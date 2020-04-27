@@ -1,0 +1,14 @@
+name: "discourse-charm"
+summary: "Discourse for juju-k8s operator framework"
+description: "Discourse bundled for juju-k8s deployment"
+maintainers:
+  - Jay Kuri <jay.kuri@canonical.com>
+  - Gareth Woolridge <gareth.woolridge@canonical.com>
+tags:
+  - applications
+  - forum
+series:
+  - kubernetes
+provide:
+  website:
+    interface: http

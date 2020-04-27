@@ -1,0 +1,73 @@
+options:
+  image:
+    type: string
+    description: "The docker image to install. Required. Defaults to something"
+    default: "k8s-discourse:2.39"
+  image_user:
+    type: string                                  
+    description: "Username to use for the configured image registry, if required"
+    default: ""                                   
+  image_pass:
+    type: string                                  
+    description: "Password to use for the configured image registry, if required"
+    default: ""
+  db_host:
+    type: string
+    description: "PostgreSQL database host"
+    default: ""
+  db_name:
+    type: string
+    description: "PostgreSQL database name"
+    default: "discourse"
+  db_user:
+    type: string
+    description: "PostgreSQL database user"
+    default: "wordpress"
+  db_password:
+    type: string
+    description: "PostgreSQL database user's password"
+    default: ""
+  external_hostname:
+    type: string
+    description: "External hostname this discourse instance should respond to"
+    default: ""
+  enable_cors:
+    type: boolean
+    description: "Enable Cross-origin Resource Sharing (CORS) at the application level (required for SSO)"
+    default: "true"
+  cors_origin:
+    type: string
+    description: "Cors origin string to use, defaults to '*'"
+    default: "*"
+  developer_emails:
+    type: string
+    description: "Comma delimited list of email addresses that should have developer level access"
+    default: ""
+  smtp_domain:
+    type: string
+    description: "Hostname that email sent by this discourse should appear to come from"
+    default: ""
+  smtp_address:
+    type: string
+    description: "Hostname / IP that should be used to send SMTP mail"
+    default: ""
+  smtp_openssl_verify_mode: 
+    type: boolean
+    description: "Verify SSL/TLS certificates when sending via SMTP"
+    default: "true"
+  smtp_port:
+    type: int
+    description: "Port to use when connecting to SMTP server"
+    default: 587
+  smtp_user_name:
+    type: string
+    description: "Username to use when sending mail via SMTP"
+    default: ""
+  smtp_password:
+    type: string
+    description: "Password to use when sending mail via SMTP"
+    default: ""
+  smtp_authentication:
+    type: string
+    description: "SMTP authentication mechanism"
+    default: "none"
