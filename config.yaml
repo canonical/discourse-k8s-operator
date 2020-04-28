@@ -1,16 +1,4 @@
 options:
-  image:
-    type: string
-    description: "The docker image to install. Required. Defaults to something"
-    default: "k8s-discourse:2.39"
-  image_user:
-    type: string                                  
-    description: "Username to use for the configured image registry, if required"
-    default: ""                                   
-  image_pass:
-    type: string                                  
-    description: "Password to use for the configured image registry, if required"
-    default: ""
   db_host:
     type: string
     description: "PostgreSQL database host"
@@ -27,6 +15,10 @@ options:
     type: string
     description: "PostgreSQL database user's password"
     default: ""
+  service_port:
+    type: int
+    description: "TCP port discourse should listen on"
+    default: 80
   external_hostname:
     type: string
     description: "External hostname this discourse instance should respond to"
@@ -51,10 +43,6 @@ options:
     type: string
     description: "Hostname / IP that should be used to send SMTP mail"
     default: ""
-  smtp_openssl_verify_mode: 
-    type: boolean
-    description: "Verify SSL/TLS certificates when sending via SMTP"
-    default: "true"
   smtp_port:
     type: int
     description: "Port to use when connecting to SMTP server"
@@ -67,10 +55,6 @@ options:
     type: string
     description: "Password to use when sending mail via SMTP"
     default: ""
-  smtp_authentication:
-    type: string
-    description: "SMTP authentication mechanism"
-    default: "none"
   redis_host:
     type: string
     description: "Redis host name / IP"
