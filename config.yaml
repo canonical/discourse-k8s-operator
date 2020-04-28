@@ -71,3 +71,7 @@ options:
     type: string
     description: "SMTP authentication mechanism"
     default: "none"
+  redis_host:
+    type: string
+    description: "Redis host name / IP"
+    default: ""
