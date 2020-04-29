@@ -12,3 +12,7 @@ series:
 provide:
   website:
     interface: http
+resources:
+  discourse_image:
+    type: oci-image
+    description: Image used for discourse pod.
