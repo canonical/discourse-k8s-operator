@@ -53,6 +53,7 @@ class DiscourseCharm(CharmBase):
             'containers': [{
                 'name': self.framework.model.app.name,
                 'imageDetails': discourse_image_details,
+                'imagePullPolicy': 'Never',
                 'ports': [{
                     'containerPort': int(config['service_port']),
                     'protocol': 'TCP',
