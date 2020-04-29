@@ -1,0 +1,1 @@
+../mod/resource-oci-image/oci_image.py
