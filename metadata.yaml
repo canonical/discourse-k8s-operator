@@ -16,7 +16,7 @@ resources:
   discourse_image:
     type: oci-image
     description: Image used for discourse pod.
-storage:
-  discourse-storage:
-    type: filesystem
-    location: /shared
+#storage:
+#  discourse-storage:
+#    type: filesystem
+#    location: /shared

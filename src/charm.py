@@ -35,7 +35,9 @@ class DiscourseCharm(CharmBase):
             raise LeadershipError()
 
     def configure_pod(self, event):
+
         # Verify we are leader - throws exception if we are not
+        # Revisit this, because it's not what we actually want - prevents scaling
         self.verify_leadership()
 
         # Get the image details for our discourse image - this will
@@ -49,6 +51,9 @@ class DiscourseCharm(CharmBase):
         config = self.framework.model.config
 
         # set our spec per our config
+        # revise this to create the spec in two pieces, 
+        # the leader should have a initContainer section,
+        # non-leaders should not.
         self.model.pod.set_spec({
             'containers': [{
                 'name': self.framework.model.app.name,
@@ -59,20 +64,50 @@ class DiscourseCharm(CharmBase):
                     'protocol': 'TCP',
                 }],
                 'config': {
-                    'DISCOURSE_DB_USERNAME': config['db_user'],
-                    'DISCOURSE_DB_PASSWORD': config['db_password'],
-                    'DISCOURSE_DB_HOST': config['db_host'],
-                    'DISCOURSE_DB_NAME': config['db_name'],
+                    'DISCOURSE_POSTGRES_USERNAME': config['db_user'],
+                    'DISCOURSE_POSTGRES_PASSWORD': config['db_password'],
+                    'DISCOURSE_POSTGRES_HOST': config['db_host'],
+                    'DISCOURSE_POSTGRES_NAME': config['db_name'],
                     'DISCOURSE_DEVELOPER_EMAILS': config['developer_emails'],
                     'DISCOURSE_HOSTNAME': config['external_hostname'],
                     'DISCOURSE_SMTP_DOMAIN': config['smtp_domain'],
                     'DISCOURSE_SMTP_ADDRESS': config['smtp_address'],
                     'DISCOURSE_SMTP_PORT': config['smtp_port'],
+                    'DISCOURSE_SMTP_AUTHENTICATION': config['smtp_authentication'],
+                    'DISCOURSE_SMTP_OPENSSL_VERIFY_MODE': config['smtp_openssl_verify_mode'],
                     'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
                     'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
+                    'DISCOURSE_ENABLE_LOCAL_REDIS': config['enable_local_redis'],
                     'DISCOURSE_REDIS_HOST': config['redis_host'],
+                    'DISCOURSE_SERVE_STATIC_ASSETS': config['serve_static_assets'],
                 },
-            }]
+            }],
+            'initContainers': [{
+                'name': '%s-init1'%(self.framework.model.app.name),
+                'imageDetails': discourse_image_details,
+                'imagePullPolicy': 'Never',
+                'config': {
+                    'DISCOURSE_POSTGRES_USERNAME': config['db_user'],
+                    'DISCOURSE_POSTGRES_PASSWORD': config['db_password'],
+                    'DISCOURSE_POSTGRES_HOST': config['db_host'],
+                    'DISCOURSE_POSTGRES_NAME': config['db_name'],
+                    'DISCOURSE_DEVELOPER_EMAILS': config['developer_emails'],
+                    'DISCOURSE_HOSTNAME': config['external_hostname'],
+                    'DISCOURSE_SMTP_DOMAIN': config['smtp_domain'],
+                    'DISCOURSE_SMTP_ADDRESS': config['smtp_address'],
+                    'DISCOURSE_SMTP_PORT': config['smtp_port'],
+                    'DISCOURSE_SMTP_AUTHENTICATION': config['smtp_authentication'],
+                    'DISCOURSE_SMTP_OPENSSL_VERIFY_MODE': config['smtp_openssl_verify_mode'],
+                    'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
+                    'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
+                    'DISCOURSE_ENABLE_LOCAL_REDIS': config['enable_local_redis'],
+                    'DISCOURSE_REDIS_HOST': config['redis_host'],
+                    'DISCOURSE_SERVE_STATIC_ASSETS': config['serve_static_assets'],
+                    # the magic 'only migrate, then exit'
+                    'DISCOURSE_MIGRATE_ONLY': 'true',
+                },
+            }],
+
         })
         self.state.is_started = True
         self.model.unit.status = ActiveStatus()

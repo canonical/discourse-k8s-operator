@@ -47,6 +47,14 @@ options:
     type: int
     description: "Port to use when connecting to SMTP server"
     default: 587
+  smtp_authentication:
+    type: string
+    description: "Type of smtp authentication to use"
+    default: "none"
+  smtp_openssl_verify_mode:
+    type: string
+    description: "Should discourse verify SSL certs"
+    default: "none"
   smtp_username:
     type: string
     description: "Username to use when sending mail via SMTP"
@@ -55,7 +63,19 @@ options:
     type: string
     description: "Password to use when sending mail via SMTP"
     default: ""
+  enable_local_sidekiq:
+    type: boolean
+    description: "Run sidekiq within the pod"
+    default: "true"
+  enable_local_redis:
+    type: boolean
+    description: "Run redis within the pod"
+    default: "true"
   redis_host:
     type: string
     description: "Redis host name / IP"
-    default: ""
+    default: "127.0.0.1"
+  serve_static_assets:
+    type: boolean
+    description: "Serve static assets with unicorn"
+    default: "true"
