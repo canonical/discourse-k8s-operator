@@ -30,31 +30,17 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.config_changed, self.configure_pod)
         self.framework.observe(self.on.upgrade_charm, self.configure_pod)
 
-    def verify_leadership(self):
-        if not self.model.unit.is_leader():
-            raise LeadershipError()
-
-    def configure_pod(self, event):
-
-        # Verify we are leader - throws exception if we are not
-        # Revisit this, because it's not what we actually want - prevents scaling
-        self.verify_leadership()
+    def get_pod_spec(self):
 
         # Get the image details for our discourse image - this will
         # obtain all the details needed to access our docker registry / etc.
         discourse_image_details = self.discourse_image.fetch()
 
-        # set our status while we get configured
-        self.model.unit.status = MaintenanceStatus('Configuring pod')
-
         # get our config
         config = self.framework.model.config
 
-        # set our spec per our config
-        # revise this to create the spec in two pieces, 
-        # the leader should have a initContainer section,
-        # non-leaders should not.
-        self.model.pod.set_spec({
+        # our pod always includes the worker container
+        pod_spec = {
             'containers': [{
                 'name': self.framework.model.app.name,
                 'imageDetails': discourse_image_details,
@@ -83,7 +69,7 @@ class DiscourseCharm(CharmBase):
                 },
             }],
             'initContainers': [{
-                'name': '%s-init1'%(self.framework.model.app.name),
+                'name': '%s-init1' % (self.framework.model.app.name),
                 'imageDetails': discourse_image_details,
                 'imagePullPolicy': 'Never',
                 'config': {
@@ -103,13 +89,28 @@ class DiscourseCharm(CharmBase):
                     'DISCOURSE_ENABLE_LOCAL_REDIS': config['enable_local_redis'],
                     'DISCOURSE_REDIS_HOST': config['redis_host'],
                     'DISCOURSE_SERVE_STATIC_ASSETS': config['serve_static_assets'],
-                    # the magic 'only migrate, then exit'
-                    'DISCOURSE_MIGRATE_ONLY': 'true',
+                    # Tell the image it should run only initialization processes and exit
+                    # rather than starting the app normally
+                    'STARTUP_MODE': 'initialization',
                 },
-            }],
+            }]
+        }
+        return pod_spec
 
-        })
-        self.state.is_started = True
+    def configure_pod(self, event):
+
+        # set our status while we get configured
+        self.model.unit.status = MaintenanceStatus('Configuring pod')
+
+        # leader must set the pod spec
+        if self.model.unit.is_leader():
+            # get our spec definition
+            pod_spec = self.get_pod_spec()
+
+            # set our pod spec
+            self.model.pod.set_spec(pod_spec)
+            self.state.is_started = True
+
         self.model.unit.status = ActiveStatus()
 
     def on_new_client(self, event):
@@ -118,11 +119,6 @@ class DiscourseCharm(CharmBase):
 
         event.client.serve(hosts=[event.client.ingress_address],
                            port=self.model.config['http_port'])
-
-class LeadershipError(ModelError):
-    def __init__(self):
-        super().__init__('not leader')
-        self.status = WaitingStatus('Deferring to leader unit to configure pod')
 
 
 if __name__ == '__main__':
