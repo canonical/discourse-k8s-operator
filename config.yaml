@@ -1,4 +1,8 @@
 options:
+  discourse_image:
+    type: string
+    description: "Discourse image to use"
+    default: ""
   db_host:
     type: string
     description: "PostgreSQL database host"

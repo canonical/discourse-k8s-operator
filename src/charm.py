@@ -25,6 +25,7 @@ class DiscourseCharm(CharmBase):
         self.state.set_default(is_started=False)
         # get our discourse_image from juju
         # ie: juju deploy . --resource discourse_image=discourse-canonical:1.0.0 )
+        # probably need to change this to use a config variable 
         self.discourse_image = OCIImageResource(self, 'discourse_image')
         self.framework.observe(self.on.leader_elected, self.configure_pod)
         self.framework.observe(self.on.config_changed, self.configure_pod)
@@ -68,32 +69,38 @@ class DiscourseCharm(CharmBase):
                     'DISCOURSE_SERVE_STATIC_ASSETS': config['serve_static_assets'],
                 },
             }],
-            'initContainers': [{
-                'name': '%s-init1' % (self.framework.model.app.name),
-                'imageDetails': discourse_image_details,
-                'imagePullPolicy': 'Never',
-                'config': {
-                    'DISCOURSE_POSTGRES_USERNAME': config['db_user'],
-                    'DISCOURSE_POSTGRES_PASSWORD': config['db_password'],
-                    'DISCOURSE_POSTGRES_HOST': config['db_host'],
-                    'DISCOURSE_POSTGRES_NAME': config['db_name'],
-                    'DISCOURSE_DEVELOPER_EMAILS': config['developer_emails'],
-                    'DISCOURSE_HOSTNAME': config['external_hostname'],
-                    'DISCOURSE_SMTP_DOMAIN': config['smtp_domain'],
-                    'DISCOURSE_SMTP_ADDRESS': config['smtp_address'],
-                    'DISCOURSE_SMTP_PORT': config['smtp_port'],
-                    'DISCOURSE_SMTP_AUTHENTICATION': config['smtp_authentication'],
-                    'DISCOURSE_SMTP_OPENSSL_VERIFY_MODE': config['smtp_openssl_verify_mode'],
-                    'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
-                    'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
-                    'DISCOURSE_ENABLE_LOCAL_REDIS': config['enable_local_redis'],
-                    'DISCOURSE_REDIS_HOST': config['redis_host'],
-                    'DISCOURSE_SERVE_STATIC_ASSETS': config['serve_static_assets'],
-                    # Tell the image it should run only initialization processes and exit
-                    # rather than starting the app normally
-                    'STARTUP_MODE': 'initialization',
-                },
-            }]
+# init Containers are our workaround to do migrations, though it
+# is not fully functional at this time. Either we need to use 
+# k8s jobs to run migrate, or we need to do more work on how 
+# we can ensure we only run migrate once per upgrade / not 
+# simultaneously.
+#
+#            'initContainers': [{
+#                'name': '%s-init1' % (self.framework.model.app.name),
+#                'imageDetails': discourse_image_details,
+#                'imagePullPolicy': 'Never',
+#                'config': {
+#                    'DISCOURSE_POSTGRES_USERNAME': config['db_user'],
+#                    'DISCOURSE_POSTGRES_PASSWORD': config['db_password'],
+#                    'DISCOURSE_POSTGRES_HOST': config['db_host'],
+#                    'DISCOURSE_POSTGRES_NAME': config['db_name'],
+#                    'DISCOURSE_DEVELOPER_EMAILS': config['developer_emails'],
+#                    'DISCOURSE_HOSTNAME': config['external_hostname'],
+#                    'DISCOURSE_SMTP_DOMAIN': config['smtp_domain'],
+#                    'DISCOURSE_SMTP_ADDRESS': config['smtp_address'],
+#                    'DISCOURSE_SMTP_PORT': config['smtp_port'],
+#                    'DISCOURSE_SMTP_AUTHENTICATION': config['smtp_authentication'],
+#                    'DISCOURSE_SMTP_OPENSSL_VERIFY_MODE': config['smtp_openssl_verify_mode'],
+#                    'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
+#                    'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
+#                    'DISCOURSE_ENABLE_LOCAL_REDIS': config['enable_local_redis'],
+#                    'DISCOURSE_REDIS_HOST': config['redis_host'],
+#                    'DISCOURSE_SERVE_STATIC_ASSETS': config['serve_static_assets'],
+#                    # Tell the image it should run only initialization processes and exit
+#                    # rather than starting the app normally
+#                    'STARTUP_MODE': 'initialization',
+#                },
+#            }]
         }
         return pod_spec
 
