@@ -3,6 +3,10 @@ options:
     type: string
     description: "Discourse image to use"
     default: ""
+  registry_secrets_name:
+    type: string
+    description: "Registry imagePullSecrets name"
+    default: ""
   db_host:
     type: string
     description: "PostgreSQL database host"
