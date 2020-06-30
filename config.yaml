@@ -23,10 +23,6 @@ options:
     type: string
     description: "PostgreSQL database user's password"
     default: ""
-  service_port:
-    type: int
-    description: "TCP port discourse should listen on"
-    default: 80
   external_hostname:
     type: string
     description: "External hostname this discourse instance should respond to"

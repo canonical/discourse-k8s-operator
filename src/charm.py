@@ -14,6 +14,7 @@ from ops.model import (
     WaitingStatus,
 )
 
+
 class DiscourseCharm(CharmBase):
     state = StoredState()
 
@@ -30,25 +31,30 @@ class DiscourseCharm(CharmBase):
         # get our config
         config = self.framework.model.config
 
-        # our pod always includes the worker container
         pod_spec = {
-            'containers': [{
-                'name': self.framework.model.app.name,
-                'imageDetails': {"imagePath": config['discourse_image']},
-                'imagePullPolicy': 'IfNotPresent',
-                'ports': [{
-                    'containerPort': int(config['service_port']),
-                    'protocol': 'TCP',
+            "version": 2,
+            "containers": [{
+                "name": self.framework.model.app.name,
+                "imageDetails": {"imagePath": config['discourse_image']},
+                "imagePullPolicy": "IfNotPresent",
+                "ports": [{
+                    "containerPort": 3000,
+                    "protocol": "TCP",
                 }],
-                'config': self.create_discourse_pod_config(config),
+                "config": self.create_discourse_pod_config(config),
             }],
+            "kubernetesResources": {
+                "ingressResources": [
+                    self.create_ingress_config(config)
+                ]
+            }
         }
 
         # this handles when we are trying to get an image from a private
         # registry.  Details are here:
         # https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
         if config['registry_secrets_name']:
-            pod_spec['containers'][0].set('imagePullSecrets', config['registry_secrets_name'])
+            pod_spec['containers'][0].set("imagePullSecrets", config['registry_secrets_name'])
 
         return pod_spec
 
@@ -73,6 +79,31 @@ class DiscourseCharm(CharmBase):
         }
         return pod_config
 
+    def create_ingress_config(self, config):
+        ingressResource = {
+            "name": self.framework.model.app.name + "-ingress",
+            "spec": {
+                "rules": [
+                    {
+                        "host": config['external_hostname'],
+                        "http": {
+                            "paths": [
+                                {
+                                    "path": "/",
+                                    "backend": {
+                                        "serviceName": self.framework.model.app.name,
+                                        "servicePort": 3000
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+
+        return ingressResource
+
     def check_config_is_valid(self):
         config = self.framework.model.config
         valid_config = True
@@ -80,7 +111,7 @@ class DiscourseCharm(CharmBase):
         missing_fields = []
 
         needed_fields = ['db_user', 'db_password', 'db_host', 'db_name', 'smtp_address',
-                          'redis_host']
+                         'redis_host']
         for key in needed_fields:
             if len(config[key]) == 0:
                 missing_fields.append(key)
