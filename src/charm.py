@@ -47,6 +47,9 @@ class DiscourseCharm(CharmBase):
                 "ingressResources": [
                     self.create_ingress_config(config)
                 ]
+            },
+            "service": {
+                "scalePolicy": "serial"
             }
         }
 

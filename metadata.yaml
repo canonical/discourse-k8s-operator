@@ -9,6 +9,8 @@ tags:
   - forum
 series:
   - kubernetes
+deployment:
+  type: stateful
 provides:
   website:
     interface: http
