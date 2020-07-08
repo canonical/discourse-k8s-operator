@@ -73,8 +73,8 @@ options:
     default: "true"
   enable_local_redis:
     type: boolean
-    description: "Run redis within the pod"
-    default: "true"
+    description: "Run redis within the pod - only appropriate for single-unit deploys"
+    default: "false"
   redis_host:
     type: string
     description: "Redis host name / IP"

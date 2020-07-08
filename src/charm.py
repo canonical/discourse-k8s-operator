@@ -42,14 +42,19 @@ class DiscourseCharm(CharmBase):
                     "protocol": "TCP",
                 }],
                 "config": self.create_discourse_pod_config(config),
+                "kubernetes": {
+                    "readinessProbe": {
+                        "httpGet": {
+                            "path": "/srv/status",
+                            "port": 3000,
+                        }
+                    }
+                },
             }],
             "kubernetesResources": {
                 "ingressResources": [
                     self.create_ingress_config(config)
                 ]
-            },
-            "service": {
-                "scalePolicy": "serial"
             }
         }
 
@@ -147,8 +152,9 @@ class DiscourseCharm(CharmBase):
                 pod_spec = self.get_pod_spec()
                 # set our pod spec
                 self.model.pod.set_spec(pod_spec)
-                self.state.is_started = True
-                self.model.unit.status = ActiveStatus()
+
+        self.state.is_started = True
+        self.model.unit.status = ActiveStatus()
 
     def on_new_client(self, event):
         if not self.state.is_started:
