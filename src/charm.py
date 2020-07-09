@@ -32,7 +32,7 @@ class DiscourseCharm(CharmBase):
         config = self.framework.model.config
 
         pod_spec = {
-            "version": 2,
+            "version": 3,
             "containers": [{
                 "name": self.framework.model.app.name,
                 "imageDetails": {"imagePath": config['discourse_image']},
