@@ -71,14 +71,10 @@ options:
     type: boolean
     description: "Run sidekiq within the pod"
     default: "true"
-  enable_local_redis:
-    type: boolean
-    description: "Run redis within the pod - only appropriate for single-unit deploys"
-    default: "false"
   redis_host:
     type: string
     description: "Redis host name / IP"
-    default: "127.0.0.1"
+    default: ""
   serve_static_assets:
     type: boolean
     description: "Serve static assets with unicorn"

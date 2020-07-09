@@ -58,8 +58,8 @@ class DiscourseCharm(CharmBase):
             }
         }
 
-        # this handles when we are trying to get an image from a private
-        # registry.  Details are here:
+        # This handles when we are trying to get an image from a private
+        # registry. Details are here:
         # https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
         if config['registry_secrets_name']:
             pod_spec['containers'][0].set("imagePullSecrets", config['registry_secrets_name'])
@@ -81,7 +81,6 @@ class DiscourseCharm(CharmBase):
             'DISCOURSE_SMTP_OPENSSL_VERIFY_MODE': config['smtp_openssl_verify_mode'],
             'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
             'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
-            'DISCOURSE_ENABLE_LOCAL_REDIS': config['enable_local_redis'],
             'DISCOURSE_REDIS_HOST': config['redis_host'],
             'DISCOURSE_SERVE_STATIC_ASSETS': config['serve_static_assets'],
         }
@@ -128,10 +127,6 @@ class DiscourseCharm(CharmBase):
             valid_config = False
             errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
 
-        if config['redis_host'] == '127.0.0.1' and config['enable_local_redis'] != "true":
-            valid_config = False
-            errors.append('redis_host set to 127.0.0.1, but enable_local_redis is disabled')
-
         # set status if we have a bad config
         if errors:
             self.model.unit.status = BlockedStatus(", ".join(errors))
@@ -142,15 +137,15 @@ class DiscourseCharm(CharmBase):
 
     def configure_pod(self, event):
 
-        # set our status while we get configured
+        # Set our status while we get configured.
         self.model.unit.status = MaintenanceStatus('Configuring pod')
 
-        # leader must set the pod spec
+        # Leader must set the pod spec.
         if self.model.unit.is_leader():
-            # get our spec definition
+            # Get our spec definition.
             if self.check_config_is_valid():
                 pod_spec = self.get_pod_spec()
-                # set our pod spec
+                # Set our pod spec.
                 self.model.pod.set_spec(pod_spec)
 
         self.state.is_started = True
