@@ -82,7 +82,6 @@ class DiscourseCharm(CharmBase):
             'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
             'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
             'DISCOURSE_REDIS_HOST': config['redis_host'],
-            'DISCOURSE_SERVE_STATIC_ASSETS': config['serve_static_assets'],
         }
         return pod_config
 

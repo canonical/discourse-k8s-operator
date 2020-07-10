@@ -67,15 +67,7 @@ options:
     type: string
     description: "Password to use when sending mail via SMTP"
     default: ""
-  enable_local_sidekiq:
-    type: boolean
-    description: "Run sidekiq within the pod"
-    default: "true"
   redis_host:
     type: string
     description: "Redis host name / IP"
     default: ""
-  serve_static_assets:
-    type: boolean
-    description: "Serve static assets with unicorn"
-    default: "true"
