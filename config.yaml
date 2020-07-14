@@ -3,9 +3,13 @@ options:
     type: string
     description: "Discourse image to use"
     default: ""
-  registry_secrets_name:
+  image_user:
     type: string
-    description: "Registry imagePullSecrets name"
+    description: "Private registry username"
+    default: ""
+  image_pass:
+    type: string
+    description: "Private registry password"
     default: ""
   db_host:
     type: string
