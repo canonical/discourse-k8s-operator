@@ -31,6 +31,8 @@ def create_discourse_pod_config(config):
         'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
         'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
         'DISCOURSE_REDIS_HOST': config['redis_host'],
+        'DISCOURSE_ENABLE_CORS': config['enable_cors'],
+        'DISCOURSE_CORS_ORIGIN': config['cors_origin'],
     }
     return pod_config
 
