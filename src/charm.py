@@ -8,12 +8,114 @@ from ops.framework import StoredState
 from ops.main import main
 from ops.model import (
     ActiveStatus,
+    BlockedStatus,
     MaintenanceStatus,
     ModelError,
     WaitingStatus,
 )
 
-from oci_image import OCIImageResource, ResourceError
+
+def create_discourse_pod_config(config):
+    pod_config = {
+        'DISCOURSE_POSTGRES_USERNAME': config['db_user'],
+        'DISCOURSE_POSTGRES_PASSWORD': config['db_password'],
+        'DISCOURSE_POSTGRES_HOST': config['db_host'],
+        'DISCOURSE_POSTGRES_NAME': config['db_name'],
+        'DISCOURSE_DEVELOPER_EMAILS': config['developer_emails'],
+        'DISCOURSE_HOSTNAME': config['external_hostname'],
+        'DISCOURSE_SMTP_DOMAIN': config['smtp_domain'],
+        'DISCOURSE_SMTP_ADDRESS': config['smtp_address'],
+        'DISCOURSE_SMTP_PORT': config['smtp_port'],
+        'DISCOURSE_SMTP_AUTHENTICATION': config['smtp_authentication'],
+        'DISCOURSE_SMTP_OPENSSL_VERIFY_MODE': config['smtp_openssl_verify_mode'],
+        'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
+        'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
+        'DISCOURSE_REDIS_HOST': config['redis_host'],
+    }
+    return pod_config
+
+
+def create_ingress_config(app_name, config):
+    ingressResource = {
+        "name": app_name + "-ingress",
+        "spec": {
+            "rules": [
+                {
+                    "host": config['external_hostname'],
+                    "http": {
+                        "paths": [
+                            {
+                                "path": "/",
+                                "backend": {
+                                    "serviceName": app_name,
+                                    "servicePort": 3000
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+    return ingressResource
+
+
+def get_pod_spec(app_name, config):
+    pod_spec = {
+        "version": 3,
+        "containers": [{
+            "name": app_name, 
+            "imageDetails": {"imagePath": config['discourse_image']},
+            "imagePullPolicy": "IfNotPresent",
+            "ports": [{
+                "containerPort": 3000,
+                "protocol": "TCP",
+            }],
+            "envConfig": create_discourse_pod_config(config),
+            "kubernetes": {
+                "readinessProbe": {
+                    "httpGet": {
+                        "path": "/srv/status",
+                        "port": 3000,
+                    }
+                }
+            },
+        }],
+        "kubernetesResources": {
+            "ingressResources": [
+                create_ingress_config(app_name, config)
+            ]
+        }
+    }
+    # This handles when we are trying to get an image from a private
+    # registry.
+    if config['image_user'] and config['image_pass']:
+        pod_spec['containers'][0]['imageDetails'].set("username", config['image_user'])
+        pod_spec['containers'][0]['imageDetails'].set("password", config['image_pass'])
+
+    return pod_spec
+
+
+def check_for_config_problems(config):
+    errors = []
+    missing_fields = check_for_missing_config_fields(config)
+
+    if len(missing_fields):
+        errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
+
+    return errors
+
+
+def check_for_missing_config_fields(config):
+    missing_fields = []
+
+    needed_fields = ['db_user', 'db_password', 'db_host', 'db_name', 'smtp_address',
+                     'redis_host']
+    for key in needed_fields:
+        if len(config[key]) == 0:
+            missing_fields.append(key)
+
+    return sorted(missing_fields)
 
 
 class DiscourseCharm(CharmBase):
@@ -23,57 +125,37 @@ class DiscourseCharm(CharmBase):
         super().__init__(framework, key)
 
         self.state.set_default(is_started=False)
-        # get our discourse_image from juju
-        # ie: juju deploy . --resource discourse_image=discourse-canonical:1.0.0 )
-        self.discourse_image = OCIImageResource(self, 'discourse_image')
         self.framework.observe(self.on.leader_elected, self.configure_pod)
         self.framework.observe(self.on.config_changed, self.configure_pod)
         self.framework.observe(self.on.upgrade_charm, self.configure_pod)
 
-    def verify_leadership(self):
-        if not self.model.unit.is_leader():
-            raise LeadershipError()
+    def check_config_is_valid(self, config):
+        valid_config = True
+        errors = check_for_config_problems(config)
+
+        # set status if we have a bad config
+        if errors:
+            self.model.unit.status = BlockedStatus(", ".join(errors))
+            valid_config = False
+        else:
+            self.model.unit.status = MaintenanceStatus("Configuration passed validation")
+
+        return valid_config
 
     def configure_pod(self, event):
-        # Verify we are leader - throws exception if we are not
-        self.verify_leadership()
 
-        # Get the image details for our discourse image - this will
-        # obtain all the details needed to access our docker registry / etc.
-        discourse_image_details = self.discourse_image.fetch()
-
-        # set our status while we get configured
+        # Set our status while we get configured.
         self.model.unit.status = MaintenanceStatus('Configuring pod')
 
-        # get our config
-        config = self.framework.model.config
+        # Leader must set the pod spec.
+        if self.model.unit.is_leader():
+            # Get our spec definition.
+            if self.check_config_is_valid(self.framework.model.config):
+                # Get pod spec using our app name and config
+                pod_spec = get_pod_spec(self.framework.model.app.name, self.framework.model.config)
+                # Set our pod spec.
+                self.model.pod.set_spec(pod_spec)
 
-        # set our spec per our config
-        self.model.pod.set_spec({
-            'containers': [{
-                'name': self.framework.model.app.name,
-                'imageDetails': discourse_image_details,
-                'imagePullPolicy': 'Never',
-                'ports': [{
-                    'containerPort': int(config['service_port']),
-                    'protocol': 'TCP',
-                }],
-                'config': {
-                    'DISCOURSE_DB_USERNAME': config['db_user'],
-                    'DISCOURSE_DB_PASSWORD': config['db_password'],
-                    'DISCOURSE_DB_HOST': config['db_host'],
-                    'DISCOURSE_DB_NAME': config['db_name'],
-                    'DISCOURSE_DEVELOPER_EMAILS': config['developer_emails'],
-                    'DISCOURSE_HOSTNAME': config['external_hostname'],
-                    'DISCOURSE_SMTP_DOMAIN': config['smtp_domain'],
-                    'DISCOURSE_SMTP_ADDRESS': config['smtp_address'],
-                    'DISCOURSE_SMTP_PORT': config['smtp_port'],
-                    'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
-                    'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
-                    'DISCOURSE_REDIS_HOST': config['redis_host'],
-                },
-            }]
-        })
         self.state.is_started = True
         self.model.unit.status = ActiveStatus()
 
@@ -83,11 +165,6 @@ class DiscourseCharm(CharmBase):
 
         event.client.serve(hosts=[event.client.ingress_address],
                            port=self.model.config['http_port'])
-
-class LeadershipError(ModelError):
-    def __init__(self):
-        super().__init__('not leader')
-        self.status = WaitingStatus('Deferring to leader unit to configure pod')
 
 
 if __name__ == '__main__':

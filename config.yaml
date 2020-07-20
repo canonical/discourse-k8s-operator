@@ -1,4 +1,16 @@
 options:
+  discourse_image:
+    type: string
+    description: "Discourse image to use"
+    default: ""
+  image_user:
+    type: string
+    description: "Private registry username"
+    default: ""
+  image_pass:
+    type: string
+    description: "Private registry password"
+    default: ""
   db_host:
     type: string
     description: "PostgreSQL database host"
@@ -15,10 +27,6 @@ options:
     type: string
     description: "PostgreSQL database user's password"
     default: ""
-  service_port:
-    type: int
-    description: "TCP port discourse should listen on"
-    default: 80
   external_hostname:
     type: string
     description: "External hostname this discourse instance should respond to"
@@ -47,6 +55,14 @@ options:
     type: int
     description: "Port to use when connecting to SMTP server"
     default: 587
+  smtp_authentication:
+    type: string
+    description: "Type of smtp authentication to use"
+    default: "none"
+  smtp_openssl_verify_mode:
+    type: string
+    description: "Should discourse verify SSL certs"
+    default: "none"
   smtp_username:
     type: string
     description: "Username to use when sending mail via SMTP"
