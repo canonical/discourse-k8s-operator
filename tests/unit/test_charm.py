@@ -7,7 +7,7 @@ sys.path.append('src')  # noqa: E402
 from charm import create_ingress_config
 
 
-class TestDiscousreCharm(unittest.TestCase):
+class TestDiscourseCharm(unittest.TestCase):
     def test_create_ingress_config(self):
         config = {
             "external_hostname": "testhost",
