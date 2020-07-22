@@ -3,4 +3,4 @@
 	url = https://github.com/canonical/operator
 [submodule "mod/resource-oci-image"]
 	path = mod/resource-oci-image
-	url = git@github.com:johnsca/resource-oci-image.git
+	url = https://github.com/johnsca/resource-oci-image
