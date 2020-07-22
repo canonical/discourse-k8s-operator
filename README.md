@@ -7,4 +7,9 @@ A juju operator charm for a Kubernetes deployment of Discourse.
 This is a k8s charm and can only be deployed to a k8s cloud via
 juju that has been attached to a k8s cloud.
 
+To deploy this charm, run:
+
+    charmcraft build
+    juju deploy discourse.charm
+
 ... More to come...
