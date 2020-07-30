@@ -8,7 +8,7 @@ lint: blacken
 
 # We actually use the build directory created by charmcraft,
 # but the .charm file makes a much more convenient sentinel.
-unittest: discourse-charm.charm
+unittest: discourse.charm
 	@tox -e unit
 
 test: lint unittest
@@ -17,7 +17,7 @@ clean:
 	@echo "Cleaning files"
 	@git clean -fXd
 
-discourse-charm.charm: src/*.py requirements.txt
+discourse.charm: src/*.py requirements.txt
 	charmcraft build
 
 .PHONY: lint test unittest clean

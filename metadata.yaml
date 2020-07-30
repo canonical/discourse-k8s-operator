@@ -1,4 +1,4 @@
-name: "discourse-charm"
+name: "discourse"
 summary: "Discourse for juju-k8s operator framework"
 description: "Discourse bundled for juju-k8s deployment"
 maintainers:

@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
-
-sys.path.append('lib')  # noqa: E402
-
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
