@@ -163,11 +163,12 @@ class DiscourseCharm(CharmBase):
             self.state.is_started = True
             self.model.unit.status = ActiveStatus()
 
-    def on_new_client(self, event):
+    def on_new_client(self, event):  # pragma: no cover
         if not self.state.is_started:
             return event.defer()
         event.client.serve(hosts=[event.client.ingress_address],
                            port=self.model.config['http_port'])
 
-if __name__ == '__main__':
+
+if __name__ == '__main__':  # pragma: no cover
     main(DiscourseCharm)
