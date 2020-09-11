@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
-import sys
-sys.path.append('lib')
-
 from ops.charm import CharmBase
-from ops.framework import StoredState
 from ops.main import main
+from ops.framework import StoredState
+
 from ops.model import (
-    ActiveStatus,
-    BlockedStatus,
     MaintenanceStatus,
-    ModelError,
-    WaitingStatus,
+    BlockedStatus,
+    ActiveStatus
 )
 
 
@@ -66,7 +62,7 @@ def get_pod_spec(app_name, config):
     pod_spec = {
         "version": 3,
         "containers": [{
-            "name": app_name, 
+            "name": app_name,
             "imageDetails": {"imagePath": config['discourse_image']},
             "imagePullPolicy": "IfNotPresent",
             "ports": [{
@@ -92,8 +88,8 @@ def get_pod_spec(app_name, config):
     # This handles when we are trying to get an image from a private
     # registry.
     if config['image_user'] and config['image_pass']:
-        pod_spec['containers'][0]['imageDetails'].set("username", config['image_user'])
-        pod_spec['containers'][0]['imageDetails'].set("password", config['image_pass'])
+        pod_spec['containers'][0]['imageDetails']['username'] = config['image_user']
+        pod_spec['containers'][0]['imageDetails']['password'] = config['image_pass']
 
     return pod_spec
 
@@ -111,10 +107,11 @@ def check_for_config_problems(config):
 def check_for_missing_config_fields(config):
     missing_fields = []
 
-    needed_fields = ['db_user', 'db_password', 'db_host', 'db_name', 'smtp_address',
-                     'redis_host']
+    needed_fields = ['db_user', 'db_host', 'db_name', 'smtp_address', 'redis_host',
+                     'cors_origin', 'developer_emails', 'smtp_domain',
+                     'discourse_image', 'external_hostname']
     for key in needed_fields:
-        if len(config[key]) == 0:
+        if (config.get(key) is None) or (len(config[key]) == 0):
             missing_fields.append(key)
 
     return sorted(missing_fields)
@@ -123,8 +120,8 @@ def check_for_missing_config_fields(config):
 class DiscourseCharm(CharmBase):
     state = StoredState()
 
-    def __init__(self, framework, key):
-        super().__init__(framework, key)
+    def __init__(self, *args):
+        super().__init__(*args)
 
         self.state.set_default(is_started=False)
         self.framework.observe(self.on.leader_elected, self.configure_pod)
@@ -136,13 +133,16 @@ class DiscourseCharm(CharmBase):
         errors = check_for_config_problems(config)
 
         # set status if we have a bad config
-        if errors:
+        if len(errors) > 0:
             self.model.unit.status = BlockedStatus(", ".join(errors))
             valid_config = False
         else:
             self.model.unit.status = MaintenanceStatus("Configuration passed validation")
 
         return valid_config
+
+    def get_pod_spec(self, config):
+        return get_pod_spec(self.framework.model.app.name, config)
 
     def configure_pod(self, event):
 
@@ -154,20 +154,20 @@ class DiscourseCharm(CharmBase):
             # Get our spec definition.
             if self.check_config_is_valid(self.framework.model.config):
                 # Get pod spec using our app name and config
-                pod_spec = get_pod_spec(self.framework.model.app.name, self.framework.model.config)
+                pod_spec = self.get_pod_spec(self.framework.model.config)
                 # Set our pod spec.
                 self.model.pod.set_spec(pod_spec)
-
-        self.state.is_started = True
-        self.model.unit.status = ActiveStatus()
+                self.state.is_started = True
+                self.model.unit.status = ActiveStatus()
+        else:
+            self.state.is_started = True
+            self.model.unit.status = ActiveStatus()
 
     def on_new_client(self, event):
         if not self.state.is_started:
             return event.defer()
-
         event.client.serve(hosts=[event.client.ingress_address],
                            port=self.model.config['http_port'])
-
 
 if __name__ == '__main__':
     main(DiscourseCharm)
