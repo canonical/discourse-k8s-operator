@@ -1,0 +1,65 @@
+config: 
+    cors_origin: '*'
+    db_host: 10.9.89.237
+    db_name: discourse
+    db_password: a_real_password
+    db_user: discourse_m
+    developer_emails: is-admin@canonical.com
+    discourse_image: discourse-k8s:1.0.8
+    enable_cors: true
+    external_hostname: discourse.example.com
+    image_pass: ''
+    image_user: ''
+    redis_host: 10.25.242.12
+    smtp_address: smtp.internal
+    smtp_authentication: login
+    smtp_domain: canonical.com
+    smtp_openssl_verify_mode: none
+    smtp_password:
+    smtp_port: 587
+    smtp_username: apikey
+spec:
+    containers:
+    - envConfig:
+        DISCOURSE_CORS_ORIGIN: '*'
+        DISCOURSE_DEVELOPER_EMAILS: is-admin@canonical.com
+        DISCOURSE_ENABLE_CORS: true
+        DISCOURSE_HOSTNAME: discourse.example.com
+        DISCOURSE_POSTGRES_HOST: 10.9.89.237
+        DISCOURSE_POSTGRES_NAME: discourse
+        DISCOURSE_POSTGRES_PASSWORD: a_real_password
+        DISCOURSE_POSTGRES_USERNAME: discourse_m
+        DISCOURSE_REDIS_HOST: 10.25.242.12
+        DISCOURSE_SMTP_ADDRESS: smtp.internal
+        DISCOURSE_SMTP_AUTHENTICATION: login
+        DISCOURSE_SMTP_DOMAIN: canonical.com
+        DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: none
+        DISCOURSE_SMTP_PASSWORD: null
+        DISCOURSE_SMTP_PORT: 587
+        DISCOURSE_SMTP_USER_NAME: apikey
+      imageDetails:
+        imagePath: discourse-k8s:1.0.8
+      imagePullPolicy: IfNotPresent
+      kubernetes:
+        readinessProbe:
+          httpGet:
+            path: /srv/status
+            port: 3000
+      name: discourse-charm
+      ports:
+      - containerPort: 3000
+        protocol: TCP
+    kubernetesResources:
+      ingressResources:
+      - name: discourse-charm-ingress
+        spec:
+          rules:
+          - host: discourse.example.com
+            http:
+              paths:
+              - backend:
+                  serviceName: discourse-charm
+                  servicePort: 3000
+                path: /
+    version: 3
+
