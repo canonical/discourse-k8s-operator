@@ -17,7 +17,7 @@ clean:
 	@echo "Cleaning files"
 	@git clean -fXd
 
-discourse-charm.charm: src/*.py requirements.txt
+discourse.charm: src/*.py requirements.txt
 	charmcraft build
 
 .PHONY: blacken lint test unittest clean
