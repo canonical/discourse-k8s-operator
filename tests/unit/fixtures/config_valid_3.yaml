@@ -47,20 +47,20 @@ spec:
           httpGet:
             path: /srv/status
             port: 3000
-      name: discourse-charm
+      name: discourse
       ports:
       - containerPort: 3000
         protocol: TCP
     kubernetesResources:
       ingressResources:
-      - name: discourse-charm-ingress
+      - name: discourse-ingress
         spec:
           rules:
           - host: discourse.local
             http:
               paths:
               - backend:
-                  serviceName: discourse-charm
+                  serviceName: discourse
                   servicePort: 3000
                 path: /
     version: 3
