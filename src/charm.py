@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
+# Copyright 2020 Canonical Ltd.
+# See LICENSE file for licensing details.
 
 from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
 
-from ops.model import (
-    MaintenanceStatus,
-    BlockedStatus,
-    ActiveStatus
-)
+from ops.model import MaintenanceStatus, BlockedStatus, ActiveStatus
 
 
 def create_discourse_pod_config(config):
@@ -40,20 +38,10 @@ def create_ingress_config(app_name, config):
             "rules": [
                 {
                     "host": config['external_hostname'],
-                    "http": {
-                        "paths": [
-                            {
-                                "path": "/",
-                                "backend": {
-                                    "serviceName": app_name,
-                                    "servicePort": 3000
-                                }
-                            }
-                        ]
-                    }
+                    "http": {"paths": [{"path": "/", "backend": {"serviceName": app_name, "servicePort": 3000}}]},
                 }
             ]
-        }
+        },
     }
     return ingressResource
 
@@ -61,29 +49,29 @@ def create_ingress_config(app_name, config):
 def get_pod_spec(app_name, config):
     pod_spec = {
         "version": 3,
-        "containers": [{
-            "name": app_name,
-            "imageDetails": {"imagePath": config['discourse_image']},
-            "imagePullPolicy": "IfNotPresent",
-            "ports": [{
-                "containerPort": 3000,
-                "protocol": "TCP",
-            }],
-            "envConfig": create_discourse_pod_config(config),
-            "kubernetes": {
-                "readinessProbe": {
-                    "httpGet": {
-                        "path": "/srv/status",
-                        "port": 3000,
+        "containers": [
+            {
+                "name": app_name,
+                "imageDetails": {"imagePath": config['discourse_image']},
+                "imagePullPolicy": "IfNotPresent",
+                "ports": [
+                    {
+                        "containerPort": 3000,
+                        "protocol": "TCP",
                     }
-                }
-            },
-        }],
-        "kubernetesResources": {
-            "ingressResources": [
-                create_ingress_config(app_name, config)
-            ]
-        }
+                ],
+                "envConfig": create_discourse_pod_config(config),
+                "kubernetes": {
+                    "readinessProbe": {
+                        "httpGet": {
+                            "path": "/srv/status",
+                            "port": 3000,
+                        }
+                    }
+                },
+            }
+        ],
+        "kubernetesResources": {"ingressResources": [create_ingress_config(app_name, config)]},
     }
     # This handles when we are trying to get an image from a private
     # registry.
@@ -107,9 +95,18 @@ def check_for_config_problems(config):
 def check_for_missing_config_fields(config):
     missing_fields = []
 
-    needed_fields = ['db_user', 'db_host', 'db_name', 'smtp_address', 'redis_host',
-                     'cors_origin', 'developer_emails', 'smtp_domain',
-                     'discourse_image', 'external_hostname']
+    needed_fields = [
+        'db_user',
+        'db_host',
+        'db_name',
+        'smtp_address',
+        'redis_host',
+        'cors_origin',
+        'developer_emails',
+        'smtp_domain',
+        'discourse_image',
+        'external_hostname',
+    ]
     for key in needed_fields:
         if (config.get(key) is None) or (len(config[key]) == 0):
             missing_fields.append(key)
@@ -163,11 +160,10 @@ class DiscourseCharm(CharmBase):
             self.state.is_started = True
             self.model.unit.status = ActiveStatus()
 
-    def on_new_client(self, event):  # pragma: no cover
+    def on_new_client(self, event):
         if not self.state.is_started:
             return event.defer()
-        event.client.serve(hosts=[event.client.ingress_address],
-                           port=self.model.config['http_port'])
+        event.client.serve(hosts=[event.client.ingress_address], port=self.model.config['http_port'])
 
 
 if __name__ == '__main__':  # pragma: no cover

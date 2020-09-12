@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright 2020 Canonical Ltd.
-# Licensed under the GPLv3, see LICENCE file for details.
+# See LICENSE file for licensing details.
 
 import os
 import glob
@@ -10,10 +10,7 @@ import yaml
 import mock
 from pprint import pprint
 
-from charm import (
-    DiscourseCharm,
-    BlockedStatus
-)
+from charm import DiscourseCharm, BlockedStatus
 
 from ops import testing
 
@@ -66,9 +63,11 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
                 self.harness.update_config(self.configs[config_key]['config'])
                 valid_config = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
                 self.assertEqual(valid_config, False, 'Bad Config {} is recognized.'.format(config_key))
-                self.assertEqual(self.harness.charm.model.unit.status,
-                                 BlockedStatus(self.configs[config_key]['expected_error_status']),
-                                 'Invalid config {} does not produce correct status'.format(config_key))
+                self.assertEqual(
+                    self.harness.charm.model.unit.status,
+                    BlockedStatus(self.configs[config_key]['expected_error_status']),
+                    'Invalid config {} does not produce correct status'.format(config_key),
+                )
 
     def test_charm_creates_valid_ingress_config(self):
         """Test that a valid config creates a valid ingress spec."""
@@ -76,9 +75,11 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
             if config_key.startswith('config_valid_'):
                 self.harness.update_config(self.configs[config_key]['config'])
                 spec = self.harness.charm.get_pod_spec(self.configs[config_key]['config'])
-                self.assertEqual(spec['kubernetesResources']['ingressResources'],
-                                 self.configs[config_key]['spec']['kubernetesResources']['ingressResources'],
-                                 'Valid config {} does not produce expected ingress config.'.format(config_key))
+                self.assertEqual(
+                    spec['kubernetesResources']['ingressResources'],
+                    self.configs[config_key]['spec']['kubernetesResources']['ingressResources'],
+                    'Valid config {} does not produce expected ingress config.'.format(config_key),
+                )
 
     def test_valid_pod_spec(self):
         """A valid config results in a valid pod spec."""
@@ -86,16 +87,22 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
             if config_key.startswith('config_valid_'):
                 self.harness.update_config(self.configs[config_key]['config'])
                 spec = self.harness.charm.get_pod_spec(self.configs[config_key]['config'])
-                self.assertEqual(spec, self.configs[config_key]['spec'],
-                                 'Valid config {} does not produce expected pod spec.'.format(config_key))
+                self.assertEqual(
+                    spec,
+                    self.configs[config_key]['spec'],
+                    'Valid config {} does not produce expected pod spec.'.format(config_key),
+                )
 
     def test_charm_config_process(self):
         action_event = mock.Mock()
         self.harness.update_config(self.configs['config_valid_1']['config'])
         self.harness.charm.configure_pod(action_event)
         (configured_spec, k8s_resources) = self.harness.get_pod_spec()
-        self.assertEqual(configured_spec, self.configs['config_valid_1']['spec'],
-                         'Valid config does not cause charm to set expected pod spec.')
+        self.assertEqual(
+            configured_spec,
+            self.configs['config_valid_1']['spec'],
+            'Valid config does not cause charm to set expected pod spec.',
+        )
 
     def test_charm_config_process_invalid_config(self):
         action_event = mock.Mock()
