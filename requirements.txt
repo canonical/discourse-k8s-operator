@@ -1,4 +1,1 @@
-mock
-pytest
-pytest-cov
-pyyaml
+ops
