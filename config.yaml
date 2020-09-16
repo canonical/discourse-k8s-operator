@@ -11,21 +11,9 @@ options:
     type: string
     description: "Private registry password"
     default: ""
-  db_host:
-    type: string
-    description: "PostgreSQL database host"
-    default: ""
   db_name:
     type: string
-    description: "PostgreSQL database name"
-    default: "discourse"
-  db_user:
-    type: string
-    description: "PostgreSQL database user"
-    default: "wordpress"
-  db_password:
-    type: string
-    description: "PostgreSQL database user's password"
+    description: "PostgreSQL database name. Defaults to Juju Application name."
     default: ""
   external_hostname:
     type: string
