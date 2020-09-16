@@ -1,3 +1,2 @@
 ops
 ops-lib-pgsql
-git+https://github.com/johnsca/resource-oci-image
