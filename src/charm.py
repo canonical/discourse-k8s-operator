@@ -57,12 +57,7 @@ def get_pod_spec(app_name, config):
                 "name": app_name,
                 "imageDetails": {"imagePath": config['discourse_image']},
                 "imagePullPolicy": "IfNotPresent",
-                "ports": [
-                    {
-                        "containerPort": 3000,
-                        "protocol": "TCP",
-                    }
-                ],
+                "ports": [{"containerPort": 3000, "protocol": "TCP"}],
                 "envConfig": create_discourse_pod_config(config),
                 "kubernetes": {"readinessProbe": {"httpGet": {"path": "/srv/status", "port": 3000}}},
             }
