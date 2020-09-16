@@ -1,0 +1,16 @@
+#!/bin/bash
+
+cd ${CONTAINER_APP_ROOT}/app
+
+export RAILS_ENV=${DISCOURSE_RAILS_ENVIRONMENT:-production}
+export UNICORN_BIND_ALL=0.0.0.0
+export UNICORN_SIDEKIQS=1
+
+# Putting the tail's in the background gets the various logs outputting to
+# stdout. The sed allows us to distinguish where a given log line comes form.
+touch ${CONTAINER_APP_ROOT}/app/log/production.log
+touch ${CONTAINER_APP_ROOT}/app/log/unicorn-stderr.log
+tail -f ${CONTAINER_APP_ROOT}/app/log/production.log |sed 's/^/discourse: /' &
+tail -f ${CONTAINER_APP_ROOT}/app/log/unicorn-stderr.log |sed 's/^/unicorn-error: /' 1>&2 &
+
+su -s /bin/bash -c "bin/bundle exec unicorn -c ${CONTAINER_APP_ROOT}/app/config/unicorn.conf.rb" ${CONTAINER_APP_USERNAME} 2>&1
