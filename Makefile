@@ -20,4 +20,4 @@ clean:
 discourse.charm: src/*.py requirements.txt
 	charmcraft build
 
-.PHONY: lint test unittest clean
+.PHONY: blacken lint test unittest clean
