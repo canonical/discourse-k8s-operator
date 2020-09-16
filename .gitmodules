@@ -1,3 +1,0 @@
-[submodule "mod/resource-oci-image"]
-	path = mod/resource-oci-image
-	url = https://github.com/johnsca/resource-oci-image
