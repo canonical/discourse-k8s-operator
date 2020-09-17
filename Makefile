@@ -1,3 +1,7 @@
+DISCOURSE_VERSION ?= v2.5.1
+IMAGE_VERSION ?= $(DISCOURSE_VERSION)
+IMAGE_NAME ?=discourse
+
 blacken:
 	@echo "Normalising python layout with black."
 	@tox -e black
@@ -20,4 +24,13 @@ clean:
 discourse.charm: src/*.py requirements.txt
 	charmcraft build
 
-.PHONY: blacken lint test unittest clean
+build-image:
+	@echo "Building the image."
+	@docker build \
+                --no-cache=true \
+                --build-arg CONTAINER_APP_VERSION='$(DISCOURSE_VERSION)' \
+                -t $(IMAGE_NAME):$(IMAGE_VERSION) \
+                image/
+
+
+.PHONY: blacken lint test unittest clean build-image

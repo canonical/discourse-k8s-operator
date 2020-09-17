@@ -1,0 +1,47 @@
+#!/bin/bash
+
+cd ${CONTAINER_APP_ROOT}/app
+
+DISCOURSE_CONF=${CONTAINER_APP_ROOT}/app/config/discourse.conf
+
+export RAILS_ENV=${DISCOURSE_RAILS_ENVIRONMENT:-production}
+
+# Generate our discourse.conf: Load config file and remove any lines we don't
+# have config values for.
+/usr/bin/envsubst < /srv/scripts/assets/discourse.conf.tmpl | grep -vE '= *$' > $DISCOURSE_CONF
+
+### MIGRATION LOCK WORKAROUND STARTS HERE
+#
+# Try to get an exclusive lock via redis prior to migration so that we don't
+# have multiple units running migration at once. This is a workaround because we
+# don't have an official Juju way to do this coordination at this point. When we
+# do, this will go away.
+MIGRATE_LOCK=$(redis-cli -h $DISCOURSE_REDIS_HOST --raw setnx discourse_migrate_lock $HOSTNAME)
+if [ ${MIGRATE_LOCK} -eq 1 ]; then
+    # If we are here, we got the migrate lock, so we can do the migrate.
+    echo "Starting migration at " $(date)
+    su -s /bin/bash -c "bin/bundle exec rake db:migrate RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME}
+    redis-cli -h $DISCOURSE_REDIS_HOST --raw del discourse_migrate_lock >/dev/null
+else
+    RETRIES=5
+    while [ "${RETRIES}" -gt 0 ]; do
+        MIGRATE_HOST=$(redis-cli -h $DISCOURSE_REDIS_HOST --raw get discourse_migrate_lock)
+        if [ -z "${MIGRATE_HOST}" ]; then
+            break;
+        else
+            echo "Migrate lock found, Migrate running on ${MIGRATE_HOST}, waiting 90s."
+            sleep 90
+        fi
+        RETRIES=$(($RETRIES - 1))
+    done
+
+    if [ $RETRIES -le 0 ]; then
+        echo "Retried too many times. Can't proceed while migrate is unfinished. Exiting."
+        exit 1
+    fi
+fi
+### MIGRATION LOCK WORKAROUND ENDS HERE
+
+# It is safe to build assets in the background to improve startup time.
+export SKIP_NODE_UGLIFY="true"
+su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 |sed 's/^/asset-build: /'

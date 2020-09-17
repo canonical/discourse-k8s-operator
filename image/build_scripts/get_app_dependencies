@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# get_app_dependencies
+#
+# Installs application-specific dependencies for this image.
+ 
+apt-get install -y brotli \
+                   gifsicle \
+                   git \
+                   imagemagick \
+                   jhead \
+                   jpegoptim \
+                   libjpeg-turbo-progs \
+                   libpq-dev \
+                   libxml2-dev \
+                   libxslt1-dev \
+                   libz-dev \
+                   node-uglify \
+                   optipng \
+                   pngquant \
+                   postgresql-client \
+                   postgresql-client-common \
+                   redis-tools \
+                   ruby2.7 \
+                   ruby2.7-dev \
+                   zlib1g-dev
+
