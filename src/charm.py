@@ -88,7 +88,7 @@ def check_for_config_problems(config):
     if len(missing_fields):
         errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
 
-    if config["db_host"] is None:
+    if "db_host" not in config or config["db_host"] is None:
         errors.append("db relation is required")
 
     return errors
@@ -128,7 +128,7 @@ class DiscourseCharm(CharmBase):
 
         self.db = pgsql.PostgreSQLClient(self, 'db')
         self.framework.observe(self.db.on.database_relation_joined, self.on_database_relation_joined)
-        self.framework.observe(self.db.on_master_changed, self.on_database_changed)
+        self.framework.observe(self.db.on.master_changed, self.on_database_changed)
 
     def check_config_is_valid(self, config):
         valid_config = True
