@@ -52,6 +52,8 @@ spec:
     kubernetesResources:
       ingressResources:
       - name: discourse-ingress
+        annotations:
+          nginx.ingress.kubernetes.io/ssl-redirect: 'false'
         spec:
           rules:
           - host: discourse.example.com

@@ -36,6 +36,7 @@ def create_discourse_pod_config(config):
 
 
 def create_ingress_config(app_name, config):
+    annotations = {}
     ingressResource = {
         "name": app_name + "-ingress",
         "spec": {
@@ -47,6 +48,15 @@ def create_ingress_config(app_name, config):
             ]
         },
     }
+    tls_secret_name = config.get('tls_secret_name')
+    if tls_secret_name:
+        ingressResource['spec']['tls'] = [{'hosts': config['external_hostname'], 'secretName': tls_secret_name}]
+    else:
+        annotations['nginx.ingress.kubernetes.io/ssl-redirect'] = 'false'
+
+    if annotations:
+        ingressResource['annotations'] = annotations
+
     return ingressResource
 
 
