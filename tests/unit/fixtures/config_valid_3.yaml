@@ -18,6 +18,7 @@ config:
     smtp_password: T6DY2MzWV0AJk
     smtp_port: 587
     smtp_username: apikey
+    tls_secret_name: discourse-local
 spec:
     containers:
     - envConfig:
@@ -54,9 +55,10 @@ spec:
     kubernetesResources:
       ingressResources:
       - name: discourse-ingress
-        annotations:
-          nginx.ingress.kubernetes.io/ssl-redirect: 'false'
         spec:
+          tls:
+          - hosts: discourse.local
+            secretName: discourse-local
           rules:
           - host: discourse.local
             http:
