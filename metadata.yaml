@@ -10,9 +10,6 @@ tags:
 series:
   - kubernetes
 min-juju-version: 2.8.0
-provides:
-  website:
-    interface: http
 requires:
   db:
     interface: pgsql
