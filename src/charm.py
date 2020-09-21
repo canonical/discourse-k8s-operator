@@ -156,7 +156,7 @@ class DiscourseCharm(CharmBase):
     def get_pod_spec(self, config):
         return get_pod_spec(self.framework.model.app.name, config)
 
-    def configure_pod(self, event):
+    def configure_pod(self, event=None):
         # Set our status while we get configured.
         self.model.unit.status = MaintenanceStatus('Configuring pod')
 
@@ -205,6 +205,8 @@ class DiscourseCharm(CharmBase):
         self.state.db_user = event.master.user
         self.state.db_password = event.master.password
         self.state.db_host = event.master.host
+
+        self.configure_pod()
 
 
 if __name__ == '__main__':  # pragma: no cover
