@@ -19,52 +19,20 @@ config:
     smtp_port: 587
     smtp_username: apikey
     tls_secret_name: discourse-local
-spec:
-    containers:
-    - envConfig:
-        DISCOURSE_CORS_ORIGIN: '*'
-        DISCOURSE_DEVELOPER_EMAILS: jay.kuri@canonical.com
-        DISCOURSE_ENABLE_CORS: true
-        DISCOURSE_HOSTNAME: discourse.local
-        DISCOURSE_POSTGRES_HOST: 10.9.89.237
-        DISCOURSE_POSTGRES_NAME: discourse
-        DISCOURSE_POSTGRES_PASSWORD: a_real_password
-        DISCOURSE_POSTGRES_USERNAME: discourse_m
-        DISCOURSE_REDIS_HOST: 10.9.89.197
-        DISCOURSE_SMTP_ADDRESS: 167.89.123.58
-        DISCOURSE_SMTP_AUTHENTICATION: login
-        DISCOURSE_SMTP_DOMAIN: canonical.com
-        DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: none
-        DISCOURSE_SMTP_PASSWORD: T6DY2MzWV0AJk
-        DISCOURSE_SMTP_PORT: 587
-        DISCOURSE_SMTP_USER_NAME: apikey
-      imageDetails:
-        imagePath: discourse-k8s:1.0.7f
-        username: discourse_role
-        password: discourse123
-      imagePullPolicy: IfNotPresent
-      kubernetes:
-        readinessProbe:
-          httpGet:
-            path: /srv/status
-            port: 3000
-      name: discourse
-      ports:
-      - containerPort: 3000
-        protocol: TCP
-    kubernetesResources:
-      ingressResources:
-      - name: discourse-ingress
-        spec:
-          tls:
-          - hosts: discourse.local
-            secretName: discourse-local
-          rules:
-          - host: discourse.local
-            http:
-              paths:
-              - backend:
-                  serviceName: discourse
-                  servicePort: 3000
-                path: /
-    version: 3
+pod_config:
+    DISCOURSE_CORS_ORIGIN: '*'
+    DISCOURSE_DEVELOPER_EMAILS: jay.kuri@canonical.com
+    DISCOURSE_ENABLE_CORS: true
+    DISCOURSE_HOSTNAME: discourse.local
+    DISCOURSE_POSTGRES_HOST: 10.9.89.237
+    DISCOURSE_POSTGRES_NAME: discourse
+    DISCOURSE_POSTGRES_PASSWORD: a_real_password
+    DISCOURSE_POSTGRES_USERNAME: discourse_m
+    DISCOURSE_REDIS_HOST: 10.9.89.197
+    DISCOURSE_SMTP_ADDRESS: 167.89.123.58
+    DISCOURSE_SMTP_AUTHENTICATION: login
+    DISCOURSE_SMTP_DOMAIN: canonical.com
+    DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: none
+    DISCOURSE_SMTP_PASSWORD: T6DY2MzWV0AJk
+    DISCOURSE_SMTP_PORT: 587
+    DISCOURSE_SMTP_USER_NAME: apikey

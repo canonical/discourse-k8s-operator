@@ -153,8 +153,14 @@ class DiscourseCharm(CharmBase):
 
         return valid_config
 
-    def get_pod_spec(self, config):
+    def _get_pod_spec(self, config):
         return get_pod_spec(self.framework.model.app.name, config)
+
+    def _create_discourse_pod_config(self, config):
+        return create_discourse_pod_config(config)
+
+    def _check_for_missing_config_fields(self, config):
+        return check_for_missing_config_fields(config)
 
     def configure_pod(self, event=None):
         # Set our status while we get configured.
@@ -182,12 +188,6 @@ class DiscourseCharm(CharmBase):
         else:
             self.state.is_started = True
             self.model.unit.status = ActiveStatus()
-
-    # TODO: This is unused? Remove?
-    def on_new_client(self, event):
-        if not self.state.is_started:
-            return event.defer()
-        event.client.serve(hosts=[event.client.ingress_address], port=self.model.config['http_port'])
 
     def on_database_relation_joined(self, event):
         # Per https://github.com/canonical/ops-lib-pgsql/issues/2,
