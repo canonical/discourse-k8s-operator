@@ -180,7 +180,7 @@ class DiscourseCharm(CharmBase):
             # Get our spec definition.
             if self.check_config_is_valid(config):
                 # Get pod spec using our app name and config
-                pod_spec = self.get_pod_spec(config)
+                pod_spec = self._get_pod_spec(config)
                 # Set our pod spec.
                 self.model.pod.set_spec(pod_spec)
                 self.state.is_started = True

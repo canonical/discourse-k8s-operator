@@ -18,6 +18,7 @@ config:
     smtp_password: T6DY2MzWV0AJk
     smtp_port: 587
     smtp_username: apikey
+    tls_secret_name: discourse_local
 pod_config:
     DISCOURSE_CORS_ORIGIN: '*'
     DISCOURSE_DEVELOPER_EMAILS: jay.kuri@canonical.com
