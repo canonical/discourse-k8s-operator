@@ -153,15 +153,6 @@ class DiscourseCharm(CharmBase):
 
         return valid_config
 
-    def _get_pod_spec(self, config):
-        return get_pod_spec(self.framework.model.app.name, config)
-
-    def _create_discourse_pod_config(self, config):
-        return create_discourse_pod_config(config)
-
-    def _check_for_missing_config_fields(self, config):
-        return check_for_missing_config_fields(config)
-
     def configure_pod(self, event=None):
         # Set our status while we get configured.
         self.model.unit.status = MaintenanceStatus('Configuring pod')
@@ -180,7 +171,7 @@ class DiscourseCharm(CharmBase):
             # Get our spec definition.
             if self.check_config_is_valid(config):
                 # Get pod spec using our app name and config
-                pod_spec = self._get_pod_spec(config)
+                pod_spec = get_pod_spec(self.framework.model.app.name, config)
                 # Set our pod spec.
                 self.model.pod.set_spec(pod_spec)
                 self.state.is_started = True

@@ -12,7 +12,7 @@ import copy
 from types import SimpleNamespace
 from pprint import pprint
 
-from charm import DiscourseCharm
+from charm import DiscourseCharm, create_discourse_pod_config, get_pod_spec, check_for_missing_config_fields
 
 from ops import testing
 
@@ -55,7 +55,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         for config_key in self.configs:
             if config_key.startswith('config_valid_'):
                 config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
-                pod_config = self.harness.charm._create_discourse_pod_config(self.configs[config_key]['config'])
+                pod_config = create_discourse_pod_config(self.configs[config_key]['config'])
                 self.assertEqual(config_valid, True, 'Valid config is not recognized as valid')
                 self.assertEqual(
                     pod_config,
@@ -68,7 +68,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         for config_key in self.configs:
             if config_key.startswith('config_invalid_'):
                 config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
-                missing_fields = self.harness.charm._check_for_missing_config_fields(self.configs[config_key]['config'])
+                missing_fields = check_for_missing_config_fields(self.configs[config_key]['config'])
                 self.assertEqual(config_valid, False, 'Invalid config is not recognized as invalid')
                 self.assertEqual(
                     missing_fields,
@@ -86,7 +86,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         db_event.master.user = 'discourse_m'
         db_event.master.password = 'a_real_password'
         db_event.master.host = '10.9.89.237'
-        expected_spec = self.harness.charm._get_pod_spec(test_config)
+        expected_spec = get_pod_spec(self.harness.charm.framework.model.app.name, test_config)
         self.harness.update_config(self.configs['config_valid_1']['config'])
         self.harness.charm.on_database_relation_joined(db_event)
         self.harness.charm.on_database_changed(db_event)

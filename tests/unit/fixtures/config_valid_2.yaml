@@ -4,7 +4,7 @@ config:
     db_name: discourse
     db_password: a_real_password
     db_user: discourse_m
-    developer_emails: is-admin@canonical.com
+    developer_emails: is-admin@example.com
     discourse_image: discourse-k8s:1.0.8
     enable_cors: true
     external_hostname: discourse.example.com
@@ -13,14 +13,14 @@ config:
     redis_host: 10.25.242.12
     smtp_address: smtp.internal
     smtp_authentication: login
-    smtp_domain: canonical.com
+    smtp_domain: example.com
     smtp_openssl_verify_mode: none
     smtp_password:
     smtp_port: 587
     smtp_username: apikey
 pod_config:
     DISCOURSE_CORS_ORIGIN: '*'
-    DISCOURSE_DEVELOPER_EMAILS: is-admin@canonical.com
+    DISCOURSE_DEVELOPER_EMAILS: is-admin@example.com
     DISCOURSE_ENABLE_CORS: true
     DISCOURSE_HOSTNAME: discourse.example.com
     DISCOURSE_POSTGRES_HOST: 10.9.89.237
@@ -30,7 +30,7 @@ pod_config:
     DISCOURSE_REDIS_HOST: 10.25.242.12
     DISCOURSE_SMTP_ADDRESS: smtp.internal
     DISCOURSE_SMTP_AUTHENTICATION: login
-    DISCOURSE_SMTP_DOMAIN: canonical.com
+    DISCOURSE_SMTP_DOMAIN: example.com
     DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: none
     DISCOURSE_SMTP_PASSWORD: null
     DISCOURSE_SMTP_PORT: 587
