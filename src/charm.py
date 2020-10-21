@@ -7,13 +7,14 @@ from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
 
-from ops.model import MaintenanceStatus, BlockedStatus, ActiveStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
 
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
 
 
 def create_discourse_pod_config(config):
+    """Create the pod environment config from the juju config."""
     pod_config = {
         'DISCOURSE_POSTGRES_USERNAME': config['db_user'],
         'DISCOURSE_POSTGRES_PASSWORD': config['db_password'],
@@ -36,6 +37,7 @@ def create_discourse_pod_config(config):
 
 
 def create_ingress_config(app_name, config):
+    """Create the ingress config form the juju config."""
     annotations = {}
     ingressResource = {
         "name": app_name + "-ingress",
@@ -61,6 +63,13 @@ def create_ingress_config(app_name, config):
 
 
 def get_pod_spec(app_name, config):
+    """Get the entire pod spec using the juju config.
+
+    - uses create_discourse_pod_config() to generate pod envConfig.
+
+    - uses create_ingress_config() to generate pod ingressResources.
+
+    """
     pod_spec = {
         "version": 3,
         "containers": [
@@ -92,10 +101,16 @@ def get_pod_spec(app_name, config):
 
 
 def check_for_config_problems(config):
+    """Check if there are issues with the juju config.
+
+    - Primarily looks for missing config options using check_for_missing_config_fields()
+
+    - Returns a list of errors if any were found.
+    """
     errors = []
     missing_fields = check_for_missing_config_fields(config)
 
-    if len(missing_fields):
+    if missing_fields:
         errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
 
     if "db_host" not in config or config["db_host"] is None:
@@ -105,6 +120,11 @@ def check_for_config_problems(config):
 
 
 def check_for_missing_config_fields(config):
+    """Check for missing fields in juju config.
+
+    - Returns a list of required fields that are either not present
+      or are empty.
+    """
     missing_fields = []
 
     needed_fields = [
@@ -125,13 +145,18 @@ def check_for_missing_config_fields(config):
 
 
 class DiscourseCharm(CharmBase):
-    state = StoredState()
+    stored = StoredState()
 
     def __init__(self, *args):
+        """Initialization.
+
+        - Primarily sets up defaults and event handlers.
+
+        """
         super().__init__(*args)
 
         # TODO: is_started is unused. Remove?
-        self.state.set_default(is_started=False, db_user=None, db_password=None, db_host=None)
+        self.stored.set_default(is_started=False, db_user=None, db_password=None, db_host=None)
         self.framework.observe(self.on.leader_elected, self.configure_pod)
         self.framework.observe(self.on.config_changed, self.configure_pod)
         self.framework.observe(self.on.upgrade_charm, self.configure_pod)
@@ -141,11 +166,17 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.db.on.master_changed, self.on_database_changed)
 
     def check_config_is_valid(self, config):
+        """Check that the provided config is valid.
+
+        - Returns True if config is valid, False otherwise.
+
+        - Sets model status as appropriate.
+        """
         valid_config = True
         errors = check_for_config_problems(config)
 
-        # set status if we have a bad config
-        if len(errors) > 0:
+        # Set status if we have a bad config.
+        if errors:
             self.model.unit.status = BlockedStatus(", ".join(errors))
             valid_config = False
         else:
@@ -154,6 +185,12 @@ class DiscourseCharm(CharmBase):
         return valid_config
 
     def configure_pod(self, event=None):
+        """Configure pod.
+
+        - Verifies config is valid and unit is leader.
+
+        - Configures pod using pod_spec generated from config.
+        """
         # Set our status while we get configured.
         self.model.unit.status = MaintenanceStatus('Configuring pod')
 
@@ -165,37 +202,49 @@ class DiscourseCharm(CharmBase):
             config = dict(self.model.config)
             if not config["db_name"]:
                 config["db_name"] = self.app.name
-            config["db_user"] = self.state.db_user
-            config["db_password"] = self.state.db_password
-            config["db_host"] = self.state.db_host
+            config["db_user"] = self.stored.db_user
+            config["db_password"] = self.stored.db_password
+            config["db_host"] = self.stored.db_host
             # Get our spec definition.
             if self.check_config_is_valid(config):
                 # Get pod spec using our app name and config
                 pod_spec = get_pod_spec(self.framework.model.app.name, config)
                 # Set our pod spec.
                 self.model.pod.set_spec(pod_spec)
-                self.state.is_started = True
+                self.stored.is_started = True
                 self.model.unit.status = ActiveStatus()
         else:
-            self.state.is_started = True
+            self.stored.is_started = True
             self.model.unit.status = ActiveStatus()
 
     def on_database_relation_joined(self, event):
+        """Event handler for a newly joined database relation.
+
+        - Sets the event.database field on the database joined event.
+
+        - Required because setting the database name is only possible
+          from inside the event handler per https://github.com/canonical/ops-lib-pgsql/issues/2
+        """
         # Per https://github.com/canonical/ops-lib-pgsql/issues/2,
         # changing the setting in the config will not take effect,
         # unless the relation is dropped and recreated.
         event.database = self.model.config["db_name"]
 
     def on_database_changed(self, event):
+        """Event handler for database relation change.
+
+        - Sets our database parameters based on what was provided
+          in the relation event.
+        """
         if event.master is None:
-            self.state.db_user = None
-            self.state.db_password = None
-            self.state.db_host = None
+            self.stored.db_user = None
+            self.stored.db_password = None
+            self.stored.db_host = None
             return
 
-        self.state.db_user = event.master.user
-        self.state.db_password = event.master.password
-        self.state.db_host = event.master.host
+        self.stored.db_user = event.master.user
+        self.stored.db_password = event.master.password
+        self.stored.db_host = event.master.host
 
         self.configure_pod()
 
