@@ -3,40 +3,41 @@
 # Copyright 2020 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import os
+import copy
 import glob
+import mock
+import os
 import unittest
 import yaml
-import mock
-from pprint import pprint
 
-from charm import DiscourseCharm, BlockedStatus
+from types import SimpleNamespace
+
+from charm import (
+    check_for_missing_config_fields,
+    create_discourse_pod_config,
+    get_pod_spec,
+    DiscourseCharm,
+)
 
 from ops import testing
 
-dirname = os.path.dirname(__file__)
 
-
-# Valid and Invalid configs are present in the fixtures
-# directory. The files contain the juju config, along with
-# the spec that that config should produce in the case of
-# valid configs. In the case of invalid configs, they contain
-# the juju config and the error that should be triggered by
-# the config. These scenarios are tested below. Additional
-# config variations can be created by creating an appropriately
-# named config file in the fixtures directory. Valid configs
-# should be named: config_valid_###.yaml and invalid configs
-# should be named: config_invalid_###.yaml.
-#
-# This function loads the configs for use by the tests.
 def load_configs(directory):
+    """Load configs for use by tests.
+
+    Valid and invalid configs are present in the fixtures directory. The files
+    contain the juju config, along with the spec that that config should
+    produce in the case of valid configs. In the case of invalid configs, they
+    contain the juju config and the error that should be triggered by the
+    config. These scenarios are tested below. Additional config variations can
+    be created by creating an appropriately named config file in the fixtures
+    directory. Valid configs should be named: config_valid_###.yaml and invalid
+    configs should be named: config_invalid_###.yaml."""
     configs = {}
     for filename in glob.glob(os.path.join(directory, 'config*.yaml')):
-        pprint(filename)
         with open(filename) as file:
-            name = os.path.splitext(os.path.basename(filename))
-            pprint(name[0])
-            configs[name[0]] = yaml.full_load(file)
+            name, _ = os.path.splitext(os.path.basename(filename))
+            configs[name] = yaml.full_load(file)
     return configs
 
 
@@ -46,81 +47,70 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         self.harness.disable_hooks()
         self.harness.set_leader(True)
         self.harness.begin()
-        self.configs = load_configs(os.path.join(dirname, 'fixtures'))
+        self.configs = load_configs(os.path.join(os.path.dirname(__file__), 'fixtures'))
 
     def test_valid_configs_are_ok(self):
         """Test that a valid config is considered valid."""
         for config_key in self.configs:
             if config_key.startswith('config_valid_'):
-                self.harness.update_config(self.configs[config_key]['config'])
-                valid_config = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
-                self.assertEqual(valid_config, True, 'Valid config {} is not recognized as valid.'.format(config_key))
+                config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
+                pod_config = create_discourse_pod_config(self.configs[config_key]['config'])
+                self.assertEqual(config_valid, True, 'Valid config is not recognized as valid')
+                self.assertEqual(
+                    pod_config,
+                    self.configs[config_key]['pod_config'],
+                    'Valid config {} is does not produce expected config options for pod.'.format(config_key),
+                )
 
-    def test_charm_identifies_bad_configs(self):
+    def test_invalid_configs_are_recognized(self):
         """Test that bad configs are identified by the charm."""
         for config_key in self.configs:
             if config_key.startswith('config_invalid_'):
-                self.harness.update_config(self.configs[config_key]['config'])
-                valid_config = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
-                self.assertEqual(valid_config, False, 'Bad Config {} is recognized.'.format(config_key))
+                config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
+                missing_fields = check_for_missing_config_fields(self.configs[config_key]['config'])
+                self.assertEqual(config_valid, False, 'Invalid config is not recognized as invalid')
                 self.assertEqual(
-                    self.harness.charm.model.unit.status,
-                    BlockedStatus(self.configs[config_key]['expected_error_status']),
-                    'Invalid config {} does not produce correct status'.format(config_key),
-                )
-
-    def test_charm_creates_valid_ingress_config(self):
-        """Test that a valid config creates a valid ingress spec."""
-        for config_key in self.configs:
-            if config_key.startswith('config_valid_'):
-                self.harness.update_config(self.configs[config_key]['config'])
-                spec = self.harness.charm.get_pod_spec(self.configs[config_key]['config'])
-                self.assertEqual(
-                    spec['kubernetesResources']['ingressResources'],
-                    self.configs[config_key]['spec']['kubernetesResources']['ingressResources'],
-                    'Valid config {} does not produce expected ingress config.'.format(config_key),
-                )
-
-    def test_valid_pod_spec(self):
-        """A valid config results in a valid pod spec."""
-        for config_key in self.configs:
-            if config_key.startswith('config_valid_'):
-                self.harness.update_config(self.configs[config_key]['config'])
-                spec = self.harness.charm.get_pod_spec(self.configs[config_key]['config'])
-                self.assertEqual(
-                    spec,
-                    self.configs[config_key]['spec'],
-                    'Valid config {} does not produce expected pod spec.'.format(config_key),
+                    missing_fields,
+                    self.configs[config_key]['missing_fields'],
+                    'Invalid config {} does not fail as expected.'.format(config_key),
                 )
 
     def test_charm_config_process(self):
-        action_event = mock.Mock()
-        self.harness.update_config(self.configs['config_valid_1']['config'])
-        self.harness.charm.configure_pod(action_event)
-        (configured_spec, k8s_resources) = self.harness.get_pod_spec()
-        self.assertEqual(
-            configured_spec,
-            self.configs['config_valid_1']['spec'],
-            'Valid config does not cause charm to set expected pod spec.',
-        )
-
-    def test_charm_config_process_invalid_config(self):
-        action_event = mock.Mock()
-        self.harness.update_config(self.configs['config_invalid_1']['config'])
-        self.harness.charm.configure_pod(action_event)
-        result = self.harness.get_pod_spec()
-        pprint(result)
-        self.assertEqual(result, None, 'Invalid config does not get set as pod spec.')
+        """Test that the entire config process for the charm works."""
+        test_config = copy.deepcopy(self.configs['config_valid_complete']['config'])
+        test_config['db_user'] = 'discourse_m'
+        test_config['db_password'] = 'a_real_password'
+        test_config['db_host'] = '10.9.89.237'
+        db_event = SimpleNamespace()
+        db_event.master = SimpleNamespace()
+        db_event.master.user = 'discourse_m'
+        db_event.master.password = 'a_real_password'
+        db_event.master.host = '10.9.89.237'
+        expected_spec = (get_pod_spec(self.harness.charm.framework.model.app.name, test_config), None)
+        self.harness.update_config(self.configs['config_valid_complete']['config'])
+        self.harness.charm.on_database_relation_joined(db_event)
+        self.harness.charm.on_database_changed(db_event)
+        configured_spec = self.harness.get_pod_spec()
+        self.assertEqual(configured_spec, expected_spec, 'Configured spec does not match expected pod spec.')
 
     def test_charm_config_process_not_leader(self):
+        """Test that the config process on a non-leader does not trigger a pod_spec change."""
         non_leader_harness = testing.Harness(DiscourseCharm)
         non_leader_harness.disable_hooks()
         non_leader_harness.set_leader(False)
         non_leader_harness.begin()
 
         action_event = mock.Mock()
-        non_leader_harness.update_config(self.configs['config_valid_1']['config'])
+        non_leader_harness.update_config(self.configs['config_valid_complete']['config'])
         non_leader_harness.charm.configure_pod(action_event)
         result = non_leader_harness.get_pod_spec()
-        pprint(result)
         self.assertEqual(result, None, 'Non-leader does not set pod spec.')
+
+    def test_lost_db_relation(self):
+        """Test that losing our DB relation triggers a drop of pod config."""
+        self.harness.update_config(self.configs['config_valid_complete']['config'])
+        db_event = SimpleNamespace()
+        db_event.master = None
+        self.harness.charm.on_database_changed(db_event)
+        configured_spec = self.harness.get_pod_spec()
+        self.assertEqual(configured_spec, None, 'Lost DB relation does not result in empty spec as expected')
