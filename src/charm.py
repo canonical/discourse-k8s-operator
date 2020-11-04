@@ -138,7 +138,7 @@ def check_for_missing_config_fields(config):
         'external_hostname',
     ]
     for key in needed_fields:
-        if (config.get(key) is None) or (len(config[key]) == 0):
+        if not config.get(key):
             missing_fields.append(key)
 
     return sorted(missing_fields)
@@ -228,7 +228,13 @@ class DiscourseCharm(CharmBase):
         # Per https://github.com/canonical/ops-lib-pgsql/issues/2,
         # changing the setting in the config will not take effect,
         # unless the relation is dropped and recreated.
-        event.database = self.model.config["db_name"]
+        if self.model.unit.is_leader():
+            event.database = self.model.config["db_name"]
+        elif event.database != self.model.config["db_name"]:
+            # Leader has not yet set requirements. Defer, in case this unit
+            # becomes leader and needs to perform that operation.
+            event.defer()
+            return
 
     def on_database_changed(self, event):
         """Event handler for database relation change.
