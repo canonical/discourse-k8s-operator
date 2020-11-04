@@ -114,3 +114,22 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         self.harness.charm.on_database_changed(db_event)
         configured_spec = self.harness.get_pod_spec()
         self.assertEqual(configured_spec, None, 'Lost DB relation does not result in empty spec as expected')
+
+    def test_on_database_relation_joined(self):
+        """Test joining the DB relation."""
+        # First test with a non-leader, confirm the database property isn't set.
+        non_leader_harness = testing.Harness(DiscourseCharm)
+        non_leader_harness.disable_hooks()
+        non_leader_harness.set_leader(False)
+        non_leader_harness.begin()
+
+        action_event = mock.Mock()
+        action_event.database = None
+        non_leader_harness.update_config(self.configs['config_valid_complete']['config'])
+        non_leader_harness.charm.on_database_relation_joined(action_event)
+        self.assertEqual(action_event.database, None)
+
+        # Now test with a leader, the database property is set.
+        self.harness.update_config(self.configs['config_valid_complete']['config'])
+        self.harness.charm.on_database_relation_joined(action_event)
+        self.assertEqual(action_event.database, "discourse")
