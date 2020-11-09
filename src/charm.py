@@ -153,7 +153,7 @@ class DiscourseCharm(CharmBase):
         super().__init__(*args)
 
         self.stored.set_default(
-            db_user=None, db_password=None, db_host=None, has_db_relation=False, has_db_credentials=False
+            db_name=None, db_user=None, db_password=None, db_host=None, has_db_relation=False, has_db_credentials=False
         )
         self.framework.observe(self.on.leader_elected, self.configure_pod)
         self.framework.observe(self.on.config_changed, self.configure_pod)
@@ -211,8 +211,7 @@ class DiscourseCharm(CharmBase):
             # defaults here, because the helpers avoid dealing with
             # the framework.
             config = dict(self.model.config)
-            if not config["db_name"]:
-                config["db_name"] = self.app.name
+            config["db_name"] = self.stored.db_name
             config["db_user"] = self.stored.db_user
             config["db_password"] = self.stored.db_password
             config["db_host"] = self.stored.db_host
@@ -253,12 +252,14 @@ class DiscourseCharm(CharmBase):
           in the relation event.
         """
         if event.master is None:
+            self.stored.db_name = None
             self.stored.db_user = None
             self.stored.db_password = None
             self.stored.db_host = None
             self.stored.has_db_credentials = False
             return
 
+        self.stored.db_name = event.master.dbname
         self.stored.db_user = event.master.user
         self.stored.db_password = event.master.password
         self.stored.db_host = event.master.host
