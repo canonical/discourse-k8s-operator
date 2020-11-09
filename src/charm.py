@@ -7,7 +7,7 @@ from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
 
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 
 
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -79,14 +79,7 @@ def get_pod_spec(app_name, config):
                 "imagePullPolicy": "IfNotPresent",
                 "ports": [{"containerPort": 3000, "protocol": "TCP"}],
                 "envConfig": create_discourse_pod_config(config),
-                "kubernetes": {
-                    "readinessProbe": {
-                        "httpGet": {
-                            "path": "/srv/status",
-                            "port": 3000,
-                        }
-                    }
-                },
+                "kubernetes": {"readinessProbe": {"httpGet": {"path": "/srv/status", "port": 3000,}}},
             }
         ],
         "kubernetesResources": {"ingressResources": [create_ingress_config(app_name, config)]},
@@ -112,9 +105,6 @@ def check_for_config_problems(config):
 
     if missing_fields:
         errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
-
-    if "db_host" not in config or config["db_host"] is None:
-        errors.append("db relation is required")
 
     return errors
 
@@ -155,8 +145,9 @@ class DiscourseCharm(CharmBase):
         """
         super().__init__(*args)
 
-        # TODO: is_started is unused. Remove?
-        self.stored.set_default(is_started=False, db_user=None, db_password=None, db_host=None)
+        self.stored.set_default(
+            db_user=None, db_password=None, db_host=None, has_db_relation=False, has_db_credentials=False
+        )
         self.framework.observe(self.on.leader_elected, self.configure_pod)
         self.framework.observe(self.on.config_changed, self.configure_pod)
         self.framework.observe(self.on.upgrade_charm, self.configure_pod)
@@ -184,6 +175,16 @@ class DiscourseCharm(CharmBase):
 
         return valid_config
 
+    def check_db_is_valid(self, state):
+        if not state.has_db_relation:
+            self.model.unit.status = BlockedStatus("db relation is required")
+            return False
+        if not state.has_db_credentials:
+            self.model.unit.status = WaitingStatus("db relation is setting up")
+            return False
+        self.model.unit.status = MaintenanceStatus("db relation is ready")
+        return True
+
     def configure_pod(self, event=None):
         """Configure pod.
 
@@ -196,6 +197,9 @@ class DiscourseCharm(CharmBase):
 
         # Leader must set the pod spec.
         if self.model.unit.is_leader():
+            if not self.check_db_is_valid(self.stored):
+                return
+
             # Merge our config and state into a single dict and set
             # defaults here, because the helpers avoid dealing with
             # the framework.
@@ -211,10 +215,8 @@ class DiscourseCharm(CharmBase):
                 pod_spec = get_pod_spec(self.framework.model.app.name, config)
                 # Set our pod spec.
                 self.model.pod.set_spec(pod_spec)
-                self.stored.is_started = True
                 self.model.unit.status = ActiveStatus()
         else:
-            self.stored.is_started = True
             self.model.unit.status = ActiveStatus()
 
     def on_database_relation_joined(self, event):
@@ -225,6 +227,7 @@ class DiscourseCharm(CharmBase):
         - Required because setting the database name is only possible
           from inside the event handler per https://github.com/canonical/ops-lib-pgsql/issues/2
         """
+        self.stored.has_db_relation = True
         # Per https://github.com/canonical/ops-lib-pgsql/issues/2,
         # changing the setting in the config will not take effect,
         # unless the relation is dropped and recreated.
@@ -246,11 +249,13 @@ class DiscourseCharm(CharmBase):
             self.stored.db_user = None
             self.stored.db_password = None
             self.stored.db_host = None
+            self.stored.has_db_credentials = False
             return
 
         self.stored.db_user = event.master.user
         self.stored.db_password = event.master.password
         self.stored.db_host = event.master.host
+        self.stored.has_db_credentials = True
 
         self.configure_pod()
 
