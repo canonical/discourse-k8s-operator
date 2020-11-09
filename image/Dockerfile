@@ -82,4 +82,8 @@ RUN echo "markdown-saml image complete"
 
 # Build the final image based on the IMAGE_TYPE specified.
 FROM ${IMAGE_TYPE} AS final
+# Redeclare IMAGE_TYPE variable so it can be referenced inside this build
+# stage per
+# https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
+ARG IMAGE_TYPE
 RUN echo "Used ${IMAGE_TYPE} image type"
