@@ -1,4 +1,7 @@
-FROM ubuntu:focal
+# To be used for determining the image type to build.
+ARG IMAGE_TYPE=base
+
+FROM ubuntu:focal AS base-image
 
 # ARGS become environment variables, but can be overridden using the
 # --build-arg var=foo option to docker build. This allows you to have a
@@ -52,3 +55,31 @@ COPY --chown=${CONTAINER_APP_UID}:${CONTAINER_APP_GID} scripts /srv/scripts
 
 # Set our entrypoint.
 ENTRYPOINT /srv/scripts/pod_start
+
+# Create different image types with different plugins. Call docker build with
+# IMAGE_TYPE set to one of the image types below to create the appropriate
+# image.
+
+# 'base' image type adds no new plugins.
+FROM base-image AS base
+RUN echo "base image complete"
+
+# 'markdown-saml' image type. This will use login.ubuntu.com as the SAML
+# provider, and will disabled local logins over SAML logins using the
+# `saml_full_screen_login` option.
+FROM base-image AS markdown-saml
+
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-saml.git
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git
+RUN chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/plugins
+RUN cd ${CONTAINER_APP_ROOT}/app && su -s /bin/bash -c 'bin/bundle install' ${CONTAINER_APP_USERNAME}
+
+RUN echo "saml_target_url = https://login.ubuntu.com/+saml" >> /srv/scripts/assets/discourse.conf.tmpl
+RUN echo "saml_cert_fingerprint = 32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5" >> /srv/scripts/assets/discourse.conf.tmpl
+RUN echo "saml_full_screen_login = true" >> /srv/scripts/assets/discourse.conf.tmpl
+
+RUN echo "markdown-saml image complete"
+
+# Build the final image based on the IMAGE_TYPE specified.
+FROM ${IMAGE_TYPE} AS final
+RUN echo "Used ${IMAGE_TYPE} image type"
