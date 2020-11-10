@@ -257,6 +257,7 @@ class DiscourseCharm(CharmBase):
             self.stored.db_password = None
             self.stored.db_host = None
             self.stored.has_db_credentials = False
+            self.model.unit.status = WaitingStatus("waiting for db relation")
             return
 
         self.stored.db_name = event.master.dbname
