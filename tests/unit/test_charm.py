@@ -86,6 +86,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         db_event.master.user = 'discourse_m'
         db_event.master.password = 'a_real_password'
         db_event.master.host = '10.9.89.237'
+        db_event.master.dbname = 'discourse'
         expected_spec = (get_pod_spec(self.harness.charm.framework.model.app.name, test_config), None)
         self.harness.update_config(self.configs['config_valid_complete']['config'])
         self.harness.charm.on_database_relation_joined(db_event)
