@@ -12,6 +12,12 @@ chown ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${GEM_HOME}
 
 cd ${CONTAINER_APP_ROOT}
 git clone --depth 1 --branch ${CONTAINER_APP_VERSION} https://github.com/discourse/discourse.git ${CONTAINER_APP_VERSION}
+
+# Apply patch for LP#1903695
+cd ${CONTAINER_APP_VERSION}
+git apply /srv/build_scripts/lp1903695.patch
+cd ${CONTAINER_APP_ROOT}
+
 chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_VERSION}
 ln -s ${CONTAINER_APP_ROOT}/${CONTAINER_APP_VERSION} app
 cd ${CONTAINER_APP_ROOT}/app
