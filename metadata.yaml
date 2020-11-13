@@ -1,6 +1,7 @@
 name: "discourse"
 summary: "Discourse for juju-k8s operator framework"
 description: "Discourse bundled for juju-k8s deployment"
+docs: https://discourse.charmhub.io/t/discourse-documentation-overview/3773
 maintainers:
   - Jay Kuri <jay.kuri@canonical.com>
   - Gareth Woolridge <gareth.woolridge@canonical.com>
