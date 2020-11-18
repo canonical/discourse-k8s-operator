@@ -2,7 +2,7 @@ options:
   discourse_image:
     type: string
     description: "Discourse image to use"
-    default: ""
+    default: "discoursecharmers/discourse-v2-5-4:edge"
   image_user:
     type: string
     description: "Private registry username"
