@@ -14,6 +14,9 @@ ARG CONTAINER_APP_UID
 ARG CONTAINER_APP_GROUP
 ARG CONTAINER_APP_GID
 
+# Used in Launchpad OCI Recipe build to tag the image.
+LABEL org.label-schema.version=${CONTAINER_APP_VERSION:-v2.5.2}
+
 # Copy any args we got into the environment.
 ENV CONTAINER_APP_NAME ${CONTAINER_APP_NAME:-discourse}
 ENV CONTAINER_APP_VERSION ${CONTAINER_APP_VERSION:-v2.5.2}
