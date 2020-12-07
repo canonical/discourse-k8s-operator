@@ -11,11 +11,22 @@ cloud, attached to a controller using `juju add-k8s`.
 
 ## Usage
 
-See config option descriptions in config.yaml.
+To get started with a test environment, first deploy Redis in an IaaS model:
 
-After deploying this charm, you will need to create a relation to a PostgreSQL
-database to provide backend storage for Discourse. You will also need to
-deploy Redis and set your configuration to point to it.
+    juju deploy cs:~redis-charmers/redis  # Note the deployed IP as ${REDIS_IP}
+
+Now deploy the Discourse and PostgreSQL charms within a Juju Kubernetes model
+as follows:
+
+    juju deploy cs:~postgresql-charmers/postgresql-k8s postgresql
+    juju deploy cs:~discourse-charmers/discourse-k8s discourse \
+      --config redis_host=${REDIS_IP} \
+      --config developer_emails="user@foo.internal" \
+      --config external_hostname="foo.internal" \
+      --config smtp_address="127.0.0.1" \
+      --config smtp_domain="foo.internal"
+    juju add-relation discourse postgresql:db-admin
+    juju expose discourse
 
 ### Static content and uploads
 
@@ -30,7 +41,7 @@ local storage.
 
 ### Developing
 
-Notes for deploying a test setup locally using microk8s:
+Notes for deploying a test setup locally using MicroK8s:
 
     sudo snap install juju --classic
     sudo snap install juju-wait --classic
@@ -57,11 +68,11 @@ Notes for deploying a test setup locally using microk8s:
     juju status
 
 The charm will not function without a database, so you will need to
-deploy `cs:postgresql` somewhere. You will also need a redis application
+deploy `cs:postgresql` somewhere. You will also need a Redis application
 to connect to, such as `cs:~redis-charmers/redis`.
 
-If postgresql is deployed in the same model you plan to use for
-discourse, simply use `juju relate discourse postgresql:db`.  (This
+If PostgreSQL is deployed in the same model you plan to use for
+Discourse, simply use `juju relate discourse postgresql:db-admin`.  (This
 deployment style is recommended for testing purposes only.)
 
 Cross-model relations are also supported.  Create a suitable model on
@@ -70,7 +81,7 @@ a different cloud, for example, LXD or OpenStack.
     juju switch database
     juju deploy cs:postgresql
     juju deploy cs:~redis-charmers/redis # Use the IP address for the `redis_host` config option to discourse
-    juju offer postgresql:db
+    juju offer postgresql:db-admin
 
 In most k8s deployments, traffic to external services from worker pods
 will be SNATed by some part of the infrastructure.  You will need to
@@ -80,7 +91,7 @@ know what the source addresses or address range is for the next step.
     juju find-offers  # note down offer URL; example used below:
     juju relate discourse admin/database.postgresql --via 10.9.8.0/24
 
-(In the case of postgresql, `--via` is needed so that the charm can
+(In the case of PostgreSQL, `--via` is needed so that the charm can
 configure `pga_hba.conf` to let the k8s pods connect to the database.)
 
 ## Testing
