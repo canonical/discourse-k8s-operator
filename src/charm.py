@@ -234,6 +234,9 @@ class DiscourseCharm(CharmBase):
           from inside the event handler per https://github.com/canonical/ops-lib-pgsql/issues/2
         """
         self.stored.has_db_relation = True
+        # Ensure event.database is always set to a non-empty string. PostgreSQL
+        # can infer this if it's in the same model as Discourse, but not if
+        # we're using cross-model relations.
         db_name = self.model.config["db_name"] or self.framework.model.app.name
         # Per https://github.com/canonical/ops-lib-pgsql/issues/2,
         # changing the setting in the config will not take effect,
