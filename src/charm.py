@@ -234,12 +234,13 @@ class DiscourseCharm(CharmBase):
           from inside the event handler per https://github.com/canonical/ops-lib-pgsql/issues/2
         """
         self.stored.has_db_relation = True
+        db_name = self.model.config["db_name"] or self.framework.model.app.name
         # Per https://github.com/canonical/ops-lib-pgsql/issues/2,
         # changing the setting in the config will not take effect,
         # unless the relation is dropped and recreated.
         if self.model.unit.is_leader():
-            event.database = self.model.config["db_name"]
-        elif event.database != self.model.config["db_name"]:
+            event.database = db_name
+        elif event.database != db_name:
             # Leader has not yet set requirements. Defer, in case this unit
             # becomes leader and needs to perform that operation.
             event.defer()
