@@ -1,6 +1,9 @@
-name: "discourse"
-summary: "Discourse for juju-k8s operator framework"
-description: "Discourse bundled for juju-k8s deployment"
+name: discourse
+summary: Discourse is the 100% open source discussion platform built for the next decade of the Internet.
+description: |
+  Discourse is the 100% open source discussion platform built for the next decade of the Internet.
+  Use it as a mailing list, discussion forum, long-form chat room and more!
+  https://www.discourse.org
 docs: https://discourse.charmhub.io/t/discourse-documentation-overview/3773
 maintainers:
   - Jay Kuri <jay.kuri@canonical.com>
