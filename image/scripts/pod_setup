@@ -2,13 +2,7 @@
 
 cd ${CONTAINER_APP_ROOT}/app
 
-DISCOURSE_CONF=${CONTAINER_APP_ROOT}/app/config/discourse.conf
-
 export RAILS_ENV=${DISCOURSE_RAILS_ENVIRONMENT:-production}
-
-# Generate our discourse.conf: Load config file and remove any lines we don't
-# have config values for.
-/usr/bin/envsubst < /srv/scripts/assets/discourse.conf.tmpl | grep -vE '= *$' > $DISCOURSE_CONF
 
 ### MIGRATION LOCK WORKAROUND STARTS HERE
 #

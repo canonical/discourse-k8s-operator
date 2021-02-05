@@ -16,11 +16,12 @@ pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
 def create_discourse_pod_config(config):
     """Create the pod environment config from the juju config."""
     pod_config = {
-        'DISCOURSE_POSTGRES_USERNAME': config['db_user'],
-        'DISCOURSE_POSTGRES_PASSWORD': config['db_password'],
-        'DISCOURSE_POSTGRES_HOST': config['db_host'],
-        'DISCOURSE_POSTGRES_NAME': config['db_name'],
+        'DISCOURSE_DB_USERNAME': config['db_user'],
+        'DISCOURSE_DB_PASSWORD': config['db_password'],
+        'DISCOURSE_DB_HOST': config['db_host'],
+        'DISCOURSE_DB_NAME': config['db_name'],
         'DISCOURSE_DEVELOPER_EMAILS': config['developer_emails'],
+        'DISCOURSE_SERVE_STATIC_ASSETS': "true",
         'DISCOURSE_HOSTNAME': config['external_hostname'],
         'DISCOURSE_SMTP_DOMAIN': config['smtp_domain'],
         'DISCOURSE_SMTP_ADDRESS': config['smtp_address'],
@@ -30,8 +31,19 @@ def create_discourse_pod_config(config):
         'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
         'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
         'DISCOURSE_REDIS_HOST': config['redis_host'],
+        'DISCOURSE_REDIS_PORT': config['redis_port'],
         'DISCOURSE_ENABLE_CORS': config['enable_cors'],
         'DISCOURSE_CORS_ORIGIN': config['cors_origin'],
+        'DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS': "0",
+        'DISCOURSE_SAML_TARGET_URL': config['saml_target_url'],
+        'DISCOURSE_SAML_FULL_SCREEN_LOGIN': config['saml_full_screen_login'],
+        'DISCOURSE_SAML_CERT_FINGERPRINT': config['saml_cert_fingerprint'],
+        'DISCOURSE_MAX_REQS_PER_IP_MODE': config['max_reqs_per_ip_mode'],
+        'DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE': config['max_reqs_per_ip_per_minute'],
+        'DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS': config['max_reqs_per_ip_per_10_seconds'],
+        'DISCOURSE_MAX_USER_API_REQS_PER_MINUTE': config['max_user_api_reqs_per_minute'],
+        'DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS': config['max_asset_reqs_per_ip_per_10_seconds'],
+        'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': config['max_reqs_rate_limit_on_private'],
     }
     return pod_config
 

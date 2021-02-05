@@ -2,7 +2,7 @@ options:
   discourse_image:
     type: string
     description: "Discourse image to use"
-    default: "discoursecharmers/discourse:v2.6.0"
+    default: "discoursecharmers/discourse:v2.6.1"
   image_user:
     type: string
     description: "Private registry username"
@@ -63,7 +63,47 @@ options:
     type: string
     description: "Redis host name / IP"
     default: ""
+  redis_port:
+    type: int
+    description: "Redis port"
+    default: 6379
   tls_secret_name:
     type: string
     description: "The name of the K8s secret to be associated with the ingress resource."
+    default: ""
+  max_reqs_per_ip_mode:
+    type: string
+    description: "Throttling mode. Valid values: block, warn+block, block, none"
+    default: "warn"
+  max_reqs_per_ip_per_minute:
+    type: int
+    description: "Number of requests allowed per IP per minute"
+    default: 500
+  max_reqs_per_ip_per_10_seconds:
+    type: int
+    description: "Number of requests allowed per IP per 10 seconds"
+    default: 50
+  max_asset_reqs_per_ip_per_10_seconds:
+    type: int
+    description: "Number of asset requests allowed per IP per 10 seconds"
+    default: 200
+  max_user_api_reqs_per_minute:
+    type: int
+    description: "Number of api requests a user can make per minute"
+    default: 20
+  max_reqs_rate_limit_on_private:
+    type: string
+    description: "Apply rate limits on requests from private networks"
+    default: "false"
+  saml_target_url:
+    type: string
+    description: "SAML authentication target url"
+    default: ""
+  saml_full_screen_login:
+    type: string
+    description: "Use full screen login with SAML"
+    default: ""
+  saml_cert_fingerprint:
+    type: string
+    description: "SAML certificate fingerprint"
     default: ""

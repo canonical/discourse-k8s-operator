@@ -9,6 +9,7 @@ config:
     image_pass: ''
     image_user: ''
     redis_host: 10.9.89.197
+    redis_port: 6379
     smtp_address: 167.89.123.58
     smtp_authentication: login
     smtp_domain: example.com

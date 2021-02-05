@@ -11,6 +11,7 @@ config:
     image_pass: ''
     image_user: ''
     redis_host: 10.9.89.197
+    redis_port: 6379
     smtp_address: 167.89.123.58
     smtp_authentication: login
     smtp_domain: example.com
@@ -19,16 +20,26 @@ config:
     smtp_port: 587
     smtp_username: apikey
     tls_secret_name: discourse_local
+    saml_target_url: https://login.ubuntu.com/+saml
+    saml_full_screen_login: true
+    saml_cert_fingerprint: 32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5
+    max_reqs_per_ip_mode: warn
+    max_reqs_per_ip_per_minute: 200
+    max_reqs_per_ip_per_10_seconds: 20
+    max_user_api_reqs_per_minute: 200
+    max_asset_reqs_per_ip_per_10_seconds: 200
+    max_reqs_rate_limit_on_private: true
 pod_config:
     DISCOURSE_CORS_ORIGIN: '*'
     DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
     DISCOURSE_ENABLE_CORS: true
     DISCOURSE_HOSTNAME: discourse.local
-    DISCOURSE_POSTGRES_HOST: 10.9.89.237
-    DISCOURSE_POSTGRES_NAME: discourse
-    DISCOURSE_POSTGRES_PASSWORD: a_real_password
-    DISCOURSE_POSTGRES_USERNAME: discourse_m
+    DISCOURSE_DB_HOST: 10.9.89.237
+    DISCOURSE_DB_NAME: discourse
+    DISCOURSE_DB_PASSWORD: a_real_password
+    DISCOURSE_DB_USERNAME: discourse_m
     DISCOURSE_REDIS_HOST: 10.9.89.197
+    DISCOURSE_REDIS_PORT: 6379
     DISCOURSE_SMTP_ADDRESS: 167.89.123.58
     DISCOURSE_SMTP_AUTHENTICATION: login
     DISCOURSE_SMTP_DOMAIN: example.com
@@ -36,3 +47,12 @@ pod_config:
     DISCOURSE_SMTP_PASSWORD: OBV10USLYF4K3
     DISCOURSE_SMTP_PORT: 587
     DISCOURSE_SMTP_USER_NAME: apikey
+    DISCOURSE_SAML_TARGET_URL: https://login.ubuntu.com/+saml
+    DISCOURSE_SAML_FULL_SCREEN_LOGIN: true
+    DISCOURSE_SAML_CERT_FINGERPRINT: 32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5
+    DISCOURSE_MAX_REQS_PER_IP_MODE: warn
+    DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE: 200 
+    DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS: 20 
+    DISCOURSE_MAX_USER_API_REQS_PER_MINUTE: 200 
+    DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS: 200 
+    DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE: true
