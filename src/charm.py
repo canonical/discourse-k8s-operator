@@ -36,14 +36,14 @@ def create_discourse_pod_config(config):
         'DISCOURSE_CORS_ORIGIN': config['cors_origin'],
         'DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS': "0",
         'DISCOURSE_SAML_TARGET_URL': config['saml_target_url'],
-        'DISCOURSE_SAML_FULL_SCREEN_LOGIN': config['saml_full_screen_login'],
+        'DISCOURSE_SAML_FULL_SCREEN_LOGIN': "true" if config['saml_full_screen_login'] else "false",
         'DISCOURSE_SAML_CERT_FINGERPRINT': config['saml_cert_fingerprint'],
         'DISCOURSE_MAX_REQS_PER_IP_MODE': config['max_reqs_per_ip_mode'],
         'DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE': config['max_reqs_per_ip_per_minute'],
         'DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS': config['max_reqs_per_ip_per_10_seconds'],
         'DISCOURSE_MAX_USER_API_REQS_PER_MINUTE': config['max_user_api_reqs_per_minute'],
         'DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS': config['max_asset_reqs_per_ip_per_10_seconds'],
-        'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': config['max_reqs_rate_limit_on_private'],
+        'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': "true" if config['max_reqs_rate_limit_on_private'] else "false",
     }
     return pod_config
 
@@ -124,6 +124,10 @@ def check_for_config_problems(config):
 
     if missing_fields:
         errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
+
+    valid_throttle_modes = ['warn', 'warn+block', 'block', 'none']
+    if not config['max_reqs_per_ip_mode'] in valid_throttle_modes:
+        errors.append('max_reqs_per_ip_mode must be one of: ' + ' '.join(valid_throttle_modes))
 
     return errors
 

@@ -92,17 +92,17 @@ options:
     description: "Number of api requests a user can make per minute"
     default: 20
   max_reqs_rate_limit_on_private:
-    type: string
+    type: boolean
     description: "Apply rate limits on requests from private networks"
-    default: "false"
+    default: false
   saml_target_url:
     type: string
     description: "SAML authentication target url"
     default: ""
   saml_full_screen_login:
-    type: string
+    type: boolean
     description: "Use full screen login with SAML"
-    default: ""
+    default: false 
   saml_cert_fingerprint:
     type: string
     description: "SAML certificate fingerprint"

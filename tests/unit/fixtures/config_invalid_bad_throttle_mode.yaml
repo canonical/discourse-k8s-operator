@@ -1,5 +1,9 @@
-config:
+config: 
     cors_origin: '*'
+    db_host: 10.9.89.237
+    db_name: discourse
+    db_password: a_real_password
+    db_user: discourse_m
     developer_emails: some.person@example.com
     discourse_image: discourse-k8s:1.0.7f
     enable_cors: true
@@ -15,14 +19,14 @@ config:
     smtp_password: OBV10USLYF4K3
     smtp_port: 587
     smtp_username: apikey
+    tls_secret_name: discourse_local
     saml_target_url: https://login.ubuntu.com/+saml
     saml_full_screen_login: true
     saml_cert_fingerprint: 32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5
-    max_reqs_per_ip_mode: warn
+    max_reqs_per_ip_mode: scream
     max_reqs_per_ip_per_minute: 200
     max_reqs_per_ip_per_10_seconds: 20
     max_user_api_reqs_per_minute: 200
     max_asset_reqs_per_ip_per_10_seconds: 200
     max_reqs_rate_limit_on_private: true
-missing_fields: 
-    - 'db_name'
+missing_fields: []
