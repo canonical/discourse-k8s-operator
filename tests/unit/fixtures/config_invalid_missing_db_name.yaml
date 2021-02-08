@@ -16,13 +16,7 @@ config:
     smtp_port: 587
     smtp_username: apikey
     saml_target_url: https://login.ubuntu.com/+saml
-    saml_full_screen_login: true
-    saml_cert_fingerprint: 32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5
-    max_reqs_per_ip_mode: warn
-    max_reqs_per_ip_per_minute: 200
-    max_reqs_per_ip_per_10_seconds: 20
-    max_user_api_reqs_per_minute: 200
-    max_asset_reqs_per_ip_per_10_seconds: 200
-    max_reqs_rate_limit_on_private: true
+    force_saml_login: true
+    throttle_level: none
 missing_fields: 
     - 'db_name'

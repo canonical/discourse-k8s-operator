@@ -12,9 +12,30 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingSta
 
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
 
+THROTTLE_LEVELS = {
+    "none": {'DISCOURSE_MAX_REQS_PER_IP_MODE': 'none', 'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': 'false'},
+    "permissive": {
+        'DISCOURSE_MAX_REQS_PER_IP_MODE': 'warn+block',
+        'DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE': 1000,
+        'DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS': 100,
+        'DISCOURSE_MAX_USER_API_REQS_PER_MINUTE': 400,
+        'DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS': 400,
+        'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': 'false',
+    },
+    "strict": {
+        'DISCOURSE_MAX_REQS_PER_IP_MODE': 'block',
+        'DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE': 200,
+        'DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS': 50,
+        'DISCOURSE_MAX_USER_API_REQS_PER_MINUTE': 100,
+        'DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS': 200,
+        'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': 'false',
+    },
+}
+
 
 def create_discourse_pod_config(config):
     """Create the pod environment config from the juju config."""
+
     pod_config = {
         'DISCOURSE_DB_USERNAME': config['db_user'],
         'DISCOURSE_DB_PASSWORD': config['db_password'],
@@ -31,21 +52,40 @@ def create_discourse_pod_config(config):
         'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
         'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
         'DISCOURSE_REDIS_HOST': config['redis_host'],
-        'DISCOURSE_REDIS_PORT': config['redis_port'],
+        'DISCOURSE_REDIS_PORT': 6379,
         'DISCOURSE_ENABLE_CORS': config['enable_cors'],
         'DISCOURSE_CORS_ORIGIN': config['cors_origin'],
         'DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS': "0",
-        'DISCOURSE_SAML_TARGET_URL': config['saml_target_url'],
-        'DISCOURSE_SAML_FULL_SCREEN_LOGIN': "true" if config['saml_full_screen_login'] else "false",
-        'DISCOURSE_SAML_CERT_FINGERPRINT': config['saml_cert_fingerprint'],
-        'DISCOURSE_MAX_REQS_PER_IP_MODE': config['max_reqs_per_ip_mode'],
-        'DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE': config['max_reqs_per_ip_per_minute'],
-        'DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS': config['max_reqs_per_ip_per_10_seconds'],
-        'DISCOURSE_MAX_USER_API_REQS_PER_MINUTE': config['max_user_api_reqs_per_minute'],
-        'DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS': config['max_asset_reqs_per_ip_per_10_seconds'],
-        'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': "true" if config['max_reqs_rate_limit_on_private'] else "false",
     }
+
+    saml_config = get_saml_config(config)
+    for key in saml_config:
+        pod_config[key] = saml_config[key]
+
+    if THROTTLE_LEVELS.get(config['throttle_level']):
+        for key in THROTTLE_LEVELS[config['throttle_level']]:
+            pod_config[key] = THROTTLE_LEVELS[config['throttle_level']][key]
+    else:
+        for key in THROTTLE_LEVELS['none']:
+            pod_config[key] = THROTTLE_LEVELS['none'][key]
+
     return pod_config
+
+
+def get_saml_config(config):
+    saml_fingerprints = {
+        'https://login.ubuntu.com/+saml': '32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5'
+    }
+    saml_config = {}
+
+    if config.get('saml_target_url'):
+        saml_config['DISCOURSE_SAML_TARGET_URL'] = config['saml_target_url']
+        saml_config['DISCOURSE_SAML_FULL_SCREEN_LOGIN'] = "true" if config['force_saml_login'] else "false"
+        fingerprint = saml_fingerprints.get(config['saml_target_url'])
+        if fingerprint:
+            saml_config['DISCOURSE_SAML_CERT_FINGERPRINT'] = fingerprint
+
+    return saml_config
 
 
 def create_ingress_config(app_name, config):
@@ -125,9 +165,8 @@ def check_for_config_problems(config):
     if missing_fields:
         errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
 
-    valid_throttle_modes = ['warn', 'warn+block', 'block', 'none']
-    if not config['max_reqs_per_ip_mode'] in valid_throttle_modes:
-        errors.append('max_reqs_per_ip_mode must be one of: ' + ' '.join(valid_throttle_modes))
+    if not THROTTLE_LEVELS.get(config['throttle_level']):
+        errors.append('throttle_level must be one of: ' + ' '.join(THROTTLE_LEVELS.keys()))
 
     return errors
 
