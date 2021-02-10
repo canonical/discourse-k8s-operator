@@ -47,6 +47,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         self.harness.disable_hooks()
         self.harness.set_leader(True)
         self.harness.begin()
+        self.maxDiff = None
         self.configs = load_configs(os.path.join(os.path.dirname(__file__), 'fixtures'))
 
     def test_valid_configs_are_ok(self):

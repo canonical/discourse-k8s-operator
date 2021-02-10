@@ -2,7 +2,7 @@ options:
   discourse_image:
     type: string
     description: "Discourse image to use"
-    default: "discoursecharmers/discourse:v2.6.0"
+    default: "discoursecharmers/discourse:v2.6.1"
   image_user:
     type: string
     description: "Private registry username"
@@ -67,3 +67,15 @@ options:
     type: string
     description: "The name of the K8s secret to be associated with the ingress resource."
     default: ""
+  throttle_level:
+    type: string
+    description: "Throttle level - blocks excessive usage by ip. Valid values: none, permissive, strict"
+    default: none
+  saml_target_url:
+    type: string
+    description: "SAML authentication target url"
+    default: ""
+  force_saml_login:
+    type: boolean
+    description: "Force saml login (full screen, no local database logins)"
+    default: false 

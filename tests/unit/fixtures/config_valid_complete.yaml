@@ -19,16 +19,20 @@ config:
     smtp_port: 587
     smtp_username: apikey
     tls_secret_name: discourse_local
+    saml_target_url: https://login.ubuntu.com/+saml
+    force_saml_login: true
+    throttle_level: none
 pod_config:
     DISCOURSE_CORS_ORIGIN: '*'
     DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
     DISCOURSE_ENABLE_CORS: true
     DISCOURSE_HOSTNAME: discourse.local
-    DISCOURSE_POSTGRES_HOST: 10.9.89.237
-    DISCOURSE_POSTGRES_NAME: discourse
-    DISCOURSE_POSTGRES_PASSWORD: a_real_password
-    DISCOURSE_POSTGRES_USERNAME: discourse_m
+    DISCOURSE_DB_HOST: 10.9.89.237
+    DISCOURSE_DB_NAME: discourse
+    DISCOURSE_DB_PASSWORD: a_real_password
+    DISCOURSE_DB_USERNAME: discourse_m
     DISCOURSE_REDIS_HOST: 10.9.89.197
+    DISCOURSE_REDIS_PORT: 6379
     DISCOURSE_SMTP_ADDRESS: 167.89.123.58
     DISCOURSE_SMTP_AUTHENTICATION: login
     DISCOURSE_SMTP_DOMAIN: example.com
@@ -36,3 +40,10 @@ pod_config:
     DISCOURSE_SMTP_PASSWORD: OBV10USLYF4K3
     DISCOURSE_SMTP_PORT: 587
     DISCOURSE_SMTP_USER_NAME: apikey
+    DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS: '0'
+    DISCOURSE_SERVE_STATIC_ASSETS: 'true'
+    DISCOURSE_SAML_TARGET_URL: https://login.ubuntu.com/+saml
+    DISCOURSE_SAML_FULL_SCREEN_LOGIN: "true"
+    DISCOURSE_SAML_CERT_FINGERPRINT: 32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5
+    DISCOURSE_MAX_REQS_PER_IP_MODE: "none"
+    DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE: "false"
