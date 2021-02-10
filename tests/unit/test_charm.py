@@ -47,6 +47,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         self.harness.disable_hooks()
         self.harness.set_leader(True)
         self.harness.begin()
+        self.maxDiff = None
         self.configs = load_configs(os.path.join(os.path.dirname(__file__), 'fixtures'))
 
     def test_valid_configs_are_ok(self):
@@ -55,7 +56,6 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
             if config_key.startswith('config_valid_'):
                 config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
                 pod_config = create_discourse_pod_config(self.configs[config_key]['config'])
-                self.maxDiff = None
                 self.assertEqual(config_valid, True, 'Valid config is not recognized as valid')
                 self.assertEqual(
                     pod_config,

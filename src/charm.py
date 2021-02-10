@@ -168,6 +168,9 @@ def check_for_config_problems(config):
     if not THROTTLE_LEVELS.get(config['throttle_level']):
         errors.append('throttle_level must be one of: ' + ' '.join(THROTTLE_LEVELS.keys()))
 
+    if config['force_saml_login'] and config['saml_target_url'] == '':
+        errors.append('force_saml_login can not be true without a saml_target_url')
+
     return errors
 
 
