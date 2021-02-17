@@ -32,5 +32,14 @@ build-image:
                 -t $(IMAGE_NAME):$(IMAGE_VERSION) \
                 image/
 
+build-image-markdown-saml:
+	@echo "Building the image."
+	@docker build \
+                --no-cache=true \
+                --build-arg CONTAINER_APP_VERSION='$(DISCOURSE_VERSION)' \
+                -t $(IMAGE_NAME):$(IMAGE_VERSION) \
+		--target markdown-saml \
+                image/
+
 
 .PHONY: blacken lint test unittest clean build-image

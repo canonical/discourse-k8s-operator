@@ -75,6 +75,9 @@ FROM base-image AS markdown-saml
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-saml.git
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git
 RUN chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/plugins
+# Have to determine the gems needed and install them now, otherwise Discourse will
+# try to install them at runtime, which may not work due to network access issues.
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins/discourse-saml && echo 'source "https://rubygems.org"' > Gemfile ; grep -e ^gem plugin.rb >> Gemfile && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install --gemfile=Gemfile' ${CONTAINER_APP_USERNAME}
 RUN cd ${CONTAINER_APP_ROOT}/app && su -s /bin/bash -c 'bin/bundle install' ${CONTAINER_APP_USERNAME}
 
 RUN echo "markdown-saml image complete"
