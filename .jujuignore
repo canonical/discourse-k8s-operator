@@ -2,4 +2,5 @@
 /image
 *.py[cod]
 *.charm
+*.tar.gz
 Makefile
