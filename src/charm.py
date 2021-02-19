@@ -104,7 +104,7 @@ def create_ingress_config(app_name, config):
     }
     tls_secret_name = config.get('tls_secret_name')
     if tls_secret_name:
-        ingressResource['spec']['tls'] = [{'hosts': config['external_hostname'], 'secretName': tls_secret_name}]
+        ingressResource['spec']['tls'] = [{'hosts': [config['external_hostname']], 'secretName': tls_secret_name}]
     else:
         annotations['nginx.ingress.kubernetes.io/ssl-redirect'] = 'false'
 
