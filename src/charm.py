@@ -110,8 +110,7 @@ def create_ingress_config(app_name, config):
 
     annotations['nginx.ingress.kubernetes.io/proxy-body-size'] = "{}m".format(config.get('max_body_size'))
 
-    if annotations:
-        ingressResource['annotations'] = annotations
+    ingressResource['annotations'] = annotations
 
     return ingressResource
 
