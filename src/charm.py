@@ -108,8 +108,7 @@ def create_ingress_config(app_name, config):
     else:
         annotations['nginx.ingress.kubernetes.io/ssl-redirect'] = 'false'
 
-    if config.get('max_body_size'):
-        annotations['nginx.ingress.kubernetes.io/proxy-body-size'] = "{}m".format(config.get('max_body_size'))
+    annotations['nginx.ingress.kubernetes.io/proxy-body-size'] = "{}m".format(config.get('max_body_size'))
 
     if annotations:
         ingressResource['annotations'] = annotations

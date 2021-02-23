@@ -81,5 +81,5 @@ options:
     default: false 
   max_body_size: 
     type: integer
-    description: "Max allowed body-size (for file uploads) in megabytes"
+    description: "Max allowed body-size (for file uploads) in megabytes, set to 0 to disable limits"
     default: 20
