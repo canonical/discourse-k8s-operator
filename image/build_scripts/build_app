@@ -30,3 +30,6 @@ su -s /bin/bash -c 'bin/bundle install' ${CONTAINER_APP_USERNAME}
 # generated that are not needed at runtime, remove them here to save image size.
 # If we don't do this they will become part of the image even if removed later.
 find ${CONTAINER_APP_ROOT} -name tmp -type d -exec rm -rf {} +
+mkdir -p ${CONTAINER_APP_ROOT}/app/tmp/backups/default 
+mkdir -p ${CONTAINER_APP_ROOT}/app/backups/default 
+chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/*
