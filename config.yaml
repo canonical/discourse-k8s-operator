@@ -78,8 +78,8 @@ options:
   force_saml_login:
     type: boolean
     description: "Force saml login (full screen, no local database logins)"
-    default: false 
-  max_body_size: 
-    type: integer
+    default: false
+  max_body_size:
+    type: int
     description: "Max allowed body-size (for file uploads) in megabytes, set to 0 to disable limits"
     default: 20
