@@ -34,5 +34,5 @@ find ${CONTAINER_APP_ROOT} -name tmp -type d -exec rm -rf {} +
 # Create the backup directories as Discourse doesn't like it when they are
 # missing and won't auto-create them at runtime
 mkdir -p ${CONTAINER_APP_ROOT}/app/tmp/backups/default 
-mkdir -p ${CONTAINER_APP_ROOT}/app/backups/default 
+mkdir -p ${CONTAINER_APP_ROOT}/app/public/backups/default 
 chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/*
