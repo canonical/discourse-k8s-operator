@@ -22,6 +22,7 @@ config:
     saml_target_url: https://login.ubuntu.com/+saml
     force_saml_login: true
     throttle_level: none
+    max_body_size: 25
 pod_config:
     DISCOURSE_CORS_ORIGIN: '*'
     DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
