@@ -113,10 +113,10 @@ def create_ingress_config(app_name, config):
     # requests and we need all of them to go to the same worker pod.
     annotations['nginx.ingress.kubernetes.io/affinity'] = 'cookie'
     annotations['nginx.ingress.kubernetes.io/affinity-mode'] = 'balanced'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-name'] = 'DISCOURSE_AFFINITY'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-samesite'] = 'Lax'
     annotations['nginx.ingress.kubernetes.io/session-cookie-change-on-failure'] = 'true'
     annotations['nginx.ingress.kubernetes.io/session-cookie-max-age'] = '3600'
+    annotations['nginx.ingress.kubernetes.io/session-cookie-name'] = 'DISCOURSE_AFFINITY'
+    annotations['nginx.ingress.kubernetes.io/session-cookie-samesite'] = 'Lax'
 
     ingressResource['annotations'] = annotations
 
