@@ -10,6 +10,7 @@ config:
     external_hostname: discourse.local
     image_pass: ''
     image_user: ''
+    max_body_size: 20
     redis_host: 10.9.89.197
     smtp_address: 167.89.123.58
     smtp_authentication: login
@@ -90,6 +91,13 @@ pod_spec:
     kubernetesResources:
         ingressResources:
             - annotations:
+                nginx.ingress.kubernetes.io/affinity: 'cookie'
+                nginx.ingress.kubernetes.io/affinity-mode: 'balanced'
+                nginx.ingress.kubernetes.io/proxy-body-size: '20m'
+                nginx.ingress.kubernetes.io/session-cookie-change-on-failure: 'true'
+                nginx.ingress.kubernetes.io/session-cookie-max-age: '3600'
+                nginx.ingress.kubernetes.io/session-cookie-name: 'DISCOURSE_AFFINITY'
+                nginx.ingress.kubernetes.io/session-cookie-samesite: 'Lax'
                 nginx.ingress.kubernetes.io/ssl-redirect: 'false'
               name: discourse-ingress
               spec:

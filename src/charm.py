@@ -116,7 +116,7 @@ def create_ingress_config(app_name, config):
     annotations['nginx.ingress.kubernetes.io/session-cookie-name'] = 'DISCOURSE_AFFINITY'
     annotations['nginx.ingress.kubernetes.io/session-cookie-samesite'] = 'Lax'
     annotations['nginx.ingress.kubernetes.io/session-cookie-change-on-failure'] = 'true'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-max-age'] = "3600"
+    annotations['nginx.ingress.kubernetes.io/session-cookie-max-age'] = '3600'
 
     ingressResource['annotations'] = annotations
 

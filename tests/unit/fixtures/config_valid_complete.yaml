@@ -10,6 +10,7 @@ config:
     external_hostname: discourse.local
     image_pass: 'somepass'
     image_user: 'someuser'
+    max_body_size: 25
     redis_host: 10.9.89.197
     smtp_address: 167.89.123.58
     smtp_authentication: login
@@ -22,7 +23,6 @@ config:
     saml_target_url: https://login.ubuntu.com/+saml
     force_saml_login: true
     throttle_level: none
-    max_body_size: 25
 pod_config:
     DISCOURSE_CORS_ORIGIN: '*'
     DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
@@ -92,7 +92,15 @@ pod_spec:
           protocol: TCP
     kubernetesResources:
         ingressResources:
-            - name: discourse-ingress
+            - annotations:
+                nginx.ingress.kubernetes.io/affinity: 'cookie'
+                nginx.ingress.kubernetes.io/affinity-mode: 'balanced'
+                nginx.ingress.kubernetes.io/proxy-body-size: '25m'
+                nginx.ingress.kubernetes.io/session-cookie-change-on-failure: 'true'
+                nginx.ingress.kubernetes.io/session-cookie-max-age: '3600'
+                nginx.ingress.kubernetes.io/session-cookie-name: 'DISCOURSE_AFFINITY'
+                nginx.ingress.kubernetes.io/session-cookie-samesite: 'Lax'
+              name: discourse-ingress
               spec:
                 rules:
                   - host: discourse.local
