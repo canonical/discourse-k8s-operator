@@ -60,8 +60,17 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
                 self.assertEqual(
                     pod_config,
                     self.configs[config_key]['pod_config'],
-                    'Valid config {} is does not produce expected config options for pod.'.format(config_key),
+                    'Valid config {} does not produce expected config options for pod.'.format(config_key),
                 )
+                if "pod_spec" in self.configs[config_key]:
+                    pod_spec = get_pod_spec(
+                        self.harness.charm.framework.model.app.name, self.configs[config_key]['config']
+                    )
+                    self.assertEqual(
+                        pod_spec,
+                        self.configs[config_key]["pod_spec"],
+                        "Valid config {} does not produce expected pod_spec.".format(config_key),
+                    )
 
     def test_invalid_configs_are_recognized(self):
         """Test that bad configs are identified by the charm."""

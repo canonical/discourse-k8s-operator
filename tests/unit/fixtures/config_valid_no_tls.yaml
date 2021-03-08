@@ -1,4 +1,4 @@
-config: 
+config:
     cors_origin: '*'
     db_host: 10.9.89.237
     db_name: discourse
@@ -8,9 +8,9 @@ config:
     discourse_image: discourse-k8s:1.0.7f
     enable_cors: true
     external_hostname: discourse.local
-    image_pass: 'somepass'
-    image_user: 'someuser'
-    max_body_size: 25
+    image_pass: ''
+    image_user: ''
+    max_body_size: 20
     redis_host: 10.9.89.197
     smtp_address: 167.89.123.58
     smtp_authentication: login
@@ -19,7 +19,7 @@ config:
     smtp_password: OBV10USLYF4K3
     smtp_port: 587
     smtp_username: apikey
-    tls_secret_name: discourse_local
+    tls_secret_name: ''
     saml_target_url: https://login.ubuntu.com/+saml
     force_saml_login: true
     throttle_level: none
@@ -79,8 +79,6 @@ pod_spec:
         DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE: "false"
       imageDetails:
         imagePath: discourse-k8s:1.0.7f
-        password: somepass
-        username: someuser
       imagePullPolicy: 'IfNotPresent'
       kubernetes:
         readinessProbe:
@@ -95,11 +93,12 @@ pod_spec:
             - annotations:
                 nginx.ingress.kubernetes.io/affinity: 'cookie'
                 nginx.ingress.kubernetes.io/affinity-mode: 'balanced'
-                nginx.ingress.kubernetes.io/proxy-body-size: '25m'
+                nginx.ingress.kubernetes.io/proxy-body-size: '20m'
                 nginx.ingress.kubernetes.io/session-cookie-change-on-failure: 'true'
                 nginx.ingress.kubernetes.io/session-cookie-max-age: '3600'
                 nginx.ingress.kubernetes.io/session-cookie-name: 'DISCOURSE_AFFINITY'
                 nginx.ingress.kubernetes.io/session-cookie-samesite: 'Lax'
+                nginx.ingress.kubernetes.io/ssl-redirect: 'false'
               name: discourse-ingress
               spec:
                 rules:
@@ -110,7 +109,3 @@ pod_spec:
                              serviceName: discourse
                              servicePort: 3000
                            path: '/'
-                tls:
-                  - hosts:
-                      - 'discourse.local'
-                    secretName: 'discourse_local'

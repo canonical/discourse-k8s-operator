@@ -62,12 +62,11 @@ def create_discourse_pod_config(config):
     for key in saml_config:
         pod_config[key] = saml_config[key]
 
-    if THROTTLE_LEVELS.get(config['throttle_level']):
-        for key in THROTTLE_LEVELS[config['throttle_level']]:
-            pod_config[key] = THROTTLE_LEVELS[config['throttle_level']][key]
-    else:
-        for key in THROTTLE_LEVELS['none']:
-            pod_config[key] = THROTTLE_LEVELS['none'][key]
+    # We only get valid throttle levels here, otherwise it would be caught
+    # by `check_for_config_problems`, so we can be sure this won't raise a
+    # KeyError.
+    for key in THROTTLE_LEVELS[config['throttle_level']]:
+        pod_config[key] = THROTTLE_LEVELS[config['throttle_level']][key]
 
     return pod_config
 
@@ -114,10 +113,10 @@ def create_ingress_config(app_name, config):
     # requests and we need all of them to go to the same worker pod.
     annotations['nginx.ingress.kubernetes.io/affinity'] = 'cookie'
     annotations['nginx.ingress.kubernetes.io/affinity-mode'] = 'balanced'
+    annotations['nginx.ingress.kubernetes.io/session-cookie-change-on-failure'] = 'true'
+    annotations['nginx.ingress.kubernetes.io/session-cookie-max-age'] = '3600'
     annotations['nginx.ingress.kubernetes.io/session-cookie-name'] = 'DISCOURSE_AFFINITY'
     annotations['nginx.ingress.kubernetes.io/session-cookie-samesite'] = 'Lax'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-change-on-failure'] = 'true'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-max-age'] = "3600"
 
     ingressResource['annotations'] = annotations
 
