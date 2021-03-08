@@ -82,6 +82,20 @@ RUN cd ${CONTAINER_APP_ROOT}/app && su -s /bin/bash -c 'bin/bundle install' ${CO
 
 RUN echo "markdown-saml image complete"
 
+# 'markdown-saml-solved' image type.
+FROM base-image AS markdown-saml-solved
+
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-saml.git
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-solved.git
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git
+RUN chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/plugins
+# Have to determine the gems needed and install them now, otherwise Discourse will
+# try to install them at runtime, which may not work due to network access issues.
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins/discourse-saml && mkdir -p gems && chown ${CONTAINER_APP_USERNAME} gems && echo 'source "https://rubygems.org"' > Gemfile ; grep -e ^gem plugin.rb >> Gemfile && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install --gemfile=Gemfile --path=${CONTAINER_APP_ROOT}/app/plugins/discourse-saml/gems' ${CONTAINER_APP_USERNAME} && cd gems && ln -s ruby/* ./
+RUN cd ${CONTAINER_APP_ROOT}/app && su -s /bin/bash -c 'bin/bundle install' ${CONTAINER_APP_USERNAME}
+
+RUN echo "markdown-saml-solved image complete"
+
 # Build the final image based on the IMAGE_TYPE specified.
 FROM ${IMAGE_TYPE} AS final
 # Redeclare IMAGE_TYPE variable so it can be referenced inside this build
