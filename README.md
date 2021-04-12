@@ -36,4 +36,4 @@ Once the deployment is completed and the "discourse" workload state in `juju
 status` has changed to "active" you can visit http://{$discourse_ip}:3000 in a
 browser and log in to your Discourse instance.
 
-For further details, [see here](https://charmhub.io/discourse/docs).
+For further details, [see here](https://charmhub.io/discourse-charmers-discourse-k8s/docs).
