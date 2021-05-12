@@ -56,7 +56,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
             if config_key.startswith('config_valid_'):
                 config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
                 pod_config = create_discourse_pod_config(self.configs[config_key]['config'])
-                self.assertEqual(config_valid, True, 'Valid config is not recognized as valid')
+                self.assertEqual(config_valid, True, 'Valid config {} is not recognized as valid'.format(config_key))
                 self.assertEqual(
                     pod_config,
                     self.configs[config_key]['pod_config'],
@@ -77,7 +77,9 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         for config_key in self.configs:
             if config_key.startswith('config_invalid_'):
                 config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
-                missing_fields = check_for_missing_config_fields(self.configs[config_key]['config'])
+                stored = SimpleNamespace()
+                stored.redis_relation = {}
+                missing_fields = check_for_missing_config_fields(self.configs[config_key]['config'], stored)
                 self.assertEqual(config_valid, False, 'Invalid config is not recognized as invalid')
                 self.assertEqual(
                     missing_fields,
@@ -91,6 +93,8 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         test_config['db_user'] = 'discourse_m'
         test_config['db_password'] = 'a_real_password'
         test_config['db_host'] = '10.9.89.237'
+        test_config['redis_host'] = '10.9.89.197'
+        test_config['redis_port'] = 6379
         db_event = SimpleNamespace()
         db_event.master = SimpleNamespace()
         db_event.master.user = 'discourse_m'

@@ -2,12 +2,18 @@
 # Copyright 2020 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import logging
+
 import ops.lib
+from charms.redis_k8s.v0.redis import RedisRequires
 from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
 
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+
+
+logger = logging.getLogger(__name__)
 
 
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -52,7 +58,7 @@ def create_discourse_pod_config(config):
         'DISCOURSE_SMTP_USER_NAME': config['smtp_username'],
         'DISCOURSE_SMTP_PASSWORD': config['smtp_password'],
         'DISCOURSE_REDIS_HOST': config['redis_host'],
-        'DISCOURSE_REDIS_PORT': 6379,
+        'DISCOURSE_REDIS_PORT': config['redis_port'],
         'DISCOURSE_ENABLE_CORS': config['enable_cors'],
         'DISCOURSE_CORS_ORIGIN': config['cors_origin'],
         'DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS': "0",
@@ -161,7 +167,7 @@ def get_pod_spec(app_name, config):
     return pod_spec
 
 
-def check_for_config_problems(config):
+def check_for_config_problems(config, stored):
     """Check if there are issues with the juju config.
 
     - Primarily looks for missing config options using check_for_missing_config_fields()
@@ -169,7 +175,7 @@ def check_for_config_problems(config):
     - Returns a list of errors if any were found.
     """
     errors = []
-    missing_fields = check_for_missing_config_fields(config)
+    missing_fields = check_for_missing_config_fields(config, stored)
 
     if missing_fields:
         errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
@@ -183,7 +189,7 @@ def check_for_config_problems(config):
     return errors
 
 
-def check_for_missing_config_fields(config):
+def check_for_missing_config_fields(config, stored):
     """Check for missing fields in juju config.
 
     - Returns a list of required fields that are either not present
@@ -194,13 +200,18 @@ def check_for_missing_config_fields(config):
     needed_fields = [
         'db_name',
         'smtp_address',
-        'redis_host',
         'cors_origin',
         'developer_emails',
         'smtp_domain',
         'discourse_image',
         'external_hostname',
     ]
+    # Check we have Redis connection info
+    redis_hostname = None
+    for redis_unit in stored.redis_relation:
+        redis_hostname = stored.redis_relation[redis_unit]["hostname"]
+    if not redis_hostname:
+        needed_fields.append("redis_host")
     for key in needed_fields:
         if not config.get(key):
             missing_fields.append(key)
@@ -220,7 +231,13 @@ class DiscourseCharm(CharmBase):
         super().__init__(*args)
 
         self.stored.set_default(
-            db_name=None, db_user=None, db_password=None, db_host=None, has_db_relation=False, has_db_credentials=False
+            db_name=None,
+            db_user=None,
+            db_password=None,
+            db_host=None,
+            has_db_relation=False,
+            has_db_credentials=False,
+            redis_relation={},
         )
         self.framework.observe(self.on.leader_elected, self.configure_pod)
         self.framework.observe(self.on.config_changed, self.configure_pod)
@@ -230,6 +247,8 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.db.on.database_relation_joined, self.on_database_relation_joined)
         self.framework.observe(self.db.on.master_changed, self.on_database_changed)
 
+        self.redis = RedisRequires(self, self.stored)
+
     def check_config_is_valid(self, config):
         """Check that the provided config is valid.
 
@@ -238,7 +257,7 @@ class DiscourseCharm(CharmBase):
         - Sets model status as appropriate.
         """
         valid_config = True
-        errors = check_for_config_problems(config)
+        errors = check_for_config_problems(config, self.stored)
 
         # Set status if we have a bad config.
         if errors:
@@ -266,6 +285,14 @@ class DiscourseCharm(CharmBase):
 
         - Configures pod using pod_spec generated from config.
         """
+        # Check we have Redis connection info
+        redis_hostname = self.config["redis_host"]
+        redis_port = 6379
+        for redis_unit in self.stored.redis_relation:
+            redis_hostname = self.stored.redis_relation[redis_unit]["hostname"]
+            redis_port = self.stored.redis_relation[redis_unit]["port"]
+            logging.debug("Got redis connection details from relation of %s:%s", redis_hostname, redis_port)
+
         # Set our status while we get configured.
         self.model.unit.status = MaintenanceStatus('Configuring pod')
 
@@ -282,6 +309,8 @@ class DiscourseCharm(CharmBase):
             config["db_user"] = self.stored.db_user
             config["db_password"] = self.stored.db_password
             config["db_host"] = self.stored.db_host
+            config["redis_host"] = redis_hostname
+            config["redis_port"] = redis_port
             # Get our spec definition.
             if self.check_config_is_valid(config):
                 # Get pod spec using our app name and config
