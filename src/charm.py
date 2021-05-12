@@ -5,7 +5,10 @@
 import logging
 
 import ops.lib
-from charms.redis_k8s.v0.redis import RedisRequires
+from charms.redis_k8s.v0.redis import (
+    RedisRelationCharmEvents,
+    RedisRequires,
+)
 from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
@@ -220,6 +223,7 @@ def check_for_missing_config_fields(config, stored):
 
 
 class DiscourseCharm(CharmBase):
+    on = RedisRelationCharmEvents()
     stored = StoredState()
 
     def __init__(self, *args):
@@ -248,6 +252,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.db.on.master_changed, self.on_database_changed)
 
         self.redis = RedisRequires(self, self.stored)
+        self.framework.observe(self.on.redis_relation_updated, self.configure_pod)
 
     def check_config_is_valid(self, config):
         """Check that the provided config is valid.

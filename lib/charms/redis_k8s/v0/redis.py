@@ -19,7 +19,8 @@ for redis_unit in self._stored.redis_relation:
 """
 import logging
 
-from ops.framework import Object
+from ops.charm import CharmEvents
+from ops.framework import EventBase, EventSource, Object
 
 # The unique Charmhub library identifier, never change it
 LIBID = "fe18a608cec5465fa5153e419abcad7b"
@@ -32,6 +33,14 @@ LIBAPI = 0
 LIBPATCH = 1
 
 logger = logging.getLogger(__name__)
+
+
+class RedisRelationUpdatedEvent(EventBase):
+    pass
+
+
+class RedisRelationCharmEvents(CharmEvents):
+    redis_relation_updated = EventSource(RedisRelationUpdatedEvent)
 
 
 class RedisRequires(Object):
@@ -52,9 +61,15 @@ class RedisRequires(Object):
         # Store some data from the relation in local state
         self._stored.redis_relation[event.relation.id] = {"hostname": hostname, "port": port}
 
+        # Trigger an event that our charm can react to.
+        self.charm.on.redis_relation_updated.emit()
+
     def _on_relation_broken(self, event):
         # Remove the unit data from local state
         self._stored.redis_relation.pop(event.relation.id, None)
+
+        # Trigger an event that our charm can react to.
+        self.charm.on.redis_relation_updated.emit()
 
 
 class RedisProvides(Object):
