@@ -5,7 +5,7 @@ redis interface.
 
 Import `RedisRequires` in your charm by adding the following to `src/charm.py`:
 ```
-from charms.redis_k8s.v0.ingress import RedisRequires
+from charms.redis_k8s.v0.redis import RedisRequires
 
 # In your charm's `__init__` method.
 self.redis = RedisRequires(self, self._stored)
@@ -58,18 +58,18 @@ class RedisRequires(Object):
 
 
 class RedisProvides(Object):
-    def __init__(self, charm, _stored):
+    def __init__(self, charm, port):
         super().__init__(charm, "redis")
         self.framework.observe(charm.on.redis_relation_changed, self._on_relation_changed)
-        self._stored = _stored
+        self._port = port
 
     def _on_relation_changed(self, event):
-        if self.model.unit.is_leader():
+        if not self.model.unit.is_leader():
             logger.debug("Relation changes ignored by non-leader")
             return
 
-        event.relation.data[self.unit]['hostname'] = str(self._bind_address(event))
-        event.relation.data[self.unit]['port'] = str(DEFAULT_PORT)
+        event.relation.data[self.model.unit]['hostname'] = str(self._bind_address(event))
+        event.relation.data[self.model.unit]['port'] = str(self._port)
         # The reactive Redis charm exposes also 'password'. When tackling
         # https://github.com/canonical/redis-operator/issues/7 add 'password'
         # field so that it matches the exposed interface information from it.
