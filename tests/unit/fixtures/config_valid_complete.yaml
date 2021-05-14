@@ -12,6 +12,7 @@ config:
     image_user: 'someuser'
     max_body_size: 25
     redis_host: 10.9.89.197
+    redis_port: 6379
     smtp_address: 167.89.123.58
     smtp_authentication: login
     smtp_domain: example.com
@@ -51,7 +52,7 @@ pod_config:
 pod_spec:
     version: 3
     containers:
-    - name: discourse
+    - name: discourse-k8s
       envConfig:
         DISCOURSE_CORS_ORIGIN: '*'
         DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
@@ -100,14 +101,14 @@ pod_spec:
                 nginx.ingress.kubernetes.io/session-cookie-max-age: '3600'
                 nginx.ingress.kubernetes.io/session-cookie-name: 'DISCOURSE_AFFINITY'
                 nginx.ingress.kubernetes.io/session-cookie-samesite: 'Lax'
-              name: discourse-ingress
+              name: discourse-k8s-ingress
               spec:
                 rules:
                   - host: discourse.local
                     http:
                         paths:
                          - backend:
-                             serviceName: discourse
+                             serviceName: discourse-k8s
                              servicePort: 3000
                            path: '/'
                 tls:

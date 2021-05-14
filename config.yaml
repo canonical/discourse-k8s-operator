@@ -18,7 +18,7 @@ options:
   external_hostname:
     type: string
     description: "External hostname this discourse instance should respond to"
-    default: ""
+    default: "foo.internal"
   enable_cors:
     type: boolean
     description: "Enable Cross-origin Resource Sharing (CORS) at the application level (required for SSO)"
@@ -30,15 +30,15 @@ options:
   developer_emails:
     type: string
     description: "Comma delimited list of email addresses that should have developer level access"
-    default: ""
+    default: "user@foo.internal"
   smtp_domain:
     type: string
     description: "Hostname that email sent by this discourse should appear to come from"
-    default: ""
+    default: "foo.internal"
   smtp_address:
     type: string
     description: "Hostname / IP that should be used to send SMTP mail"
-    default: ""
+    default: "127.0.0.1"
   smtp_port:
     type: int
     description: "Port to use when connecting to SMTP server"
