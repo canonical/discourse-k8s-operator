@@ -17,10 +17,10 @@ details on using Juju with MicroK8s for easy local testing [see here](https://ju
 
 To deploy into a Juju K8s model:
 
-    juju deploy postgresql-k8s postgresql
+    juju deploy postgresql-k8s
     juju deploy redis-k8s
     juju deploy discourse-k8s
-    juju relate discourse-k8s postgresql:db-admin
+    juju relate discourse-k8s postgresql-k8s:db-admin
     juju relate discourse-k8s redis-k8s
 
 Once the deployment is completed and the "discourse" workload state in `juju
