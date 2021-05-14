@@ -209,7 +209,7 @@ def check_for_missing_config_fields(config, stored):
         'discourse_image',
         'external_hostname',
     ]
-    # Check we have Redis connection info
+    # See if Redis connection information has been provided via a relation.
     redis_hostname = None
     for redis_unit in stored.redis_relation:
         redis_hostname = stored.redis_relation[redis_unit]["hostname"]
@@ -290,7 +290,8 @@ class DiscourseCharm(CharmBase):
 
         - Configures pod using pod_spec generated from config.
         """
-        # Check we have Redis connection info
+        # Get redis connection information from config but allow overriding
+        # via a relation.
         redis_hostname = self.config["redis_host"]
         redis_port = 6379
         for redis_unit in self.stored.redis_relation:
