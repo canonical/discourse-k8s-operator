@@ -12,6 +12,7 @@ from charms.redis_k8s.v0.redis import (
 from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
+from ops.pebble import ConnectionError
 
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 
@@ -42,7 +43,7 @@ THROTTLE_LEVELS = {
 }
 
 
-def create_discourse_pod_config(config):
+def create_discourse_environment_settings(config):
     """Create the pod environment config from the juju config."""
 
     pod_config = {
@@ -132,42 +133,26 @@ def create_ingress_config(app_name, config):
     return ingressResource
 
 
-def get_pod_spec(app_name, config):
-    """Get the entire pod spec using the juju config.
+def create_layer_config(self, config):
+    """ Create a layer config based on our current configuration.
 
-    - uses create_discourse_pod_config() to generate pod envConfig.
-
-    - uses create_ingress_config() to generate pod ingressResources.
-
+    - uses create_discourse_environment_settings to genreate the environment we need.
     """
-    pod_spec = {
-        "version": 3,
-        "containers": [
-            {
-                "name": app_name,
-                "imageDetails": {"imagePath": config['discourse_image']},
-                "imagePullPolicy": "IfNotPresent",
-                "ports": [{"containerPort": 3000, "protocol": "TCP"}],
-                "envConfig": create_discourse_pod_config(config),
-                "kubernetes": {
-                    "readinessProbe": {
-                        "httpGet": {
-                            "path": "/srv/status",
-                            "port": 3000,
-                        }
-                    }
-                },
+    logger.info("Generating Layer config")
+    layer_config = {
+        "summary": "Discourse layer",
+        "description": "Discourse layer",
+        "services": {
+            "discourse": {
+                "override": "replace",
+                "summary": "Discourse web application",
+                "command": "/srv/script/pod_start",
+                "startup": "enabled",
+                "environment": create_discourse_environment_settings(config)
             }
-        ],
-        "kubernetesResources": {"ingressResources": [create_ingress_config(app_name, config)]},
+        }
     }
-    # This handles when we are trying to get an image from a private
-    # registry.
-    if config['image_user'] and config['image_pass']:
-        pod_spec['containers'][0]['imageDetails']['username'] = config['image_user']
-        pod_spec['containers'][0]['imageDetails']['password'] = config['image_pass']
-
-    return pod_spec
+    return layer_config
 
 
 def check_for_config_problems(config, stored):

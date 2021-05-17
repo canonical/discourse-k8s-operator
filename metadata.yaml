@@ -21,3 +21,12 @@ requires:
   db:
     interface: pgsql
     limit: 1
+
+containers:
+  discourse:
+    resource: discourse-image
+
+resources:
+  discourse-image:
+    type: oci-image
+    description: OCI image for discourse  
