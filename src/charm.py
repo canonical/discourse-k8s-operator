@@ -133,8 +133,8 @@ def create_ingress_config(app_name, config):
     return ingressResource
 
 
-def create_layer_config(self, config):
-    """ Create a layer config based on our current configuration.
+def create_layer_config(config):
+    """Create a layer config based on our current configuration.
 
     - uses create_discourse_environment_settings to genreate the environment we need.
     """
@@ -150,7 +150,7 @@ def create_layer_config(self, config):
                 "startup": "enabled",
                 "environment": create_discourse_environment_settings(config)
             }
-        }
+        },
     }
     return layer_config
 
@@ -191,7 +191,6 @@ def check_for_missing_config_fields(config, stored):
         'cors_origin',
         'developer_emails',
         'smtp_domain',
-        'discourse_image',
         'external_hostname',
     ]
     # See if Redis connection information has been provided via a relation.
@@ -228,16 +227,17 @@ class DiscourseCharm(CharmBase):
             has_db_credentials=False,
             redis_relation={},
         )
-        self.framework.observe(self.on.leader_elected, self.configure_pod)
-        self.framework.observe(self.on.config_changed, self.configure_pod)
-        self.framework.observe(self.on.upgrade_charm, self.configure_pod)
+        self.service_name = "discourse"
+        self.framework.observe(self.on.leader_elected, self.config_changed)
+        self.framework.observe(self.on.config_changed, self.config_changed)
+        self.framework.observe(self.on.upgrade_charm, self.config_changed)
 
         self.db = pgsql.PostgreSQLClient(self, 'db')
         self.framework.observe(self.db.on.database_relation_joined, self.on_database_relation_joined)
         self.framework.observe(self.db.on.master_changed, self.on_database_changed)
 
         self.redis = RedisRequires(self, self.stored)
-        self.framework.observe(self.on.redis_relation_updated, self.configure_pod)
+        self.framework.observe(self.on.redis_relation_updated, self.config_changed)
 
     def check_config_is_valid(self, config):
         """Check that the provided config is valid.
@@ -268,13 +268,17 @@ class DiscourseCharm(CharmBase):
         self.model.unit.status = MaintenanceStatus("db relation is ready")
         return True
 
-    def configure_pod(self, event=None):
-        """Configure pod.
+    def config_changed(self, event=None):
+        """Configure service.
 
-        - Verifies config is valid and unit is leader.
+        - Verifies config is valid
 
-        - Configures pod using pod_spec generated from config.
+        - Configures pod using pebble and layer generated from config.
         """
+
+        # Set our status while we get configured.
+        self.model.unit.status = MaintenanceStatus('Configuring service')
+
         # Get redis connection information from config but allow overriding
         # via a relation.
         redis_hostname = self.config["redis_host"]
@@ -284,33 +288,37 @@ class DiscourseCharm(CharmBase):
             redis_port = self.stored.redis_relation[redis_unit]["port"]
             logging.debug("Got redis connection details from relation of %s:%s", redis_hostname, redis_port)
 
-        # Set our status while we get configured.
-        self.model.unit.status = MaintenanceStatus('Configuring pod')
+        if not self.check_db_is_valid(self.stored):
+            self.model.unit.status = MaintenanceStatus('Invalid database configuration')
+            return
 
-        # Leader must set the pod spec.
-        if self.model.unit.is_leader():
-            if not self.check_db_is_valid(self.stored):
-                return
+        # Merge our config and state into a single dict and set
+        # defaults here, because the helpers avoid dealing with
+        # the framework.
+        config = dict(self.model.config)
+        config["db_name"] = self.stored.db_name
+        config["db_user"] = self.stored.db_user
+        config["db_password"] = self.stored.db_password
+        config["db_host"] = self.stored.db_host
+        config["redis_host"] = redis_hostname
+        config["redis_port"] = redis_port
+        # Get our spec definition.
 
-            # Merge our config and state into a single dict and set
-            # defaults here, because the helpers avoid dealing with
-            # the framework.
-            config = dict(self.model.config)
-            config["db_name"] = self.stored.db_name
-            config["db_user"] = self.stored.db_user
-            config["db_password"] = self.stored.db_password
-            config["db_host"] = self.stored.db_host
-            config["redis_host"] = redis_hostname
-            config["redis_port"] = redis_port
-            # Get our spec definition.
+        try:
             if self.check_config_is_valid(config):
-                # Get pod spec using our app name and config
-                pod_spec = get_pod_spec(self.framework.model.app.name, config)
-                # Set our pod spec.
-                self.model.pod.set_spec(pod_spec)
+                layer_config = create_layer_config(config)
+                live_config = self.container().get_plan().to_dict().get("services", {})
+                if live_config != layer_config:
+                    logger.debug("Updating config")
+                    self.container().add_layer(self.service_name, layer_config, combine=True)
+                    self.restart_service()
+
                 self.model.unit.status = ActiveStatus()
-        else:
-            self.model.unit.status = ActiveStatus()
+        except ConnectionError:
+            logger.info("Unable to connect to Pebble, deferring event")
+            event.defer()
+            return
+
 
     def on_database_relation_joined(self, event):
         """Event handler for a newly joined database relation.
@@ -357,7 +365,18 @@ class DiscourseCharm(CharmBase):
         self.stored.db_host = event.master.host
         self.stored.has_db_credentials = True
 
-        self.configure_pod()
+        self.config_changed()
+
+    def container(self):
+        return self.unit.get_container(self.service_name)
+
+    def stop_service(self):
+        self.container().stop(self.service_name)
+
+    def restart_service(self):
+        if self.container().get_service(self.service_name).is_running():
+            self.stop()
+        self.container().start(self.service_name)
 
 
 if __name__ == '__main__':  # pragma: no cover

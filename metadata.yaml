@@ -12,9 +12,6 @@ maintainers:
 tags:
   - applications
   - forum
-series:
-  - kubernetes
-min-juju-version: 2.8.0
 requires:
   redis:
     interface: redis

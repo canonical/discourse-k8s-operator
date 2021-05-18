@@ -1,16 +1,4 @@
 options:
-  discourse_image:
-    type: string
-    description: "Discourse image to use"
-    default: "discoursecharmers/discourse:v2.6.1"
-  image_user:
-    type: string
-    description: "Private registry username"
-    default: ""
-  image_pass:
-    type: string
-    description: "Private registry password"
-    default: ""
   db_name:
     type: string
     description: "PostgreSQL database name. Defaults to Juju Application name."
