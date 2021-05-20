@@ -13,8 +13,8 @@ from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
 from ops.pebble import ConnectionError
-
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 
 
 logger = logging.getLogger(__name__)
@@ -146,13 +146,30 @@ def create_layer_config(config):
             "discourse": {
                 "override": "replace",
                 "summary": "Discourse web application",
-                "command": "/srv/script/pod_start",
+                "command": "/srv/scripts/pod_start",
                 "startup": "enabled",
                 "environment": create_discourse_environment_settings(config)
             }
         },
     }
     return layer_config
+
+
+def create_ingress_config(app_name, config):
+    ingress_config = {
+        "service-hostname": config['external_hostname'],
+        "service-name": app_name,
+        "service-port": 3000,
+        "max-body-size": "{}m".format(config.get('max_body_size')),
+    }
+
+    tls_secret_name = config.get('tls_secret_name')
+    if tls_secret_name:
+        ingress_config['tls-secret-name'] = tls_secret_name
+    else:
+        ingress_config['ssl-redirect'] = 'false'
+
+    return ingress_config
 
 
 def check_for_config_problems(config, stored):
@@ -228,6 +245,7 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.service_name = "discourse"
+        self.ingress = None
         self.framework.observe(self.on.leader_elected, self.config_changed)
         self.framework.observe(self.on.config_changed, self.config_changed)
         self.framework.observe(self.on.upgrade_charm, self.config_changed)
@@ -302,6 +320,10 @@ class DiscourseCharm(CharmBase):
         config["db_host"] = self.stored.db_host
         config["redis_host"] = redis_hostname
         config["redis_port"] = redis_port
+
+        if self.ingress is None:
+            self.ingress = IngressRequires(self, create_ingress_config(self.service_name, config))
+
         # Get our spec definition.
 
         try:
@@ -312,6 +334,7 @@ class DiscourseCharm(CharmBase):
                     logger.debug("Updating config")
                     self.container().add_layer(self.service_name, layer_config, combine=True)
                     self.restart_service()
+                    self.ingress.update_config(create_ingress_config(config))
 
                 self.model.unit.status = ActiveStatus()
         except ConnectionError:
