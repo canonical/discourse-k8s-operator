@@ -245,7 +245,11 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.service_name = "discourse"
-        self.ingress = None
+        self.ingress = IngressRequires(self, {
+            "service-hostname": self.config['external_hostname'],
+            "service-name": self.service_name,
+            "service-port": 3000
+        })
         self.framework.observe(self.on.leader_elected, self.config_changed)
         self.framework.observe(self.on.config_changed, self.config_changed)
         self.framework.observe(self.on.upgrade_charm, self.config_changed)
@@ -321,10 +325,7 @@ class DiscourseCharm(CharmBase):
         config["redis_host"] = redis_hostname
         config["redis_port"] = redis_port
 
-        if self.ingress is None:
-            self.ingress = IngressRequires(self, create_ingress_config(self.service_name, config))
-
-        # Get our spec definition.
+        # Get our layer config. 
 
         try:
             if self.check_config_is_valid(config):
@@ -341,7 +342,6 @@ class DiscourseCharm(CharmBase):
             logger.info("Unable to connect to Pebble, deferring event")
             event.defer()
             return
-
 
     def on_database_relation_joined(self, event):
         """Event handler for a newly joined database relation.
@@ -388,7 +388,7 @@ class DiscourseCharm(CharmBase):
         self.stored.db_host = event.master.host
         self.stored.has_db_credentials = True
 
-        self.config_changed()
+        self.config_changed(event)
 
     def container(self):
         return self.unit.get_container(self.service_name)
@@ -398,7 +398,7 @@ class DiscourseCharm(CharmBase):
 
     def restart_service(self):
         if self.container().get_service(self.service_name).is_running():
-            self.stop()
+            self.stop_service()
         self.container().start(self.service_name)
 
 
