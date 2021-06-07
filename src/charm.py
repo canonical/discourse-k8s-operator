@@ -97,42 +97,6 @@ def get_saml_config(config):
     return saml_config
 
 
-def create_ingress_config(app_name, config):
-    """Create the ingress config form the juju config."""
-    annotations = {}
-    ingressResource = {
-        "name": app_name + "-ingress",
-        "spec": {
-            "rules": [
-                {
-                    "host": config['external_hostname'],
-                    "http": {"paths": [{"path": "/", "backend": {"serviceName": app_name, "servicePort": 3000}}]},
-                }
-            ]
-        },
-    }
-    tls_secret_name = config.get('tls_secret_name')
-    if tls_secret_name:
-        ingressResource['spec']['tls'] = [{'hosts': [config['external_hostname']], 'secretName': tls_secret_name}]
-    else:
-        annotations['nginx.ingress.kubernetes.io/ssl-redirect'] = 'false'
-
-    annotations['nginx.ingress.kubernetes.io/proxy-body-size'] = "{}m".format(config.get('max_body_size'))
-
-    # Set affinity because discourse breaks uploads into multiple
-    # requests and we need all of them to go to the same worker pod.
-    annotations['nginx.ingress.kubernetes.io/affinity'] = 'cookie'
-    annotations['nginx.ingress.kubernetes.io/affinity-mode'] = 'balanced'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-change-on-failure'] = 'true'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-max-age'] = '3600'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-name'] = 'DISCOURSE_AFFINITY'
-    annotations['nginx.ingress.kubernetes.io/session-cookie-samesite'] = 'Lax'
-
-    ingressResource['annotations'] = annotations
-
-    return ingressResource
-
-
 def create_layer_config(config):
     """Create a layer config based on our current configuration.
 
@@ -146,30 +110,13 @@ def create_layer_config(config):
             "discourse": {
                 "override": "replace",
                 "summary": "Discourse web application",
-                "command": "/srv/scripts/pod_start",
+                "command": "sh -c '/srv/scripts/pod_start >>/srv/discourse/discourse.log 2&>1'",
                 "startup": "enabled",
-                "environment": create_discourse_environment_settings(config)
+                "environment": create_discourse_environment_settings(config),
             }
         },
     }
     return layer_config
-
-
-def create_ingress_config(app_name, config):
-    ingress_config = {
-        "service-hostname": config['external_hostname'],
-        "service-name": app_name,
-        "service-port": 3000,
-        "max-body-size": "{}m".format(config.get('max_body_size')),
-    }
-
-    tls_secret_name = config.get('tls_secret_name')
-    if tls_secret_name:
-        ingress_config['tls-secret-name'] = tls_secret_name
-    else:
-        ingress_config['ssl-redirect'] = 'false'
-
-    return ingress_config
 
 
 def check_for_config_problems(config, stored):
@@ -245,11 +192,7 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.service_name = "discourse"
-        self.ingress = IngressRequires(self, {
-            "service-hostname": self.config['external_hostname'],
-            "service-name": self.service_name,
-            "service-port": 3000
-        })
+        self.ingress = IngressRequires(self, self._ingress_config())
         self.framework.observe(self.on.leader_elected, self.config_changed)
         self.framework.observe(self.on.config_changed, self.config_changed)
         self.framework.observe(self.on.upgrade_charm, self.config_changed)
@@ -260,6 +203,20 @@ class DiscourseCharm(CharmBase):
 
         self.redis = RedisRequires(self, self.stored)
         self.framework.observe(self.on.redis_relation_updated, self.config_changed)
+
+    def _ingress_config(self):
+        """Return a dict of our ingress config."""
+        ingress_config = {
+            "service-hostname": self.config['external_hostname'],
+            "service-name": self.app.name,
+            "service-port": 3000,
+            "session-cookie-max-age": 3600,
+        }
+        if self.config["tls_secret_name"]:
+            ingress_config["tls-secret-name"] = self.config["tls_secret_name"]
+        if self.config["max_body_size"]:
+            ingress_config["max-body-size"] = self.config["max_body_size"]
+        return ingress_config
 
     def check_config_is_valid(self, config):
         """Check that the provided config is valid.
@@ -308,7 +265,7 @@ class DiscourseCharm(CharmBase):
         for redis_unit in self.stored.redis_relation:
             redis_hostname = self.stored.redis_relation[redis_unit]["hostname"]
             redis_port = self.stored.redis_relation[redis_unit]["port"]
-            logging.debug("Got redis connection details from relation of %s:%s", redis_hostname, redis_port)
+            logger.debug("Got redis connection details from relation of %s:%s", redis_hostname, redis_port)
 
         if not self.check_db_is_valid(self.stored):
             self.model.unit.status = MaintenanceStatus('Invalid database configuration')
@@ -325,17 +282,21 @@ class DiscourseCharm(CharmBase):
         config["redis_host"] = redis_hostname
         config["redis_port"] = redis_port
 
-        # Get our layer config. 
+        # Get our layer config.
 
         try:
             if self.check_config_is_valid(config):
                 layer_config = create_layer_config(config)
                 live_config = self.container().get_plan().to_dict().get("services", {})
-                if live_config != layer_config:
+                logger.debug("___LIVE CONFIG___")
+                logger.debug(live_config)
+                logger.debug("___LAYER CONFIG___")
+                logger.debug(layer_config["services"])
+                if live_config != layer_config["services"]:
                     logger.debug("Updating config")
                     self.container().add_layer(self.service_name, layer_config, combine=True)
                     self.restart_service()
-                    self.ingress.update_config(create_ingress_config(config))
+                    self.ingress.update_config(self._ingress_config())
 
                 self.model.unit.status = ActiveStatus()
         except ConnectionError:
@@ -398,9 +359,14 @@ class DiscourseCharm(CharmBase):
 
     def restart_service(self):
         if self.container().get_service(self.service_name).is_running():
+            logger.debug("Stopping service")
             self.stop_service()
+        logger.debug("Starting service")
         self.container().start(self.service_name)
 
 
 if __name__ == '__main__':  # pragma: no cover
-    main(DiscourseCharm)
+    main(
+        DiscourseCharm,
+        use_juju_for_storage=True,  # https://github.com/canonical/operator/issues/506
+    )
