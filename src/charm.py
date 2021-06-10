@@ -207,7 +207,7 @@ class DiscourseCharm(CharmBase):
     def _ingress_config(self):
         """Return a dict of our ingress config."""
         ingress_config = {
-            "service-hostname": self.config['external_hostname'],
+            "service-hostname": self.config['external_hostname'] or self.app.name,
             "service-name": self.app.name,
             "service-port": 3000,
             "session-cookie-max-age": 3600,

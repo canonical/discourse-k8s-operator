@@ -23,8 +23,15 @@ To deploy into a Juju K8s model:
     juju relate discourse-k8s postgresql-k8s:db-admin
     juju relate discourse-k8s redis-k8s
 
-Once the deployment is completed and the "discourse" workload state in `juju
-status` has changed to "active" you can visit http://{$discourse_ip}:3000 in a
-browser and log in to your Discourse instance.
+Then expose Discourse via the Kubernetes ingress:
 
-For further details, [see here](https://charmhub.io/discourse-charmers-discourse-k8s/docs).
+    juju deploy nginx-ingress-integrator
+    juju relate discourse-k8s nginx-ingress-integrator
+
+Once the deployment is completed and the "discourse" workload state in `juju
+status` has changed to "active" you can add `discourse-k8s` to `/etc/hosts`
+with the IP address of your Kubernetes cluster's ingress (127.0.0.1 if you're
+using MicroK8s) and visit `http://discourse-k8s` in a browser and log in to
+your Discourse instance.
+
+For further details, [see here](https://charmhub.io/discourse-k8s/docs).
