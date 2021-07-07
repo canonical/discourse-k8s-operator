@@ -96,8 +96,8 @@ def get_saml_config(config):
         saml_sync_groups = [x.strip() for x in config['saml_sync_groups'].split(',') if x.strip()]
         if saml_sync_groups:
             # Per https://github.com/discourse/discourse-saml setting this to `true`
-            # "should the assigned groups be completely synced including adding AND
-            # removing groups based on the IDP".
+            # means the assigned groups will be completely synced including adding
+            # AND removing groups based on the SAML provider.
             saml_config['DISCOURSE_SAML_GROUPS_FULLSYNC'] = "false"
             saml_config['DISCOURSE_SAML_SYNC_GROUPS'] = "true"
             saml_config['DISCOURSE_SAML_SYNC_GROUPS_LIST'] = "|".join(saml_sync_groups)
