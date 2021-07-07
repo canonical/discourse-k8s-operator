@@ -93,6 +93,15 @@ def get_saml_config(config):
         if fingerprint:
             saml_config['DISCOURSE_SAML_CERT_FINGERPRINT'] = fingerprint
 
+        saml_sync_groups = [x.strip() for x in config['saml_sync_groups'].split(',') if x.strip()]
+        if saml_sync_groups:
+            # Per https://github.com/discourse/discourse-saml setting this to `true`
+            # "should the assigned groups be completely synced including adding AND
+            # removing groups based on the IDP".
+            saml_config['DISCOURSE_SAML_GROUPS_FULLSYNC'] = "false"
+            saml_config['DISCOURSE_SAML_SYNC_GROUPS'] = "true"
+            saml_config['DISCOURSE_SAML_SYNC_GROUPS_LIST'] = "|".join(saml_sync_groups)
+
     return saml_config
 
 
@@ -186,8 +195,11 @@ def check_for_config_problems(config, stored):
     if not THROTTLE_LEVELS.get(config['throttle_level']):
         errors.append('throttle_level must be one of: ' + ' '.join(THROTTLE_LEVELS.keys()))
 
-    if config['force_saml_login'] and config['saml_target_url'] == '':
-        errors.append('force_saml_login can not be true without a saml_target_url')
+    if config['force_saml_login'] and not config['saml_target_url']:
+        errors.append("'force_saml_login' cannot be true without a 'saml_target_url'")
+
+    if config['saml_sync_groups'] and not config['saml_target_url']:
+        errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
 
     return errors
 

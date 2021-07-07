@@ -13,6 +13,7 @@ import yaml
 from types import SimpleNamespace
 
 from charm import (
+    check_for_config_problems,
     check_for_missing_config_fields,
     create_discourse_pod_config,
     get_pod_spec,
@@ -85,6 +86,12 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
                     missing_fields,
                     self.configs[config_key]['missing_fields'],
                     'Invalid config {} does not fail as expected.'.format(config_key),
+                )
+                config_problems = check_for_config_problems(self.configs[config_key]['config'], stored)
+                self.assertEqual(
+                    config_problems,
+                    self.configs[config_key]['config_problems'],
+                    'Invalid config {} does not fail with expected problems'.format(config_key),
                 )
 
     def test_charm_config_process(self):

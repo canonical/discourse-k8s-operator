@@ -19,6 +19,7 @@ config:
     smtp_password:
     smtp_port: 587
     smtp_username: apikey
+    saml_sync_groups: ''
     saml_target_url: https://login.ubuntu.com/+saml
     force_saml_login: false
     throttle_level: strict

@@ -19,7 +19,12 @@ config:
     smtp_port: 587
     smtp_username: apikey
     tls_secret_name: discourse_local
+    saml_sync_groups: 'canonical, ubuntu-core'
     saml_target_url: ''
     force_saml_login: true
     throttle_level: scream
+config_problems:
+    - 'throttle_level must be one of: none permissive strict'
+    - "'force_saml_login' cannot be true without a 'saml_target_url'"
+    - "'saml_sync_groups' cannot be specified without a 'saml_target_url'"
 missing_fields: []

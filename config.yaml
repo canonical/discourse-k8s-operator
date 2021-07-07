@@ -71,13 +71,17 @@ options:
     type: string
     description: "Throttle level - blocks excessive usage by ip. Valid values: none, permissive, strict"
     default: none
+  saml_sync_groups:
+    type: string
+    description: "Comma-separated list of groups to sync from SAML provider."
+    default: ""
   saml_target_url:
     type: string
     description: "SAML authentication target url"
     default: ""
   force_saml_login:
     type: boolean
-    description: "Force saml login (full screen, no local database logins)"
+    description: "Force SAML login (full screen, no local database logins)"
     default: false
   max_body_size:
     type: int
