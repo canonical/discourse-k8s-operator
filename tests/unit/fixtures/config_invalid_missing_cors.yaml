@@ -17,8 +17,11 @@ config:
     smtp_password: OBV10USLYF4K3
     smtp_port: 587
     smtp_username: apikey
+    saml_sync_groups: ''
     saml_target_url: https://login.ubuntu.com/+saml
     force_saml_login: true
     throttle_level: none
+config_problems:
+    - 'Required configuration missing: cors_origin'
 missing_fields: 
     - 'cors_origin'

@@ -20,6 +20,7 @@ config:
     smtp_port: 587
     smtp_username: apikey
     tls_secret_name: discourse-local
+    saml_sync_groups: ''
     saml_target_url: https://login.ubuntu.com/+saml
     force_saml_login: true
     throttle_level: permissive
