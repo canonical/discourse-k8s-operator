@@ -12,6 +12,7 @@ apt-get install -y brotli \
                    jpegoptim \
                    libjpeg-turbo-progs \
                    libpq-dev \
+                   libssl-dev \
                    libxml2-dev \
                    libxslt1-dev \
                    libz-dev \
