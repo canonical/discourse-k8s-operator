@@ -11,7 +11,7 @@ import sys
 import unittest
 import yaml
 
-sys.path.insert(0, 'lib')
+sys.path.insert(0, 'lib')  # noqa E402
 
 from types import SimpleNamespace
 
