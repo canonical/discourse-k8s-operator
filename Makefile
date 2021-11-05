@@ -42,7 +42,7 @@ build-image-markdown-saml:
                 image/
 
 push-image-local-registry:
-	@echo "Pushing the default image to local registry"
+	@echo "Pushing the default image to local registry."
 	@docker tag $(IMAGE_NAME):$(IMAGE_VERSION) localhost:32000/$(IMAGE_NAME):$(IMAGE_VERSION)
 	@docker push localhost:32000/$(IMAGE_NAME):$(IMAGE_VERSION)
 
