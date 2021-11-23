@@ -18,6 +18,11 @@ cd ${CONTAINER_APP_VERSION}
 git apply /srv/build_scripts/lp1903695.patch
 cd ${CONTAINER_APP_ROOT}
 
+# Apply patch to use terser rather than uglifier
+cd ${CONTAINER_APP_VERSION}
+git apply /srv/build_scripts/terser.patch
+cd ${CONTAINER_APP_ROOT}
+
 chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_VERSION}
 ln -s ${CONTAINER_APP_ROOT}/${CONTAINER_APP_VERSION} app
 cd ${CONTAINER_APP_ROOT}/app
