@@ -25,7 +25,7 @@ discourse-k8s.charm: src/*.py requirements.txt
 	charmcraft build
 
 build-image:
-	@echo "Building the image."
+	@echo "Building the default image."
 	@docker build \
                 --no-cache=true \
                 --build-arg CONTAINER_APP_VERSION='$(DISCOURSE_VERSION)' \
@@ -33,12 +33,18 @@ build-image:
                 image/
 
 build-image-markdown-saml:
-	@echo "Building the image."
+	@echo "Building the markdown-saml image."
 	@docker build \
                 --no-cache=true \
                 --build-arg CONTAINER_APP_VERSION='$(DISCOURSE_VERSION)' \
                 -t $(IMAGE_NAME)-markdown-saml:$(IMAGE_VERSION) \
 		--target markdown-saml \
                 image/
+
+push-image-local-registry:
+	@echo "Pushing the default image to local registry."
+	@docker tag $(IMAGE_NAME):$(IMAGE_VERSION) localhost:32000/$(IMAGE_NAME):$(IMAGE_VERSION)
+	@docker push localhost:32000/$(IMAGE_NAME):$(IMAGE_VERSION)
+	@echo "Image available at: localhost:32000/$(IMAGE_NAME):$(IMAGE_VERSION)"
 
 .PHONY: blacken lint test unittest clean build-image
