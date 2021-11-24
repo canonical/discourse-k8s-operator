@@ -16,6 +16,7 @@ apt-get install -y brotli \
                    libxml2-dev \
                    libxslt1-dev \
                    libz-dev \
+                   node-terser \
                    node-uglify \
                    optipng \
                    pngquant \

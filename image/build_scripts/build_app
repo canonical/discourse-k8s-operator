@@ -14,9 +14,10 @@ cd ${CONTAINER_APP_ROOT}
 git clone --depth 1 --branch ${CONTAINER_APP_VERSION} https://github.com/discourse/discourse.git ${CONTAINER_APP_VERSION}
 
 # Apply patch for LP#1903695
-cd ${CONTAINER_APP_VERSION}
-git apply /srv/build_scripts/lp1903695.patch
-cd ${CONTAINER_APP_ROOT}
+git -C "${CONTAINER_APP_VERSION}" apply /srv/build_scripts/lp1903695.patch
+
+# Apply patch to use terser rather than uglifier
+git -C "${CONTAINER_APP_VERSION}" apply /srv/build_scripts/terser.patch
 
 chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_VERSION}
 ln -s ${CONTAINER_APP_ROOT}/${CONTAINER_APP_VERSION} app
