@@ -10,9 +10,7 @@ lint: blacken
 	@echo "Running flake8"
 	@tox -e lint
 
-# We actually use the build directory created by charmcraft,
-# but the .charm file makes a much more convenient sentinel.
-unittest: discourse-k8s.charm
+unittest:
 	@tox -e unit
 
 test: lint unittest
@@ -20,9 +18,6 @@ test: lint unittest
 clean:
 	@echo "Cleaning files"
 	@git clean -fXd
-
-discourse-k8s.charm: src/*.py requirements.txt
-	charmcraft build
 
 build-image:
 	@echo "Building the default image."
