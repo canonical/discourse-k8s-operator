@@ -2,12 +2,12 @@ diff --git a/lib/middleware/anonymous_cache.rb b/lib/middleware/anonymous_cache.
 index 6da23a55..0641ba0e 100644
 --- a/lib/middleware/anonymous_cache.rb
 +++ b/lib/middleware/anonymous_cache.rb
-@@ -301,7 +301,7 @@ module Middleware
+@@ -312,7 +312,7 @@ module Middleware
  
      def call(env)
        if PAYLOAD_INVALID_REQUEST_METHODS.include?(env[Rack::REQUEST_METHOD]) &&
 -        env[Rack::RACK_INPUT].size > 0
 +        env[Rack::RACK_INPUT].respond_to?(:size) && env[Rack::RACK_INPUT].size > 0
  
-         return [413, {}, []]
+         return [413, { "Cache-Control" => "private, max-age=0, must-revalidate" }, []]
        end
