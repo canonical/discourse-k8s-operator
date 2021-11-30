@@ -40,7 +40,7 @@ fi
 export SKIP_NODE_UGLIFY="true"
 su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 |sed 's/^/asset-build: /'
 
-# LP#1952681: First run consistently fails to process application JS
+# LP#1952681: First run consistently fails to process discourse/tests/theme_qunit_helper JS
 su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 |sed 's/^/asset-build-1: /'
 # LP#1952681: Second run consistently fails to process application JS
 su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 |sed 's/^/asset-build-2: /'
