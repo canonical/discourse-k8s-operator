@@ -87,3 +87,65 @@ options:
     type: int
     description: "Max allowed body-size (for file uploads) in megabytes, set to 0 to disable limits"
     default: 20
+  s3_enabled:
+    type: boolean
+    description: |
+      Store uploaded objects in an S3-compatible object storage service instead of a local directory.
+
+      If true, sets DISCOURSE_USE_S3=true.
+      Check https://meta.discourse.org/t/using-object-storage-for-uploads-s3-clones/148916 for more details.
+    default: false
+  s3_endpoint:
+    type: string
+    description: |
+      The S3 endpoint to use.  This may be a non-Amazon S3-compatible endpoint.
+
+      Sets DISCOURSE_S3_ENDPOINT
+    default: "https://s3.amazonaws.com"
+  s3_bucket:
+    type: string
+    description: |
+      The S3 bucket to use.
+
+      Sets DISCOURSE_S3_BUCKET.
+      Required if s3_enabled is true.
+    default: ""
+  s3_access_key_id:
+    type: string
+    description: |
+      The S3 access key ID to use.
+
+      Sets DISCOURSE_S3_ACCESS_KEY_ID.
+      Required if s3_enabled is true.
+    default: ""
+  s3_secret_access_key:
+    type: string
+    description: |
+      The S3 secret key to use.
+
+      Sets DISCOURSE_S3_SECRET_ACCESS_KEY.
+      Required if s3_enabled is true.
+    default: ""
+  s3_region:
+    type: string
+    description: |
+      The S3 region to use.
+
+      Sets DISCOURSE_S3_REGION.
+      Required if s3_enabled is true.
+    default: ""
+  s3_backup_bucket:
+    type: string
+    description: |
+      The S3 bucket to use for backups.
+
+      Sets DISCOURSE_S3_BACKUP_BUCKET.
+      Also sets DISCOURSE_BACKUP_LOCATION=s3.
+    default: ""
+  s3_cdn_url:
+    type: string
+    description: |
+      The S3 Content Delivery Network URL.
+
+      Sets DISCOURSE_S3_CDN_URL.
+    default: ""
