@@ -49,6 +49,8 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         self.harness.set_leader(True)
         self.harness.begin()
         self.maxDiff = None
+        # Let's list fields we store in config dict() which are not actual charm options
+        self.not_actual_charm_config = ['db_user', 'db_password', 'db_host', 'redis_port']
         self.configs = load_configs(os.path.join(os.path.dirname(__file__), 'fixtures'))
 
     def test_valid_configs_are_ok(self):
@@ -56,7 +58,13 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         for config_key in self.configs:
             if config_key.startswith('config_valid_'):
                 config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
-                pod_config = create_discourse_pod_config(self.configs[config_key]['config'])
+                # These are added with a relation, let's not test that here
+                test_config = self.configs[config_key]['config'].copy()
+                test_config['db_user'] = 'discourse_m'
+                test_config['db_password'] = 'a_real_password'
+                test_config['db_host'] = '10.9.89.237'
+                test_config['redis_port'] = 6379
+                pod_config = create_discourse_pod_config(test_config)
                 self.assertEqual(config_valid, True, 'Valid config {} is not recognized as valid'.format(config_key))
                 self.assertEqual(
                     pod_config,
@@ -64,9 +72,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
                     'Valid config {} does not produce expected config options for pod.'.format(config_key),
                 )
                 if "pod_spec" in self.configs[config_key]:
-                    pod_spec = get_pod_spec(
-                        self.harness.charm.framework.model.app.name, self.configs[config_key]['config']
-                    )
+                    pod_spec = get_pod_spec(self.harness.charm.framework.model.app.name, test_config)
                     self.assertEqual(
                         pod_spec,
                         self.configs[config_key]["pod_spec"],
@@ -81,7 +87,9 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
                 stored = SimpleNamespace()
                 stored.redis_relation = {}
                 missing_fields = check_for_missing_config_fields(self.configs[config_key]['config'], stored)
-                self.assertEqual(config_valid, False, 'Invalid config is not recognized as invalid')
+                self.assertEqual(
+                    config_valid, False, 'Invalid config is not recognized as invalid: {}'.format(config_key)
+                )
                 self.assertEqual(
                     missing_fields,
                     self.configs[config_key]['missing_fields'],
@@ -109,7 +117,7 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         db_event.master.host = '10.9.89.237'
         db_event.master.dbname = 'discourse'
         expected_spec = (get_pod_spec(self.harness.charm.framework.model.app.name, test_config), None)
-        self.harness.update_config(self.configs['config_valid_complete']['config'])
+        self.harness.update_config(self.configs['config_valid_complete']['config'], unset=self.not_actual_charm_config)
         self.harness.charm.on_database_relation_joined(db_event)
         self.harness.charm.on_database_changed(db_event)
         configured_spec = self.harness.get_pod_spec()
@@ -123,14 +131,16 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
         non_leader_harness.begin()
 
         action_event = mock.Mock()
-        non_leader_harness.update_config(self.configs['config_valid_complete']['config'])
+        non_leader_harness.update_config(
+            self.configs['config_valid_complete']['config'], unset=self.not_actual_charm_config
+        )
         non_leader_harness.charm.configure_pod(action_event)
         result = non_leader_harness.get_pod_spec()
         self.assertEqual(result, None, 'Non-leader does not set pod spec.')
 
     def test_lost_db_relation(self):
         """Test that losing our DB relation triggers a drop of pod config."""
-        self.harness.update_config(self.configs['config_valid_complete']['config'])
+        self.harness.update_config(self.configs['config_valid_complete']['config'], unset=self.not_actual_charm_config)
         db_event = SimpleNamespace()
         db_event.master = None
         self.harness.charm.on_database_changed(db_event)
@@ -147,11 +157,13 @@ class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
 
         action_event = mock.Mock()
         action_event.database = None
-        non_leader_harness.update_config(self.configs['config_valid_complete']['config'])
+        non_leader_harness.update_config(
+            self.configs['config_valid_complete']['config'], unset=self.not_actual_charm_config
+        )
         non_leader_harness.charm.on_database_relation_joined(action_event)
         self.assertEqual(action_event.database, None)
 
         # Now test with a leader, the database property is set.
-        self.harness.update_config(self.configs['config_valid_complete']['config'])
+        self.harness.update_config(self.configs['config_valid_complete']['config'], unset=self.not_actual_charm_config)
         self.harness.charm.on_database_relation_joined(action_event)
         self.assertEqual(action_event.database, "discourse")
