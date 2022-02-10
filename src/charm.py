@@ -40,6 +40,7 @@ THROTTLE_LEVELS = {
         'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': 'false',
     },
 }
+REQUIRED_S3_SETTINGS = ['s3_access_key_id', 's3_bucket', 's3_region', 's3_secret_access_key']
 
 
 def create_discourse_pod_config(config):
@@ -70,6 +71,9 @@ def create_discourse_pod_config(config):
     saml_config = get_saml_config(config)
     for key in saml_config:
         pod_config[key] = saml_config[key]
+
+    if config.get('s3_enabled'):
+        pod_config.update(get_s3_env(config))
 
     # We only get valid throttle levels here, otherwise it would be caught
     # by `check_for_config_problems`, so we can be sure this won't raise a
@@ -103,6 +107,29 @@ def get_saml_config(config):
             saml_config['DISCOURSE_SAML_SYNC_GROUPS_LIST'] = "|".join(saml_sync_groups)
 
     return saml_config
+
+
+def get_s3_env(config):
+    """Get the list of S3-related environment variables from charm's configuration."""
+    if not config.get('s3_enabled'):
+        return {}
+
+    s3_env = {
+        'DISCOURSE_USE_S3': True,
+        'DISCOURSE_S3_REGION': config['s3_region'],
+        'DISCOURSE_S3_ENDPOINT': config.get('s3_endpoint', 's3.amazonaws.com'),
+        'DISCOURSE_S3_ACCESS_KEY_ID': config['s3_access_key_id'],
+        'DISCOURSE_S3_SECRET_ACCESS_KEY': config['s3_secret_access_key'],
+        'DISCOURSE_S3_BUCKET': config['s3_bucket'],
+    }
+
+    if config.get('s3_backup_bucket'):
+        s3_env['DISCOURSE_S3_BACKUP_BUCKET'] = config['s3_backup_bucket']
+        s3_env['DISCOURSE_BACKUP_LOCATION'] = 's3'
+    if config.get('s3_cdn_url'):
+        s3_env['DISCOURSE_S3_CDN_URL'] = config['s3_cdn_url']
+
+    return s3_env
 
 
 def create_ingress_config(app_name, config):
@@ -200,6 +227,9 @@ def check_for_config_problems(config, stored):
 
     if config['saml_sync_groups'] and not config['saml_target_url']:
         errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
+
+    if config.get('s3_enabled'):
+        errors.extend(["'s3_enabled' requires '{}'".format(x) for x in REQUIRED_S3_SETTINGS if x not in config])
 
     return errors
 

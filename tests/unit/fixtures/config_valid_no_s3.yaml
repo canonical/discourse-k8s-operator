@@ -21,16 +21,7 @@ config:
     saml_target_url: https://login.ubuntu.com/+saml
     force_saml_login: true
     throttle_level: none
-    s3_enabled: true
-    s3_endpoint: 'not.aws.endpoi.nt'
-    s3_bucket: 'who-s-a-good-bucket?'
-    s3_access_key_id: '3|33+'
-    s3_secret_access_key: 's|kI0ure_k3Y'
-    s3_region: 'the-infinite-and-beyond'
-    s3_backup_bucket: 'backups-please'
-    s3_cdn_url: 'https://cdn.my.domain'
 pod_config:
-    DISCOURSE_BACKUP_LOCATION: 's3'
     DISCOURSE_CORS_ORIGIN: '*'
     DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
     DISCOURSE_ENABLE_CORS: true
@@ -49,14 +40,6 @@ pod_config:
     DISCOURSE_SMTP_PORT: 587
     DISCOURSE_SMTP_USER_NAME: apikey
     DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS: '0'
-    DISCOURSE_USE_S3: true
-    DISCOURSE_S3_ACCESS_KEY_ID: '3|33+'
-    DISCOURSE_S3_BACKUP_BUCKET: 'backups-please'
-    DISCOURSE_S3_BUCKET: 'who-s-a-good-bucket?'
-    DISCOURSE_S3_CDN_URL: 'https://cdn.my.domain'
-    DISCOURSE_S3_ENDPOINT: 'not.aws.endpoi.nt'
-    DISCOURSE_S3_REGION: 'the-infinite-and-beyond'
-    DISCOURSE_S3_SECRET_ACCESS_KEY: 's|kI0ure_k3Y'
     DISCOURSE_SERVE_STATIC_ASSETS: 'true'
     DISCOURSE_SAML_GROUPS_FULLSYNC: 'false'
     DISCOURSE_SAML_SYNC_GROUPS: 'true'
@@ -71,7 +54,6 @@ pod_spec:
     containers:
     - name: discourse-k8s
       envConfig:
-        DISCOURSE_BACKUP_LOCATION: 's3'
         DISCOURSE_CORS_ORIGIN: '*'
         DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
         DISCOURSE_ENABLE_CORS: true
@@ -89,14 +71,6 @@ pod_spec:
         DISCOURSE_SMTP_PASSWORD: OBV10USLYF4K3
         DISCOURSE_SMTP_PORT: 587
         DISCOURSE_SMTP_USER_NAME: apikey
-        DISCOURSE_USE_S3: true
-        DISCOURSE_S3_ACCESS_KEY_ID: '3|33+'
-        DISCOURSE_S3_BACKUP_BUCKET: 'backups-please'
-        DISCOURSE_S3_BUCKET: 'who-s-a-good-bucket?'
-        DISCOURSE_S3_CDN_URL: 'https://cdn.my.domain'
-        DISCOURSE_S3_ENDPOINT: 'not.aws.endpoi.nt'
-        DISCOURSE_S3_REGION: 'the-infinite-and-beyond'
-        DISCOURSE_S3_SECRET_ACCESS_KEY: 's|kI0ure_k3Y'
         DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS: '0'
         DISCOURSE_SERVE_STATIC_ASSETS: 'true'
         DISCOURSE_SAML_GROUPS_FULLSYNC: 'false'
