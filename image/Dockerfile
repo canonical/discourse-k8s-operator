@@ -73,6 +73,8 @@ RUN echo "base image complete"
 FROM base-image AS markdown-saml
 
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-saml.git
+# Remove additions incompatible with Discourse versions < 2.8
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins/discourse-saml && git reset --hard 851f6cebe3fdd48019660b236a447abb6ddf9c89
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git
 RUN chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/plugins
 # Have to determine the gems needed and install them now, otherwise Discourse will
@@ -86,6 +88,8 @@ RUN echo "markdown-saml image complete"
 FROM base-image AS markdown-saml-solved
 
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-saml.git
+# Remove additions incompatible with Discourse versions < 2.8
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins/discourse-saml && git reset --hard 851f6cebe3fdd48019660b236a447abb6ddf9c89
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-solved.git
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git
 RUN chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/plugins
