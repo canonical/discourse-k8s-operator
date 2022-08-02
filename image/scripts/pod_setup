@@ -36,15 +36,7 @@ else
 fi
 ### MIGRATION LOCK WORKAROUND ENDS HERE
 
-# It is safe to build assets in the background to improve startup time.
-export SKIP_NODE_UGLIFY="true"
-
-# LP#1952681: First run consistently fails to process discourse/tests/theme_qunit_helper JS
-su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 |sed 's/^/asset-build-1: /'
-# LP#1952681: Second run consistently fails to process application JS
-su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 |sed 's/^/asset-build-2: /'
-# LP#1952681: Third run consistently succeeds
-su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 |sed 's/^/asset-build-3: /'
+su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 | sed 's/^/asset-build: /'
 
 if [ ! -z "${DISCOURSE_USE_S3}" ] && [ "${DISCOURSE_USE_S3}" == "true" ]; then
 	echo "Discourse is configured to use S3:"
