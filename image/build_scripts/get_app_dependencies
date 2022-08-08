@@ -16,7 +16,7 @@ apt-get install -y brotli \
                    libxml2-dev \
                    libxslt1-dev \
                    libz-dev \
-                   node-terser \
+                   uglifyjs.terser \
                    node-uglify \
                    optipng \
                    pngquant \
@@ -27,3 +27,11 @@ apt-get install -y brotli \
                    ruby2.7-dev \
                    zlib1g-dev
 
+# Older versions of the uglifyjs.terser package install a uglifyjs.terser
+# command but not the terser command, terser command exists in $PATH is
+# vital to trigger js assets compression using node. Manually create the
+# terser command if it does not exist. Please remove this line if the
+# base image is >= 22.04. Also, please consider removing the node-uglify
+# when upgrading to discourse >= 2.8.0, since the node-uglify is not
+# required to trigger node js assets compression, only terser will do fine.
+which terser || ln -s $(which uglifyjs.terser) /usr/local/bin/terser
