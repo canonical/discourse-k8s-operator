@@ -100,6 +100,23 @@ RUN cd ${CONTAINER_APP_ROOT}/app && su -s /bin/bash -c 'bin/bundle install' ${CO
 
 RUN echo "markdown-saml-solved image complete"
 
+FROM base-image AS markdown-mermaid-saml-solved
+
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-saml.git
+# Remove additions incompatible with Discourse versions < 2.8
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins/discourse-saml && git reset --hard 851f6cebe3fdd48019660b236a447abb6ddf9c89
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-solved.git
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/docker_manager.git
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/unfoldingWord-dev/discourse-mermaid.git
+RUN chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/plugins
+# Have to determine the gems needed and install them now, otherwise Discourse will
+# try to install them at runtime, which may not work due to network access issues.
+RUN cd ${CONTAINER_APP_ROOT}/app/plugins/discourse-saml && mkdir -p gems && chown ${CONTAINER_APP_USERNAME} gems && echo 'source "https://rubygems.org"' > Gemfile ; grep -e ^gem plugin.rb >> Gemfile && su -s /bin/bash -c 'gem install bundler' ${CONTAINER_APP_USERNAME} && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install --gemfile=Gemfile --path=${CONTAINER_APP_ROOT}/app/plugins/discourse-saml/gems' ${CONTAINER_APP_USERNAME} && cd gems && ln -s ruby/* ./
+RUN cd ${CONTAINER_APP_ROOT}/app && su -s /bin/bash -c 'bin/bundle install' ${CONTAINER_APP_USERNAME}
+
+RUN echo "markdown-mermaid-saml-solved image complete"
+
 # Build the final image based on the IMAGE_TYPE specified.
 FROM ${IMAGE_TYPE} AS final
 # Redeclare IMAGE_TYPE variable so it can be referenced inside this build
