@@ -107,7 +107,6 @@ RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discour
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins/discourse-saml && git reset --hard 851f6cebe3fdd48019660b236a447abb6ddf9c89
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/discourse-solved.git
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git
-RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/discourse/docker_manager.git
 RUN cd ${CONTAINER_APP_ROOT}/app/plugins && git clone https://github.com/unfoldingWord-dev/discourse-mermaid.git
 RUN chown -R ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${CONTAINER_APP_ROOT}/app/plugins
 # Have to determine the gems needed and install them now, otherwise Discourse will
