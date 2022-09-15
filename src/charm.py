@@ -12,7 +12,6 @@ from charms.redis_k8s.v0.redis import (
 from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
-from ops.pebble import ConnectionError
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 
