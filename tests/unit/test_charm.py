@@ -32,10 +32,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
     def test_config_changed_when_no_saml_target(self):
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
-        self.harness.update_config({
-            "external_hostname": "discourse.local",
-            "force_saml_login": True,
-        })
+        self.harness.update_config(
+            {
+                "external_hostname": "discourse.local",
+                "force_saml_login": True,
+            }
+        )
         self.assertEqual(
             self.harness.model.unit.status,
             BlockedStatus("force_saml_login can not be true without a saml_target_url"),
@@ -44,10 +46,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
     def test_config_changed_when_no_cors(self):
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
-        self.harness.update_config({
-            "cors_origin": "",
-            "external_hostname": "discourse.local",
-        })
+        self.harness.update_config(
+            {
+                "cors_origin": "",
+                "external_hostname": "discourse.local",
+            }
+        )
         self.assertEqual(
             self.harness.model.unit.status,
             BlockedStatus("Required configuration missing: cors_origin"),
@@ -56,10 +60,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
     def test_config_changed_when_throttle_mode_invalid(self):
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
-        self.harness.update_config({
-            "external_hostname": "discourse.local",
-            "throttle_level": "Scream",
-        })
+        self.harness.update_config(
+            {
+                "external_hostname": "discourse.local",
+                "throttle_level": "Scream",
+            }
+        )
         self.assertEqual(
             self.harness.model.unit.status,
             BlockedStatus("throttle_level must be one of: none permissive strict"),
@@ -68,15 +74,17 @@ class TestDiscourseK8sCharm(unittest.TestCase):
     def test_config_changed_when_valid(self):
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
-        self.harness.update_config({
-            "enable_cors": True,
-            "external_hostname": "discourse.local",
-            "force_saml_login": True,
-            "saml_target_url": "https://login.ubuntu.com/+saml",
-            "smtp_password": "OBV10USLYF4K3",
-            "smtp_username": "apikey",
-            "tls_secret_name": "somesecret",
-        })
+        self.harness.update_config(
+            {
+                "enable_cors": True,
+                "external_hostname": "discourse.local",
+                "force_saml_login": True,
+                "saml_target_url": "https://login.ubuntu.com/+saml",
+                "smtp_password": "OBV10USLYF4K3",
+                "smtp_username": "apikey",
+                "tls_secret_name": "somesecret",
+            }
+        )
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         print(updated_plan)
@@ -94,7 +102,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertEqual(
             "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5",
-            updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"]
+            updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"],
         )
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
         self.assertEqual("https://login.ubuntu.com/+saml", updated_plan_env["DISCOURSE_SAML_TARGET_URL"])
@@ -106,15 +114,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("OBV10USLYF4K3", updated_plan_env["DISCOURSE_SMTP_PASSWORD"])
         self.assertEqual(587, updated_plan_env["DISCOURSE_SMTP_PORT"])
         self.assertEqual("apikey", updated_plan_env["DISCOURSE_SMTP_USER_NAME"])
-        
+
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 
-        self.assertEqual(
-            "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
-        )
-        self.assertEqual(
-           "somesecret", self.harness.charm.ingress.config_dict["tls-secret-name"]
-        )
+        self.assertEqual("discourse.local", self.harness.charm.ingress.config_dict["service-hostname"])
+        self.assertEqual("somesecret", self.harness.charm.ingress.config_dict["tls-secret-name"])
         self.assertEqual(20, self.harness.charm.ingress.config_dict["max-body-size"])
 
     def test_db_relation(self):
@@ -122,9 +126,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.set_leader(True)
         # testing harness not re-emits deferred events, manually trigger that
         self.harness.framework.reemit()
-        db_relation_data = self.harness.get_relation_data(
-            self.db_relation_id, self.harness.charm.app.name
-        )
+        db_relation_data = self.harness.get_relation_data(self.db_relation_id, self.harness.charm.app.name)
         self.assertEqual(
             db_relation_data.get("database"),
             "discourse-k8s",
@@ -141,6 +143,4 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         redis_relation_id = self.harness.add_relation("redis", self.harness.charm.app.name)
         self.harness.add_relation_unit(redis_relation_id, "redis/0")
-        self.harness.charm._stored.redis_relation = {
-            redis_relation_id: {"hostname": "redis-host", "port": 1010}
-        }
+        self.harness.charm._stored.redis_relation = {redis_relation_id: {"hostname": "redis-host", "port": 1010}}

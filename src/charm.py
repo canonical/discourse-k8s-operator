@@ -42,6 +42,7 @@ THROTTLE_LEVELS = {
 
 SERVICE_NAME = "discourse"
 
+
 class DiscourseCharm(CharmBase):
     on = RedisRelationCharmEvents()
     _stored = StoredState()
@@ -122,7 +123,6 @@ class DiscourseCharm(CharmBase):
 
         return saml_config
 
-
     def check_for_config_problems(self):
         """Check if there are issues with the juju config.
 
@@ -143,7 +143,6 @@ class DiscourseCharm(CharmBase):
             errors.append('force_saml_login can not be true without a saml_target_url')
 
         return errors
-
 
     def check_for_missing_config_fields(self):
         """Check for missing fields in juju config.
@@ -191,7 +190,7 @@ class DiscourseCharm(CharmBase):
             'DISCOURSE_CORS_ORIGIN': self.config['cors_origin'],
             'DISCOURSE_DB_HOST': self._stored.db_host,
             'DISCOURSE_DB_NAME': self._stored.db_name,
-            'DISCOURSE_DB_PASSWORD':self._stored.db_password,
+            'DISCOURSE_DB_PASSWORD': self._stored.db_password,
             'DISCOURSE_DB_USERNAME': self._stored.db_user,
             'DISCOURSE_DEVELOPER_EMAILS': self.config['developer_emails'],
             'DISCOURSE_ENABLE_CORS': self.config['enable_cors'],
