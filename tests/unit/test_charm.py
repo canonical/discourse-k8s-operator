@@ -3,135 +3,144 @@
 # Copyright 2020 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-import copy
-import glob
-
-# import mock
-import os
 import unittest
-import yaml
 
-from types import SimpleNamespace
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.testing import Harness
 
-from charm import (
-    check_for_missing_config_fields,
-    create_discourse_environment_settings,
-    DiscourseCharm,
-)
-
-from ops import testing
+from tests.unit._patched_charm import DiscourseCharm, pgsql_patch
 
 
-def load_configs(directory):
-    """Load configs for use by tests.
-
-    Valid and invalid configs are present in the fixtures directory. The files
-    contain the juju config, along with the spec that that config should
-    produce in the case of valid configs. In the case of invalid configs, they
-    contain the juju config and the error that should be triggered by the
-    config. These scenarios are tested below. Additional config variations can
-    be created by creating an appropriately named config file in the fixtures
-    directory. Valid configs should be named: config_valid_###.yaml and invalid
-    configs should be named: config_invalid_###.yaml."""
-    configs = {}
-    for filename in glob.glob(os.path.join(directory, 'config*.yaml')):
-        with open(filename) as file:
-            name, _ = os.path.splitext(os.path.basename(filename))
-            configs[name] = yaml.full_load(file)
-    return configs
-
-
-class TestDiscourseK8sCharmHooksDisabled(unittest.TestCase):
+class TestDiscourseK8sCharm(unittest.TestCase):
     def setUp(self):
-        self.harness = testing.Harness(DiscourseCharm)
-        self.harness.disable_hooks()
-        self.harness.set_leader(True)
+        pgsql_patch.start()
+        self.harness = Harness(DiscourseCharm)
+        self.addCleanup(self.harness.cleanup)
         self.harness.begin()
-        self.maxDiff = None
-        self.configs = load_configs(os.path.join(os.path.dirname(__file__), 'fixtures'))
+        self.harness.set_leader(True)
 
-    def test_valid_configs_are_ok(self):
-        """Test that a valid config is considered valid."""
-        for config_key in self.configs:
-            if config_key.startswith('config_valid_'):
-                config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
-                pod_config = create_discourse_environment_settings(self.configs[config_key]['config'])
-                self.assertEqual(config_valid, True, 'Valid config {} is not recognized as valid'.format(config_key))
-                self.assertEqual(
-                    pod_config,
-                    self.configs[config_key]['pod_config'],
-                    'Valid config {} does not produce expected config options for pod.'.format(config_key),
-                )
-                # if "pod_spec" in self.configs[config_key]:
-                #    pod_spec = get_pod_spec(
-                #        self.harness.charm.framework.model.app.name, self.configs[config_key]['config']
-                #    )
-                #    self.assertEqual(
-                #        pod_spec,
-                #        self.configs[config_key]["pod_spec"],
-                #        "Valid config {} does not produce expected pod_spec.".format(config_key),
-                #    )
+    def tearDown(self):
+        pgsql_patch.stop()
 
-    def test_invalid_configs_are_recognized(self):
-        """Test that bad configs are identified by the charm."""
-        for config_key in self.configs:
-            if config_key.startswith('config_invalid_'):
-                config_valid = self.harness.charm.check_config_is_valid(self.configs[config_key]['config'])
-                stored = SimpleNamespace()
-                stored.redis_relation = {}
-                missing_fields = check_for_missing_config_fields(self.configs[config_key]['config'], stored)
-                self.assertEqual(config_valid, False, 'Invalid config is not recognized as invalid')
-                self.assertEqual(
-                    missing_fields,
-                    self.configs[config_key]['missing_fields'],
-                    'Invalid config {} does not fail as expected.'.format(config_key),
-                )
+    def test_db_relation_not_ready(self):
+        self.harness.container_pebble_ready("discourse")
+        self.assertEqual(
+            self.harness.model.unit.status,
+            WaitingStatus("Waiting for database relation"),
+        )
 
-    def test_charm_config_process(self):
-        """Test that the entire config process for the charm works."""
-        test_config = copy.deepcopy(self.configs['config_valid_complete']['config'])
-        test_config['db_user'] = 'discourse_m'
-        test_config['db_password'] = 'a_real_password'
-        test_config['db_host'] = '10.9.89.237'
-        test_config['redis_host'] = '10.9.89.197'
-        test_config['redis_port'] = 6379
-        db_event = SimpleNamespace()
-        db_event.master = SimpleNamespace()
-        db_event.master.user = 'discourse_m'
-        db_event.master.password = 'a_real_password'
-        db_event.master.host = '10.9.89.237'
-        db_event.master.dbname = 'discourse'
-        # expected_spec = (get_pod_spec(self.harness.charm.framework.model.app.name, test_config), None)
-        # self.harness.update_config(self.configs['config_valid_complete']['config'])
-        # self.harness.charm.on_database_relation_joined(db_event)
-        # self.harness.charm.on_database_changed(db_event)
-        # configured_spec = self.harness.get_pod_spec()
-        # self.assertEqual(configured_spec, expected_spec, 'Configured spec does not match expected pod spec.')
+    def test_config_changed_when_no_saml_target(self):
+        self.add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config({
+            "external_hostname": "discourse.local",
+            "force_saml_login": True,
+        })
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("force_saml_login can not be true without a saml_target_url"),
+        )
 
-        #    def test_lost_db_relation(self):
-        #        """Test that losing our DB relation triggers a drop of pod config."""
-        #        self.harness.update_config(self.configs['config_valid_complete']['config'])
-        #        db_event = SimpleNamespace()
-        #        db_event.master = None
-        #        self.harness.charm.on_database_changed(db_event)
-        #        configured_spec = self.harness.get_pod_spec()
-        #        self.assertEqual(configured_spec, None, 'Lost DB relation does not result in empty spec as expected')
+    def test_config_changed_when_no_cors(self):
+        self.add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config({
+            "cors_origin": "",
+            "external_hostname": "discourse.local",
+        })
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("Required configuration missing: cors_origin"),
+        )
 
-        #    def test_on_database_relation_joined(self):
-        #        """Test joining the DB relation."""
-        #        # First test with a non-leader, confirm the database property isn't set.
-        #        non_leader_harness = testing.Harness(DiscourseCharm)
-        #        non_leader_harness.disable_hooks()
-        #        non_leader_harness.set_leader(False)
-        #        non_leader_harness.begin()
-        #
-        #        action_event = mock.Mock()
-        #        action_event.database = None
-        #        non_leader_harness.update_config(self.configs['config_valid_complete']['config'])
-        #        non_leader_harness.charm.on_database_relation_joined(action_event)
-        #        self.assertEqual(action_event.database, None)
+    def test_config_changed_when_throttle_mode_invalid(self):
+        self.add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config({
+            "external_hostname": "discourse.local",
+            "throttle_level": "Scream",
+        })
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("throttle_level must be one of: none permissive strict"),
+        )
 
-        # Now test with a leader, the database property is set.
-        # self.harness.update_config(self.configs['config_valid_complete']['config'])
-        # self.harness.charm.on_database_relation_joined(action_event)
-        # self.assertEqual(action_event.database, "discourse")
+    def test_config_changed_when_valid(self):
+        self.add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config({
+            "enable_cors": True,
+            "external_hostname": "discourse.local",
+            "force_saml_login": True,
+            "saml_target_url": "https://login.ubuntu.com/+saml",
+            "smtp_password": "OBV10USLYF4K3",
+            "smtp_username": "apikey",
+            "tls_secret_name": "somesecret",
+        })
+
+        updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
+        print(updated_plan)
+        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+
+        self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
+        self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
+        self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_DB_NAME"])
+        self.assertEqual("somepasswd", updated_plan_env["DISCOURSE_DB_PASSWORD"])
+        self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
+        self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
+        self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
+        self.assertEqual("discourse.local", updated_plan_env["DISCOURSE_HOSTNAME"])
+        self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
+        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertEqual(
+            "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5",
+            updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"]
+        )
+        self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
+        self.assertEqual("https://login.ubuntu.com/+saml", updated_plan_env["DISCOURSE_SAML_TARGET_URL"])
+        self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
+        self.assertEqual("127.0.0.1", updated_plan_env["DISCOURSE_SMTP_ADDRESS"])
+        self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"])
+        self.assertEqual("foo.internal", updated_plan_env["DISCOURSE_SMTP_DOMAIN"])
+        self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"])
+        self.assertEqual("OBV10USLYF4K3", updated_plan_env["DISCOURSE_SMTP_PASSWORD"])
+        self.assertEqual(587, updated_plan_env["DISCOURSE_SMTP_PORT"])
+        self.assertEqual("apikey", updated_plan_env["DISCOURSE_SMTP_USER_NAME"])
+        
+        self.assertEqual(self.harness.model.unit.status, ActiveStatus())
+
+        self.assertEqual(
+            "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
+        )
+        self.assertEqual(
+           "somesecret", self.harness.charm.ingress.config_dict["tls-secret-name"]
+        )
+        self.assertEqual(20, self.harness.charm.ingress.config_dict["max-body-size"])
+
+    def test_db_relation(self):
+        self.add_database_relations()
+        self.harness.set_leader(True)
+        # testing harness not re-emits deferred events, manually trigger that
+        self.harness.framework.reemit()
+        db_relation_data = self.harness.get_relation_data(
+            self.db_relation_id, self.harness.charm.app.name
+        )
+        self.assertEqual(
+            db_relation_data.get("database"),
+            "discourse-k8s",
+            "database name should be set after relation joined",
+        )
+
+    def add_database_relations(self):
+        self.harness.charm._stored.db_name = "discourse-k8s"
+        self.harness.charm._stored.db_user = "someuser"
+        self.harness.charm._stored.db_password = "somepasswd"
+        self.harness.charm._stored.db_host = "dbhost"
+        self.db_relation_id = self.harness.add_relation("db", self.harness.charm.app.name)
+        self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
+
+        redis_relation_id = self.harness.add_relation("redis", self.harness.charm.app.name)
+        self.harness.add_relation_unit(redis_relation_id, "redis/0")
+        self.harness.charm._stored.redis_relation = {
+            redis_relation_id: {"hostname": "redis-host", "port": 1010}
+        }

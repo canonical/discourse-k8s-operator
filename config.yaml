@@ -5,7 +5,7 @@ options:
     default: ""
   external_hostname:
     type: string
-    description: "External hostname this discourse instance should respond to. If unset, will used deployed application name."
+    description: "External hostname this discourse instance should respond to. Defaults to the deployed application name."
     default: ""
   enable_cors:
     type: boolean
