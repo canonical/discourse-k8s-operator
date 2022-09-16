@@ -71,6 +71,38 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             BlockedStatus("throttle_level must be one of: none permissive strict"),
         )
 
+    def test_config_changed_when_saml_sync_groups_and_no_url_invalid(self):
+        self.add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config(
+            {
+                "external_hostname": "discourse.local",
+                "saml_sync_groups": "group1",
+            }
+        )
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("'saml_sync_groups' cannot be specified without a 'saml_target_url'"),
+        )
+
+    def test_config_changed_when_s3_and_no_bucket_invalid(self):
+        self.add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config(
+            {
+                "external_hostname": "discourse.local",
+                "s3_access_key_id": "3|33+",
+                "s3_enabled": True,
+                "s3_endpoint": "s3.endpoint",
+                "s3_region": "the-infinite-and-beyond",
+                "s3_secret_access_key": "s|kI0ure_k3Y",
+            }
+        )
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("'s3_enabled' requires 's3_bucket'"),
+        )
+
     def test_config_changed_when_valid(self):
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
@@ -80,16 +112,25 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 "external_hostname": "discourse.local",
                 "force_saml_login": True,
                 "saml_target_url": "https://login.ubuntu.com/+saml",
+                "saml_sync_groups": "group1",
                 "smtp_password": "OBV10USLYF4K3",
                 "smtp_username": "apikey",
+                "s3_access_key_id": "3|33+",
+                "s3_backup_bucket": "back-bucket",
+                "s3_bucket": "who-s-a-good-bucket?",
+                "s3_cdn_url": "s3.cdn",
+                "s3_enabled": True,
+                "s3_endpoint": "s3.endpoint",
+                "s3_region": "the-infinite-and-beyond",
+                "s3_secret_access_key": "s|kI0ure_k3Y",
                 "tls_secret_name": "somesecret",
             }
         )
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
-        print(updated_plan)
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
 
+        self.assertEqual("s3", updated_plan_env["DISCOURSE_BACKUP_LOCATION"])
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_DB_NAME"])
@@ -103,7 +144,17 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertIsNotNone(updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"])
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
         self.assertEqual("https://login.ubuntu.com/+saml", updated_plan_env["DISCOURSE_SAML_TARGET_URL"])
+        self.assertEqual("false",updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"])
+        self.assertEqual("true",updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"])
+        self.assertEqual("group1",updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"])
         self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
+        self.assertEqual("3|33+", updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"])
+        self.assertEqual("back-bucket",updated_plan_env["DISCOURSE_S3_BACKUP_BUCKET"])
+        self.assertEqual("s3.cdn",updated_plan_env["DISCOURSE_S3_CDN_URL"])
+        self.assertEqual("who-s-a-good-bucket?", updated_plan_env["DISCOURSE_S3_BUCKET"])
+        self.assertEqual("s3.endpoint", updated_plan_env["DISCOURSE_S3_ENDPOINT"])
+        self.assertEqual("the-infinite-and-beyond", updated_plan_env["DISCOURSE_S3_REGION"])
+        self.assertEqual("s|kI0ure_k3Y", updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"])
         self.assertEqual("127.0.0.1", updated_plan_env["DISCOURSE_SMTP_ADDRESS"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"])
         self.assertEqual("foo.internal", updated_plan_env["DISCOURSE_SMTP_DOMAIN"])
@@ -111,6 +162,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("OBV10USLYF4K3", updated_plan_env["DISCOURSE_SMTP_PASSWORD"])
         self.assertEqual(587, updated_plan_env["DISCOURSE_SMTP_PORT"])
         self.assertEqual("apikey", updated_plan_env["DISCOURSE_SMTP_USER_NAME"])
+        self.assertTrue(updated_plan_env["DISCOURSE_USE_S3"])
 
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
 

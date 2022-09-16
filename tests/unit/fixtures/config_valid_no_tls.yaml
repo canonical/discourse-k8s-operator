@@ -1,0 +1,109 @@
+config:
+    cors_origin: '*'
+    db_name: discourse
+    developer_emails: some.person@example.com
+    discourse_image: discourse-k8s:1.0.7f
+    enable_cors: true
+    external_hostname: discourse.local
+    image_pass: ''
+    image_user: ''
+    max_body_size: 20
+    redis_host: 10.9.89.197
+    smtp_address: 167.89.123.58
+    smtp_authentication: login
+    smtp_domain: example.com
+    smtp_openssl_verify_mode: none
+    smtp_password: OBV10USLYF4K3
+    smtp_port: 587
+    smtp_username: apikey
+    tls_secret_name: ''
+    saml_sync_groups: ''
+    saml_target_url: https://login.ubuntu.com/+saml
+    force_saml_login: true
+    throttle_level: none
+pod_config:
+    DISCOURSE_CORS_ORIGIN: '*'
+    DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
+    DISCOURSE_ENABLE_CORS: true
+    DISCOURSE_HOSTNAME: discourse.local
+    DISCOURSE_DB_HOST: 10.9.89.237
+    DISCOURSE_DB_NAME: discourse
+    DISCOURSE_DB_PASSWORD: a_real_password
+    DISCOURSE_DB_USERNAME: discourse_m
+    DISCOURSE_REDIS_HOST: 10.9.89.197
+    DISCOURSE_REDIS_PORT: 6379
+    DISCOURSE_SMTP_ADDRESS: 167.89.123.58
+    DISCOURSE_SMTP_AUTHENTICATION: login
+    DISCOURSE_SMTP_DOMAIN: example.com
+    DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: none
+    DISCOURSE_SMTP_PASSWORD: OBV10USLYF4K3
+    DISCOURSE_SMTP_PORT: 587
+    DISCOURSE_SMTP_USER_NAME: apikey
+    DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS: '0'
+    DISCOURSE_SERVE_STATIC_ASSETS: 'true'
+    DISCOURSE_SAML_TARGET_URL: https://login.ubuntu.com/+saml
+    DISCOURSE_SAML_FULL_SCREEN_LOGIN: "true"
+    DISCOURSE_SAML_CERT_FINGERPRINT: 32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5
+    DISCOURSE_MAX_REQS_PER_IP_MODE: "none"
+    DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE: "false"
+pod_spec:
+    version: 3
+    containers:
+    - name: discourse-k8s
+      envConfig:
+        DISCOURSE_CORS_ORIGIN: '*'
+        DISCOURSE_DEVELOPER_EMAILS: some.person@example.com
+        DISCOURSE_ENABLE_CORS: true
+        DISCOURSE_HOSTNAME: discourse.local
+        DISCOURSE_DB_HOST: 10.9.89.237
+        DISCOURSE_DB_NAME: discourse
+        DISCOURSE_DB_PASSWORD: a_real_password
+        DISCOURSE_DB_USERNAME: discourse_m
+        DISCOURSE_REDIS_HOST: 10.9.89.197
+        DISCOURSE_REDIS_PORT: 6379
+        DISCOURSE_SMTP_ADDRESS: 167.89.123.58
+        DISCOURSE_SMTP_AUTHENTICATION: login
+        DISCOURSE_SMTP_DOMAIN: example.com
+        DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: none
+        DISCOURSE_SMTP_PASSWORD: OBV10USLYF4K3
+        DISCOURSE_SMTP_PORT: 587
+        DISCOURSE_SMTP_USER_NAME: apikey
+        DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS: '0'
+        DISCOURSE_SERVE_STATIC_ASSETS: 'true'
+        DISCOURSE_SAML_TARGET_URL: https://login.ubuntu.com/+saml
+        DISCOURSE_SAML_FULL_SCREEN_LOGIN: "true"
+        DISCOURSE_SAML_CERT_FINGERPRINT: 32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5
+        DISCOURSE_MAX_REQS_PER_IP_MODE: "none"
+        DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE: "false"
+      imageDetails:
+        imagePath: discourse-k8s:1.0.7f
+      imagePullPolicy: 'IfNotPresent'
+      kubernetes:
+        readinessProbe:
+          httpGet:
+            path: '/srv/status'
+            port: 3000
+      ports:
+        - containerPort: 3000
+          protocol: TCP
+    kubernetesResources:
+        ingressResources:
+            - annotations:
+                nginx.ingress.kubernetes.io/affinity: 'cookie'
+                nginx.ingress.kubernetes.io/affinity-mode: 'balanced'
+                nginx.ingress.kubernetes.io/proxy-body-size: '20m'
+                nginx.ingress.kubernetes.io/session-cookie-change-on-failure: 'true'
+                nginx.ingress.kubernetes.io/session-cookie-max-age: '3600'
+                nginx.ingress.kubernetes.io/session-cookie-name: 'DISCOURSE_AFFINITY'
+                nginx.ingress.kubernetes.io/session-cookie-samesite: 'Lax'
+                nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+              name: discourse-k8s-ingress
+              spec:
+                rules:
+                  - host: discourse.local
+                    http:
+                        paths:
+                         - backend:
+                             serviceName: discourse-k8s
+                             servicePort: 3000
+                           path: '/'

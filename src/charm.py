@@ -38,6 +38,7 @@ THROTTLE_LEVELS = {
         "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
     },
 }
+REQUIRED_S3_SETTINGS = ['s3_access_key_id', 's3_bucket', 's3_region', 's3_secret_access_key']
 
 SERVICE_NAME = "discourse"
 
@@ -61,7 +62,7 @@ class DiscourseCharm(CharmBase):
             db_host=None,
             redis_relation={},
         )
-        self.ingress = IngressRequires(self, self._ingress_config())
+        self.ingress = IngressRequires(self, self._make_ingress_config())
         self.framework.observe(self.on.leader_elected, self._config_changed)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
@@ -74,7 +75,7 @@ class DiscourseCharm(CharmBase):
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._config_changed)
 
-    def _ingress_config(self):
+    def _make_ingress_config(self):
         """Return a dict of our ingress config."""
         ingress_config = {
             "service-hostname": self.config["external_hostname"] or self.app.name,
@@ -82,6 +83,7 @@ class DiscourseCharm(CharmBase):
             "service-port": 3000,
             "session-cookie-max-age": 3600,
         }
+
         if self.config["tls_secret_name"]:
             ingress_config["tls-secret-name"] = self.config["tls_secret_name"]
         if self.config["max_body_size"]:
@@ -120,6 +122,15 @@ class DiscourseCharm(CharmBase):
             if fingerprint:
                 saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = fingerprint
 
+        saml_sync_groups = [x.strip() for x in self.config["saml_sync_groups"].split(",") if x.strip()]
+        if saml_sync_groups:
+            # Per https://github.com/discourse/discourse-saml setting this to `true`
+            # means the assigned groups will be completely synced including adding
+            # AND removing groups based on the SAML provider.
+            saml_config["DISCOURSE_SAML_GROUPS_FULLSYNC"] = "false"
+            saml_config["DISCOURSE_SAML_SYNC_GROUPS"] = "true"
+            saml_config["DISCOURSE_SAML_SYNC_GROUPS_LIST"] = "|".join(saml_sync_groups)
+
         return saml_config
 
     def _check_for_config_problems(self):
@@ -140,6 +151,15 @@ class DiscourseCharm(CharmBase):
 
         if self.config["force_saml_login"] and self.config["saml_target_url"] == "":
             errors.append("force_saml_login can not be true without a saml_target_url")
+
+        if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
+            errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
+
+        if self.config.get("s3_enabled"):
+            [
+                errors.append(f"'s3_enabled' requires '{s3_config}'")
+                for s3_config in REQUIRED_S3_SETTINGS if not self.config[s3_config]
+            ]
 
         return errors
 
@@ -172,6 +192,25 @@ class DiscourseCharm(CharmBase):
 
     def _check_db_is_valid(self):
         return self._stored.db_name
+
+    def _get_s3_env(self):
+        """Get the list of S3-related environment variables from charm's configuration."""
+
+        s3_env = {
+            "DISCOURSE_S3_ACCESS_KEY_ID": self.config["s3_access_key_id"],
+            "DISCOURSE_S3_BUCKET": self.config["s3_bucket"],
+            "DISCOURSE_S3_ENDPOINT": self.config.get("s3_endpoint", "s3.amazonaws.com"),
+            "DISCOURSE_S3_REGION": self.config["s3_region"],
+            "DISCOURSE_S3_SECRET_ACCESS_KEY": self.config["s3_secret_access_key"],
+            "DISCOURSE_USE_S3": True,
+        }
+        if self.config.get("s3_backup_bucket"):
+            s3_env["DISCOURSE_BACKUP_LOCATION"] = "s3"
+            s3_env["DISCOURSE_S3_BACKUP_BUCKET"] = self.config["s3_backup_bucket"]
+        if self.config.get("s3_cdn_url"):
+            s3_env["DISCOURSE_S3_CDN_URL"] = self.config["s3_cdn_url"]
+
+        return s3_env
 
     def _create_discourse_environment_settings(self):
         """Create the pod environment config from the existing config."""
@@ -210,6 +249,9 @@ class DiscourseCharm(CharmBase):
         saml_config = self._get_saml_config()
         for key in saml_config:
             pod_config[key] = saml_config[key]
+
+        if self.config.get("s3_enabled"):
+            pod_config.update(self._get_s3_env())
 
         # We only get valid throttle levels here, otherwise it would be caught
         # by `check_for_config_problems`, so we can be sure this won"t raise a
@@ -264,7 +306,7 @@ class DiscourseCharm(CharmBase):
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
-            self.ingress.update_config(self._ingress_config())
+            self.ingress.update_config(self._make_ingress_config())
             self.model.unit.status = ActiveStatus()
 
     def _on_database_relation_joined(self, event):

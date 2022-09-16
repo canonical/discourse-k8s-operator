@@ -36,6 +36,14 @@ else
 fi
 ### MIGRATION LOCK WORKAROUND ENDS HERE
 
-# It is safe to build assets in the background to improve startup time.
-export SKIP_NODE_UGLIFY="true"
-su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 |sed 's/^/asset-build: /'
+su -s /bin/bash -c "bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1 | sed 's/^/asset-build: /'
+
+if [ ! -z "${DISCOURSE_USE_S3}" ] && [ "${DISCOURSE_USE_S3}" == "true" ]; then
+	echo "Discourse is configured to use S3:"
+	echo "S3_ENDPOINT=${DISCOURSE_S3_ENDPOINT}"
+	echo "S3_BUCKET=${DISCOURSE_S3_BUCKET}"
+	echo "Running migration to S3..."
+	su -s /bin/bash -c "bin/bundle exec rake s3:upload_assets RAILS_ENV=$RAILS_ENV" ${CONTAINER_APP_USERNAME} 2>&1
+else
+	echo "Not running migration to S3 (DISCOURSE_USE_S3=${DISCOURSE_USE_S3})."
+fi
