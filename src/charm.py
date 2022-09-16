@@ -326,7 +326,7 @@ class DiscourseCharm(CharmBase):
         # unless the relation is dropped and recreated.
         if self.model.unit.is_leader():
             event.database = db_name
-            event.extensions = ["hstore"]
+            event.extensions = ["hstore:public", "pg_trgm:public"]
         elif event.database != db_name:
             # Leader has not yet set requirements. Defer, in case this unit
             # becomes leader and needs to perform that operation.
