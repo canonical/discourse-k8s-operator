@@ -23,6 +23,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         pgsql_patch.stop()
 
     def test_db_relation_not_ready(self):
+        """
+        arrange: given a deployed discourse charm
+        act: when pebble ready event is triggered
+        assert: it will wait for the db relation.
+        """
         self.harness.container_pebble_ready("discourse")
         self.assertEqual(
             self.harness.model.unit.status,
@@ -30,6 +35,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         )
 
     def test_config_changed_when_no_saml_target(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when force_saml_login configuration is True and there's no saml_target_url
+        assert: it will get to blocked status waiting for the later.
+        """
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
         self.harness.update_config(
@@ -43,7 +53,31 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             BlockedStatus("force_saml_login can not be true without a saml_target_url"),
         )
 
+    def test_config_changed_when_saml_sync_groups_and_no_url_invalid(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when saml_sync_groups configuration is provided and there's no saml_target_url
+        assert: it will get to blocked status waiting for the later.
+        """
+        self.add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config(
+            {
+                "external_hostname": "discourse.local",
+                "saml_sync_groups": "group1",
+            }
+        )
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus("'saml_sync_groups' cannot be specified without a 'saml_target_url'"),
+        )
+
     def test_config_changed_when_no_cors(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when cors_origin configuration is empty
+        assert: it will get to blocked status waiting for it.
+        """
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
         self.harness.update_config(
@@ -58,6 +92,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         )
 
     def test_config_changed_when_throttle_mode_invalid(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when throttle_level configuration is invalid
+        assert: it will get to blocked status waiting for a valid value to be provided.
+        """
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
         self.harness.update_config(
@@ -71,21 +110,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             BlockedStatus("throttle_level must be one of: none permissive strict"),
         )
 
-    def test_config_changed_when_saml_sync_groups_and_no_url_invalid(self):
-        self.add_database_relations()
-        self.harness.container_pebble_ready("discourse")
-        self.harness.update_config(
-            {
-                "external_hostname": "discourse.local",
-                "saml_sync_groups": "group1",
-            }
-        )
-        self.assertEqual(
-            self.harness.model.unit.status,
-            BlockedStatus("'saml_sync_groups' cannot be specified without a 'saml_target_url'"),
-        )
-
     def test_config_changed_when_s3_and_no_bucket_invalid(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when s3_enabled configuration is True and there's no s3_bucket
+        assert: it will get to blocked status waiting for the later.
+        """
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
         self.harness.update_config(
@@ -104,6 +134,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         )
 
     def test_config_changed_when_valid(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when a valid configuration is provided
+        assert: the approapriate configuration values are passed to the pod and the unit reaches Active status.
+        """
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
         self.harness.update_config(
@@ -171,6 +206,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual(20, self.harness.charm.ingress.config_dict["max-body-size"])
 
     def test_db_relation(self):
+        """
+        arrange: given a deployed discourse charm
+        act: when the database realtion is added
+        assert: the approapriate database name is set.
+        """
         self.add_database_relations()
         self.harness.set_leader(True)
         # testing harness not re-emits deferred events, manually trigger that
