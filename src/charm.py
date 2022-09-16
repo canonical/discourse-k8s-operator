@@ -62,17 +62,17 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.ingress = IngressRequires(self, self._ingress_config())
-        self.framework.observe(self.on.leader_elected, self.config_changed)
-        self.framework.observe(self.on.discourse_pebble_ready, self.config_changed)
-        self.framework.observe(self.on.config_changed, self.config_changed)
-        self.framework.observe(self.on.upgrade_charm, self.config_changed)
+        self.framework.observe(self.on.leader_elected, self._config_changed)
+        self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
+        self.framework.observe(self.on.config_changed, self._config_changed)
+        self.framework.observe(self.on.upgrade_charm, self._config_changed)
 
         self.db = pgsql.PostgreSQLClient(self, 'db')
-        self.framework.observe(self.db.on.database_relation_joined, self.on_database_relation_joined)
-        self.framework.observe(self.db.on.master_changed, self.on_database_changed)
+        self.framework.observe(self.db.on.database_relation_joined, self._on_database_relation_joined)
+        self.framework.observe(self.db.on.master_changed, self._on_database_changed)
 
         self.redis = RedisRequires(self, self._stored)
-        self.framework.observe(self.on.redis_relation_updated, self.config_changed)
+        self.framework.observe(self.on.redis_relation_updated, self._config_changed)
 
     def _ingress_config(self):
         """Return a dict of our ingress config."""
@@ -88,7 +88,7 @@ class DiscourseCharm(CharmBase):
             ingress_config["max-body-size"] = self.config["max_body_size"]
         return ingress_config
 
-    def check_config_is_valid(self):
+    def _check_config_is_valid(self):
         """Check that the provided config is valid.
 
         - Returns True if config is valid, False otherwise.
@@ -96,7 +96,7 @@ class DiscourseCharm(CharmBase):
         - Sets model status as appropriate.
         """
         valid_config = True
-        errors = self.check_for_config_problems()
+        errors = self._check_for_config_problems()
 
         # Set status if we have a bad config.
         if errors:
@@ -107,7 +107,7 @@ class DiscourseCharm(CharmBase):
 
         return valid_config
 
-    def get_saml_config(self):
+    def _get_saml_config(self):
         saml_fingerprints = {
             'https://login.ubuntu.com/+saml': '32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5'
         }
@@ -122,7 +122,7 @@ class DiscourseCharm(CharmBase):
 
         return saml_config
 
-    def check_for_config_problems(self):
+    def _check_for_config_problems(self):
         """Check if there are issues with the juju config.
 
         - Primarily looks for missing config options using check_for_missing_config_fields()
@@ -130,20 +130,20 @@ class DiscourseCharm(CharmBase):
         - Returns a list of errors if any were found.
         """
         errors = []
-        missing_fields = self.check_for_missing_config_fields()
+        missing_fields = self._check_for_missing_config_fields()
 
         if missing_fields:
-            errors.append('Required configuration missing: {}'.format(" ".join(missing_fields)))
+            errors.append(f"Required configuration missing: {' '.join(missing_fields)}")
 
         if not THROTTLE_LEVELS.get(self.config['throttle_level']):
-            errors.append('throttle_level must be one of: ' + ' '.join(THROTTLE_LEVELS.keys()))
+            errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
 
         if self.config['force_saml_login'] and self.config['saml_target_url'] == '':
             errors.append('force_saml_login can not be true without a saml_target_url')
 
         return errors
 
-    def check_for_missing_config_fields(self):
+    def _check_for_missing_config_fields(self):
         """Check for missing fields in juju config.
 
         - Returns a list of required fields that are either not present
@@ -170,10 +170,10 @@ class DiscourseCharm(CharmBase):
 
         return sorted(missing_fields)
 
-    def check_db_is_valid(self):
+    def _check_db_is_valid(self):
         return self._stored.db_name
 
-    def create_discourse_environment_settings(self):
+    def _create_discourse_environment_settings(self):
         """Create the pod environment config from the existing config."""
 
         # Get redis connection information from config but allow overriding
@@ -207,7 +207,7 @@ class DiscourseCharm(CharmBase):
             'DISCOURSE_SMTP_USER_NAME': self.config['smtp_username'],
         }
 
-        saml_config = self.get_saml_config()
+        saml_config = self._get_saml_config()
         for key in saml_config:
             pod_config[key] = saml_config[key]
 
@@ -219,7 +219,7 @@ class DiscourseCharm(CharmBase):
 
         return pod_config
 
-    def create_layer_config(self):
+    def _create_layer_config(self):
         """Create a layer config based on our current configuration.
 
         - uses create_discourse_environment_settings to genreate the environment we need.
@@ -234,13 +234,13 @@ class DiscourseCharm(CharmBase):
                     "summary": "Discourse web application",
                     "command": "sh -c '/srv/scripts/pod_start >>/srv/discourse/discourse.log 2&>1'",
                     "startup": "enabled",
-                    "environment": self.create_discourse_environment_settings(),
+                    "environment": self._create_discourse_environment_settings(),
                 }
             },
         }
         return layer_config
 
-    def config_changed(self, event):
+    def _config_changed(self, event):
         """Configure service.
 
         - Verifies config is valid
@@ -250,7 +250,7 @@ class DiscourseCharm(CharmBase):
 
         self.model.unit.status = MaintenanceStatus('Configuring service')
 
-        if not self.check_db_is_valid():
+        if not self._check_db_is_valid():
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             event.defer()
             return
@@ -260,14 +260,14 @@ class DiscourseCharm(CharmBase):
             event.defer()
             return
 
-        if self.check_config_is_valid():
-            layer_config = self.create_layer_config()
+        if self._check_config_is_valid():
+            layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._ingress_config())
             self.model.unit.status = ActiveStatus()
 
-    def on_database_relation_joined(self, event):
+    def _on_database_relation_joined(self, event):
         """Event handler for a newly joined database relation.
 
         - Sets the event.database field on the database joined event.
@@ -284,13 +284,14 @@ class DiscourseCharm(CharmBase):
         # unless the relation is dropped and recreated.
         if self.model.unit.is_leader():
             event.database = db_name
+            event.extensions = ["hstore"]
         elif event.database != db_name:
             # Leader has not yet set requirements. Defer, in case this unit
             # becomes leader and needs to perform that operation.
             event.defer()
             return
 
-    def on_database_changed(self, event):
+    def _on_database_changed(self, event):
         """Event handler for database relation change.
 
         - Sets our database parameters based on what was provided
@@ -309,7 +310,7 @@ class DiscourseCharm(CharmBase):
         self._stored.db_password = event.master.password
         self._stored.db_host = event.master.host
 
-        self.config_changed(event)
+        self._config_changed(event)
 
 
 if __name__ == '__main__':  # pragma: no cover

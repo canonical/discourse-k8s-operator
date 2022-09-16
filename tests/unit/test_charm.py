@@ -100,10 +100,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("discourse.local", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
         self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
-        self.assertEqual(
-            "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5",
-            updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"],
-        )
+        self.assertIsNotNone(updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"])
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
         self.assertEqual("https://login.ubuntu.com/+saml", updated_plan_env["DISCOURSE_SAML_TARGET_URL"])
         self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
