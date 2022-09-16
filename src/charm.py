@@ -20,22 +20,22 @@ logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
 
 THROTTLE_LEVELS = {
-    "none": {'DISCOURSE_MAX_REQS_PER_IP_MODE': 'none', 'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': 'false'},
+    "none": {"DISCOURSE_MAX_REQS_PER_IP_MODE": "none", "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false"},
     "permissive": {
-        'DISCOURSE_MAX_REQS_PER_IP_MODE': 'warn+block',
-        'DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE': 1000,
-        'DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS': 100,
-        'DISCOURSE_MAX_USER_API_REQS_PER_MINUTE': 400,
-        'DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS': 400,
-        'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': 'false',
+        "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
+        "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 1000,
+        "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 100,
+        "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 400,
+        "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 400,
+        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
     },
     "strict": {
-        'DISCOURSE_MAX_REQS_PER_IP_MODE': 'block',
-        'DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE': 200,
-        'DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS': 50,
-        'DISCOURSE_MAX_USER_API_REQS_PER_MINUTE': 100,
-        'DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS': 200,
-        'DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE': 'false',
+        "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
+        "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 200,
+        "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 50,
+        "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 100,
+        "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 200,
+        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
     },
 }
 
@@ -67,7 +67,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.config_changed, self._config_changed)
         self.framework.observe(self.on.upgrade_charm, self._config_changed)
 
-        self.db = pgsql.PostgreSQLClient(self, 'db')
+        self.db = pgsql.PostgreSQLClient(self, "db")
         self.framework.observe(self.db.on.database_relation_joined, self._on_database_relation_joined)
         self.framework.observe(self.db.on.master_changed, self._on_database_changed)
 
@@ -77,7 +77,7 @@ class DiscourseCharm(CharmBase):
     def _ingress_config(self):
         """Return a dict of our ingress config."""
         ingress_config = {
-            "service-hostname": self.config['external_hostname'] or self.app.name,
+            "service-hostname": self.config["external_hostname"] or self.app.name,
             "service-name": self.app.name,
             "service-port": 3000,
             "session-cookie-max-age": 3600,
@@ -109,16 +109,16 @@ class DiscourseCharm(CharmBase):
 
     def _get_saml_config(self):
         saml_fingerprints = {
-            'https://login.ubuntu.com/+saml': '32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5'
+            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
         }
         saml_config = {}
 
-        if self.config.get('saml_target_url'):
-            saml_config['DISCOURSE_SAML_TARGET_URL'] = self.config['saml_target_url']
-            saml_config['DISCOURSE_SAML_FULL_SCREEN_LOGIN'] = "true" if self.config['force_saml_login'] else "false"
-            fingerprint = saml_fingerprints.get(self.config['saml_target_url'])
+        if self.config.get("saml_target_url"):
+            saml_config["DISCOURSE_SAML_TARGET_URL"] = self.config["saml_target_url"]
+            saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = "true" if self.config["force_saml_login"] else "false"
+            fingerprint = saml_fingerprints.get(self.config["saml_target_url"])
             if fingerprint:
-                saml_config['DISCOURSE_SAML_CERT_FINGERPRINT'] = fingerprint
+                saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = fingerprint
 
         return saml_config
 
@@ -135,11 +135,11 @@ class DiscourseCharm(CharmBase):
         if missing_fields:
             errors.append(f"Required configuration missing: {' '.join(missing_fields)}")
 
-        if not THROTTLE_LEVELS.get(self.config['throttle_level']):
+        if not THROTTLE_LEVELS.get(self.config["throttle_level"]):
             errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
 
-        if self.config['force_saml_login'] and self.config['saml_target_url'] == '':
-            errors.append('force_saml_login can not be true without a saml_target_url')
+        if self.config["force_saml_login"] and self.config["saml_target_url"] == "":
+            errors.append("force_saml_login can not be true without a saml_target_url")
 
         return errors
 
@@ -152,11 +152,11 @@ class DiscourseCharm(CharmBase):
         missing_fields = []
 
         needed_fields = [
-            'smtp_address',
-            'cors_origin',
-            'developer_emails',
-            'smtp_domain',
-            'external_hostname',
+            "smtp_address",
+            "cors_origin",
+            "developer_emails",
+            "smtp_domain",
+            "external_hostname",
         ]
         # See if Redis connection information has been provided via a relation.
         redis_hostname = None
@@ -186,25 +186,25 @@ class DiscourseCharm(CharmBase):
             logger.debug("Got redis connection details from relation of %s:%s", redis_hostname, redis_port)
 
         pod_config = {
-            'DISCOURSE_CORS_ORIGIN': self.config['cors_origin'],
-            'DISCOURSE_DB_HOST': self._stored.db_host,
-            'DISCOURSE_DB_NAME': self._stored.db_name,
-            'DISCOURSE_DB_PASSWORD': self._stored.db_password,
-            'DISCOURSE_DB_USERNAME': self._stored.db_user,
-            'DISCOURSE_DEVELOPER_EMAILS': self.config['developer_emails'],
-            'DISCOURSE_ENABLE_CORS': self.config['enable_cors'],
-            'DISCOURSE_HOSTNAME': self.config['external_hostname'],
-            'DISCOURSE_REDIS_HOST': redis_hostname,
-            'DISCOURSE_REDIS_PORT': redis_port,
-            'DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS': "0",
-            'DISCOURSE_SERVE_STATIC_ASSETS': "true",
-            'DISCOURSE_SMTP_ADDRESS': self.config['smtp_address'],
-            'DISCOURSE_SMTP_AUTHENTICATION': self.config['smtp_authentication'],
-            'DISCOURSE_SMTP_DOMAIN': self.config['smtp_domain'],
-            'DISCOURSE_SMTP_OPENSSL_VERIFY_MODE': self.config['smtp_openssl_verify_mode'],
-            'DISCOURSE_SMTP_PASSWORD': self.config['smtp_password'],
-            'DISCOURSE_SMTP_PORT': self.config['smtp_port'],
-            'DISCOURSE_SMTP_USER_NAME': self.config['smtp_username'],
+            "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
+            "DISCOURSE_DB_HOST": self._stored.db_host,
+            "DISCOURSE_DB_NAME": self._stored.db_name,
+            "DISCOURSE_DB_PASSWORD": self._stored.db_password,
+            "DISCOURSE_DB_USERNAME": self._stored.db_user,
+            "DISCOURSE_DEVELOPER_EMAILS": self.config["developer_emails"],
+            "DISCOURSE_ENABLE_CORS": self.config["enable_cors"],
+            "DISCOURSE_HOSTNAME": self.config["external_hostname"],
+            "DISCOURSE_REDIS_HOST": redis_hostname,
+            "DISCOURSE_REDIS_PORT": redis_port,
+            "DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS": "0",
+            "DISCOURSE_SERVE_STATIC_ASSETS": "true",
+            "DISCOURSE_SMTP_ADDRESS": self.config["smtp_address"],
+            "DISCOURSE_SMTP_AUTHENTICATION": self.config["smtp_authentication"],
+            "DISCOURSE_SMTP_DOMAIN": self.config["smtp_domain"],
+            "DISCOURSE_SMTP_OPENSSL_VERIFY_MODE": self.config["smtp_openssl_verify_mode"],
+            "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
+            "DISCOURSE_SMTP_PORT": self.config["smtp_port"],
+            "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
         }
 
         saml_config = self._get_saml_config()
@@ -212,17 +212,17 @@ class DiscourseCharm(CharmBase):
             pod_config[key] = saml_config[key]
 
         # We only get valid throttle levels here, otherwise it would be caught
-        # by `check_for_config_problems`, so we can be sure this won't raise a
+        # by `check_for_config_problems`, so we can be sure this won"t raise a
         # KeyError.
-        for key in THROTTLE_LEVELS[self.config['throttle_level']]:
-            pod_config[key] = THROTTLE_LEVELS[self.config['throttle_level']][key]
+        for key in THROTTLE_LEVELS[self.config["throttle_level"]]:
+            pod_config[key] = THROTTLE_LEVELS[self.config["throttle_level"]][key]
 
         return pod_config
 
     def _create_layer_config(self):
         """Create a layer config based on our current configuration.
 
-        - uses create_discourse_environment_settings to genreate the environment we need.
+        - uses create_discourse_environment_settings to generate the environment we need.
         """
         logger.info("Generating Layer config")
         layer_config = {
@@ -248,7 +248,7 @@ class DiscourseCharm(CharmBase):
         - Configures pod using pebble and layer generated from config.
         """
 
-        self.model.unit.status = MaintenanceStatus('Configuring service')
+        self.model.unit.status = MaintenanceStatus("Configuring service")
 
         if not self._check_db_is_valid():
             self.model.unit.status = WaitingStatus("Waiting for database relation")
@@ -313,5 +313,5 @@ class DiscourseCharm(CharmBase):
         self._config_changed(event)
 
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main(DiscourseCharm, use_juju_for_storage=True)
