@@ -46,8 +46,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         self.harness.update_config(
             {
+                "developer_emails": "user@foo.internal",
                 "external_hostname": "discourse.local",
                 "force_saml_login": True,
+                "smtp_domain": "foo.internal",
             }
         )
 
@@ -67,8 +69,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         self.harness.update_config(
             {
+                "developer_emails": "user@foo.internal",
                 "external_hostname": "discourse.local",
                 "saml_sync_groups": "group1",
+                "smtp_domain": "foo.internal",
             }
         )
 
@@ -89,7 +93,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.update_config(
             {
                 "cors_origin": "",
+                "developer_emails": "user@foo.internal",
                 "external_hostname": "discourse.local",
+                "smtp_domain": "foo.internal",
             }
         )
 
@@ -109,8 +115,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         self.harness.update_config(
             {
+                "developer_emails": "user@foo.internal",
                 "external_hostname": "discourse.local",
                 "throttle_level": "Scream",
+                "smtp_domain": "foo.internal",
             }
         )
 
@@ -131,7 +139,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         self.harness.update_config(
             {
+                "developer_emails": "user@foo.internal",
                 "external_hostname": "discourse.local",
+                "smtp_domain": "foo.internal",
                 "s3_access_key_id": "3|33+",
                 "s3_enabled": True,
                 "s3_endpoint": "s3.endpoint",
@@ -156,11 +166,13 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         self.harness.update_config(
             {
+                "developer_emails": "user@foo.internal",
                 "enable_cors": True,
                 "external_hostname": "discourse.local",
                 "force_saml_login": True,
                 "saml_target_url": "https://login.ubuntu.com/+saml",
                 "saml_sync_groups": "group1",
+                "smtp_domain": "foo.internal",
                 "smtp_password": "OBV10USLYF4K3",
                 "smtp_username": "apikey",
                 "s3_access_key_id": "3|33+",
