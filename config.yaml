@@ -10,7 +10,7 @@ options:
   developer_emails:
     type: string
     description: "Comma delimited list of email addresses that should have developer level access"
-    default: "user@foo.internal"
+    default: ""
   enable_cors:
     type: boolean
     description: "Enable Cross-origin Resource Sharing (CORS) at the application level (required for SSO)"
@@ -50,7 +50,7 @@ options:
   smtp_domain:
     type: string
     description: "Hostname that email sent by this discourse should appear to come from"
-    default: "foo.internal"
+    default: ""
   smtp_openssl_verify_mode:
     type: string
     description: "Should discourse verify SSL certs"
