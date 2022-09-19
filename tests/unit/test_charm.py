@@ -235,6 +235,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         )
 
     def add_database_relations(self):
+        "Adds postgresql and redis relations and relation data to the charm."
         self.harness.charm._stored.db_name = "discourse-k8s"
         self.harness.charm._stored.db_user = "someuser"
         self.harness.charm._stored.db_password = "somepasswd"
