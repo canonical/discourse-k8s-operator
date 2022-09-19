@@ -38,7 +38,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when force_saml_login configuration is True and there's no saml_target_url
-        assert: it will get to blocked status waiting for the later.
+        assert: it will get to blocked status waiting for the latter.
         """
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
@@ -57,7 +57,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when saml_sync_groups configuration is provided and there's no saml_target_url
-        assert: it will get to blocked status waiting for the later.
+        assert: it will get to blocked status waiting for the latter.
         """
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")
@@ -114,7 +114,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when s3_enabled configuration is True and there's no s3_bucket
-        assert: it will get to blocked status waiting for the later.
+        assert: it will get to blocked status waiting for the latter.
         """
         self.add_database_relations()
         self.harness.container_pebble_ready("discourse")

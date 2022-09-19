@@ -144,9 +144,9 @@ class DiscourseCharm(CharmBase):
         missing_fields = self._check_for_missing_config_fields()
 
         if missing_fields:
-            errors.append(f"Required configuration missing: {' '.join(missing_fields)}")
+            errors.append(f"Required configuration missing: {','.join(missing_fields)}")
 
-        if not THROTTLE_LEVELS.get(self.config["throttle_level"]):
+        if self.config["throttle_level"] not in THROTTLE_LEVELS:
             errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
 
         if self.config["force_saml_login"] and self.config["saml_target_url"] == "":
@@ -191,7 +191,7 @@ class DiscourseCharm(CharmBase):
         return sorted(missing_fields)
 
     def _check_db_is_valid(self):
-        return self._stored.db_name
+        return self._stored.db_name and self._stored.db_name.strip()
 
     def _get_s3_env(self):
         """Get the list of S3-related environment variables from charm's configuration."""
