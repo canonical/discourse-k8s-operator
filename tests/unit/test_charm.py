@@ -115,9 +115,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         )
 
         self.assertEqual(
-            self.harness.model.unit.status,
-            BlockedStatus("throttle_level must be one of: none permissive strict"),
+            self.harness.model.unit.status.name,
+            BlockedStatus.name,
         )
+        self.assertTrue("none permissive strict" in self.harness.model.unit.status.message)
 
     def test_config_changed_when_s3_and_no_bucket_invalid(self):
         """
