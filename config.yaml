@@ -14,7 +14,7 @@ options:
   enable_cors:
     type: boolean
     description: "Enable Cross-origin Resource Sharing (CORS) at the application level (required for SSO)"
-    default: "true"
+    default: true
   external_hostname:
     type: string
     description: "External hostname this discourse instance should respond to. Defaults to the deployed application name."
