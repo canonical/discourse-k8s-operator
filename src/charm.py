@@ -237,7 +237,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_DB_PASSWORD": self._stored.db_password,
             "DISCOURSE_DB_USERNAME": self._stored.db_user,
             "DISCOURSE_DEVELOPER_EMAILS": self.config["developer_emails"],
-            "DISCOURSE_ENABLE_CORS": self.config["enable_cors"],
+            "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
             "DISCOURSE_HOSTNAME": self.config["external_hostname"],
             "DISCOURSE_REDIS_HOST": redis_hostname,
             "DISCOURSE_REDIS_PORT": redis_port,
@@ -248,8 +248,13 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_DOMAIN": self.config["smtp_domain"],
             "DISCOURSE_SMTP_OPENSSL_VERIFY_MODE": self.config["smtp_openssl_verify_mode"],
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
-            "DISCOURSE_SMTP_PORT": self.config["smtp_port"],
+            "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
+            # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
+            # I need to take the required envVars for the application to work properly
+            "CONTAINER_APP_NAME": "discourse",
+            "CONTAINER_APP_ROOT": "/srv/discourse",
+            "CONTAINER_APP_USERNAME": "discourse"
         }
 
         saml_config = self._get_saml_config()
@@ -314,9 +319,10 @@ class DiscourseCharm(CharmBase):
         # First execute the setup script
         if self._check_config_is_valid() and not self._has_setup_run():
             script = f"{SCRIPT_PATH}/pod_setup"
-            
+
             logger.debug(f"Executing setup script ({script})")
-            process = container.exec(script, environment=self._create_discourse_environment_settings())
+            logger.debug(self._create_discourse_environment_settings())
+            process = container.exec([script], environment=self._create_discourse_environment_settings())
             try:
                 stdout, _ = process.wait_output()
                 logger.debug(f"{script} stdout: {stdout}")
