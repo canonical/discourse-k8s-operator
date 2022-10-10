@@ -13,6 +13,8 @@ from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from ops.pebble import ExecError
+
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 
 
@@ -41,6 +43,9 @@ THROTTLE_LEVELS = {
 REQUIRED_S3_SETTINGS = ['s3_access_key_id', 's3_bucket', 's3_region', 's3_secret_access_key']
 
 SERVICE_NAME = "discourse"
+SERVICE_PORT = 3000
+
+SCRIPT_PATH = "/srv/scripts"
 
 
 class DiscourseCharm(CharmBase):
@@ -61,6 +66,7 @@ class DiscourseCharm(CharmBase):
             db_password=None,
             db_host=None,
             redis_relation={},
+            setup_ran=False,
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
         self.framework.observe(self.on.leader_elected, self._config_changed)
@@ -80,7 +86,7 @@ class DiscourseCharm(CharmBase):
         ingress_config = {
             "service-hostname": self.config["external_hostname"] or self.app.name,
             "service-name": self.app.name,
-            "service-port": 3000,
+            "service-port": SERVICE_PORT,
             "session-cookie-max-age": 3600,
         }
 
@@ -274,13 +280,16 @@ class DiscourseCharm(CharmBase):
                 "discourse": {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": "sh -c '/srv/scripts/pod_start >>/srv/discourse/discourse.log 2&>1'",
+                    "command": f"sh -c '{SCRIPT_PATH}/pod_start >>/srv/discourse/discourse.log 2&>1'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
             },
         }
         return layer_config
+
+    def _has_setup_run(self):
+        return self._stored.setup_ran
 
     def _config_changed(self, event):
         """Configure service.
@@ -302,6 +311,24 @@ class DiscourseCharm(CharmBase):
             event.defer()
             return
 
+        # First execute the setup script
+        if self._check_config_is_valid() and not self._has_setup_run():
+            script = f"{SCRIPT_PATH}/pod_setup"
+            
+            logger.debug(f"Executing setup script ({script})")
+            process = container.exec(script, environment=self._create_discourse_environment_settings())
+            try:
+                stdout, _ = process.wait_output()
+                logger.debug(f"{script} stdout: {stdout}")
+            except ExecError as e:
+                logger.error(f"{script} command exited with code {e.exit_code}. Stderr:")
+                for line in e.stderr.splitlines():
+                    logger.error(f"    {line}")
+                self.model.unit.status = BlockedStatus(f"Error while executing {script}")
+                raise
+            self._stored.setup_ran = True
+
+        # Then start the service
         if self._check_config_is_valid():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)

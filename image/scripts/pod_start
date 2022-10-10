@@ -7,32 +7,15 @@
 # application exits in order for the pod to terminate properly.
 
 # Steps:
-#  1) Run any pre-launch setup.
-#  2) Launch application - should not exit until application exits.
-#  3) Do any pod-exit cleanup.
+#  1) Launch application - should not exit until application exits.
+#  2) Do any pod-exit cleanup.
 
-SETUP_EXIT="notrun"
 APP_EXIT="notrun"
 
-# Run pod_setup script first.
-echo "Pod setup starting..."
-/srv/scripts/pod_setup
-SETUP_EXIT=$?
-
-if [ $SETUP_EXIT -eq 0 ]; then
-    echo "${CONTAINER_APP_NAME} setup completed successfully."
-else
-    echo "${CONTAINER_APP_NAME} setup failed with exit code: " $SETUP_EXIT
-fi
-
-
-# If we exited pod_setup ok, we launch the app.
-if [ $SETUP_EXIT -eq 0 ]; then
-    echo "Launching ${CONTAINER_APP_NAME}"
-    /srv/scripts/app_launch
-    APP_EXIT=$?
-    echo "${CONTAINER_APP_NAME} exited with code ${APP_EXIT}"
-fi
+echo "Launching ${CONTAINER_APP_NAME}"
+/srv/scripts/app_launch
+APP_EXIT=$?
+echo "${CONTAINER_APP_NAME} exited with code ${APP_EXIT}"
 
 # Run pod_exit with either the pod_setup exit code, or the app_launch exit code
 # as the first argument.
