@@ -3,15 +3,13 @@
 # Copyright 2020 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-from charm import SCRIPT_PATH
-
 import unittest
 from unittest.mock import MagicMock, patch
 
 from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
-from tests.unit._patched_charm import DiscourseCharm, pgsql_patch
+from tests.unit._patched_charm import DiscourseCharm, pgsql_patch, SCRIPT_PATH
 
 
 class MockExecProcess(object):
@@ -197,8 +195,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        exec_mock.assert_any_call(f"{SCRIPT_PATH}/pod_setup", environment=updated_plan_env)
+        exec_mock.assert_any_call([f"{SCRIPT_PATH}/pod_setup"], environment=updated_plan_env)
         self.assertEqual(True, self.harness.charm._stored.setup_ran)
+        self.assertEqual(True, self.harness.charm._stored.s3_enabled)
+        self.assertEqual("the-infinite-and-beyond", self.harness.charm._stored.s3_region)
+        self.assertEqual("s3.endpoint", self.harness.charm._stored.s3_endpoint)
+        self.assertEqual("who-s-a-good-bucket?", self.harness.charm._stored.s3_bucket)
         self.assertEqual("s3", updated_plan_env["DISCOURSE_BACKUP_LOCATION"])
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
@@ -229,7 +231,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("foo.internal", updated_plan_env["DISCOURSE_SMTP_DOMAIN"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"])
         self.assertEqual("OBV10USLYF4K3", updated_plan_env["DISCOURSE_SMTP_PASSWORD"])
-        self.assertEqual(587, updated_plan_env["DISCOURSE_SMTP_PORT"])
+        self.assertEqual("587", updated_plan_env["DISCOURSE_SMTP_PORT"])
         self.assertEqual("apikey", updated_plan_env["DISCOURSE_SMTP_USER_NAME"])
         self.assertTrue(updated_plan_env["DISCOURSE_USE_S3"])
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())

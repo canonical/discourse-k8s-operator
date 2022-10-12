@@ -67,6 +67,11 @@ class DiscourseCharm(CharmBase):
             db_host=None,
             redis_relation={},
             setup_ran=False,
+            # Allows us to trigger S3 asset upload when S3 configuration is changed
+            s3_enabled=False,
+            s3_bucket=None,
+            s3_endpoint=None,
+            s3_region=None
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
         self.framework.observe(self.on.leader_elected, self._config_changed)
@@ -208,7 +213,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_S3_ENDPOINT": self.config.get("s3_endpoint", "s3.amazonaws.com"),
             "DISCOURSE_S3_REGION": self.config["s3_region"],
             "DISCOURSE_S3_SECRET_ACCESS_KEY": self.config["s3_secret_access_key"],
-            "DISCOURSE_USE_S3": True,
+            "DISCOURSE_USE_S3": "true",
         }
         if self.config.get("s3_backup_bucket"):
             s3_env["DISCOURSE_BACKUP_LOCATION"] = "s3"
@@ -254,6 +259,7 @@ class DiscourseCharm(CharmBase):
             # I need to take the required envVars for the application to work properly
             "CONTAINER_APP_NAME": "discourse",
             "CONTAINER_APP_ROOT": "/srv/discourse",
+            "GEM_HOME": "/srv/discourse/.gem",
             "CONTAINER_APP_USERNAME": "discourse"
         }
 
@@ -290,11 +296,27 @@ class DiscourseCharm(CharmBase):
                     "environment": self._create_discourse_environment_settings(),
                 }
             },
+            "checks": {
+                "discourse-check": {
+                    "override": "replace",
+                    "http": {"url": f"http://localhost:{SERVICE_PORT}"},
+                },
+            }
         }
         return layer_config
 
-    def _has_setup_run(self):
-        return self._stored.setup_ran
+    def _should_run_setup(self):
+        # Return true if setup never ran
+        return not self._stored.setup_ran or (
+            # Or S3 is enabled and one S3 parameter has changed
+            self.config.get("s3_enabled")
+            and (
+                self._stored.s3_enabled != self.config.get("s3_enabled")
+                or self._stored.s3_region != self.config.get("s3_region")
+                or self._stored.s3_bucket != self.config.get("s3_bucket")
+                or self._stored.s3_endpoint != self.config.get("s3_endpoint")
+            )
+        )
 
     def _config_changed(self, event):
         """Configure service.
@@ -317,13 +339,14 @@ class DiscourseCharm(CharmBase):
             return
 
         # First execute the setup script
-        if self._check_config_is_valid() and not self._has_setup_run():
+        if self._check_config_is_valid() and self.model.unit.is_leader() and self._should_run_setup():
             script = f"{SCRIPT_PATH}/pod_setup"
 
             logger.debug(f"Executing setup script ({script})")
             logger.debug(self._create_discourse_environment_settings())
             process = container.exec([script], environment=self._create_discourse_environment_settings())
             try:
+                self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
                 stdout, _ = process.wait_output()
                 logger.debug(f"{script} stdout: {stdout}")
             except ExecError as e:
@@ -333,6 +356,13 @@ class DiscourseCharm(CharmBase):
                 self.model.unit.status = BlockedStatus(f"Error while executing {script}")
                 raise
             self._stored.setup_ran = True
+
+        self.model.unit.status = MaintenanceStatus("Configuring service")
+
+        self._stored.s3_enabled = self.config.get("s3_enabled")
+        self._stored.s3_endpoint = self.config.get("s3_endpoint")
+        self._stored.s3_region = self.config.get("s3_region")
+        self._stored.s3_bucket = self.config.get("s3_bucket")
 
         # Then start the service
         if self._check_config_is_valid():

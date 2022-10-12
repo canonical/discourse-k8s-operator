@@ -26,6 +26,7 @@ async def test_discourse_up(ops_test: OpsTest, app: Application):
     Assume that the charm has already been built and is running.
     """
 
+    # TODO: Simplify should be available from ops_test.model.unit
     status = await ops_test.model.get_status()
     unit = list(status.applications[app.name].units)[0]
     address = status["applications"][app.name]["units"][unit]["address"]
