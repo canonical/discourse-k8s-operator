@@ -41,6 +41,11 @@ def s3_ip_address(pytestconfig: Config):
     """Provides S3 IP address to inject to discourse hosts"""
     yield pytestconfig.getoption("--s3-ip-address") if pytestconfig.getoption("--s3-ip-address") else "127.0.0.1"
 
+@fixture(scope="module")
+def requests_timeout():
+    """Provides a global default timeout for HTTP requests"""
+    yield 5
+
 @pytest_asyncio.fixture(scope="module")
 async def app(ops_test: OpsTest, app_name: str, app_config: dict[str, str], pytestconfig: Config):
     """Discourse charm used for integration testing.

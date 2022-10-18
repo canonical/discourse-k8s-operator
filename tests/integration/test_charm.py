@@ -35,7 +35,7 @@ async def test_active(app: Application):
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_discourse_up(ops_test: OpsTest, app: Application):
+async def test_discourse_up(ops_test: OpsTest, app: Application, requests_timeout: float):
     """Check that the bootstrap page is reachable.
     Assume that the charm has already been built and is running.
     """
@@ -44,14 +44,16 @@ async def test_discourse_up(ops_test: OpsTest, app: Application):
     # Send request to bootstrap page and set Host header to app_name (which the application
     # expects)
     response = requests.get(
-        f"http://{address}:{SERVICE_PORT}/finish-installation/register", headers={"Host": f"{app.name}.local"}
+        f"http://{address}:{SERVICE_PORT}/finish-installation/register",
+        headers={"Host": f"{app.name}.local"},
+        timeout=requests_timeout,
     )
     assert response.status_code == 200
 
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: dict[str, str]):
+async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: dict[str, str], requests_timeout: float):
     """Check discourse if working properly by registrating an Admin and generates an API
     Note that the API is later used to manipulate Discourse
     """
@@ -65,7 +67,9 @@ async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: 
     # Send request to bootstrap page and set Host header to app_name (which the application
     # expects)
     response = session.get(
-        f"{discourse_url}/finish-installation/register", headers={"Host": f"{app_config['external_hostname']}"}
+        f"{discourse_url}/finish-installation/register",
+        headers={"Host": f"{app_config['external_hostname']}"},
+        timeout=requests_timeout
     )
     
     assert response.status_code == 200
@@ -95,6 +99,7 @@ async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: 
         headers=form_headers,
         data=urlencode(form_fields),
         allow_redirects=False,
+        timeout=requests_timeout,
     )
     
     # Replies with a redirect
@@ -113,7 +118,8 @@ async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: 
     
     response = session.get(
         f"{discourse_url}/u/activate-account/{email_token}",
-        headers={"Host": f"{app_config['external_hostname']}"}
+        headers={"Host": f"{app_config['external_hostname']}"},
+        timeout=requests_timeout,
     )
     
     assert response.status_code == 200
@@ -126,7 +132,8 @@ async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: 
     # There's a challenge to get through an Ajax request to submit the activation
     response = session.get(
         f"{discourse_url}/session/hp",
-        headers={"Host": f"{app_config['external_hostname']}", "X-Requested-With": "XMLHttpRequest"}
+        headers={"Host": f"{app_config['external_hostname']}", "X-Requested-With": "XMLHttpRequest"},
+        timeout=requests_timeout,
     )
     
     assert response.status_code == 200
@@ -149,6 +156,7 @@ async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: 
         headers=form_headers,
         data=urlencode(form_fields),
         allow_redirects=False,
+        timeout=requests_timeout,
     )
     
     assert response.status_code == 302
@@ -162,7 +170,8 @@ async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: 
             "Host": f"{app_config['external_hostname']}",
             # Without the user-agent, the server answer doesn't contain csrf
             "User-Agent": "AppleWebKit/537.36"
-        }
+        },
+        timeout=requests_timeout,
     )
     
     # Extract the CSRF token
@@ -187,7 +196,8 @@ async def test_setup_discourse(ops_test: OpsTest, app: Application, app_config: 
             "X-CSRF-Token": csrf_token,
             "Content-Type": "application/json",
         },
-        data=json.dumps(api_key_payload)
+        data=json.dumps(api_key_payload),
+        timeout=requests_timeout,
     )
     
     assert response.status_code == 200
@@ -278,6 +288,6 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_ip_address: str):
     
     # Check content has been uploaded in the bucket
     response = s3_client.list_objects(Bucket=s3_bucket)
-    bucket_count = sum(1 for _ in response["Contents"])
+    object_count = sum(1 for _ in response["Contents"])
     
-    assert bucket_count > 0
+    assert object_count > 0
