@@ -4,7 +4,6 @@
 
 import json
 import logging
-from urllib.request import proxy_bypass
 import pytest
 import requests
 
