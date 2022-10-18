@@ -1,4 +1,5 @@
 /venv
+/env
 /image
 *.py[cod]
 *.charm
