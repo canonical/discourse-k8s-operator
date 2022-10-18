@@ -213,6 +213,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_S3_ENDPOINT": self.config.get("s3_endpoint", "s3.amazonaws.com"),
             "DISCOURSE_S3_REGION": self.config["s3_region"],
             "DISCOURSE_S3_SECRET_ACCESS_KEY": self.config["s3_secret_access_key"],
+            "DISCOURSE_S3_INSTALL_CORS_RULE": str(self.config.get("s3_install_cors_rule", True)).lower(),
             "DISCOURSE_USE_S3": "true",
         }
         if self.config.get("s3_backup_bucket"):
@@ -343,7 +344,6 @@ class DiscourseCharm(CharmBase):
             script = f"{SCRIPT_PATH}/pod_setup"
 
             logger.debug(f"Executing setup script ({script})")
-            logger.debug(self._create_discourse_environment_settings())
             process = container.exec([script], environment=self._create_discourse_environment_settings())
             try:
                 self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
@@ -353,6 +353,7 @@ class DiscourseCharm(CharmBase):
                 logger.error(f"{script} command exited with code {e.exit_code}. Stderr:")
                 for line in e.stderr.splitlines():
                     logger.error(f"    {line}")
+                logger.debug(f"{script} stdout: {e.stdout}")
                 self.model.unit.status = BlockedStatus(f"Error while executing {script}")
                 raise
             self._stored.setup_ran = True

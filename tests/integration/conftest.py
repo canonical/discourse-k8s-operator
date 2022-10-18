@@ -11,6 +11,7 @@ from pathlib import Path
 from pytest import Config, fixture
 from pytest_operator.plugin import OpsTest
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,9 +26,23 @@ def app_name(metadata):
     """Provides app name from the metadata."""
     yield metadata["name"]
 
+@fixture(scope="module")
+def app_config():
+    """Provides app config."""
+    yield {
+        "developer_emails": "noreply@canonical.com",
+        "external_hostname": "test.local:3000",
+        "smtp_domain": "test.local",
+        "s3_install_cors_rule": "false",
+    }
+    
+@fixture(scope="module")
+def s3_ip_address(pytestconfig: Config):
+    """Provides S3 IP address to inject to discourse hosts"""
+    yield pytestconfig.getoption("--s3-ip-address") if pytestconfig.getoption("--s3-ip-address") else "127.0.0.1"
 
 @pytest_asyncio.fixture(scope="module")
-async def app(ops_test: OpsTest, app_name: str, pytestconfig: Config):
+async def app(ops_test: OpsTest, app_name: str, app_config: dict[str, str], pytestconfig: Config):
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
@@ -41,13 +56,9 @@ async def app(ops_test: OpsTest, app_name: str, pytestconfig: Config):
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
     }
-    config = {
-        "developer_emails": "noreply@canonical.com",
-        "external_hostname": "test.local",
-        "smtp_domain": "test.local"
-    }
+
     application = await ops_test.model.deploy(
-        charm, resources=resources, application_name=app_name, config=config
+        charm, resources=resources, application_name=app_name, config=app_config
     )
     await ops_test.model.wait_for_idle()
 

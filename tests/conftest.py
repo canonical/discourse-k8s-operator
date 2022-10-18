@@ -4,3 +4,4 @@
 
 def pytest_addoption(parser):
     parser.addoption("--discourse-image", action="store")
+    parser.addoption("--s3-ip-address", action="store")
