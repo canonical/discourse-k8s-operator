@@ -252,9 +252,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.charm._stored.db_user = "someuser"
         self.harness.charm._stored.db_password = "somepasswd"
         self.harness.charm._stored.db_host = "dbhost"
-        self.db_relation_id = self.harness.add_relation("db", self.harness.charm.app.name)
+        self.db_relation_id = self.harness.add_relation("db", "postgresql")
         self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
 
-        redis_relation_id = self.harness.add_relation("redis", self.harness.charm.app.name)
+        redis_relation_id = self.harness.add_relation("redis", "redis")
         self.harness.add_relation_unit(redis_relation_id, "redis/0")
         self.harness.charm._stored.redis_relation = {redis_relation_id: {"hostname": "redis-host", "port": 1010}}
