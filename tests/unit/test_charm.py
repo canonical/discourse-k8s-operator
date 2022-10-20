@@ -196,11 +196,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
         exec_mock.assert_any_call([f"{SCRIPT_PATH}/pod_setup"], environment=updated_plan_env)
-        self.assertEqual(True, self.harness.charm._stored.setup_ran)
-        self.assertEqual(True, self.harness.charm._stored.s3_enabled)
-        self.assertEqual("the-infinite-and-beyond", self.harness.charm._stored.s3_region)
-        self.assertEqual("s3.endpoint", self.harness.charm._stored.s3_endpoint)
-        self.assertEqual("who-s-a-good-bucket?", self.harness.charm._stored.s3_bucket)
         self.assertEqual("s3", updated_plan_env["DISCOURSE_BACKUP_LOCATION"])
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
