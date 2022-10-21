@@ -4,11 +4,16 @@
 # See LICENSE file for licensing details.
 
 import unittest
+from unittest.mock import MagicMock, patch
 
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
-from tests.unit._patched_charm import DiscourseCharm, pgsql_patch
+from tests.unit._patched_charm import DiscourseCharm, pgsql_patch, SCRIPT_PATH
+
+
+class MockExecProcess(object):
+    wait_output: MagicMock = MagicMock(return_value=("", None))
 
 
 class TestDiscourseK8sCharm(unittest.TestCase):
@@ -162,33 +167,35 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the approapriate configuration values are passed to the pod and the unit reaches Active status.
         """
         self.add_database_relations()
-        self.harness.container_pebble_ready("discourse")
+        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
+            self.harness.container_pebble_ready("discourse")
 
-        self.harness.update_config(
-            {
-                "developer_emails": "user@foo.internal",
-                "enable_cors": True,
-                "external_hostname": "discourse.local",
-                "force_saml_login": True,
-                "saml_target_url": "https://login.ubuntu.com/+saml",
-                "saml_sync_groups": "group1",
-                "smtp_domain": "foo.internal",
-                "smtp_password": "OBV10USLYF4K3",
-                "smtp_username": "apikey",
-                "s3_access_key_id": "3|33+",
-                "s3_backup_bucket": "back-bucket",
-                "s3_bucket": "who-s-a-good-bucket?",
-                "s3_cdn_url": "s3.cdn",
-                "s3_enabled": True,
-                "s3_endpoint": "s3.endpoint",
-                "s3_region": "the-infinite-and-beyond",
-                "s3_secret_access_key": "s|kI0ure_k3Y",
-                "tls_secret_name": "somesecret",
-            }
-        )
+            self.harness.update_config(
+                {
+                    "developer_emails": "user@foo.internal",
+                    "enable_cors": True,
+                    "external_hostname": "discourse.local",
+                    "force_saml_login": True,
+                    "saml_target_url": "https://login.ubuntu.com/+saml",
+                    "saml_sync_groups": "group1",
+                    "smtp_domain": "foo.internal",
+                    "smtp_password": "OBV10USLYF4K3",
+                    "smtp_username": "apikey",
+                    "s3_access_key_id": "3|33+",
+                    "s3_backup_bucket": "back-bucket",
+                    "s3_bucket": "who-s-a-good-bucket?",
+                    "s3_cdn_url": "s3.cdn",
+                    "s3_enabled": True,
+                    "s3_endpoint": "s3.endpoint",
+                    "s3_region": "the-infinite-and-beyond",
+                    "s3_secret_access_key": "s|kI0ure_k3Y",
+                    "tls_secret_name": "somesecret",
+                }
+            )
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+        exec_mock.assert_any_call([f"{SCRIPT_PATH}/pod_setup"], environment=updated_plan_env)
         self.assertEqual("s3", updated_plan_env["DISCOURSE_BACKUP_LOCATION"])
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
@@ -219,7 +226,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("foo.internal", updated_plan_env["DISCOURSE_SMTP_DOMAIN"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"])
         self.assertEqual("OBV10USLYF4K3", updated_plan_env["DISCOURSE_SMTP_PASSWORD"])
-        self.assertEqual(587, updated_plan_env["DISCOURSE_SMTP_PORT"])
+        self.assertEqual("587", updated_plan_env["DISCOURSE_SMTP_PORT"])
         self.assertEqual("apikey", updated_plan_env["DISCOURSE_SMTP_USER_NAME"])
         self.assertTrue(updated_plan_env["DISCOURSE_USE_S3"])
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())

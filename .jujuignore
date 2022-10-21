@@ -1,6 +1,10 @@
+/venv
 /env
 /image
 *.py[cod]
 *.charm
 *.tar.gz
 Makefile
+/.vscode
+.env
+/.pytest_cache

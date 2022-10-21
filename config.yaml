@@ -129,6 +129,13 @@ options:
       Sets DISCOURSE_S3_SECRET_ACCESS_KEY.
       Required if s3_enabled is true.
     default: ""
+  s3_install_cors_rule:
+    type: boolean
+    description: |
+      Will discourse set cors rule on the S3 bucket.
+
+      Sets DISCOURSE_S3_INSTALL_CORS_RULE
+    default: true
   throttle_level:
     type: string
     description: "Throttle level - blocks excessive usage by ip. Valid values: none, permissive, strict"

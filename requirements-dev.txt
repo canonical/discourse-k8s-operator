@@ -1,0 +1,3 @@
+psycopg2-binary
+bs4
+boto3

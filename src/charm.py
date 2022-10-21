@@ -3,21 +3,23 @@
 # See LICENSE file for licensing details.
 
 import logging
-
 import ops.lib
-from charms.redis_k8s.v0.redis import (
-    RedisRelationCharmEvents,
-    RedisRequires,
-)
+
+from collections import namedtuple
 from ops.charm import CharmBase
 from ops.main import main
 from ops.framework import StoredState
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from ops.pebble import ExecError
+
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
+from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
 
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
+
+S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
 THROTTLE_LEVELS = {
     "none": {"DISCOURSE_MAX_REQS_PER_IP_MODE": "none", "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false"},
@@ -41,6 +43,9 @@ THROTTLE_LEVELS = {
 REQUIRED_S3_SETTINGS = ['s3_access_key_id', 's3_bucket', 's3_region', 's3_secret_access_key']
 
 SERVICE_NAME = "discourse"
+SERVICE_PORT = 3000
+
+SCRIPT_PATH = "/srv/scripts"
 
 
 class DiscourseCharm(CharmBase):
@@ -80,7 +85,7 @@ class DiscourseCharm(CharmBase):
         ingress_config = {
             "service-hostname": self.config["external_hostname"] or self.app.name,
             "service-name": self.app.name,
-            "service-port": 3000,
+            "service-port": SERVICE_PORT,
             "session-cookie-max-age": 3600,
         }
 
@@ -202,7 +207,8 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_S3_ENDPOINT": self.config.get("s3_endpoint", "s3.amazonaws.com"),
             "DISCOURSE_S3_REGION": self.config["s3_region"],
             "DISCOURSE_S3_SECRET_ACCESS_KEY": self.config["s3_secret_access_key"],
-            "DISCOURSE_USE_S3": True,
+            "DISCOURSE_S3_INSTALL_CORS_RULE": str(self.config.get("s3_install_cors_rule", True)).lower(),
+            "DISCOURSE_USE_S3": "true",
         }
         if self.config.get("s3_backup_bucket"):
             s3_env["DISCOURSE_BACKUP_LOCATION"] = "s3"
@@ -231,7 +237,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_DB_PASSWORD": self._stored.db_password,
             "DISCOURSE_DB_USERNAME": self._stored.db_user,
             "DISCOURSE_DEVELOPER_EMAILS": self.config["developer_emails"],
-            "DISCOURSE_ENABLE_CORS": self.config["enable_cors"],
+            "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
             "DISCOURSE_HOSTNAME": self.config["external_hostname"],
             "DISCOURSE_REDIS_HOST": redis_hostname,
             "DISCOURSE_REDIS_PORT": redis_port,
@@ -242,8 +248,14 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_DOMAIN": self.config["smtp_domain"],
             "DISCOURSE_SMTP_OPENSSL_VERIFY_MODE": self.config["smtp_openssl_verify_mode"],
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
-            "DISCOURSE_SMTP_PORT": self.config["smtp_port"],
+            "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
+            # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
+            # I need to take the required envVars for the application to work properly
+            "CONTAINER_APP_NAME": "discourse",
+            "CONTAINER_APP_ROOT": "/srv/discourse",
+            "GEM_HOME": "/srv/discourse/.gem",
+            "CONTAINER_APP_USERNAME": "discourse"
         }
 
         saml_config = self._get_saml_config()
@@ -274,13 +286,32 @@ class DiscourseCharm(CharmBase):
                 "discourse": {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": "sh -c '/srv/scripts/pod_start >>/srv/discourse/discourse.log 2&>1'",
+                    "command": f"sh -c '{SCRIPT_PATH}/pod_start >>/srv/discourse/discourse.log 2&>1'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
             },
+            "checks": {
+                "discourse-check": {
+                    "override": "replace",
+                    "http": {"url": f"http://localhost:{SERVICE_PORT}"},
+                },
+            }
         }
         return layer_config
+
+    def _should_run_setup(self, current_plan, s3info: S3Info):
+        # Return true if no services are planned yet (first run)
+        return not current_plan.services or (
+            # Or S3 is enabled and one S3 parameter has changed
+            self.config.get("s3_enabled")
+            and (
+                s3info.enabled != self.config.get("s3_enabled")
+                or s3info.region != self.config.get("s3_region")
+                or s3info.bucket != self.config.get("s3_bucket")
+                or s3info.endpoint != self.config.get("s3_endpoint")
+            )
+        )
 
     def _config_changed(self, event):
         """Configure service.
@@ -301,7 +332,44 @@ class DiscourseCharm(CharmBase):
         if not container.can_connect():
             event.defer()
             return
+        
+        # Get previous plan and extract env vars values to check is some S3 params has changed
+        current_plan = container.get_plan()
+        
+        # Covers when there are no plan
+        previous_s3_info: S3Info = None
+        if current_plan.services and current_plan.services["discourse"]:
+            current_env = current_plan.services["discourse"].environment
+            previous_s3_info = S3Info(
+                current_env["DISCOURSE_USE_S3"] if "DISCOURSE_USE_S3" in current_env else "",
+                current_env["DISCOURSE_S3_REGION"] if "DISCOURSE_S3_REGION" in current_env else "",
+                current_env["DISCOURSE_S3_BUCKET"] if "DISCOURSE_S3_BUCKET" in current_env else "",
+                current_env["DISCOURSE_S3_ENDPOINT"] if "DISCOURSE_S3_ENDPOINT" in current_env else "",
+            )
 
+        # First execute the setup script in 2 conditions:
+        # - First run (when no services are planned in pebble)
+        # - Change in important S3 parameter (comparing value with envVars in pebble plan)
+        if self._check_config_is_valid() and self.model.unit.is_leader() and self._should_run_setup(current_plan, previous_s3_info):
+            script = f"{SCRIPT_PATH}/pod_setup"
+
+            logger.debug(f"Executing setup script ({script})")
+            process = container.exec([script], environment=self._create_discourse_environment_settings())
+            try:
+                self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
+                stdout, _ = process.wait_output()
+                logger.debug(f"{script} stdout: {stdout}")
+            except ExecError as e:
+                logger.error(f"{script} command exited with code {e.exit_code}. Stderr:")
+                for line in e.stderr.splitlines():
+                    logger.error(f"    {line}")
+                logger.debug(f"{script} stdout: {e.stdout}")
+                self.model.unit.status = BlockedStatus(f"Error while executing {script}")
+                raise
+
+        self.model.unit.status = MaintenanceStatus("Configuring service")
+
+        # Then start the service
         if self._check_config_is_valid():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
