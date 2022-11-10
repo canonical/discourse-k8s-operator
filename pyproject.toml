@@ -11,7 +11,7 @@ skips = ["*/*test.py", "*/test_*.py"]
 branch = true
 
 [tool.coverage.report]
-fail_under = 83
+fail_under = 85
 show_missing = true
 
 
