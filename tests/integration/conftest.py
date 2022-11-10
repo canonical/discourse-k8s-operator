@@ -3,14 +3,13 @@
 
 import asyncio
 import logging
+from pathlib import Path
+
 import pytest_asyncio
 import yaml
-
 from ops.model import WaitingStatus
-from pathlib import Path
 from pytest import Config, fixture
 from pytest_operator.plugin import OpsTest
-
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +25,7 @@ def app_name(metadata):
     """Provides app name from the metadata."""
     yield metadata["name"]
 
+
 @fixture(scope="module")
 def app_config():
     """Provides app config."""
@@ -35,16 +35,21 @@ def app_config():
         "smtp_domain": "test.local",
         "s3_install_cors_rule": "false",
     }
-    
+
+
 @fixture(scope="module")
 def s3_ip_address(pytestconfig: Config):
     """Provides S3 IP address to inject to discourse hosts"""
-    yield pytestconfig.getoption("--s3-ip-address") if pytestconfig.getoption("--s3-ip-address") else "127.0.0.1"
+    yield pytestconfig.getoption("--s3-ip-address") if pytestconfig.getoption(
+        "--s3-ip-address"
+    ) else "127.0.0.1"
+
 
 @fixture(scope="module")
 def requests_timeout():
     """Provides a global default timeout for HTTP requests"""
     yield 5
+
 
 @pytest_asyncio.fixture(scope="module")
 async def app(ops_test: OpsTest, app_name: str, app_config: dict[str, str], pytestconfig: Config):
