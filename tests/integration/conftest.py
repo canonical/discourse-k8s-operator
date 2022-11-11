@@ -4,6 +4,7 @@
 import asyncio
 import logging
 from pathlib import Path
+from typing import Dict
 
 import pytest_asyncio
 import yaml
@@ -52,7 +53,7 @@ def requests_timeout():
 
 
 @pytest_asyncio.fixture(scope="module")
-async def app(ops_test: OpsTest, app_name: str, app_config: dict[str, str], pytestconfig: Config):
+async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pytestconfig: Config):
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
