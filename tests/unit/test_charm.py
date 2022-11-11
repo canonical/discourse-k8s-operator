@@ -148,8 +148,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 "external_hostname": "discourse.local",
                 "smtp_domain": "foo.internal",
                 "s3_access_key_id": "3|33+",
-                "
-                ": True,
+                "s3_enabled": True,
                 "s3_endpoint": "s3.endpoint",
                 "s3_region": "the-infinite-and-beyond",
                 "s3_secret_access_key": "s|kI0ure_k3Y",

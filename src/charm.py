@@ -371,19 +371,19 @@ class DiscourseCharm(CharmBase):
         ):
             script = f"{SCRIPT_PATH}/pod_setup"
 
-            logger.debug(f"Executing setup script ({script})")
+            logger.debug("Executing setup script (%s)", script)
             process = container.exec(
                 [script], environment=self._create_discourse_environment_settings()
             )
             try:
                 self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
                 stdout, _ = process.wait_output()
-                logger.debug(f"{script} stdout: {stdout}")
+                logger.debug("%s stdout: %s", script, stdout)
             except ExecError as e:
-                logger.error(f"{script} command exited with code {e.exit_code}. Stderr:")
+                logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
                 for line in e.stderr.splitlines():
-                    logger.error(f"    {line}")
-                logger.debug(f"{script} stdout: {e.stdout}")
+                    logger.error("    %s", line)
+                logger.debug("%s stdout: %s", script, e.stdout)
                 self.model.unit.status = BlockedStatus(f"Error while executing {script}")
                 raise
 
