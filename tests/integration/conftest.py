@@ -59,8 +59,8 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     """
     # Deploy relations to speed up overall execution
     await asyncio.gather(
-        ops_test.model.deploy("postgresql-k8s"),
-        ops_test.model.deploy("redis-k8s"),
+        ops_test.model.deploy("postgresql-k8s", series="focal"),
+        ops_test.model.deploy("redis-k8s", series="focal"),
     )
 
     charm = await ops_test.build_charm(".")
@@ -69,7 +69,7 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     }
 
     application = await ops_test.model.deploy(
-        charm, resources=resources, application_name=app_name, config=app_config
+        charm, resources=resources, application_name=app_name, config=app_config, series="focal"
     )
     await ops_test.model.wait_for_idle()
 

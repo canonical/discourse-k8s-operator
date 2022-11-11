@@ -10,7 +10,7 @@ echo "Building ${CONTAINER_APP_NAME} ${CONTAINER_APP_VERSION} in ${CONTAINER_APP
 mkdir -p ${GEM_HOME}
 chown ${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP} ${GEM_HOME}
 
-cd ${CONTAINER_APP_ROOT} || exit 1
+cd ${CONTAINER_APP_ROOT} || exit 1
 git clone --depth 1 --branch ${CONTAINER_APP_VERSION} https://github.com/discourse/discourse.git ${CONTAINER_APP_VERSION}
 
 # Apply patch for LP#1903695
