@@ -5,6 +5,7 @@
 import json
 import logging
 from urllib.parse import urlencode
+from typing import Dict
 
 import pytest
 import requests
@@ -55,7 +56,7 @@ async def test_discourse_up(ops_test: OpsTest, app: Application, requests_timeou
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
 async def test_setup_discourse(
-    ops_test: OpsTest, app: Application, app_config: dict[str, str], requests_timeout: float
+    ops_test: OpsTest, app: Application, app_config: Dict[str, str], requests_timeout: float
 ):
     """Check discourse if working properly by registrating an Admin and generates an API
     Note that the API is later used to manipulate Discourse
