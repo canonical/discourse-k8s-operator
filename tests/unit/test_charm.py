@@ -190,7 +190,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "s3_region": "the-infinite-and-beyond",
                     "s3_secret_access_key": "s|kI0ure_k3Y",
                     "tls_secret_name": "somesecret",
-                    "max_body_size": "1000",
+                    "max_body_size": 1000,
                 }
             )
 

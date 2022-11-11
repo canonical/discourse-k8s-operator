@@ -4,8 +4,8 @@
 
 import json
 import logging
-from urllib.parse import urlencode
 from typing import Dict
+from urllib.parse import urlencode
 
 import pytest
 import requests

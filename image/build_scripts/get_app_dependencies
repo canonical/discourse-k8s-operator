@@ -34,4 +34,4 @@ apt-get install -y brotli \
 # base image is >= 22.04. Also, please consider removing the node-uglify
 # when upgrading to discourse >= 2.8.0, since the node-uglify is not
 # required to trigger node js assets compression, only terser will do fine.
-which terser || ln -s $(which uglifyjs.terser) /usr/local/bin/terser
+which terser || ln -s "$(which uglifyjs.terser)" /usr/local/bin/terser
