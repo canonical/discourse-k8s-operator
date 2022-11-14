@@ -12,4 +12,4 @@ APP_EXITCODE=$2
 echo "Setup exited with exit code ${SETUP_EXITCODE}"
 echo "App exited with exit code ${APP_EXITCODE}"
 
-exit ${APP_EXITCODE} 
+exit "${APP_EXITCODE}"

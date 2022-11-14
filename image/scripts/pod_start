@@ -19,4 +19,4 @@ echo "${CONTAINER_APP_NAME} exited with code ${APP_EXIT}"
 
 # Run pod_exit with either the pod_setup exit code, or the app_launch exit code
 # as the first argument.
-/srv/scripts/pod_exit $SETUP_EXIT $APP_EXIT
+/srv/scripts/pod_exit "$SETUP_EXIT" "$APP_EXIT"
