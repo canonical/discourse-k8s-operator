@@ -237,7 +237,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
         )
         self.assertEqual("somesecret", self.harness.charm.ingress.config_dict["tls-secret-name"])
-        self.assertEqual(20, self.harness.charm.ingress.config_dict["max-body-size"])
+        self.assertEqual(1000, self.harness.charm.ingress.config_dict["max-body-size"])
 
     def test_db_relation(self):
         """
