@@ -14,6 +14,7 @@ from botocore.config import Config
 from bs4 import BeautifulSoup
 from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import OpsTest
+from requests.adapters import HTTPAdapter
 
 from charm import SERVICE_NAME, SERVICE_PORT
 from tests.integration.helpers import (
@@ -45,7 +46,9 @@ async def test_discourse_up(ops_test: OpsTest, app: Application, requests_timeou
     address = await get_unit_address(ops_test, app.name)
     # Send request to bootstrap page and set Host header to app_name (which the application
     # expects)
-    response = requests.get(
+    session = requests.Session()
+    session.mount('http://', HTTPAdapter(max_retries=5))
+    response = session.get(
         f"http://{address}:{SERVICE_PORT}/finish-installation/register",
         headers={"Host": f"{app.name}.local"},
         timeout=requests_timeout,
