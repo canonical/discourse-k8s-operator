@@ -164,7 +164,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
-        assert: the approapriate configuration values are passed to the pod and the unit reaches Active status.
+        assert: the approapriate configuration values are passed to the pod and the unit
+        reaches Active status.
         """
         self.add_database_relations()
         with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:

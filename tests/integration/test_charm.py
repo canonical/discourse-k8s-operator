@@ -208,7 +208,7 @@ async def test_setup_discourse(
     assert response.status_code == 200
 
     parsed_key = response.json()
-    logger.info("Admin API Key: %s", {parsed_key['key']['key']})
+    logger.info("Admin API Key: %s", {parsed_key["key"]["key"]})
 
 
 @pytest.mark.asyncio
