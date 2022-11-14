@@ -49,7 +49,7 @@ def s3_ip_address(pytestconfig: Config):
 @fixture(scope="module")
 def requests_timeout():
     """Provides a global default timeout for HTTP requests"""
-    yield 5
+    yield 15
 
 
 @pytest_asyncio.fixture(scope="module")
