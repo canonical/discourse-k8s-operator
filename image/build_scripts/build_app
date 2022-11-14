@@ -35,4 +35,4 @@ find "${CONTAINER_APP_ROOT}" -name tmp -type d -exec rm -rf {} +
 mkdir -p "${CONTAINER_APP_ROOT}/app/tmp/backups/default"
 mkdir -p "${CONTAINER_APP_ROOT}/app/public/backups/default"
 mkdir -p "${CONTAINER_APP_ROOT}/app/public/uploads/default"
-chown -R "${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP}" "${CONTAINER_APP_ROOT}/app/*"
+chown -R "${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP}" "${CONTAINER_APP_ROOT}/app"/*
