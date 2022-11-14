@@ -185,11 +185,11 @@ class DiscourseCharm(CharmBase):
         missing_fields = []
 
         needed_fields = [
-            "smtp_address",
             "cors_origin",
             "developer_emails",
-            "smtp_domain",
             "external_hostname",
+            "smtp_address",
+            "smtp_domain",
         ]
         # See if Redis connection information has been provided via a relation.
         redis_hostname = None

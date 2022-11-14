@@ -160,6 +160,60 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             BlockedStatus("'s3_enabled' requires 's3_bucket'"),
         )
 
+    def test_config_changed_when_valid_no_s3_backup_nor_cdn(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when a valid configuration is provided
+        assert: the approapriate configuration values are passed to the pod and the unit
+        reaches Active status.
+        """
+        self.add_database_relations()
+        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
+            self.harness.container_pebble_ready("discourse")
+
+            self.harness.update_config(
+                {
+                    "developer_emails": "user@foo.internal",
+                    "enable_cors": True,
+                    "external_hostname": "discourse.local",
+                    "smtp_domain": "foo.internal",
+                    "s3_access_key_id": "3|33+",
+                    "s3_bucket": "who-s-a-good-bucket?",
+                    "s3_enabled": True,
+                    "s3_endpoint": "s3.endpoint",
+                    "s3_region": "the-infinite-and-beyond",
+                    "s3_secret_access_key": "s|kI0ure_k3Y",
+                }
+            )
+
+        updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
+        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+        exec_mock.assert_any_call([f"{SCRIPT_PATH}/pod_setup"], environment=updated_plan_env)
+        self.assertNotIn("DISCOURSE_BACKUP_LOCATION", updated_plan_env)
+        self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
+        self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
+        self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_DB_NAME"])
+        self.assertEqual("somepasswd", updated_plan_env["DISCOURSE_DB_PASSWORD"])
+        self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
+        self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
+        self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
+        self.assertEqual("discourse.local", updated_plan_env["DISCOURSE_HOSTNAME"])
+        self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
+        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
+        self.assertEqual("3|33+", updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"])
+        self.assertNotIn("DISCOURSE_S3_BACKUP_BUCKET", updated_plan_env)
+        self.assertNotIn("DISCOURSE_S3_CDN_URL", updated_plan_env)
+        self.assertEqual("who-s-a-good-bucket?", updated_plan_env["DISCOURSE_S3_BUCKET"])
+        self.assertEqual("s3.endpoint", updated_plan_env["DISCOURSE_S3_ENDPOINT"])
+        self.assertEqual("the-infinite-and-beyond", updated_plan_env["DISCOURSE_S3_REGION"])
+        self.assertEqual("s|kI0ure_k3Y", updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"])
+        self.assertTrue(updated_plan_env["DISCOURSE_USE_S3"])
+        self.assertEqual(self.harness.model.unit.status, ActiveStatus())
+        self.assertEqual(
+            "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
+        )
+
     def test_config_changed_when_valid(self):
         """
         arrange: given a deployed discourse charm with all the required relations
