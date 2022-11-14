@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pip install pip --upgrade
+pip install pyopenssl --upgrade
 pip install localstack # install LocalStack cli
 docker pull localstack/localstack # Make sure to pull the latest version of the image
 localstack start -d # Start LocalStack in the background
