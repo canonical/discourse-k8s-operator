@@ -364,12 +364,12 @@ class DiscourseCharm(CharmBase):
         # First execute the setup script in 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
+        script = f"{SCRIPT_PATH}/pod_setup"
         if (
             self._check_config_is_valid()
             and self.model.unit.is_leader()
             and self._should_run_setup(current_plan, previous_s3_info)
         ):
-            script = f"{SCRIPT_PATH}/pod_setup"
 
             logger.debug("Executing setup script (%s)", script)
             process = container.exec(
@@ -395,6 +395,9 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
+            if not container.can_connect():
+                event.defer()
+                return
             self.model.unit.status = ActiveStatus()
 
     def _on_database_relation_joined(self, event):
