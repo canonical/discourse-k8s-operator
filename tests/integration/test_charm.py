@@ -43,7 +43,7 @@ async def test_discourse_up(ops_test: OpsTest, app: Application, requests_timeou
     Assume that the charm has already been built and is running.
     """
 
-    action = await app.units[0].run("curl -v http://localhost:3000")
+    action = await app.units[0].run("ps auxwf")
     result = await action.wait()
     logger.info(result.results)
 
