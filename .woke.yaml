@@ -5,3 +5,4 @@ rules:
   # Ignore "master" - the database relation event received from the library
   # uses this terminology.
   - name: master
+  - name: whitelist
