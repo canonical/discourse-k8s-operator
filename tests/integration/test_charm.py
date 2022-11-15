@@ -43,7 +43,9 @@ async def test_discourse_up(ops_test: OpsTest, app: Application, requests_timeou
     Assume that the charm has already been built and is running.
     """
 
-    await ops_test.model.debug_log(no_tail=True, lines=100, level="DEBUG")
+    action = await app.units[0].run("ps auxwf")
+    result = await action.wait()
+    logger.info(result.results)
 
     address = await get_unit_address(ops_test, app.name)
     # Send request to bootstrap page and set Host header to app_name (which the application
