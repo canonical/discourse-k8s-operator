@@ -5,7 +5,8 @@ on:
 
 jobs:
   integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@feature/allow-remote-debug
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
       pre-run-script: localstack-installation.sh
+      extra-arguments: --s3-ip-address 127.0.0.1
