@@ -214,6 +214,67 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
+    def test_config_changed_when_valid_no_fingerprint(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when a valid configuration is provided
+        assert: the appropriate configuration values are passed to the pod and the unit
+        reaches Active status.
+        """
+        self.add_database_relations()
+        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
+            self.harness.container_pebble_ready("discourse")
+
+            self.harness.update_config(
+                {
+                    "developer_emails": "user@foo.internal",
+                    "enable_cors": True,
+                    "external_hostname": "discourse.local",
+                    "force_saml_login": True,
+                    "saml_target_url": "https://login.sample.com/+saml",
+                    "saml_sync_groups": "group1",
+                    "smtp_domain": "foo.internal",
+                    "smtp_password": "OBV10USLYF4K3",
+                    "smtp_username": "apikey",
+                    "s3_enabled": False,
+                }
+            )
+
+        updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
+        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+        exec_mock.assert_any_call([f"{SCRIPT_PATH}/pod_setup"], environment=updated_plan_env)
+        self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
+        self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
+        self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_DB_NAME"])
+        self.assertEqual("somepasswd", updated_plan_env["DISCOURSE_DB_PASSWORD"])
+        self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
+        self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
+        self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
+        self.assertEqual("discourse.local", updated_plan_env["DISCOURSE_HOSTNAME"])
+        self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
+        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertNotIn("DISCOURSE_SAML_CERT_FINGERPRINT", updated_plan_env)
+        self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
+        self.assertEqual(
+            "https://login.sample.com/+saml", updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
+        )
+        self.assertEqual("false", updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"])
+        self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"])
+        self.assertEqual("group1", updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"])
+        self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
+        self.assertEqual("127.0.0.1", updated_plan_env["DISCOURSE_SMTP_ADDRESS"])
+        self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"])
+        self.assertEqual("foo.internal", updated_plan_env["DISCOURSE_SMTP_DOMAIN"])
+        self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"])
+        self.assertEqual("OBV10USLYF4K3", updated_plan_env["DISCOURSE_SMTP_PASSWORD"])
+        self.assertEqual("587", updated_plan_env["DISCOURSE_SMTP_PORT"])
+        self.assertEqual("apikey", updated_plan_env["DISCOURSE_SMTP_USER_NAME"])
+        self.assertNotIn("DISCOURSE_USE_S3", updated_plan_env)
+        self.assertEqual(self.harness.model.unit.status, ActiveStatus())
+        self.assertEqual(
+            "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
+        )
+
     def test_config_changed_when_valid(self):
         """
         arrange: given a deployed discourse charm with all the required relations
