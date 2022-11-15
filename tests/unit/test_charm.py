@@ -164,7 +164,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
-        assert: the approapriate configuration values are passed to the pod and the unit
+        assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
         """
         self.add_database_relations()
@@ -218,7 +218,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
-        assert: the approapriate configuration values are passed to the pod and the unit
+        assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
         """
         self.add_database_relations()
@@ -298,7 +298,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         arrange: given a deployed discourse charm
         act: when the database relation is added
-        assert: the approapriate database name is set.
+        assert: the appropriate database name is set.
         """
         self.add_database_relations()
         self.harness.set_leader(True)
