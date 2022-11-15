@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#Ensure background processes are killed when the script ends, otherwise pebble
+# will never see the process ending and think it's still running
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
 cd "${CONTAINER_APP_ROOT}/app" || exit 1
 
 export RAILS_ENV="${DISCOURSE_RAILS_ENVIRONMENT:-production}"
@@ -15,4 +19,4 @@ tail -f "${CONTAINER_APP_ROOT}/app/log/unicorn-stderr.log" |sed 's/^/unicorn-err
 
 # Add the discourse bin and scripts directories to the PATH.
 export PATH="${CONTAINER_APP_ROOT}/app/bin:${CONTAINER_APP_ROOT}/app/scripts:$PATH"
-su -s /bin/bash -c "bin/bundle exec unicorn -c ${CONTAINER_APP_ROOT}/app/config/unicorn.conf.rb" "${CONTAINER_APP_USERNAME}" 2>&1
+su -s /bin/bash -c "bin/unicorn -c ${CONTAINER_APP_ROOT}/app/config/unicorn.conf.rb" "${CONTAINER_APP_USERNAME}" 2>&1
