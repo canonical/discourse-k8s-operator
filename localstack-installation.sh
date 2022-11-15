@@ -7,6 +7,5 @@ docker pull localstack/localstack # Make sure to pull the latest version of the 
 localstack start -d # Start LocalStack in the background
 echo "Waiting for LocalStack startup..." # Wait 30 seconds for the LocalStack container
 localstack wait -t 30 # to become ready before timing out 
-echo "Startup complete"    
-microk8s status
-kubectl get po --all-namespaces
+echo "Startup complete"
+
