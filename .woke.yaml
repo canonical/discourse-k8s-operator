@@ -7,6 +7,6 @@ rules:
   # See https://github.com/kubernetes/ingress-nginx/issues/7916 for upstream
   # issue about this.
   - name: whitelist
-  # Ignore "master" - the databse relation event received from the library
+  # Ignore "master" - the database relation event received from the library
   # uses this terminology.
   - name: master
