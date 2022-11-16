@@ -5,7 +5,7 @@
 import json
 import logging
 from typing import Dict
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import pytest
 import requests
@@ -15,7 +15,6 @@ from bs4 import BeautifulSoup
 from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import OpsTest
 from requests.adapters import HTTPAdapter, Retry
-from urllib.parse import urlparse
 
 from charm import SERVICE_NAME, SERVICE_PORT
 from tests.integration.helpers import (
