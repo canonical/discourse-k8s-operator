@@ -9,3 +9,4 @@ jobs:
     secrets: inherit
     with:
       pre-run-script: localstack-installation.sh
+      extra-arguments: --s3-url http://172.17.0.1:4566
