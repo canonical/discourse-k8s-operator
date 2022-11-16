@@ -9,4 +9,3 @@ jobs:
     secrets: inherit
     with:
       pre-run-script: localstack-installation.sh
-      extra-arguments: --s3-ip-address 127.0.0.1

@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import OpsTest
 from requests.adapters import HTTPAdapter, Retry
+from urllib.parse import urlparse
 
 from charm import SERVICE_NAME, SERVICE_PORT
 from tests.integration.helpers import (
@@ -217,7 +218,7 @@ async def test_setup_discourse(
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_s3_conf(ops_test: OpsTest, app: Application, s3_ip_address: str):
+async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
     Assume that the charm has already been built and is running.
@@ -232,6 +233,13 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_ip_address: str):
     s3_bucket = "tests"
     s3_region = "us-east-1"
 
+    # Parse URL to get the IP address and the port, and compose the required variables
+    parsed_s3_url = urlparse(s3_url)
+    s3_ip_address = parsed_s3_url.hostname
+    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_domain}"
+    if parsed_s3_url:
+        s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
+    
     logger.info("Updating discourse hosts")
 
     # Discourse S3 client uses subdomain bucket routing,
@@ -248,7 +256,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_ip_address: str):
         {
             "s3_enabled": "true",
             # The final URL is computed by discourse, we need to pass the main URL
-            "s3_endpoint": f"http://{s3_domain}",
+            "s3_endpoint": s3_endpoint,
             "s3_bucket": s3_bucket,
             "s3_secret_access_key": config_s3_bucket["secret-key"],
             "s3_access_key_id": config_s3_bucket["access-key"],
@@ -271,7 +279,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_ip_address: str):
     # Trick to use when localstack is deployed on another location than locally
     if s3_ip_address != "127.0.0.1":
         proxy_definition = {
-            "http": f"http://{s3_ip_address}",
+            "http": s3_url,
         }
         s3_client_config = s3_client_config.merge(
             Config(
@@ -285,7 +293,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_ip_address: str):
         s3_region,
         aws_access_key_id=config_s3_bucket["access-key"],
         aws_secret_access_key=config_s3_bucket["secret-key"],
-        endpoint_url=f"http://{s3_domain}",
+        endpoint_url=s3_endpoint,
         use_ssl=False,
         config=s3_client_config,
     )

@@ -39,11 +39,11 @@ def app_config():
 
 
 @fixture(scope="module")
-def s3_ip_address(pytestconfig: Config):
+def s3_url(pytestconfig: Config):
     """Provides S3 IP address to inject to discourse hosts"""
-    yield pytestconfig.getoption("--s3-ip-address") if pytestconfig.getoption(
+    yield pytestconfig.getoption("--s3-url") if pytestconfig.getoption(
         "--s3-ip-address"
-    ) else "127.0.0.1"
+    ) else "http://127.0.0.1:4566"
 
 
 @fixture(scope="module")
