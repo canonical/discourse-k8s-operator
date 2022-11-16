@@ -1,4 +1,4 @@
-# Ignore ingress charm library as it uses this non compliant terminology.
+# Ignore ingress charm library as it uses this non compliant terminology: whitelist.
 ignore_files:
  - lib/charms/nginx_ingress_integrator/v0/ingress.py
 rules:
