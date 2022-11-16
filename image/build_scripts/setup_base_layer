@@ -15,7 +15,7 @@ ln -s /usr/share/zoneinfo/UTC /etc/localtime
 apt-get install -y gettext-base tzdata ubuntu-dev-tools git
 
 # Create our application group.
-/usr/sbin/addgroup --gid ${CONTAINER_APP_GID} ${CONTAINER_APP_GROUP}
+/usr/sbin/addgroup --gid "${CONTAINER_APP_GID}" "${CONTAINER_APP_GROUP}"
 
 # Create our application user - this also creates our app root. 
-/usr/sbin/adduser --uid ${CONTAINER_APP_UID} --home ${CONTAINER_APP_ROOT} --gid ${CONTAINER_APP_GID} --system ${CONTAINER_APP_USERNAME}
+/usr/sbin/adduser --uid "${CONTAINER_APP_UID}" --home "${CONTAINER_APP_ROOT}" --gid "${CONTAINER_APP_GID}" --system "${CONTAINER_APP_USERNAME}"

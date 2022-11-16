@@ -37,7 +37,7 @@ ENV GEM_HOME ${CONTAINER_APP_ROOT}/.gem
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Copy our build and runtime scripts into the image.
-COPY --chown=${CONTAINER_APP_UID}:${CONTAINER_APP_GID} build_scripts /srv/build_scripts
+COPY --chown=${CONTAINER_APP_UID}:${CONTAINER_APP_GID} image/build_scripts /srv/build_scripts
 
 # The setup_base_layer script performs steps that are very unlikely to change
 # for this image.
@@ -54,7 +54,7 @@ RUN /srv/build_scripts/build_app
 RUN /srv/build_scripts/cleanup_post_build
 
 # Copy run-time scripts into the container.
-COPY --chown=${CONTAINER_APP_UID}:${CONTAINER_APP_GID} scripts /srv/scripts
+COPY --chown=${CONTAINER_APP_UID}:${CONTAINER_APP_GID} image/scripts /srv/scripts
 
 # Set our entrypoint.
 ENTRYPOINT /srv/scripts/pod_start
