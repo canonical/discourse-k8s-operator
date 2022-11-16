@@ -1,12 +1,17 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+[tool.bandit]
+exclude_dirs = ["/venv/"]
+[tool.bandit.assert_used]
+skips = ["*/*test.py", "*/test_*.py"]
+
 # Testing tools configuration
 [tool.coverage.run]
 branch = true
 
 [tool.coverage.report]
-fail_under = 86
+fail_under = 85
 show_missing = true
 
 
@@ -20,6 +25,7 @@ line-length = 99
 target-version = ["py38"]
 
 [tool.isort]
+line_length = 99
 profile = "black"
 
 # Linting tools configuration

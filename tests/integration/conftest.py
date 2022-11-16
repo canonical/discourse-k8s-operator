@@ -3,14 +3,14 @@
 
 import asyncio
 import logging
+from pathlib import Path
+from typing import Dict
+
 import pytest_asyncio
 import yaml
-
 from ops.model import WaitingStatus
-from pathlib import Path
 from pytest import Config, fixture
 from pytest_operator.plugin import OpsTest
-
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ def app_name(metadata):
     """Provides app name from the metadata."""
     yield metadata["name"]
 
+
 @fixture(scope="module")
 def app_config():
     """Provides app config."""
@@ -35,26 +36,31 @@ def app_config():
         "smtp_domain": "test.local",
         "s3_install_cors_rule": "false",
     }
-    
+
+
 @fixture(scope="module")
-def s3_ip_address(pytestconfig: Config):
+def s3_url(pytestconfig: Config):
     """Provides S3 IP address to inject to discourse hosts"""
-    yield pytestconfig.getoption("--s3-ip-address") if pytestconfig.getoption("--s3-ip-address") else "127.0.0.1"
+    yield pytestconfig.getoption("--s3-url") if pytestconfig.getoption(
+        "--s3-url"
+    ) else "http://127.0.0.1:4566"
+
 
 @fixture(scope="module")
 def requests_timeout():
     """Provides a global default timeout for HTTP requests"""
-    yield 5
+    yield 15
+
 
 @pytest_asyncio.fixture(scope="module")
-async def app(ops_test: OpsTest, app_name: str, app_config: dict[str, str], pytestconfig: Config):
+async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pytestconfig: Config):
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
     # Deploy relations to speed up overall execution
     await asyncio.gather(
-        ops_test.model.deploy("postgresql-k8s"),
-        ops_test.model.deploy("redis-k8s"),
+        ops_test.model.deploy("postgresql-k8s", series="focal"),
+        ops_test.model.deploy("redis-k8s", series="focal"),
     )
 
     charm = await ops_test.build_charm(".")
@@ -63,7 +69,7 @@ async def app(ops_test: OpsTest, app_name: str, app_config: dict[str, str], pyte
     }
 
     application = await ops_test.model.deploy(
-        charm, resources=resources, application_name=app_name, config=app_config
+        charm, resources=resources, application_name=app_name, config=app_config, series="focal"
     )
     await ops_test.model.wait_for_idle()
 

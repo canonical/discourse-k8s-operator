@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
-# Copyright 2020 Canonical Ltd.
+# Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 import logging
-import ops.lib
-
 from collections import namedtuple
-from ops.charm import CharmBase
-from ops.main import main
-from ops.framework import StoredState
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
-from ops.pebble import ExecError
 
+import ops.lib
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
-
+from ops.charm import CharmBase
+from ops.framework import StoredState
+from ops.main import main
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from ops.pebble import ExecError
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -22,7 +20,10 @@ pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
 S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
 THROTTLE_LEVELS = {
-    "none": {"DISCOURSE_MAX_REQS_PER_IP_MODE": "none", "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false"},
+    "none": {
+        "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
+        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
+    },
     "permissive": {
         "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
         "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 1000,
@@ -40,7 +41,7 @@ THROTTLE_LEVELS = {
         "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
     },
 }
-REQUIRED_S3_SETTINGS = ['s3_access_key_id', 's3_bucket', 's3_region', 's3_secret_access_key']
+REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
 
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
@@ -74,7 +75,9 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.upgrade_charm, self._config_changed)
 
         self.db = pgsql.PostgreSQLClient(self, "db")
-        self.framework.observe(self.db.on.database_relation_joined, self._on_database_relation_joined)
+        self.framework.observe(
+            self.db.on.database_relation_joined, self._on_database_relation_joined
+        )
         self.framework.observe(self.db.on.master_changed, self._on_database_changed)
 
         self.redis = RedisRequires(self, self._stored)
@@ -122,12 +125,16 @@ class DiscourseCharm(CharmBase):
 
         if self.config.get("saml_target_url"):
             saml_config["DISCOURSE_SAML_TARGET_URL"] = self.config["saml_target_url"]
-            saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = "true" if self.config["force_saml_login"] else "false"
+            saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
+                "true" if self.config["force_saml_login"] else "false"
+            )
             fingerprint = saml_fingerprints.get(self.config["saml_target_url"])
             if fingerprint:
                 saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = fingerprint
 
-        saml_sync_groups = [x.strip() for x in self.config["saml_sync_groups"].split(",") if x.strip()]
+        saml_sync_groups = [
+            x.strip() for x in self.config["saml_sync_groups"].split(",") if x.strip()
+        ]
         if saml_sync_groups:
             # Per https://github.com/discourse/discourse-saml setting this to `true`
             # means the assigned groups will be completely synced including adding
@@ -163,7 +170,8 @@ class DiscourseCharm(CharmBase):
         if self.config.get("s3_enabled"):
             [
                 errors.append(f"'s3_enabled' requires '{s3_config}'")
-                for s3_config in REQUIRED_S3_SETTINGS if not self.config[s3_config]
+                for s3_config in REQUIRED_S3_SETTINGS
+                if not self.config[s3_config]
             ]
 
         return errors
@@ -177,11 +185,11 @@ class DiscourseCharm(CharmBase):
         missing_fields = []
 
         needed_fields = [
-            "smtp_address",
             "cors_origin",
             "developer_emails",
-            "smtp_domain",
             "external_hostname",
+            "smtp_address",
+            "smtp_domain",
         ]
         # See if Redis connection information has been provided via a relation.
         redis_hostname = None
@@ -207,7 +215,9 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_S3_ENDPOINT": self.config.get("s3_endpoint", "s3.amazonaws.com"),
             "DISCOURSE_S3_REGION": self.config["s3_region"],
             "DISCOURSE_S3_SECRET_ACCESS_KEY": self.config["s3_secret_access_key"],
-            "DISCOURSE_S3_INSTALL_CORS_RULE": str(self.config.get("s3_install_cors_rule", True)).lower(),
+            "DISCOURSE_S3_INSTALL_CORS_RULE": str(
+                self.config.get("s3_install_cors_rule", True)
+            ).lower(),
             "DISCOURSE_USE_S3": "true",
         }
         if self.config.get("s3_backup_bucket"):
@@ -228,7 +238,9 @@ class DiscourseCharm(CharmBase):
         for redis_unit in self._stored.redis_relation:
             redis_hostname = self._stored.redis_relation[redis_unit]["hostname"]
             redis_port = self._stored.redis_relation[redis_unit]["port"]
-            logger.debug("Got redis connection details from relation of %s:%s", redis_hostname, redis_port)
+            logger.debug(
+                "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
+            )
 
         pod_config = {
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
@@ -255,7 +267,7 @@ class DiscourseCharm(CharmBase):
             "CONTAINER_APP_NAME": "discourse",
             "CONTAINER_APP_ROOT": "/srv/discourse",
             "GEM_HOME": "/srv/discourse/.gem",
-            "CONTAINER_APP_USERNAME": "discourse"
+            "CONTAINER_APP_USERNAME": "discourse",
         }
 
         saml_config = self._get_saml_config()
@@ -286,7 +298,7 @@ class DiscourseCharm(CharmBase):
                 "discourse": {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": f"sh -c '{SCRIPT_PATH}/pod_start >>/srv/discourse/discourse.log 2&>1'",
+                    "command": f"sh -c '{SCRIPT_PATH}/app_launch >>/srv/discourse/discourse.log 2&>1'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
@@ -296,7 +308,7 @@ class DiscourseCharm(CharmBase):
                     "override": "replace",
                     "http": {"url": f"http://localhost:{SERVICE_PORT}"},
                 },
-            }
+            },
         }
         return layer_config
 
@@ -332,10 +344,10 @@ class DiscourseCharm(CharmBase):
         if not container.can_connect():
             event.defer()
             return
-        
+
         # Get previous plan and extract env vars values to check is some S3 params has changed
         current_plan = container.get_plan()
-        
+
         # Covers when there are no plan
         previous_s3_info: S3Info = None
         if current_plan.services and current_plan.services["discourse"]:
@@ -344,26 +356,34 @@ class DiscourseCharm(CharmBase):
                 current_env["DISCOURSE_USE_S3"] if "DISCOURSE_USE_S3" in current_env else "",
                 current_env["DISCOURSE_S3_REGION"] if "DISCOURSE_S3_REGION" in current_env else "",
                 current_env["DISCOURSE_S3_BUCKET"] if "DISCOURSE_S3_BUCKET" in current_env else "",
-                current_env["DISCOURSE_S3_ENDPOINT"] if "DISCOURSE_S3_ENDPOINT" in current_env else "",
+                current_env["DISCOURSE_S3_ENDPOINT"]
+                if "DISCOURSE_S3_ENDPOINT" in current_env
+                else "",
             )
 
         # First execute the setup script in 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        if self._check_config_is_valid() and self.model.unit.is_leader() and self._should_run_setup(current_plan, previous_s3_info):
-            script = f"{SCRIPT_PATH}/pod_setup"
+        script = f"{SCRIPT_PATH}/pod_setup"
+        if (
+            self._check_config_is_valid()
+            and self.model.unit.is_leader()
+            and self._should_run_setup(current_plan, previous_s3_info)
+        ):
 
-            logger.debug(f"Executing setup script ({script})")
-            process = container.exec([script], environment=self._create_discourse_environment_settings())
+            logger.debug("Executing setup script (%s)", script)
+            process = container.exec(
+                [script], environment=self._create_discourse_environment_settings()
+            )
             try:
                 self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
                 stdout, _ = process.wait_output()
-                logger.debug(f"{script} stdout: {stdout}")
+                logger.debug("%s stdout: %s", script, stdout)
             except ExecError as e:
-                logger.error(f"{script} command exited with code {e.exit_code}. Stderr:")
+                logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
                 for line in e.stderr.splitlines():
-                    logger.error(f"    {line}")
-                logger.debug(f"{script} stdout: {e.stdout}")
+                    logger.error("    %s", line)
+                logger.debug("%s stdout: %s", script, e.stdout)
                 self.model.unit.status = BlockedStatus(f"Error while executing {script}")
                 raise
 
@@ -375,6 +395,9 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
+            if not container.can_connect():
+                event.defer()
+                return
             self.model.unit.status = ActiveStatus()
 
     def _on_database_relation_joined(self, event):
