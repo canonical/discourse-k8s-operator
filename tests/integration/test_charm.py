@@ -239,7 +239,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     s3_endpoint = f"{parsed_s3_url.scheme}://{s3_domain}"
     if parsed_s3_url:
         s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
-    
+
     logger.info("Updating discourse hosts")
 
     # Discourse S3 client uses subdomain bucket routing,

@@ -42,7 +42,7 @@ def app_config():
 def s3_url(pytestconfig: Config):
     """Provides S3 IP address to inject to discourse hosts"""
     yield pytestconfig.getoption("--s3-url") if pytestconfig.getoption(
-        "--s3-ip-address"
+        "--s3-url"
     ) else "http://127.0.0.1:4566"
 
 
