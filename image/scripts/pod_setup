@@ -11,7 +11,7 @@ export RAILS_ENV="${DISCOURSE_RAILS_ENVIRONMENT:-production}"
 # don't have an official Juju way to do this coordination at this point. When we
 # do, this will go away.
 MIGRATE_LOCK=$(redis-cli -h "$DISCOURSE_REDIS_HOST" --raw setnx discourse_migrate_lock "$HOSTNAME")
-if [ "${MIGRATE_LOCK}" != "1" ]; then
+if [ "${MIGRATE_LOCK}" == "1" ]; then
     # If we are here, we got the migrate lock, so we can do the migrate.
     echo "Starting migration at $(date)"
     su -s /bin/bash -c "bin/bundle exec rake db:migrate RAILS_ENV=$RAILS_ENV" "${CONTAINER_APP_USERNAME}"
