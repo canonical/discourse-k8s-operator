@@ -383,7 +383,7 @@ class DiscourseCharm(CharmBase):
                 logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
                 for line in e.stderr.splitlines():
                     logger.error("    %s", line)
-                logger.error("%s stdout: %s", script, e.stdout)
+                logger.debug("%s stdout: %s", script, e.stdout)
                 self.model.unit.status = BlockedStatus(f"Error while executing {script}")
                 raise
 
