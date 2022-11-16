@@ -85,7 +85,7 @@ async def test_setup_discourse(
     # Parse output and send registration form
     parsed_registration: BeautifulSoup = BeautifulSoup(response.content, features="html.parser")
 
-`    # Get the form info
+    # Get the form info
     form_fields = {
         "utf8": parsed_registration.body.find("input", attrs={"name": "utf8"}).get("value"),
         "authenticity_token": parsed_registration.body.find(
