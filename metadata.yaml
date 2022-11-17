@@ -30,3 +30,7 @@ resources:
   discourse-image:
     type: oci-image
     description: OCI image for discourse  
+
+peers:
+  discourse-peers:
+    interface: discourse-instance

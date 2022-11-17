@@ -8,7 +8,7 @@ from collections import namedtuple
 import ops.lib
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
-from ops.charm import CharmBase
+from ops.charm import CharmBase, HookEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
@@ -69,10 +69,10 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
-        self.framework.observe(self.on.leader_elected, self._config_changed)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
-        self.framework.observe(self.on.upgrade_charm, self._config_changed)
+        self.framework.observe(self.on.install, self._on_install)
+        self.framework.observe(self.on.upgrade_charm, self._on_install)
 
         self.db = pgsql.PostgreSQLClient(self, "db")
         self.framework.observe(
@@ -243,6 +243,11 @@ class DiscourseCharm(CharmBase):
             )
 
         pod_config = {
+            # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
+            # I need to take the required envVars for the application to work properly
+            "CONTAINER_APP_NAME": "discourse",
+            "CONTAINER_APP_ROOT": "/srv/discourse",
+            "CONTAINER_APP_USERNAME": "discourse",
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
             "DISCOURSE_DB_HOST": self._stored.db_host,
             "DISCOURSE_DB_NAME": self._stored.db_name,
@@ -262,12 +267,8 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
             "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
-            # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
-            # I need to take the required envVars for the application to work properly
-            "CONTAINER_APP_NAME": "discourse",
-            "CONTAINER_APP_ROOT": "/srv/discourse",
             "GEM_HOME": "/srv/discourse/.gem",
-            "CONTAINER_APP_USERNAME": "discourse",
+            "RAILS_ENV": "production",
         }
 
         saml_config = self._get_saml_config()
@@ -325,7 +326,7 @@ class DiscourseCharm(CharmBase):
             )
         )
 
-    def _config_changed(self, event):
+    def _config_changed(self, event: HookEvent) -> None:
         """Configure service.
 
         - Verifies config is valid
@@ -364,13 +365,12 @@ class DiscourseCharm(CharmBase):
         # First execute the setup script in 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        script = f"{SCRIPT_PATH}/pod_setup"
         if (
             self._check_config_is_valid()
             and self.model.unit.is_leader()
             and self._should_run_setup(current_plan, previous_s3_info)
         ):
-
+            script = f"{SCRIPT_PATH}/pod_setup"
             logger.debug("Executing setup script (%s)", script)
             process = container.exec(
                 [script], environment=self._create_discourse_environment_settings()
@@ -444,6 +444,30 @@ class DiscourseCharm(CharmBase):
         self._stored.db_host = event.master.host
 
         self._config_changed(event)
+
+    def _on_install(self, event: HookEvent) -> None:
+        if self.unit.isLeader():
+            container = self.unit.get_container(SERVICE_NAME)
+            if not container.can_connect():
+                event.defer()
+                return
+            self.model.unit.status = MaintenanceStatus("Running migrations")
+            script = f"{SCRIPT_PATH}/migrate"
+            logger.debug("Executing setup script (%s)", script)
+            process = container.exec(
+                [script], environment=self._create_discourse_environment_settings()
+            )
+            try:
+                self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
+                stdout, _ = process.wait_output()
+                logger.debug("%s stdout: %s", script, stdout)
+            except ExecError as e:
+                logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
+                for line in e.stderr.splitlines():
+                    logger.error("    %s", line)
+                logger.debug("%s stdout: %s", script, e.stdout)
+                self.model.unit.status = BlockedStatus(f"Error while executing {script}")
+                raise
 
 
 if __name__ == "__main__":  # pragma: no cover
