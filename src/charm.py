@@ -371,8 +371,8 @@ class DiscourseCharm(CharmBase):
             process = container.exec(
                 [script], environment=self._create_discourse_environment_settings()
             )
+            self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
             try:
-                self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
                 stdout, _ = process.wait_output()
                 logger.debug("%s stdout: %s", script, stdout)
             except ExecError as e:
