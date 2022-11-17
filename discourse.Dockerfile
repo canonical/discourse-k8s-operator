@@ -94,7 +94,6 @@ RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
 
 # Copy run-time scripts into the container.
 COPY --chown="${CONTAINER_APP_UID}:${CONTAINER_APP_GID}" image/scripts /srv/scripts
-RUN chmod +x /srv/scripts/*
 
 ENV PLUGINS_DIR="${CONTAINER_APP_ROOT}/app/plugins"
 RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/discourse-saml" \
