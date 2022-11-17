@@ -19,10 +19,6 @@ options:
     type: boolean
     description: "Force SAML login (full screen, no local database logins)"
     default: false
-  max_body_size:
-    type: int
-    description: "Max allowed body-size (for file uploads) in megabytes, set to 0 to disable limits"
-    default: 20
   saml_sync_groups:
     type: string
     description: "Comma-separated list of groups to sync from SAML provider."
@@ -132,7 +128,3 @@ options:
     type: string
     description: "Throttle level - blocks excessive usage by ip. Valid values: none, permissive, strict"
     default: none
-  tls_secret_name:
-    type: string
-    description: "The name of the K8s secret to be associated with the ingress resource."
-    default: ""
