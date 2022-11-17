@@ -312,6 +312,15 @@ class DiscourseCharm(CharmBase):
             )
         )
 
+    def _are_db_relations_ready(self):
+        if not self._stored.db_name:
+            self.model.unit.status = WaitingStatus("Waiting for database relation")
+            return False
+        if not self._stored.redis_relation:
+            self.model.unit.status = WaitingStatus("Waiting for redis relation")
+            return False
+        return True
+
     def _config_changed(self, event: HookEvent) -> None:
         """Configure service.
 
@@ -321,19 +330,8 @@ class DiscourseCharm(CharmBase):
         """
 
         self.model.unit.status = MaintenanceStatus("Configuring service")
-
-        if not self._stored.db_name:
-            self.model.unit.status = WaitingStatus("Waiting for database relation")
-            event.defer()
-            return
-
-        if not self._stored.redis_relation:
-            self.model.unit.status = WaitingStatus("Waiting for redis relation")
-            event.defer()
-            return
-
         container = self.unit.get_container(SERVICE_NAME)
-        if not container.can_connect():
+        if not self._are_db_relations_ready() or not container.can_connect():
             event.defer()
             return
 
@@ -378,17 +376,12 @@ class DiscourseCharm(CharmBase):
                 self.model.unit.status = BlockedStatus(f"Error while executing {script}")
                 raise
 
-        self.model.unit.status = MaintenanceStatus("Configuring service")
-
         # Then start the service
         if self._check_config_is_valid():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
-            if not container.can_connect():
-                event.defer()
-                return
             self.model.unit.status = ActiveStatus()
 
     def _on_database_relation_joined(self, event: pgsql.DatabaseRelationJoinedEvent) -> None:
@@ -396,7 +389,6 @@ class DiscourseCharm(CharmBase):
 
         - Sets the event.database field on the database joined event.
         """
-
         if self.model.unit.is_leader():
             event.database = DATABASE_NAME
             event.extensions = ["hstore:public", "pg_trgm:public"]
@@ -426,22 +418,14 @@ class DiscourseCharm(CharmBase):
         self._config_changed(event)
 
     def _on_install(self, event: HookEvent) -> None:
-        if not self._stored.db_name:
-            event.defer()
-            return
-        if not self._stored.redis_relation:
-            self.model.unit.status = WaitingStatus("Waiting for redis relation")
+        if not self._are_db_relations_ready() or not event.workload.can_connect():
             event.defer()
             return
         if self.unit.is_leader():
-            container = self.unit.get_container(SERVICE_NAME)
-            if not container.can_connect():
-                event.defer()
-                return
             self.model.unit.status = MaintenanceStatus("Running migrations")
             script = f"{SCRIPT_PATH}/migrate"
             logger.debug("Executing setup script (%s)", script)
-            process = container.exec(
+            process = event.workload.exec(
                 [script], environment=self._create_discourse_environment_settings()
             )
             try:
