@@ -426,7 +426,14 @@ class DiscourseCharm(CharmBase):
         self._config_changed(event)
 
     def _on_install(self, event: HookEvent) -> None:
-        if self.unit.isLeader():
+        if not self._stored.db_name:
+            event.defer()
+            return
+        if not self._stored.redis_relation:
+            self.model.unit.status = WaitingStatus("Waiting for redis relation")
+            event.defer()
+            return
+        if self.unit.is_leader():
             container = self.unit.get_container(SERVICE_NAME)
             if not container.can_connect():
                 event.defer()
@@ -438,7 +445,6 @@ class DiscourseCharm(CharmBase):
                 [script], environment=self._create_discourse_environment_settings()
             )
             try:
-                self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
                 stdout, _ = process.wait_output()
                 logger.debug("%s stdout: %s", script, stdout)
             except ExecError as e:
@@ -446,7 +452,6 @@ class DiscourseCharm(CharmBase):
                 for line in e.stderr.splitlines():
                     logger.error("    %s", line)
                 logger.debug("%s stdout: %s", script, e.stdout)
-                self.model.unit.status = BlockedStatus(f"Error while executing {script}")
                 raise
 
 
