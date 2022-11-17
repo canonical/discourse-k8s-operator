@@ -18,3 +18,6 @@ jobs:
   publish-to-edge:
     uses: canonical/operator-workflows/.github/workflows/test_and_publish_charm.yaml@main
     secrets: inherit
+    with:
+     integration-test-extra-arguments: --s3-url http://172.17.0.1:4566
+     integration-test-pre-run-script: localstack-installation.sh

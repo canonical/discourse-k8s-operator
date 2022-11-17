@@ -58,6 +58,7 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     tzdata \
     ubuntu-dev-tools \
     zlib1g-dev \
+    && rm /var/lib/apt/lists/* \
 # Older versions of the uglifyjs.terser package install a uglifyjs.terser
 # command but not the terser command, terser command exists in $PATH is
 # vital to trigger js assets compression using node. Manually create the
