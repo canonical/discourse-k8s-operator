@@ -91,11 +91,6 @@ class DiscourseCharm(CharmBase):
             "service-port": SERVICE_PORT,
             "session-cookie-max-age": 3600,
         }
-
-        if self.config["tls_secret_name"]:
-            ingress_config["tls-secret-name"] = self.config["tls_secret_name"]
-        if self.config["max_body_size"]:
-            ingress_config["max-body-size"] = self.config["max_body_size"]
         return ingress_config
 
     def _check_config_is_valid(self):

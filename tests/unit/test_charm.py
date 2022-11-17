@@ -305,8 +305,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "s3_endpoint": "s3.endpoint",
                     "s3_region": "the-infinite-and-beyond",
                     "s3_secret_access_key": "s|kI0ure_k3Y",
-                    "tls_secret_name": "somesecret",
-                    "max_body_size": 1000,
                 }
             )
 
@@ -352,8 +350,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual(
             "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
         )
-        self.assertEqual("somesecret", self.harness.charm.ingress.config_dict["tls-secret-name"])
-        self.assertEqual(1000, self.harness.charm.ingress.config_dict["max-body-size"])
 
     def test_db_relation(self):
         """
