@@ -15,6 +15,7 @@ tags:
 requires:
   redis:
     interface: redis
+    limit: 1
   db:
     interface: pgsql
     limit: 1

@@ -19,6 +19,7 @@ pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
 
 S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
+DATABASE_NAME = "discourse"
 THROTTLE_LEVELS = {
     "none": {
         "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
@@ -191,20 +192,11 @@ class DiscourseCharm(CharmBase):
             "smtp_address",
             "smtp_domain",
         ]
-        # See if Redis connection information has been provided via a relation.
-        redis_hostname = None
-        for redis_unit in self._stored.redis_relation:
-            redis_hostname = self._stored.redis_relation[redis_unit]["hostname"]
-        if not redis_hostname:
-            needed_fields.append("redis_host")
         for key in needed_fields:
             if not self.config.get(key):
                 missing_fields.append(key)
 
         return sorted(missing_fields)
-
-    def _check_db_is_valid(self):
-        return self._stored.db_name and self._stored.db_name.strip()
 
     def _get_s3_env(self):
         """Get the list of S3-related environment variables from charm's configuration."""
@@ -231,9 +223,8 @@ class DiscourseCharm(CharmBase):
     def _create_discourse_environment_settings(self):
         """Create the pod environment config from the existing config."""
 
-        # Get redis connection information from config but allow overriding
-        # via a relation.
-        redis_hostname = self.config["redis_host"]
+        # Get redis connection information from the relation.
+        redis_hostname = None
         redis_port = 6379
         for redis_unit in self._stored.redis_relation:
             redis_hostname = self._stored.redis_relation[redis_unit]["hostname"]
@@ -335,8 +326,13 @@ class DiscourseCharm(CharmBase):
 
         self.model.unit.status = MaintenanceStatus("Configuring service")
 
-        if not self._check_db_is_valid():
+        if not self._stored.db_name:
             self.model.unit.status = WaitingStatus("Waiting for database relation")
+            event.defer()
+            return
+
+        if not self._stored.redis_relation:
+            self.model.unit.status = WaitingStatus("Waiting for redis relation")
             event.defer()
             return
 
@@ -400,31 +396,22 @@ class DiscourseCharm(CharmBase):
                 return
             self.model.unit.status = ActiveStatus()
 
-    def _on_database_relation_joined(self, event):
+    def _on_database_relation_joined(self, event: pgsql.DatabaseRelationJoinedEvent) -> None:
         """Event handler for a newly joined database relation.
 
         - Sets the event.database field on the database joined event.
-
-        - Required because setting the database name is only possible
-          from inside the event handler per https://github.com/canonical/ops-lib-pgsql/issues/2
         """
-        # Ensure event.database is always set to a non-empty string. PostgreSQL
-        # can infer this if it's in the same model as Discourse, but not if
-        # we're using cross-model relations.
-        db_name = self.model.config["db_name"] or self.framework.model.app.name
-        # Per https://github.com/canonical/ops-lib-pgsql/issues/2,
-        # changing the setting in the config will not take effect,
-        # unless the relation is dropped and recreated.
+
         if self.model.unit.is_leader():
-            event.database = db_name
+            event.database = DATABASE_NAME
             event.extensions = ["hstore:public", "pg_trgm:public"]
-        elif event.database != db_name:
+        elif event.database != DATABASE_NAME:
             # Leader has not yet set requirements. Defer, in case this unit
             # becomes leader and needs to perform that operation.
             event.defer()
             return
 
-    def _on_database_changed(self, event):
+    def _on_database_changed(self, event: pgsql.DatabaseChangedEvent) -> None:
         """Event handler for database relation change.
 
         - Sets our database parameters based on what was provided
@@ -435,13 +422,11 @@ class DiscourseCharm(CharmBase):
             self._stored.db_user = None
             self._stored.db_password = None
             self._stored.db_host = None
-            self.model.unit.status = WaitingStatus("waiting for db relation")
-            return
-
-        self._stored.db_name = event.master.dbname
-        self._stored.db_user = event.master.user
-        self._stored.db_password = event.master.password
-        self._stored.db_host = event.master.host
+        else:
+            self._stored.db_name = event.master.dbname
+            self._stored.db_user = event.master.user
+            self._stored.db_password = event.master.password
+            self._stored.db_host = event.master.host
 
         self._config_changed(event)
 

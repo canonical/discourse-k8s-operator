@@ -40,6 +40,20 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             WaitingStatus("Waiting for database relation"),
         )
 
+    def test_redis_relation_not_ready(self):
+        """
+        arrange: given a deployed discourse charm
+        act: when pebble ready event is triggered
+        assert: it will wait for the db relation.
+        """
+        self.add_postgres_relation()
+        self.harness.container_pebble_ready("discourse")
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            WaitingStatus("Waiting for redis relation"),
+        )
+
     def test_config_changed_when_no_saml_target(self):
         """
         arrange: given a deployed discourse charm with all the required relations
@@ -372,18 +386,22 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         self.assertEqual(
             db_relation_data.get("database"),
-            "discourse-k8s",
+            "discourse",
             "database name should be set after relation joined",
         )
 
-    def add_database_relations(self):
-        "Adds postgresql and redis relations and relation data to the charm."
+    def add_postgres_relation(self):
+        "Adds postgresql relation and relation data to the charm."
         self.harness.charm._stored.db_name = "discourse-k8s"
         self.harness.charm._stored.db_user = "someuser"
         self.harness.charm._stored.db_password = "somepasswd"  # nosec
         self.harness.charm._stored.db_host = "dbhost"
         self.db_relation_id = self.harness.add_relation("db", "postgresql")
         self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
+
+    def add_database_relations(self):
+        "Adds postgresql and redis relations and relation data to the charm."
+        self.add_postgres_relation()
 
         redis_relation_id = self.harness.add_relation("redis", "redis")
         self.harness.add_relation_unit(redis_relation_id, "redis/0")

@@ -3,10 +3,6 @@ options:
     type: string
     description: "Cors origin string to use, defaults to '*'"
     default: "*"
-  db_name:
-    type: string
-    description: "PostgreSQL database name. Defaults to Juju Application name."
-    default: ""
   developer_emails:
     type: string
     description: "Comma delimited list of email addresses that should have developer level access"
@@ -27,10 +23,6 @@ options:
     type: int
     description: "Max allowed body-size (for file uploads) in megabytes, set to 0 to disable limits"
     default: 20
-  redis_host:
-    type: string
-    description: "Redis host name / IP"
-    default: ""
   saml_sync_groups:
     type: string
     description: "Comma-separated list of groups to sync from SAML provider."
