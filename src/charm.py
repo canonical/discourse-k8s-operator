@@ -4,6 +4,7 @@
 
 import logging
 from collections import namedtuple
+from typing import List
 
 import ops.lib
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
@@ -94,25 +95,6 @@ class DiscourseCharm(CharmBase):
         }
         return ingress_config
 
-    def _check_config_is_valid(self):
-        """Check that the provided config is valid.
-
-        - Returns True if config is valid, False otherwise.
-
-        - Sets model status as appropriate.
-        """
-        valid_config = True
-        errors = self._check_for_config_problems()
-
-        # Set status if we have a bad config.
-        if errors:
-            self.model.unit.status = BlockedStatus(", ".join(errors))
-            valid_config = False
-        else:
-            self.model.unit.status = MaintenanceStatus("Configuration passed validation")
-
-        return valid_config
-
     def _get_saml_config(self):
         saml_fingerprints = {
             "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
@@ -141,15 +123,15 @@ class DiscourseCharm(CharmBase):
 
         return saml_config
 
-    def _check_for_config_problems(self):
+    def _is_config_valid(self) -> bool:
         """Check if there are issues with the juju config.
 
         - Primarily looks for missing config options using check_for_missing_config_fields()
 
-        - Returns a list of errors if any were found.
+        - Returns if the config is valid.
         """
         errors = []
-        missing_fields = self._check_for_missing_config_fields()
+        missing_fields = self._get_missing_config_fields()
 
         if missing_fields:
             errors.append(f"Required configuration missing: {','.join(missing_fields)}")
@@ -170,16 +152,15 @@ class DiscourseCharm(CharmBase):
                 if not self.config[s3_config]
             ]
 
-        return errors
+        self.model.unit.status = BlockedStatus(", ".join(errors))
+        return not errors
 
-    def _check_for_missing_config_fields(self):
+    def _get_missing_config_fields(self) -> List[str]:
         """Check for missing fields in juju config.
 
         - Returns a list of required fields that are either not present
         or are empty.
         """
-        missing_fields = []
-
         needed_fields = [
             "cors_origin",
             "developer_emails",
@@ -187,11 +168,7 @@ class DiscourseCharm(CharmBase):
             "smtp_address",
             "smtp_domain",
         ]
-        for key in needed_fields:
-            if not self.config.get(key):
-                missing_fields.append(key)
-
-        return sorted(missing_fields)
+        return [field for field in needed_fields if not self.config.get(field)]
 
     def _get_s3_env(self):
         """Get the list of S3-related environment variables from charm's configuration."""
@@ -217,7 +194,6 @@ class DiscourseCharm(CharmBase):
 
     def _create_discourse_environment_settings(self):
         """Create the pod environment config from the existing config."""
-
         # Get redis connection information from the relation.
         redis_hostname = None
         redis_port = 6379
@@ -355,7 +331,7 @@ class DiscourseCharm(CharmBase):
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
         if (
-            self._check_config_is_valid()
+            self._is_config_valid()
             and self.model.unit.is_leader()
             and self._should_run_setup(current_plan, previous_s3_info)
         ):
@@ -377,7 +353,7 @@ class DiscourseCharm(CharmBase):
                 raise
 
         # Then start the service
-        if self._check_config_is_valid():
+        if self._is_config_valid():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
@@ -418,7 +394,11 @@ class DiscourseCharm(CharmBase):
         self._config_changed(event)
 
     def _on_install(self, event: HookEvent) -> None:
-        if not self._are_db_relations_ready() or not event.workload.can_connect():
+        if (
+            not self._are_db_relations_ready()
+            or not event.workload.can_connect()
+            or not self._is_config_valid()
+        ):
             event.defer()
             return
         if self.unit.is_leader():
