@@ -395,29 +395,6 @@ class DiscourseCharm(CharmBase):
 
         self._config_changed(event)
 
-    def _on_install(self, event: HookEvent) -> None:
-        container = self.unit.get_container(SERVICE_NAME)
-        if (
-            not self._are_db_relations_ready()
-            or not container.can_connect()
-            or not self._is_config_valid()
-        ):
-            event.defer()
-            return
-        if self.unit.is_leader():
-            self.model.unit.status = MaintenanceStatus("Running migrations")
-            script = f"{SCRIPT_PATH}/pod_setup"
-            process = container.exec(
-                [script], environment=self._create_discourse_environment_settings()
-            )
-            try:
-                out, err = process.wait_output()
-            except ExecError as ex:
-                logging.debug(out)
-                logging.debug(err)
-                logging.debug(ex)
-                raise
-
 
 if __name__ == "__main__":  # pragma: no cover
     main(DiscourseCharm, use_juju_for_storage=True)

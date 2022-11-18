@@ -20,9 +20,7 @@ ENV CONTAINER_APP_UID ${CONTAINER_APP_UID:-200}
 ENV CONTAINER_APP_GROUP ${CONTAINER_APP_GROUP:-discourse}
 ENV CONTAINER_APP_GID ${CONTAINER_APP_GID:-200}
 
-# CONTAINER_APP_ROOT is where files related to this application go. This
-# environment variable is available in the build scripts. This should usually be
-# a subdirectory of /srv.
+# CONTAINER_APP_ROOT is where files related to this application go.
 ENV CONTAINER_APP_ROOT=/srv/discourse
 ENV GEM_HOME ${CONTAINER_APP_ROOT}/.gem
 
