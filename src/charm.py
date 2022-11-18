@@ -97,9 +97,7 @@ class DiscourseCharm(CharmBase):
     def _get_external_hostname(self):
         """Return external_hostname if exists or the default value."""
         return (
-            self.config["external_hostname"]
-            if self.config["external_hostname"]
-            else f"{self.app.name}.local"
+            self.config["external_hostname"] if self.config["external_hostname"] else self.app.name
         )
 
     def _check_config_is_valid(self):

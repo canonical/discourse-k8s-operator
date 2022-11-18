@@ -205,7 +205,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
         self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
-        self.assertEqual("discourse-k8s.local", updated_plan_env["DISCOURSE_HOSTNAME"])
+        self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
         self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
@@ -219,7 +219,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertTrue(updated_plan_env["DISCOURSE_USE_S3"])
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
         self.assertEqual(
-            "discourse-k8s.local", self.harness.charm.ingress.config_dict["service-hostname"]
+            "discourse-k8s", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
     def test_config_changed_when_valid_no_fingerprint(self):
@@ -257,7 +257,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
         self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
-        self.assertEqual("discourse-k8s.local", updated_plan_env["DISCOURSE_HOSTNAME"])
+        self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
         self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertNotIn("DISCOURSE_SAML_CERT_FINGERPRINT", updated_plan_env)
@@ -279,7 +279,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertNotIn("DISCOURSE_USE_S3", updated_plan_env)
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
         self.assertEqual(
-            "discourse-k8s.local", self.harness.charm.ingress.config_dict["service-hostname"]
+            "discourse-k8s", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
     def test_config_changed_when_valid(self):
