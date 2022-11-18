@@ -13,7 +13,7 @@ options:
     default: true
   external_hostname:
     type: string
-    description: "External hostname this discourse instance should respond to. Defaults to the deployed application name."
+    description: "External hostname this discourse instance responds to. Defaults to application name."
     default: ""
   force_saml_login:
     type: boolean
