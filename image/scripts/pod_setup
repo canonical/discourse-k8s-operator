@@ -1,10 +1,10 @@
 #!/bin/bash
 
-su -s /bin/bash -c "${CONTAINER_APP_ROOT}/app/bin/bundle exec rake --trace assets:precompile RAILS_ENV=$RAILS_ENV" "${CONTAINER_APP_USERNAME}" 2>&1 | sed 's/^/asset-build: /'
+su -s /bin/bash -c "${CONTAINER_APP_ROOT}/app/bin/bundle exec rake assets:precompile RAILS_ENV=$RAILS_ENV" "${CONTAINER_APP_USERNAME}" 2>&1 | sed 's/^/asset-build: /'
 
 if [ -n "${DISCOURSE_USE_S3}" ] && [ "${DISCOURSE_USE_S3}" == "true" ]; then
 	echo "Running migration to S3..."
-	su -s /bin/bash -c "${CONTAINER_APP_ROOT}/app/bin/bundle exec rake --trace s3:upload_assets RAILS_ENV=$RAILS_ENV" "${CONTAINER_APP_USERNAME}" 2>&1
+	su -s /bin/bash -c "${CONTAINER_APP_ROOT}/app/bin/bundle exec rake s3:upload_assets RAILS_ENV=$RAILS_ENV" "${CONTAINER_APP_USERNAME}" 2>&1
 else
 	echo "Not running migration to S3 (DISCOURSE_USE_S3=${DISCOURSE_USE_S3})."
 fi

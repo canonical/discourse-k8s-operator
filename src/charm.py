@@ -315,7 +315,7 @@ class DiscourseCharm(CharmBase):
         current_plan = container.get_plan()
 
         # Covers when there are no plan
-        previous_s3_info: S3Info = None
+        previous_s3_info = None
         if current_plan.services and current_plan.services["discourse"]:
             current_env = current_plan.services["discourse"].environment
             previous_s3_info = S3Info(
@@ -340,17 +340,8 @@ class DiscourseCharm(CharmBase):
             process = container.exec(
                 [script], environment=self._create_discourse_environment_settings()
             )
-            self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
-            try:
-                stdout, _ = process.wait_output()
-                logger.debug("%s stdout: %s", script, stdout)
-            except ExecError as e:
-                logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
-                for line in e.stderr.splitlines():
-                    logger.error("    %s", line)
-                logger.debug("%s stdout: %s", script, e.stdout)
-                self.model.unit.status = BlockedStatus(f"Error while executing {script}")
-                raise
+            self.model.unit.status = MaintenanceStatus("Compiling assets")
+            process.wait_output()
 
         # Then start the service
         if self._is_config_valid():
@@ -394,28 +385,26 @@ class DiscourseCharm(CharmBase):
         self._config_changed(event)
 
     def _on_install(self, event: HookEvent) -> None:
+        container = self.unit.get_container(SERVICE_NAME)
         if (
             not self._are_db_relations_ready()
-            or not event.workload.can_connect()
+            or not container.can_connect()
             or not self._is_config_valid()
         ):
             event.defer()
             return
         if self.unit.is_leader():
             self.model.unit.status = MaintenanceStatus("Running migrations")
-            script = f"{SCRIPT_PATH}/migrate"
-            logger.debug("Executing setup script (%s)", script)
-            process = event.workload.exec(
+            script = f"{SCRIPT_PATH}/pod_setup"
+            process = container.exec(
                 [script], environment=self._create_discourse_environment_settings()
             )
             try:
-                stdout, _ = process.wait_output()
-                logger.debug("%s stdout: %s", script, stdout)
-            except ExecError as e:
-                logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
-                for line in e.stderr.splitlines():
-                    logger.error("    %s", line)
-                logger.debug("%s stdout: %s", script, e.stdout)
+                out, err = process.wait_output()
+            except ExecError as ex:
+                logging.debug(out)
+                logging.debug(err)
+                logging.debug(ex)
                 raise
 
 
