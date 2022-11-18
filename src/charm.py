@@ -13,7 +13,6 @@ from ops.charm import CharmBase, HookEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
-from ops.pebble import ExecError
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -73,8 +72,6 @@ class DiscourseCharm(CharmBase):
         self.ingress = IngressRequires(self, self._make_ingress_config())
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
-        self.framework.observe(self.on.install, self._on_install)
-        self.framework.observe(self.on.upgrade_charm, self._on_install)
 
         self.db = pgsql.PostgreSQLClient(self, "db")
         self.framework.observe(
