@@ -87,12 +87,20 @@ class DiscourseCharm(CharmBase):
     def _make_ingress_config(self):
         """Return a dict of our ingress config."""
         ingress_config = {
-            "service-hostname": self.config["external_hostname"] or self.app.name,
+            "service-hostname": self._get_external_hostname(),
             "service-name": self.app.name,
             "service-port": SERVICE_PORT,
             "session-cookie-max-age": 3600,
         }
         return ingress_config
+
+    def _get_external_hostname(self):
+        """Return external_hostname if exists or the default value."""
+        return (
+            self.config["external_hostname"]
+            if self.config["external_hostname"]
+            else f"{self.app.name}.local"
+        )
 
     def _check_config_is_valid(self):
         """Check that the provided config is valid.
@@ -183,7 +191,6 @@ class DiscourseCharm(CharmBase):
         needed_fields = [
             "cors_origin",
             "developer_emails",
-            "external_hostname",
             "smtp_address",
             "smtp_domain",
         ]
@@ -236,7 +243,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_DB_USERNAME": self._stored.db_user,
             "DISCOURSE_DEVELOPER_EMAILS": self.config["developer_emails"],
             "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
-            "DISCOURSE_HOSTNAME": self.config["external_hostname"],
+            "DISCOURSE_HOSTNAME": self._get_external_hostname(),
             "DISCOURSE_REDIS_HOST": redis_hostname,
             "DISCOURSE_REDIS_PORT": redis_port,
             "DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS": "0",

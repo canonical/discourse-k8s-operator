@@ -66,7 +66,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.update_config(
             {
                 "developer_emails": "user@foo.internal",
-                "external_hostname": "discourse.local",
                 "force_saml_login": True,
                 "smtp_domain": "foo.internal",
             }
@@ -89,7 +88,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.update_config(
             {
                 "developer_emails": "user@foo.internal",
-                "external_hostname": "discourse.local",
                 "saml_sync_groups": "group1",
                 "smtp_domain": "foo.internal",
             }
@@ -113,7 +111,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             {
                 "cors_origin": "",
                 "developer_emails": "user@foo.internal",
-                "external_hostname": "discourse.local",
                 "smtp_domain": "foo.internal",
             }
         )
@@ -135,7 +132,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.update_config(
             {
                 "developer_emails": "user@foo.internal",
-                "external_hostname": "discourse.local",
                 "throttle_level": "Scream",
                 "smtp_domain": "foo.internal",
             }
@@ -159,7 +155,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.update_config(
             {
                 "developer_emails": "user@foo.internal",
-                "external_hostname": "discourse.local",
                 "smtp_domain": "foo.internal",
                 "s3_access_key_id": "3|33+",
                 "s3_enabled": True,
@@ -189,7 +184,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 {
                     "developer_emails": "user@foo.internal",
                     "enable_cors": True,
-                    "external_hostname": "discourse.local",
                     "smtp_domain": "foo.internal",
                     "s3_access_key_id": "3|33+",
                     "s3_bucket": "who-s-a-good-bucket?",
@@ -211,7 +205,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
         self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
-        self.assertEqual("discourse.local", updated_plan_env["DISCOURSE_HOSTNAME"])
+        self.assertEqual("discourse-k8s.local", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
         self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
@@ -225,7 +219,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertTrue(updated_plan_env["DISCOURSE_USE_S3"])
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
         self.assertEqual(
-            "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
+            "discourse-k8s.local", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
     def test_config_changed_when_valid_no_fingerprint(self):
@@ -243,7 +237,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 {
                     "developer_emails": "user@foo.internal",
                     "enable_cors": True,
-                    "external_hostname": "discourse.local",
                     "force_saml_login": True,
                     "saml_target_url": "https://login.sample.com/+saml",
                     "saml_sync_groups": "group1",
@@ -264,7 +257,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
         self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
-        self.assertEqual("discourse.local", updated_plan_env["DISCOURSE_HOSTNAME"])
+        self.assertEqual("discourse-k8s.local", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
         self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertNotIn("DISCOURSE_SAML_CERT_FINGERPRINT", updated_plan_env)
@@ -286,7 +279,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertNotIn("DISCOURSE_USE_S3", updated_plan_env)
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
         self.assertEqual(
-            "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
+            "discourse-k8s.local", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
     def test_config_changed_when_valid(self):
