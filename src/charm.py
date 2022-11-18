@@ -4,6 +4,7 @@
 
 import logging
 from collections import namedtuple
+from typing import List
 
 import ops.lib
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
@@ -94,30 +95,45 @@ class DiscourseCharm(CharmBase):
         }
         return ingress_config
 
-    def _get_external_hostname(self):
+    def _get_external_hostname(self) -> str:
         """Return external_hostname if exists or the default value."""
         return (
             self.config["external_hostname"] if self.config["external_hostname"] else self.app.name
         )
 
-    def _check_config_is_valid(self):
+    def _is_config_valid(self) -> bool:
         """Check that the provided config is valid.
 
         - Returns True if config is valid, False otherwise.
 
         - Sets model status as appropriate.
         """
-        valid_config = True
-        errors = self._check_for_config_problems()
+        errors = []
+        missing_fields = self._get_missing_config_fields()
 
-        # Set status if we have a bad config.
+        if missing_fields:
+            errors.append(f"Required configuration missing: {','.join(missing_fields)}")
+
+        if self.config["throttle_level"] not in THROTTLE_LEVELS:
+            errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
+
+        if self.config["force_saml_login"] and not self.config["saml_target_url"]:
+            errors.append("force_saml_login can not be true without a saml_target_url")
+
+        if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
+            errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
+
+        if self.config.get("s3_enabled"):
+            [
+                errors.append(f"'s3_enabled' requires '{s3_config}'")
+                for s3_config in REQUIRED_S3_SETTINGS
+                if not self.config[s3_config]
+            ]
+
         if errors:
             self.model.unit.status = BlockedStatus(", ".join(errors))
-            valid_config = False
-        else:
-            self.model.unit.status = MaintenanceStatus("Configuration passed validation")
 
-        return valid_config
+        return not errors
 
     def _get_saml_config(self):
         saml_fingerprints = {
@@ -147,56 +163,19 @@ class DiscourseCharm(CharmBase):
 
         return saml_config
 
-    def _check_for_config_problems(self):
-        """Check if there are issues with the juju config.
-
-        - Primarily looks for missing config options using check_for_missing_config_fields()
-
-        - Returns a list of errors if any were found.
-        """
-        errors = []
-        missing_fields = self._check_for_missing_config_fields()
-
-        if missing_fields:
-            errors.append(f"Required configuration missing: {','.join(missing_fields)}")
-
-        if self.config["throttle_level"] not in THROTTLE_LEVELS:
-            errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
-
-        if self.config["force_saml_login"] and self.config["saml_target_url"] == "":
-            errors.append("force_saml_login can not be true without a saml_target_url")
-
-        if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
-            errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
-
-        if self.config.get("s3_enabled"):
-            [
-                errors.append(f"'s3_enabled' requires '{s3_config}'")
-                for s3_config in REQUIRED_S3_SETTINGS
-                if not self.config[s3_config]
-            ]
-
-        return errors
-
-    def _check_for_missing_config_fields(self):
+    def _get_missing_config_fields(self) -> List[str]:
         """Check for missing fields in juju config.
 
         - Returns a list of required fields that are either not present
         or are empty.
         """
-        missing_fields = []
-
         needed_fields = [
             "cors_origin",
             "developer_emails",
             "smtp_address",
             "smtp_domain",
         ]
-        for key in needed_fields:
-            if not self.config.get(key):
-                missing_fields.append(key)
-
-        return sorted(missing_fields)
+        return [field for field in needed_fields if not self.config.get(field)]
 
     def _get_s3_env(self):
         """Get the list of S3-related environment variables from charm's configuration."""
@@ -316,6 +295,15 @@ class DiscourseCharm(CharmBase):
             )
         )
 
+    def _are_db_relations_ready(self) -> bool:
+        if not self._stored.db_name:
+            self.model.unit.status = WaitingStatus("Waiting for database relation")
+            return False
+        if not self._stored.redis_relation:
+            self.model.unit.status = WaitingStatus("Waiting for redis relation")
+            return False
+        return True
+
     def _config_changed(self, event):
         """Configure service.
 
@@ -325,14 +313,7 @@ class DiscourseCharm(CharmBase):
         """
 
         self.model.unit.status = MaintenanceStatus("Configuring service")
-
-        if not self._stored.db_name:
-            self.model.unit.status = WaitingStatus("Waiting for database relation")
-            event.defer()
-            return
-
-        if not self._stored.redis_relation:
-            self.model.unit.status = WaitingStatus("Waiting for redis relation")
+        if not self._are_db_relations_ready():
             event.defer()
             return
 
@@ -362,7 +343,7 @@ class DiscourseCharm(CharmBase):
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
         script = f"{SCRIPT_PATH}/pod_setup"
         if (
-            self._check_config_is_valid()
+            self._is_config_valid()
             and self.model.unit.is_leader()
             and self._should_run_setup(current_plan, previous_s3_info)
         ):
@@ -386,7 +367,7 @@ class DiscourseCharm(CharmBase):
         self.model.unit.status = MaintenanceStatus("Configuring service")
 
         # Then start the service
-        if self._check_config_is_valid():
+        if self._is_config_valid():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
