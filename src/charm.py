@@ -88,12 +88,52 @@ class DiscourseCharm(CharmBase):
     def _make_ingress_config(self):
         """Return a dict of our ingress config."""
         ingress_config = {
-            "service-hostname": self.config["external_hostname"] or self.app.name,
+            "service-hostname": self._get_external_hostname(),
             "service-name": self.app.name,
             "service-port": SERVICE_PORT,
             "session-cookie-max-age": 3600,
         }
         return ingress_config
+
+    def _get_external_hostname(self) -> str:
+        """Return external_hostname if exists or the default value."""
+        return (
+            self.config["external_hostname"] if self.config["external_hostname"] else self.app.name
+        )
+
+    def _is_config_valid(self) -> bool:
+        """Check that the provided config is valid.
+
+        - Returns True if config is valid, False otherwise.
+
+        - Sets model status as appropriate.
+        """
+        errors = []
+        missing_fields = self._get_missing_config_fields()
+
+        if missing_fields:
+            errors.append(f"Required configuration missing: {','.join(missing_fields)}")
+
+        if self.config["throttle_level"] not in THROTTLE_LEVELS:
+            errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
+
+        if self.config["force_saml_login"] and not self.config["saml_target_url"]:
+            errors.append("force_saml_login can not be true without a saml_target_url")
+
+        if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
+            errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
+
+        if self.config.get("s3_enabled"):
+            [
+                errors.append(f"'s3_enabled' requires '{s3_config}'")
+                for s3_config in REQUIRED_S3_SETTINGS
+                if not self.config[s3_config]
+            ]
+
+        if errors:
+            self.model.unit.status = BlockedStatus(", ".join(errors))
+
+        return not errors
 
     def _get_saml_config(self):
         saml_fingerprints = {
@@ -123,38 +163,6 @@ class DiscourseCharm(CharmBase):
 
         return saml_config
 
-    def _is_config_valid(self) -> bool:
-        """Check if there are issues with the juju config.
-
-        - Primarily looks for missing config options using check_for_missing_config_fields()
-
-        - Returns if the config is valid.
-        """
-        errors = []
-        missing_fields = self._get_missing_config_fields()
-
-        if missing_fields:
-            errors.append(f"Required configuration missing: {','.join(missing_fields)}")
-
-        if self.config["throttle_level"] not in THROTTLE_LEVELS:
-            errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
-
-        if self.config["force_saml_login"] and self.config["saml_target_url"] == "":
-            errors.append("force_saml_login can not be true without a saml_target_url")
-
-        if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
-            errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
-
-        if self.config.get("s3_enabled"):
-            [
-                errors.append(f"'s3_enabled' requires '{s3_config}'")
-                for s3_config in REQUIRED_S3_SETTINGS
-                if not self.config[s3_config]
-            ]
-
-        self.model.unit.status = BlockedStatus(", ".join(errors))
-        return not errors
-
     def _get_missing_config_fields(self) -> List[str]:
         """Check for missing fields in juju config.
 
@@ -164,7 +172,6 @@ class DiscourseCharm(CharmBase):
         needed_fields = [
             "cors_origin",
             "developer_emails",
-            "external_hostname",
             "smtp_address",
             "smtp_domain",
         ]
@@ -217,7 +224,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_DB_USERNAME": self._stored.db_user,
             "DISCOURSE_DEVELOPER_EMAILS": self.config["developer_emails"],
             "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
-            "DISCOURSE_HOSTNAME": self.config["external_hostname"],
+            "DISCOURSE_HOSTNAME": self._get_external_hostname(),
             "DISCOURSE_REDIS_HOST": redis_hostname,
             "DISCOURSE_REDIS_PORT": redis_port,
             "DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS": "0",
@@ -288,7 +295,7 @@ class DiscourseCharm(CharmBase):
             )
         )
 
-    def _are_db_relations_ready(self):
+    def _are_db_relations_ready(self) -> bool:
         if not self._stored.db_name:
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             return False
@@ -306,6 +313,10 @@ class DiscourseCharm(CharmBase):
         """
 
         self.model.unit.status = MaintenanceStatus("Configuring service")
+        if not self._are_db_relations_ready():
+            event.defer()
+            return
+
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_db_relations_ready() or not container.can_connect():
             event.defer()
