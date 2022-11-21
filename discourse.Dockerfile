@@ -78,6 +78,8 @@ RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
     && mkdir -p "${CONTAINER_APP_ROOT}/app/tmp/backups/default" \
     && mkdir -p "${CONTAINER_APP_ROOT}/app/public/backups/default" \
     && mkdir -p "${CONTAINER_APP_ROOT}/app/public/uploads/default" \
+    && touch "${CONTAINER_APP_ROOT}/app/log/production.log" \
+    && touch "${CONTAINER_APP_ROOT}/app/log/unicorn-stderr.log" \
     && chown -R "${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP}" "${CONTAINER_APP_ROOT}" \
 # This must be done as the discourse user in order to avoid permission 
 # problems later.

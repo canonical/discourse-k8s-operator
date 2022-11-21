@@ -4,6 +4,7 @@
 
 import logging
 from collections import namedtuple
+from shutil import ExecError
 from typing import List
 
 import ops.lib
@@ -265,7 +266,7 @@ class DiscourseCharm(CharmBase):
                 "discourse": {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": f"sh -c '{SCRIPT_PATH}/app_launch >>/srv/discourse/discourse.log 2&>1'",
+                    "command": f"sh -c '{SCRIPT_PATH}/app_launch >> /srv/discourse/discourse.log 2&>1'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
@@ -343,13 +344,23 @@ class DiscourseCharm(CharmBase):
             and self.model.unit.is_leader()
             and self._should_run_setup(current_plan, previous_s3_info)
         ):
-            script = f"{SCRIPT_PATH}/pod_setup"
-            logger.debug("Executing setup script (%s)", script)
-            process = container.exec(
-                [script], environment=self._create_discourse_environment_settings()
-            )
             self.model.unit.status = MaintenanceStatus("Compiling assets")
-            process.wait_output()
+            script = f"{SCRIPT_PATH}/pod_setup"
+            process = container.exec(
+                [script],
+                environment=self._create_discourse_environment_settings(),
+                working_dir="/srv/discourse/app",
+            )
+            try:
+                stdout, _ = process.wait_output()
+                logger.debug("%s stdout: %s", script, stdout)
+            except ExecError as e:
+                logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
+                for line in e.stderr.splitlines():
+                    logger.error("    %s", line)
+                logger.error("%s stdout: %s", script, e.stdout)
+                self.model.unit.status = BlockedStatus(f"Error while executing {script}")
+                raise
 
         # Then start the service
         if self._is_config_valid():
