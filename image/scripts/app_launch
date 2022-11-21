@@ -14,6 +14,6 @@ export UNICORN_SIDEKIQS=1
 tail -f "${CONTAINER_APP_ROOT}/app/log/production.log" | sed 's/^/discourse: /' &
 tail -f "${CONTAINER_APP_ROOT}/app/log/unicorn-stderr.log" | sed 's/^/unicorn-error: /' 1>&2 &
 
-# Add the discourse bin directory to the PATH.
+# Add the discourse bin and scripts directories to the PATH.
 export PATH="${CONTAINER_APP_ROOT}/app/bin:${CONTAINER_APP_ROOT}/app/scripts:$PATH"
 su -s /bin/bash -c "${CONTAINER_APP_ROOT}/app/bin/unicorn -c ${CONTAINER_APP_ROOT}/app/config/unicorn.conf.rb" "${CONTAINER_APP_USERNAME}" 2>&1
