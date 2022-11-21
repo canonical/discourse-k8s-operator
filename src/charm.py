@@ -4,7 +4,6 @@
 
 import logging
 from collections import namedtuple
-from shutil import ExecError
 from typing import List
 
 import ops.lib
@@ -14,6 +13,7 @@ from ops.charm import CharmBase, HookEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from ops.pebble import ExecError
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
