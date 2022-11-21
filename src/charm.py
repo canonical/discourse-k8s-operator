@@ -9,7 +9,7 @@ from typing import List
 import ops.lib
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
-from ops.charm import CharmBase
+from ops.charm import CharmBase, HookEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
@@ -71,10 +71,8 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
-        self.framework.observe(self.on.leader_elected, self._config_changed)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
-        self.framework.observe(self.on.upgrade_charm, self._config_changed)
 
         self.db = pgsql.PostgreSQLClient(self, "db")
         self.framework.observe(
@@ -201,7 +199,6 @@ class DiscourseCharm(CharmBase):
 
     def _create_discourse_environment_settings(self):
         """Create the pod environment config from the existing config."""
-
         # Get redis connection information from the relation.
         redis_hostname = None
         redis_port = 6379
@@ -213,6 +210,11 @@ class DiscourseCharm(CharmBase):
             )
 
         pod_config = {
+            # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
+            # I need to take the required envVars for the application to work properly
+            "CONTAINER_APP_NAME": "discourse",
+            "CONTAINER_APP_ROOT": "/srv/discourse",
+            "CONTAINER_APP_USERNAME": "discourse",
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
             "DISCOURSE_DB_HOST": self._stored.db_host,
             "DISCOURSE_DB_NAME": self._stored.db_name,
@@ -232,12 +234,8 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
             "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
-            # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
-            # I need to take the required envVars for the application to work properly
-            "CONTAINER_APP_NAME": "discourse",
-            "CONTAINER_APP_ROOT": "/srv/discourse",
             "GEM_HOME": "/srv/discourse/.gem",
-            "CONTAINER_APP_USERNAME": "discourse",
+            "RAILS_ENV": "production",
         }
 
         saml_config = self._get_saml_config()
@@ -268,7 +266,7 @@ class DiscourseCharm(CharmBase):
                 "discourse": {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": f"sh -c '{SCRIPT_PATH}/app_launch >>/srv/discourse/discourse.log 2&>1'",
+                    "command": f"sh -c '{SCRIPT_PATH}/app_launch >> /srv/discourse/discourse.log 2&>1'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
@@ -304,7 +302,7 @@ class DiscourseCharm(CharmBase):
             return False
         return True
 
-    def _config_changed(self, event):
+    def _config_changed(self, event: HookEvent) -> None:
         """Configure service.
 
         - Verifies config is valid
@@ -318,7 +316,7 @@ class DiscourseCharm(CharmBase):
             return
 
         container = self.unit.get_container(SERVICE_NAME)
-        if not container.can_connect():
+        if not self._are_db_relations_ready() or not container.can_connect():
             event.defer()
             return
 
@@ -326,7 +324,7 @@ class DiscourseCharm(CharmBase):
         current_plan = container.get_plan()
 
         # Covers when there are no plan
-        previous_s3_info: S3Info = None
+        previous_s3_info = None
         if current_plan.services and current_plan.services["discourse"]:
             current_env = current_plan.services["discourse"].environment
             previous_s3_info = S3Info(
@@ -341,30 +339,27 @@ class DiscourseCharm(CharmBase):
         # First execute the setup script in 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        script = f"{SCRIPT_PATH}/pod_setup"
         if (
             self._is_config_valid()
             and self.model.unit.is_leader()
             and self._should_run_setup(current_plan, previous_s3_info)
         ):
-
-            logger.debug("Executing setup script (%s)", script)
+            self.model.unit.status = MaintenanceStatus("Compiling assets")
+            script = f"{SCRIPT_PATH}/pod_setup"
             process = container.exec(
-                [script], environment=self._create_discourse_environment_settings()
+                [script],
+                environment=self._create_discourse_environment_settings(),
+                working_dir="/srv/discourse/app",
             )
             try:
-                self.model.unit.status = MaintenanceStatus(f"Executing setup {script}")
                 stdout, _ = process.wait_output()
                 logger.debug("%s stdout: %s", script, stdout)
             except ExecError as e:
                 logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
                 for line in e.stderr.splitlines():
                     logger.error("    %s", line)
-                logger.debug("%s stdout: %s", script, e.stdout)
-                self.model.unit.status = BlockedStatus(f"Error while executing {script}")
+                logger.error("%s stdout: %s", script, e.stdout)
                 raise
-
-        self.model.unit.status = MaintenanceStatus("Configuring service")
 
         # Then start the service
         if self._is_config_valid():
@@ -372,9 +367,6 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
-            if not container.can_connect():
-                event.defer()
-                return
             self.model.unit.status = ActiveStatus()
 
     def _on_database_relation_joined(self, event: pgsql.DatabaseRelationJoinedEvent) -> None:
@@ -382,7 +374,6 @@ class DiscourseCharm(CharmBase):
 
         - Sets the event.database field on the database joined event.
         """
-
         if self.model.unit.is_leader():
             event.database = DATABASE_NAME
             event.extensions = ["hstore:public", "pg_trgm:public"]

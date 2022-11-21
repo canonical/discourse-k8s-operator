@@ -27,4 +27,4 @@ containers:
 resources:
   discourse-image:
     type: oci-image
-    description: OCI image for discourse  
+    description: OCI image for discourse

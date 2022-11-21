@@ -20,9 +20,7 @@ ENV CONTAINER_APP_UID ${CONTAINER_APP_UID:-200}
 ENV CONTAINER_APP_GROUP ${CONTAINER_APP_GROUP:-discourse}
 ENV CONTAINER_APP_GID ${CONTAINER_APP_GID:-200}
 
-# CONTAINER_APP_ROOT is where files related to this application go. This
-# environment variable is available in the build scripts. This should usually be
-# a subdirectory of /srv.
+# CONTAINER_APP_ROOT is where files related to this application go.
 ENV CONTAINER_APP_ROOT=/srv/discourse
 ENV GEM_HOME ${CONTAINER_APP_ROOT}/.gem
 
@@ -80,6 +78,8 @@ RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
     && mkdir -p "${CONTAINER_APP_ROOT}/app/tmp/backups/default" \
     && mkdir -p "${CONTAINER_APP_ROOT}/app/public/backups/default" \
     && mkdir -p "${CONTAINER_APP_ROOT}/app/public/uploads/default" \
+    && touch "${CONTAINER_APP_ROOT}/app/log/production.log" \
+    && touch "${CONTAINER_APP_ROOT}/app/log/unicorn-stderr.log" \
     && chown -R "${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP}" "${CONTAINER_APP_ROOT}" \
 # This must be done as the discourse user in order to avoid permission 
 # problems later.
