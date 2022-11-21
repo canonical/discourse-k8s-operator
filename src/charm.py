@@ -359,7 +359,6 @@ class DiscourseCharm(CharmBase):
                 for line in e.stderr.splitlines():
                     logger.error("    %s", line)
                 logger.error("%s stdout: %s", script, e.stdout)
-                self.model.unit.status = BlockedStatus(f"Error while executing {script}")
                 raise
 
         # Then start the service
