@@ -33,6 +33,7 @@ def app_config():
     yield {
         "developer_emails": "noreply@canonical.com",
         "external_hostname": "test.local:3000",
+        "smtp_address": "test.local",
         "smtp_domain": "test.local",
         "s3_install_cors_rule": "false",
     }

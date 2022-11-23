@@ -67,6 +67,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             {
                 "developer_emails": "user@foo.internal",
                 "force_saml_login": True,
+                "smtp_address": "smtp.internal",
                 "smtp_domain": "foo.internal",
             }
         )
@@ -89,6 +90,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             {
                 "developer_emails": "user@foo.internal",
                 "saml_sync_groups": "group1",
+                "smtp_address": "smtp.internal",
                 "smtp_domain": "foo.internal",
             }
         )
@@ -111,6 +113,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             {
                 "cors_origin": "",
                 "developer_emails": "user@foo.internal",
+                "smtp_address": "smtp.internal",
                 "smtp_domain": "foo.internal",
             }
         )
@@ -133,6 +136,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             {
                 "developer_emails": "user@foo.internal",
                 "throttle_level": "Scream",
+                "smtp_address": "smtp.internal",
                 "smtp_domain": "foo.internal",
             }
         )
@@ -155,6 +159,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.update_config(
             {
                 "developer_emails": "user@foo.internal",
+                "smtp_address": "smtp.internal",
                 "smtp_domain": "foo.internal",
                 "s3_access_key_id": "3|33+",
                 "s3_enabled": True,
@@ -184,6 +189,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 {
                     "developer_emails": "user@foo.internal",
                     "enable_cors": True,
+                    "smtp_address": "smtp.internal",
                     "smtp_domain": "foo.internal",
                     "s3_access_key_id": "3|33+",
                     "s3_bucket": "who-s-a-good-bucket?",
@@ -244,6 +250,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "force_saml_login": True,
                     "saml_target_url": "https://login.sample.com/+saml",
                     "saml_sync_groups": "group1",
+                    "smtp_address": "smtp.internal",
                     "smtp_domain": "foo.internal",
                     "smtp_password": "OBV10USLYF4K3",
                     "smtp_username": "apikey",
@@ -277,7 +284,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"])
         self.assertEqual("group1", updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"])
         self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
-        self.assertEqual("127.0.0.1", updated_plan_env["DISCOURSE_SMTP_ADDRESS"])
+        self.assertEqual("smtp.internal", updated_plan_env["DISCOURSE_SMTP_ADDRESS"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"])
         self.assertEqual("foo.internal", updated_plan_env["DISCOURSE_SMTP_DOMAIN"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"])
@@ -309,6 +316,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "force_saml_login": True,
                     "saml_target_url": "https://login.ubuntu.com/+saml",
                     "saml_sync_groups": "group1",
+                    "smtp_address": "smtp.internal",
                     "smtp_domain": "foo.internal",
                     "smtp_password": "OBV10USLYF4K3",
                     "smtp_username": "apikey",
@@ -357,7 +365,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("s3.endpoint", updated_plan_env["DISCOURSE_S3_ENDPOINT"])
         self.assertEqual("the-infinite-and-beyond", updated_plan_env["DISCOURSE_S3_REGION"])
         self.assertEqual("s|kI0ure_k3Y", updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"])
-        self.assertEqual("127.0.0.1", updated_plan_env["DISCOURSE_SMTP_ADDRESS"])
+        self.assertEqual("smtp.internal", updated_plan_env["DISCOURSE_SMTP_ADDRESS"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"])
         self.assertEqual("foo.internal", updated_plan_env["DISCOURSE_SMTP_DOMAIN"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"])
