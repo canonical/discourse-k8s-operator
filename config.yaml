@@ -30,7 +30,7 @@ options:
   smtp_address:
     type: string
     description: "Hostname / IP that should be used to send SMTP mail"
-    default: "127.0.0.1"
+    default: ""
   smtp_authentication:
     type: string
     description: "Type of smtp authentication to use"
