@@ -41,6 +41,9 @@ To deploy the charm and relate it to
     juju relate discourse-k8s postgresql-k8s:db-admin
     juju relate discourse-k8s redis-k8s
 
+The following config options are required in order for the charm to work: 
+`developer_emails`, `smtp_address` and `smtp_domain`.
+
 The charm also supports the `ingress` relation, which can be used with
 [nginx-ingress-integrator](https://charmhub.io/nginx-ingress-integrator/).
 
