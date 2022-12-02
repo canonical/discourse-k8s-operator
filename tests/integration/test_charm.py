@@ -4,7 +4,7 @@
 
 import json
 import logging
-from typing import Dict
+from typing import Dict, Optional
 from urllib.parse import urlencode, urlparse
 
 import pytest
@@ -115,7 +115,7 @@ async def test_setup_discourse(
     assert response.status_code == 302
 
     # Fecth the email token from DB
-    postgresql_info: DBInfo = await get_db_info(app, SERVICE_NAME)
+    postgresql_info: Optional[DBInfo] = await get_db_info(app, SERVICE_NAME)
     assert postgresql_info is not None
     email_token = await get_discourse_email_token(postgresql_info, app_config["developer_emails"])
     assert email_token is not None

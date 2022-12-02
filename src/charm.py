@@ -4,10 +4,13 @@
 
 import logging
 from collections import namedtuple
-from typing import List
+from typing import Dict, List, Optional
 
 import ops.lib
+from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
+from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
+from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
 from ops.charm import CharmBase, HookEvent
 from ops.framework import StoredState
@@ -43,6 +46,7 @@ THROTTLE_LEVELS = {
         "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
     },
 }
+LOG_PATH = "/srv/discourse/app/log/production.log"
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
 
 SERVICE_NAME = "discourse"
@@ -83,7 +87,15 @@ class DiscourseCharm(CharmBase):
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._config_changed)
 
-    def _make_ingress_config(self):
+        self._metrics_endpoint = MetricsEndpointProvider(
+            self, jobs=[{"static_configs": [{"targets": ["*:9394"]}]}]
+        )
+        self._logging = LogProxyConsumer(
+            self, relation_name="logging", log_files=[LOG_PATH], container_name="discourse"
+        )
+        self._grafana_dashboards = GrafanaDashboardProvider(self)
+
+    def _make_ingress_config(self) -> Dict:
         """Return a dict of our ingress config."""
         ingress_config = {
             "service-hostname": self._get_external_hostname(),
@@ -133,7 +145,7 @@ class DiscourseCharm(CharmBase):
 
         return not errors
 
-    def _get_saml_config(self):
+    def _get_saml_config(self) -> Dict:
         saml_fingerprints = {
             "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
         }
@@ -175,7 +187,7 @@ class DiscourseCharm(CharmBase):
         ]
         return [field for field in needed_fields if not self.config.get(field)]
 
-    def _get_s3_env(self):
+    def _get_s3_env(self) -> Dict:
         """Get the list of S3-related environment variables from charm's configuration."""
 
         s3_env = {
@@ -197,7 +209,7 @@ class DiscourseCharm(CharmBase):
 
         return s3_env
 
-    def _create_discourse_environment_settings(self):
+    def _create_discourse_environment_settings(self) -> Dict:
         """Create the pod environment config from the existing config."""
         # Get redis connection information from the relation.
         redis_hostname = None
@@ -253,7 +265,7 @@ class DiscourseCharm(CharmBase):
 
         return pod_config
 
-    def _create_layer_config(self):
+    def _create_layer_config(self) -> Dict:
         """Create a layer config based on our current configuration.
 
         - uses create_discourse_environment_settings to generate the environment we need.
@@ -266,7 +278,7 @@ class DiscourseCharm(CharmBase):
                 "discourse": {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": f"sh -c '{SCRIPT_PATH}/app_launch >> /srv/discourse/discourse.log 2&>1'",
+                    "command": f"sh -c '{SCRIPT_PATH}/app_launch >> {LOG_PATH} 2&>1'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
@@ -280,11 +292,12 @@ class DiscourseCharm(CharmBase):
         }
         return layer_config
 
-    def _should_run_setup(self, current_plan, s3info: S3Info):
+    def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
         # Return true if no services are planned yet (first run)
         return not current_plan.services or (
             # Or S3 is enabled and one S3 parameter has changed
             self.config.get("s3_enabled")
+            and s3info
             and (
                 s3info.enabled != self.config.get("s3_enabled")
                 or s3info.region != self.config.get("s3_region")
@@ -369,7 +382,10 @@ class DiscourseCharm(CharmBase):
             self.ingress.update_config(self._make_ingress_config())
             self.model.unit.status = ActiveStatus()
 
-    def _on_database_relation_joined(self, event: pgsql.DatabaseRelationJoinedEvent) -> None:
+    # pgsql.DatabaseRelationJoinedEvent is actually defined
+    def _on_database_relation_joined(
+        self, event: pgsql.DatabaseRelationJoinedEvent  # type: ignore
+    ) -> None:
         """Event handler for a newly joined database relation.
 
         - Sets the event.database field on the database joined event.
@@ -383,7 +399,8 @@ class DiscourseCharm(CharmBase):
             event.defer()
             return
 
-    def _on_database_changed(self, event: pgsql.DatabaseChangedEvent) -> None:
+    # pgsql.DatabaseChangedEvent is actually defined
+    def _on_database_changed(self, event: pgsql.DatabaseChangedEvent) -> None:  # type: ignore
         """Event handler for database relation change.
 
         - Sets our database parameters based on what was provided

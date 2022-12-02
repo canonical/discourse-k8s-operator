@@ -4,6 +4,7 @@
 
 import itertools
 from collections import namedtuple
+from typing import Optional
 
 import psycopg2
 import yaml
@@ -26,7 +27,7 @@ async def get_unit_address(ops_test: OpsTest, app_name: str) -> str:
     return status["applications"][app_name]["units"][unit]["address"]
 
 
-async def get_db_info(app: Application, app_name: str = "operator") -> DBInfo:
+async def get_db_info(app: Application, app_name: str = "operator") -> Optional[DBInfo]:
     """Retrieve a user password from the application pebble plan."""
 
     cmd = f"PEBBLE_SOCKET=/charm/containers/{app_name}/pebble.socket /charm/bin/pebble plan"
