@@ -2,6 +2,7 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+"""Charm for Discourse on kubernetes."""
 import logging
 from collections import namedtuple
 from typing import Dict, List, Optional
@@ -56,15 +57,13 @@ SCRIPT_PATH = "/srv/scripts"
 
 
 class DiscourseCharm(CharmBase):
+    """Charm for Discourse on kubernetes."""
+
     on = RedisRelationCharmEvents()
     _stored = StoredState()
 
     def __init__(self, *args):
-        """Initialization.
-
-        - Primarily sets up defaults and event handlers.
-
-        """
+        """Initialize defaults and event handlers."""
         super().__init__(*args)
 
         self._stored.set_default(
@@ -189,7 +188,6 @@ class DiscourseCharm(CharmBase):
 
     def _get_s3_env(self) -> Dict:
         """Get the list of S3-related environment variables from charm's configuration."""
-
         s3_env = {
             "DISCOURSE_S3_ACCESS_KEY_ID": self.config["s3_access_key_id"],
             "DISCOURSE_S3_BUCKET": self.config["s3_bucket"],
@@ -322,7 +320,6 @@ class DiscourseCharm(CharmBase):
 
         - Configures pod using pebble and layer generated from config.
         """
-
         self.model.unit.status = MaintenanceStatus("Configuring service")
         if not self._are_db_relations_ready():
             event.defer()
@@ -386,9 +383,10 @@ class DiscourseCharm(CharmBase):
     def _on_database_relation_joined(
         self, event: pgsql.DatabaseRelationJoinedEvent  # type: ignore
     ) -> None:
-        """Event handler for a newly joined database relation.
+        """Handle db-relation-joined.
 
-        - Sets the event.database field on the database joined event.
+        Args:
+            event: Event triggering the database relation joined handler.
         """
         if self.model.unit.is_leader():
             event.database = DATABASE_NAME
@@ -401,10 +399,10 @@ class DiscourseCharm(CharmBase):
 
     # pgsql.DatabaseChangedEvent is actually defined
     def _on_database_changed(self, event: pgsql.DatabaseChangedEvent) -> None:  # type: ignore
-        """Event handler for database relation change.
+        """Handle changes in the primary database unit.
 
-        - Sets our database parameters based on what was provided
-          in the relation event.
+        Args:
+            event: Event triggering the database master changed handler.
         """
         if event.master is None:
             self._stored.db_name = None
