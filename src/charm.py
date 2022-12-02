@@ -95,7 +95,11 @@ class DiscourseCharm(CharmBase):
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
     def _make_ingress_config(self) -> Dict:
-        """Return a dict of our ingress config."""
+        """Create minimal ingress configuration.
+
+        Returns:
+            Minimal ingress configuration with hostname, service name and service port.
+        """
         ingress_config = {
             "service-hostname": self._get_external_hostname(),
             "service-name": self.app.name,
@@ -105,7 +109,11 @@ class DiscourseCharm(CharmBase):
         return ingress_config
 
     def _get_external_hostname(self) -> str:
-        """Return external_hostname if exists or the default value."""
+        """Extract and return hostname from site_url or default to [application name].
+
+        Returns:
+            The site hostname defined as part of the site_url configuration or a default value.
+        """
         return (
             self.config["external_hostname"] if self.config["external_hostname"] else self.app.name
         )
@@ -305,6 +313,11 @@ class DiscourseCharm(CharmBase):
         )
 
     def _are_db_relations_ready(self) -> bool:
+        """Check if the needed database relations are established.
+
+        Returns:
+            If the needed relations have been established.
+        """
         if not self._stored.db_name:
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             return False
