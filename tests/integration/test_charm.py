@@ -33,7 +33,9 @@ async def test_active(app: Application):
     """Check that the charm is active.
     Assume that the charm has already been built and is running.
     """
-    assert app.units[0].workload_status == ActiveStatus.name
+    # Application actually does have units
+    # Mypy has difficulty with ActiveStatus
+    assert app.units[0].workload_status == ActiveStatus.name  # type: ignore
 
 
 @pytest.mark.asyncio
@@ -86,11 +88,12 @@ async def test_setup_discourse(
     parsed_registration: BeautifulSoup = BeautifulSoup(response.content, features="html.parser")
 
     # Get the form info
+    assert parsed_registration.body
+    utf8 = parsed_registration.body.find("input", attrs={"name": "utf8"}).get("value")  # type: ignore
+    authenticity_token = parsed_registration.body.find("input", attrs={"name": "authenticity_token"}).get("value")  # type: ignore
     form_fields = {
-        "utf8": parsed_registration.body.find("input", attrs={"name": "utf8"}).get("value"),
-        "authenticity_token": parsed_registration.body.find(
-            "input", attrs={"name": "authenticity_token"}
-        ).get("value"),
+        "utf8": utf8,
+        "authenticity_token": authenticity_token,
         "username": "admin",
         "email": app_config["developer_emails"],
         "password": "MyLovelySecurePassword2022!",
@@ -151,11 +154,11 @@ async def test_setup_discourse(
     assert response.status_code == 200
     parsed_challenge = response.json()
 
+    assert parsed_validation.body
+    authenticity_token = parsed_validation.body.find("input", attrs={"name": "authenticity_token"}).get("value")  # type: ignore
     form_fields = {
         "_method": "put",
-        "authenticity_token": parsed_validation.body.find(
-            "input", attrs={"name": "authenticity_token"}
-        ).get("value"),
+        "authenticity_token": authenticity_token,
         "password_confirmation": parsed_challenge["value"],
         # The challenge string is reversed see
         # https://github.com/discourse/discourse/blob/main/app/assets/javascripts/discourse/scripts/activate-account.js
@@ -190,7 +193,8 @@ async def test_setup_discourse(
 
     # Extract the CSRF token
     parsed_admin: BeautifulSoup = BeautifulSoup(response.content, features="html.parser")
-    csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get("content")
+    assert parsed_admin.head
+    csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get("content")  # type: ignore
 
     logger.info("Getting admin API key")
 
@@ -202,7 +206,7 @@ async def test_setup_discourse(
         headers={
             "Host": f"{app_config['external_hostname']}",
             "X-Requested-With": "XMLHttpRequest",
-            "X-CSRF-Token": csrf_token,
+            "X-CSRF-Token": csrf_token,  # type: ignore
             "Content-Type": "application/json",
         },
         data=json.dumps(api_key_payload),
@@ -243,7 +247,8 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
 
     # Discourse S3 client uses subdomain bucket routing,
     # I need to inject subdomain in the DNS (not needed if everything runs localhost)
-    action = await app.units[0].run(
+    # Application actually does have units
+    action = await app.units[0].run(  # type: ignore
         f'echo "{s3_ip_address}  {s3_bucket}.{s3_domain}" >> /etc/hosts'
     )
     result = await action.wait()
@@ -251,7 +256,8 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
 
-    await app.set_config(
+    # Application does actually have attribute set_config
+    await app.set_config(  # type: ignore
         {
             "s3_enabled": "true",
             # The final URL is computed by discourse, we need to pass the main URL
@@ -263,6 +269,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
             "s3_region": s3_region,
         }
     )
+    assert ops_test.model
     await ops_test.model.wait_for_idle(status="active")
 
     logger.info("Discourse config updated, checking bucket content")

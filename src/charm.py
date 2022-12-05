@@ -47,13 +47,15 @@ THROTTLE_LEVELS = {
         "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
     },
 }
-LOG_PATH = "/srv/discourse/app/log/production.log"
+LOG_PATHS = [
+    "/srv/discourse/app/log/production.log",
+    "/srv/discourse/app/log/unicorn.stderr.log",
+    "/srv/discourse/app/log/unicorn.stdout.log",
+]
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
-
+SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
-
-SCRIPT_PATH = "/srv/scripts"
 
 
 class DiscourseCharm(CharmBase):
@@ -90,7 +92,7 @@ class DiscourseCharm(CharmBase):
             self, jobs=[{"static_configs": [{"targets": ["*:9394"]}]}]
         )
         self._logging = LogProxyConsumer(
-            self, relation_name="logging", log_files=[LOG_PATH], container_name="discourse"
+            self, relation_name="logging", log_files=LOG_PATHS, container_name="discourse"
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
@@ -121,9 +123,8 @@ class DiscourseCharm(CharmBase):
     def _is_config_valid(self) -> bool:
         """Check that the provided config is valid.
 
-        - Returns True if config is valid, False otherwise.
-
-        - Sets model status as appropriate.
+        Returns:
+            If config is valid.
         """
         errors = []
         missing_fields = self._get_missing_config_fields()
@@ -153,6 +154,11 @@ class DiscourseCharm(CharmBase):
         return not errors
 
     def _get_saml_config(self) -> Dict:
+        """Get SAML configuration.
+
+        Returns:
+            Dictionary with the SAML configuration settings..
+        """
         saml_fingerprints = {
             "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
         }
@@ -183,8 +189,8 @@ class DiscourseCharm(CharmBase):
     def _get_missing_config_fields(self) -> List[str]:
         """Check for missing fields in juju config.
 
-        - Returns a list of required fields that are either not present
-        or are empty.
+        Returns:
+            List of required fields that are either not present or empty.
         """
         needed_fields = [
             "cors_origin",
@@ -195,7 +201,11 @@ class DiscourseCharm(CharmBase):
         return [field for field in needed_fields if not self.config.get(field)]
 
     def _get_s3_env(self) -> Dict:
-        """Get the list of S3-related environment variables from charm's configuration."""
+        """Get the list of S3-related environment variables from charm's configuration.
+
+        Returns:
+            Dictionary with all the S3 environment settings.
+        """
         s3_env = {
             "DISCOURSE_S3_ACCESS_KEY_ID": self.config["s3_access_key_id"],
             "DISCOURSE_S3_BUCKET": self.config["s3_bucket"],
@@ -216,7 +226,11 @@ class DiscourseCharm(CharmBase):
         return s3_env
 
     def _create_discourse_environment_settings(self) -> Dict:
-        """Create the pod environment config from the existing config."""
+        """Create a layer config based on our current configuration.
+
+        Returns:
+            Dictionary with all the environment settings.
+        """
         # Get redis connection information from the relation.
         redis_hostname = None
         redis_port = 6379
@@ -274,7 +288,8 @@ class DiscourseCharm(CharmBase):
     def _create_layer_config(self) -> Dict:
         """Create a layer config based on our current configuration.
 
-        - uses create_discourse_environment_settings to generate the environment we need.
+        Returns:
+            Dictionary with the pebble configuration.
         """
         logger.info("Generating Layer config")
         layer_config = {
@@ -284,7 +299,7 @@ class DiscourseCharm(CharmBase):
                 "discourse": {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": f"sh -c '{SCRIPT_PATH}/app_launch >> {LOG_PATH} 2&>1'",
+                    "command": f"sh -c '{SCRIPT_PATH}/app_launch'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
@@ -299,7 +314,15 @@ class DiscourseCharm(CharmBase):
         return layer_config
 
     def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        # Return true if no services are planned yet (first run)
+        """Check if the setup script is to be run.
+
+        Args:
+            current_plan: Dictionary containing the current plan.
+            s3info: S3Info object containing the S3 configuration options.
+
+        Returns:
+            If o services are planned yet (first run).
+        """
         return not current_plan.services or (
             # Or S3 is enabled and one S3 parameter has changed
             self.config.get("s3_enabled")
@@ -327,11 +350,10 @@ class DiscourseCharm(CharmBase):
         return True
 
     def _config_changed(self, event: HookEvent) -> None:
-        """Configure service.
+        """Configure pod using pebble and layer generated from config.
 
-        - Verifies config is valid
-
-        - Configures pod using pebble and layer generated from config.
+        Args:
+            event: Event triggering the handler.
         """
         self.model.unit.status = MaintenanceStatus("Configuring service")
         if not self._are_db_relations_ready():
@@ -379,8 +401,7 @@ class DiscourseCharm(CharmBase):
                 logger.debug("%s stdout: %s", script, stdout)
             except ExecError as e:
                 logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
-                for line in e.stderr.splitlines():
-                    logger.error("    %s", line)
+                logger.error("%s stderr: %s", script, e.stderr)
                 logger.error("%s stdout: %s", script, e.stdout)
                 raise
 

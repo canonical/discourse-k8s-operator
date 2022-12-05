@@ -22,6 +22,7 @@ async def get_unit_address(ops_test: OpsTest, app_name: str) -> str:
     Returns:
         IP address of the first unit
     """
+    assert ops_test.model
     status = await ops_test.model.get_status()
     unit = list(status.applications[app_name].units)[0]
     return status["applications"][app_name]["units"][unit]["address"]
@@ -31,7 +32,8 @@ async def get_db_info(app: Application, app_name: str = "operator") -> Optional[
     """Retrieve a user password from the application pebble plan."""
 
     cmd = f"PEBBLE_SOCKET=/charm/containers/{app_name}/pebble.socket /charm/bin/pebble plan"
-    unit = app.units[0]
+    # Application actually does have units
+    unit = app.units[0]  # type: ignore
 
     action = await unit.run(cmd)
     result = await action.wait()
