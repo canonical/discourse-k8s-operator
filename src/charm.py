@@ -142,11 +142,13 @@ class DiscourseCharm(CharmBase):
             errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
 
         if self.config.get("s3_enabled"):
-            [
-                errors.append(f"'s3_enabled' requires '{s3_config}'")
-                for s3_config in REQUIRED_S3_SETTINGS
-                if not self.config[s3_config]
-            ]
+            errors.extend(
+                [
+                    f"'s3_enabled' requires '{s3_config}'"
+                    for s3_config in REQUIRED_S3_SETTINGS
+                    if not self.config[s3_config]
+                ]
+            )
 
         if errors:
             self.model.unit.status = BlockedStatus(", ".join(errors))
@@ -234,9 +236,10 @@ class DiscourseCharm(CharmBase):
         # Get redis connection information from the relation.
         redis_hostname = None
         redis_port = 6379
-        for redis_unit in self._stored.redis_relation:
-            redis_hostname = self._stored.redis_relation[redis_unit]["hostname"]
-            redis_port = self._stored.redis_relation[redis_unit]["port"]
+        # This is the current recommended way of accessing the relation data.
+        for redis_unit in self._stored.redis_relation:  # type: ignore
+            redis_hostname = self._stored.redis_relation[redis_unit].get("hostname")  # type: ignore
+            redis_port = self._stored.redis_relation[redis_unit].get("port")  # type: ignore
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
             )
@@ -272,16 +275,15 @@ class DiscourseCharm(CharmBase):
 
         saml_config = self._get_saml_config()
         for key in saml_config:
-            pod_config[key] = saml_config[key]
+            pod_config.update({key: saml_config[key]})
 
         if self.config.get("s3_enabled"):
             pod_config.update(self._get_s3_env())
 
         # We only get valid throttle levels here, otherwise it would be caught
-        # by `check_for_config_problems`, so we can be sure this won"t raise a
-        # KeyError.
-        for key in THROTTLE_LEVELS[self.config["throttle_level"]]:
-            pod_config[key] = THROTTLE_LEVELS[self.config["throttle_level"]][key]
+        # by `check_for_config_problems`.
+        if THROTTLE_LEVELS.get(self.config["throttle_level"]):
+            pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
 
         return pod_config
 
@@ -323,7 +325,7 @@ class DiscourseCharm(CharmBase):
         Returns:
             If o services are planned yet (first run).
         """
-        return not current_plan.services or (
+        return not current_plan.services or (  # type: ignore
             # Or S3 is enabled and one S3 parameter has changed
             self.config.get("s3_enabled")
             and s3info
@@ -341,10 +343,10 @@ class DiscourseCharm(CharmBase):
         Returns:
             If the needed relations have been established.
         """
-        if not self._stored.db_name:
+        if not self._stored.db_name:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             return False
-        if not self._stored.redis_relation:
+        if not self._stored.redis_relation:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
             return False
         return True
