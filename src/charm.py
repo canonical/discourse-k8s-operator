@@ -316,7 +316,7 @@ class DiscourseCharm(CharmBase):
         return layer_config
 
     def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        """Check if the setup script is to be run.
+        """Determine if the setup script is to be run based on the current plan and the new S3 settings.
 
         Args:
             current_plan: Dictionary containing the current plan.
