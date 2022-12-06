@@ -323,7 +323,7 @@ class DiscourseCharm(CharmBase):
             s3info: S3Info object containing the S3 configuration options.
 
         Returns:
-            If o services are planned yet (first run).
+            If no services are planned yet (first run) or S3 settings have changed.
         """
         return not current_plan.services or (  # type: ignore
             # Or S3 is enabled and one S3 parameter has changed
