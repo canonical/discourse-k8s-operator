@@ -60,21 +60,21 @@ async def test_discourse_up(ops_test: OpsTest, app: Application, requests_timeou
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_prom_exporter_is_up(ops_test: OpsTest, app: Application, requests_timeout: float):
+async def test_prom_exporter_is_up(app: Application):
     """
     arrange: given charm in its initial state
-    act: when the metrics endpoints are scraped
+    act: when the metrics endpoint is scraped
     assert: the response is 200 (HTTP OK)
     """
-    address = await get_unit_address(ops_test, app.name)
-    session = requests.Session()
-    retries = Retry(total=5, backoff_factor=1)
-    session.mount("http://", HTTPAdapter(max_retries=retries))
-    response = session.get(
-        f"http://{address}:9394/metrics",
-        timeout=requests_timeout,
-    )
-    assert response.status_code == 200
+    # Application actually does have units
+    indico_unit = app.units[0]  # type: ignore
+    cmd = f"curl http://localhost:9394/metrics"
+    action = await indico_unit.run(cmd)
+    result = await action.wait()
+    code = result.results.get("return-code")
+    stdout = result.results.get("stdout")
+    stderr = result.results.get("stderr")
+    assert code == 0, f"{cmd} failed ({code}): {stderr or stdout}"
 
 
 @pytest.mark.asyncio
