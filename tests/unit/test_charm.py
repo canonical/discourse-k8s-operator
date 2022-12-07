@@ -203,7 +203,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
         exec_mock.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup"],
+            [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
             working_dir="/srv/discourse/app",
         )
@@ -261,7 +261,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
         exec_mock.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup"],
+            [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
             working_dir="/srv/discourse/app",
         )
@@ -334,7 +334,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
         exec_mock.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup"],
+            [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
             working_dir="/srv/discourse/app",
         )

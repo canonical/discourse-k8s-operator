@@ -9,6 +9,13 @@ issues: https://github.com/canonical/discourse-k8s-operator/issues
 tags:
   - applications
   - forum
+
+provides:
+  metrics-endpoint:
+    interface: prometheus_scrape
+  grafana-dashboard:
+    interface: grafana_dashboard
+
 requires:
   redis:
     interface: redis
@@ -19,6 +26,8 @@ requires:
   ingress:
     interface: ingress
     limit: 1
+  logging:
+    interface: loki_push_api
 assumes:
   - k8s-api
 

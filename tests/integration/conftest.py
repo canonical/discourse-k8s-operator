@@ -58,6 +58,7 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
+    assert ops_test.model
     # Deploy relations to speed up overall execution
     await asyncio.gather(
         ops_test.model.deploy("postgresql-k8s", series="focal"),
@@ -75,7 +76,7 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     await ops_test.model.wait_for_idle()
 
     # Add required relations
-    assert ops_test.model.applications[app_name].units[0].workload_status == WaitingStatus.name
+    assert ops_test.model.applications[app_name].units[0].workload_status == WaitingStatus.name  # type: ignore
     await asyncio.gather(
         ops_test.model.add_relation(app_name, "postgresql-k8s:db-admin"),
         ops_test.model.add_relation(app_name, "redis-k8s"),
