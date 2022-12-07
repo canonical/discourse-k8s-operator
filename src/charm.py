@@ -301,7 +301,7 @@ class DiscourseCharm(CharmBase):
                 "discourse": {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": f"sh -c '{SCRIPT_PATH}/app_launch'",
+                    "command": f"sh -c '{SCRIPT_PATH}/app_launch.sh'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
@@ -392,7 +392,7 @@ class DiscourseCharm(CharmBase):
             and self._should_run_setup(current_plan, previous_s3_info)
         ):
             self.model.unit.status = MaintenanceStatus("Compiling assets")
-            script = f"{SCRIPT_PATH}/pod_setup"
+            script = f"{SCRIPT_PATH}/pod_setup.sh"
             process = container.exec(
                 [script],
                 environment=self._create_discourse_environment_settings(),
