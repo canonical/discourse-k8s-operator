@@ -68,7 +68,7 @@ async def test_prom_exporter_is_up(app: Application):
     """
     # Application actually does have units
     indico_unit = app.units[0]  # type: ignore
-    cmd = f"curl http://localhost:9394/metrics"
+    cmd = "curl http://localhost:9394/metrics"
     action = await indico_unit.run(cmd)
     result = await action.wait()
     code = result.results.get("return-code")
