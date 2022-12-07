@@ -143,11 +143,9 @@ class DiscourseCharm(CharmBase):
 
         if self.config.get("s3_enabled"):
             errors.extend(
-                [
-                    f"'s3_enabled' requires '{s3_config}'"
-                    for s3_config in REQUIRED_S3_SETTINGS
-                    if not self.config[s3_config]
-                ]
+                f"'s3_enabled' requires '{s3_config}'"
+                for s3_config in REQUIRED_S3_SETTINGS
+                if not self.config[s3_config]
             )
 
         if errors:
@@ -272,10 +270,7 @@ class DiscourseCharm(CharmBase):
             "GEM_HOME": "/srv/discourse/.gem",
             "RAILS_ENV": "production",
         }
-
-        saml_config = self._get_saml_config()
-        for key in saml_config:
-            pod_config.update({key: saml_config[key]})
+        pod_config.update(self._get_saml_config())
 
         if self.config.get("s3_enabled"):
             pod_config.update(self._get_s3_env())
