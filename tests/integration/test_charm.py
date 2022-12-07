@@ -16,7 +16,7 @@ from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import OpsTest
 from requests.adapters import HTTPAdapter, Retry
 
-from charm import SERVICE_NAME, SERVICE_PORT
+from charm import PROMETHEUS_PORT, SERVICE_NAME, SERVICE_PORT
 from tests.integration.helpers import (
     DBInfo,
     get_db_info,
@@ -68,7 +68,7 @@ async def test_prom_exporter_is_up(app: Application):
     """
     # Application actually does have units
     indico_unit = app.units[0]  # type: ignore
-    cmd = "curl http://localhost:9394/metrics"
+    cmd = f"curl http://localhost:{PROMETHEUS_PORT}/metrics"
     action = await indico_unit.run(cmd)
     result = await action.wait()
     code = result.results.get("return-code")

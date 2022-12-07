@@ -52,6 +52,7 @@ LOG_PATHS = [
     "/srv/discourse/app/log/unicorn.stderr.log",
     "/srv/discourse/app/log/unicorn.stdout.log",
 ]
+PROMETHEUS_PORT = 9394
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
@@ -89,7 +90,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.redis_relation_updated, self._config_changed)
 
         self._metrics_endpoint = MetricsEndpointProvider(
-            self, jobs=[{"static_configs": [{"targets": ["*:9394"]}]}]
+            self, jobs=[{"static_configs": [{"targets": [f"*:{PROMETHEUS_PORT}"]}]}]
         )
         self._logging = LogProxyConsumer(
             self, relation_name="logging", log_files=LOG_PATHS, container_name="discourse"
