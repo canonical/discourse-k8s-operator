@@ -57,6 +57,7 @@ async def test_discourse_up(ops_test: OpsTest, app: Application, requests_timeou
     )
     assert response.status_code == 200
 
+
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
 async def test_prom_exporter_is_up(ops_test: OpsTest, app: Application, requests_timeout: float):
