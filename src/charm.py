@@ -5,7 +5,7 @@
 """Charm for Discourse on kubernetes."""
 import logging
 from collections import namedtuple
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import ops.lib
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
@@ -96,7 +96,7 @@ class DiscourseCharm(CharmBase):
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
-    def _make_ingress_config(self) -> Dict:
+    def _make_ingress_config(self) -> Dict[str, Any]:
         """Create minimal ingress configuration.
 
         Returns:
@@ -153,7 +153,7 @@ class DiscourseCharm(CharmBase):
 
         return not errors
 
-    def _get_saml_config(self) -> Dict:
+    def _get_saml_config(self) -> Dict[str, Any]:
         """Get SAML configuration.
 
         Returns:
@@ -200,7 +200,7 @@ class DiscourseCharm(CharmBase):
         ]
         return [field for field in needed_fields if not self.config.get(field)]
 
-    def _get_s3_env(self) -> Dict:
+    def _get_s3_env(self) -> Dict[str, Any]:
         """Get the list of S3-related environment variables from charm's configuration.
 
         Returns:
@@ -225,7 +225,7 @@ class DiscourseCharm(CharmBase):
 
         return s3_env
 
-    def _create_discourse_environment_settings(self) -> Dict:
+    def _create_discourse_environment_settings(self) -> Dict[str, Any]:
         """Create a layer config based on our current configuration.
 
         Returns:
@@ -282,7 +282,7 @@ class DiscourseCharm(CharmBase):
 
         return pod_config
 
-    def _create_layer_config(self) -> Dict:
+    def _create_layer_config(self) -> Dict[str, Any]:
         """Create a layer config based on our current configuration.
 
         Returns:
