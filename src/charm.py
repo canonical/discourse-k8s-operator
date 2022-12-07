@@ -278,6 +278,7 @@ class DiscourseCharm(CharmBase):
         # We only get valid throttle levels here, otherwise it would be caught
         # by `check_for_config_problems`.
         if THROTTLE_LEVELS.get(self.config["throttle_level"]):
+            # self.config return an Any type
             pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
 
         return pod_config
@@ -320,6 +321,7 @@ class DiscourseCharm(CharmBase):
         Returns:
             If no services are planned yet (first run) or S3 settings have changed.
         """
+        # Properly type checks would require defining a complex TypedMap for the pebble plan
         return not current_plan.services or (  # type: ignore
             # Or S3 is enabled and one S3 parameter has changed
             self.config.get("s3_enabled")
@@ -338,9 +340,11 @@ class DiscourseCharm(CharmBase):
         Returns:
             If the needed relations have been established.
         """
+        # mypy fails do detect this stored value can be False
         if not self._stored.db_name:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             return False
+        # mypy fails do detect this stored value can be False
         if not self._stored.redis_relation:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
             return False
