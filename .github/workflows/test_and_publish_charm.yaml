@@ -21,3 +21,15 @@ jobs:
     with:
      integration-test-extra-arguments: --s3-url http://172.17.0.1:4566
      integration-test-pre-run-script: localstack-installation.sh
+  draft-publish-docs:
+    name: Draft publish docs
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Publish documentation
+        uses: canonical/upload-charm-docs@main
+        with:
+          discourse_host: discourse.charmhub.io
+          discourse_api_username: ${{ secrets.DISCOURSE_API_USERNAME }}
+          discourse_api_key: ${{ secrets.DISCOURSE_API_KEY }}
+          dry_run: true
