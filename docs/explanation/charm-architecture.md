@@ -49,7 +49,7 @@ In this case, an existing Ingress controller is required. For more information, 
 
 ### PostgreSQL
 
-PostgreSQL is an open-source object-relational database used by Indico as a source of all the data needed for its goal: event organization, archival, and collaboration.
+PostgreSQL is an open-source object-relational database used by Discourse as a source of all the data needed for its goal: event organization, archival, and collaboration.
 
 ### Redis
 
@@ -79,7 +79,7 @@ For this charm, the following events are observed:
 
 ## Charm Code Overview
 
-The `src/charm.py` is the default entry point for a charm and has the IndicoOperatorCharm Python class which inherits from CharmBase.
+The `src/charm.py` is the default entry point for a charm and has the DiscourseCharm Python class which inherits from CharmBase.
 
 CharmBase is the base class from which all Charms are formed, defined by [Ops](https://juju.is/docs/sdk/ops) (Python framework for developing charms).
 
