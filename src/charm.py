@@ -472,8 +472,10 @@ class DiscourseCharm(CharmBase):
             try:
                 process.wait_output()
             except ExecError as ex:
+                logger.error(ex)
                 event.fail(
-                    f"Failed to create user with email {email}: {ex.stderr.decode('utf-8')}"  # type: ignore
+                    # Parameter validation erros are printed to stdout
+                    f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
                 )
             event.set_results({"user": f"{email}"})
 
