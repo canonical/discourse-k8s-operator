@@ -474,7 +474,7 @@ class DiscourseCharm(CharmBase):
             except ExecError as ex:
                 logger.error(ex)
                 event.fail(
-                    # Parameter validation erros are printed to stdout
+                    # Parameter validation errors are printed to stdout
                     f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
                 )
             event.set_results({"user": f"{email}"})
