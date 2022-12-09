@@ -6,6 +6,6 @@ add-admin-user:
       description: User email.
     password:
       type: string
-      description: Password at least 15 characters long.
+      description: User password.
   required: [email, password]
 
