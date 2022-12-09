@@ -58,3 +58,4 @@ class _PGSQLPatch:
 pgsql_patch = _PGSQLPatch()
 DiscourseCharm = __import__("charm").DiscourseCharm
 SCRIPT_PATH = __import__("charm").SCRIPT_PATH
+DISCOURSE_PATH = __import__("charm").DISCOURSE_PATH
