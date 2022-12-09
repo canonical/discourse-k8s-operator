@@ -76,3 +76,14 @@ For this charm, the following events are observed:
 5. [database_relation_joined](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation joins. Action: initialize the database and enable the appropriate extensions.
 5. [master_changed](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation change. Action: update the database connection string configuration and emit config_changed event.
 5. [redis_relation_updated](https://github.com/canonical/redis-k8s-operator): Redis Operator custom event for when the relation details have been updated. Action: wait for the integrations and restart the containers.
+
+## Charm Code Overview
+
+The `src/charm.py` is the default entry point for a charm and has the IndicoOperatorCharm Python class which inherits from CharmBase.
+
+CharmBase is the base class from which all Charms are formed, defined by [Ops](https://juju.is/docs/sdk/ops) (Python framework for developing charms).
+
+See more information in [Charm](https://juju.is/docs/sdk/constructs#heading--charm).
+
+The `__init__` method guarantees that the charm observes all events relevant to its operation and handles them.
+
