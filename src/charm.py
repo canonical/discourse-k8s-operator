@@ -471,13 +471,13 @@ class DiscourseCharm(CharmBase):
             )
             try:
                 process.wait_output()
+                event.set_results({"user": f"{email}"})
             except ExecError as ex:
                 logger.error(ex)
                 event.fail(
                     # Parameter validation errors are printed to stdout
                     f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
                 )
-            event.set_results({"user": f"{email}"})
 
 
 if __name__ == "__main__":  # pragma: no cover
