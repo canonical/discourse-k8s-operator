@@ -3,13 +3,14 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+import typing
 import unittest
 from unittest.mock import MagicMock, patch
 
 from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
-from tests.unit._patched_charm import SCRIPT_PATH, DiscourseCharm, pgsql_patch
+from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseCharm, pgsql_patch
 
 
 class MockExecProcess(object):
@@ -61,16 +62,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: it will get to blocked status waiting for the latter.
         """
         self.add_database_relations()
+        self.harness.update_config({"force_saml_login": True})
         self.harness.container_pebble_ready("discourse")
-
-        self.harness.update_config(
-            {
-                "developer_emails": "user@foo.internal",
-                "force_saml_login": True,
-                "smtp_address": "smtp.internal",
-                "smtp_domain": "foo.internal",
-            }
-        )
 
         self.assertEqual(
             self.harness.model.unit.status,
@@ -84,16 +77,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: it will get to blocked status waiting for the latter.
         """
         self.add_database_relations()
+        self.harness.update_config({"saml_sync_groups": "group1"})
         self.harness.container_pebble_ready("discourse")
-
-        self.harness.update_config(
-            {
-                "developer_emails": "user@foo.internal",
-                "saml_sync_groups": "group1",
-                "smtp_address": "smtp.internal",
-                "smtp_domain": "foo.internal",
-            }
-        )
 
         self.assertEqual(
             self.harness.model.unit.status,
@@ -107,16 +92,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: it will get to blocked status waiting for it.
         """
         self.add_database_relations()
+        self.harness.update_config({"cors_origin": ""})
         self.harness.container_pebble_ready("discourse")
-
-        self.harness.update_config(
-            {
-                "cors_origin": "",
-                "developer_emails": "user@foo.internal",
-                "smtp_address": "smtp.internal",
-                "smtp_domain": "foo.internal",
-            }
-        )
 
         self.assertEqual(
             self.harness.model.unit.status,
@@ -130,16 +107,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: it will get to blocked status waiting for a valid value to be provided.
         """
         self.add_database_relations()
+        self.harness.update_config({"throttle_level": "Scream"})
         self.harness.container_pebble_ready("discourse")
-
-        self.harness.update_config(
-            {
-                "developer_emails": "user@foo.internal",
-                "throttle_level": "Scream",
-                "smtp_address": "smtp.internal",
-                "smtp_domain": "foo.internal",
-            }
-        )
 
         self.assertEqual(
             self.harness.model.unit.status.name,
@@ -154,13 +123,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: it will get to blocked status waiting for the latter.
         """
         self.add_database_relations()
-        self.harness.container_pebble_ready("discourse")
-
         self.harness.update_config(
             {
-                "developer_emails": "user@foo.internal",
-                "smtp_address": "smtp.internal",
-                "smtp_domain": "foo.internal",
                 "s3_access_key_id": "3|33+",
                 "s3_enabled": True,
                 "s3_endpoint": "s3.endpoint",
@@ -168,6 +132,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 "s3_secret_access_key": "s|kI0ure_k3Y",
             }
         )
+        self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
             self.harness.model.unit.status,
@@ -183,14 +148,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         self.add_database_relations()
         with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
-            self.harness.container_pebble_ready("discourse")
-
             self.harness.update_config(
                 {
-                    "developer_emails": "user@foo.internal",
-                    "enable_cors": True,
-                    "smtp_address": "smtp.internal",
-                    "smtp_domain": "foo.internal",
                     "s3_access_key_id": "3|33+",
                     "s3_bucket": "who-s-a-good-bucket?",
                     "s3_enabled": True,
@@ -199,6 +158,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "s3_secret_access_key": "s|kI0ure_k3Y",
                 }
             )
+            self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -213,7 +173,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_DB_NAME"])
         self.assertEqual("somepasswd", updated_plan_env["DISCOURSE_DB_PASSWORD"])
         self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
-        self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
@@ -241,22 +200,15 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         self.add_database_relations()
         with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
-            self.harness.container_pebble_ready("discourse")
-
             self.harness.update_config(
                 {
-                    "developer_emails": "user@foo.internal",
-                    "enable_cors": True,
                     "force_saml_login": True,
                     "saml_target_url": "https://login.sample.com/+saml",
                     "saml_sync_groups": "group1",
-                    "smtp_address": "smtp.internal",
-                    "smtp_domain": "foo.internal",
-                    "smtp_password": "OBV10USLYF4K3",
-                    "smtp_username": "apikey",
                     "s3_enabled": False,
                 }
             )
+            self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -270,7 +222,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_DB_NAME"])
         self.assertEqual("somepasswd", updated_plan_env["DISCOURSE_DB_PASSWORD"])
         self.assertEqual("someuser", updated_plan_env["DISCOURSE_DB_USERNAME"])
-        self.assertEqual("user@foo.internal", updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"])
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
@@ -284,13 +235,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"])
         self.assertEqual("group1", updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"])
         self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
-        self.assertEqual("smtp.internal", updated_plan_env["DISCOURSE_SMTP_ADDRESS"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"])
-        self.assertEqual("foo.internal", updated_plan_env["DISCOURSE_SMTP_DOMAIN"])
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"])
-        self.assertEqual("OBV10USLYF4K3", updated_plan_env["DISCOURSE_SMTP_PASSWORD"])
-        self.assertEqual("587", updated_plan_env["DISCOURSE_SMTP_PORT"])
-        self.assertEqual("apikey", updated_plan_env["DISCOURSE_SMTP_USER_NAME"])
         self.assertNotIn("DISCOURSE_USE_S3", updated_plan_env)
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
         self.assertEqual(
@@ -306,8 +252,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         self.add_database_relations()
         with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
-            self.harness.container_pebble_ready("discourse")
-
             self.harness.update_config(
                 {
                     "developer_emails": "user@foo.internal",
@@ -330,6 +274,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "s3_secret_access_key": "s|kI0ure_k3Y",
                 }
             )
+            self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -399,8 +344,36 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "database name should be set after relation joined",
         )
 
+    def test_add_admin_user(self):
+        self.harness.disable_hooks()
+        self.add_database_relations()
+
+        charm: DiscourseCharm = typing.cast(DiscourseCharm, self.harness.charm)
+        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
+            self.harness.container_pebble_ready("discourse")
+
+            email = "sample@email.com"
+            password = "somepassword"  # nosec
+            event = MagicMock()
+            event.params = {
+                "email": email,
+                "password": password,
+            }
+            charm._on_add_admin_user_action(event)
+
+        exec_mock.assert_any_call(
+            [
+                "bash",
+                "-c",
+                "./bin/bundle exec rake admin:create <<< $'sample@email.com\nsomepassword\nsomepassword\nY'",
+            ],
+            user="discourse",
+            working_dir=DISCOURSE_PATH,
+            environment=charm._create_discourse_environment_settings(),
+        )
+
     def add_postgres_relation(self):
-        "Adds postgresql relation and relation data to the charm."
+        "Add postgresql relation and relation data to the charm."
         self.harness.charm._stored.db_name = "discourse-k8s"
         self.harness.charm._stored.db_user = "someuser"
         self.harness.charm._stored.db_password = "somepasswd"  # nosec
@@ -409,7 +382,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
 
     def add_database_relations(self):
-        "Adds postgresql and redis relations and relation data to the charm."
+        "Add postgresql and redis relations and relation data to the charm."
         self.add_postgres_relation()
 
         redis_relation_id = self.harness.add_relation("redis", "redis")

@@ -1,0 +1,11 @@
+add-admin-user:
+  description: Add a new admin user.
+  params:
+    email:
+      type: string
+      description: User email.
+    password:
+      type: string
+      description: User password.
+  required: [email, password]
+
