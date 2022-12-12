@@ -7,6 +7,7 @@ import typing
 import unittest
 from unittest.mock import MagicMock, patch
 
+from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
@@ -345,6 +346,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         )
 
     def test_add_admin_user(self):
+        """
+        arrange: an email and a password
+        act: when the _on_add_admin_user_action mtehod is executed
+        assert: the underlying rake command to add the user is executed with the appropriate parameters.
+        """
         self.harness.disable_hooks()
         self.add_database_relations()
 
@@ -354,7 +360,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
             email = "sample@email.com"
             password = "somepassword"  # nosec
-            event = MagicMock()
+            event = MagicMock(spec=ActionEvent)
             event.params = {
                 "email": email,
                 "password": password,
@@ -365,7 +371,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             [
                 "bash",
                 "-c",
-                "./bin/bundle exec rake admin:create <<< $'sample@email.com\nsomepassword\nsomepassword\nY'",
+                f"./bin/bundle exec rake admin:create <<< $'{email}\n{password}\n{password}\nY'",
             ],
             user="discourse",
             working_dir=DISCOURSE_PATH,
