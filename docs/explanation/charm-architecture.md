@@ -29,13 +29,13 @@ Configuration files for the containers can be found in [the image directory of t
 
 Discourse is a Ruby on Rails application deployed on top of the [Unicorn server](https://devcenter.heroku.com/articles/rails-unicorn).
 
-The server is started in HTTP mode (port `3000`) serving all the content. Alongside it there's a standalone process running the [Prometheus Exporter Plugin for Discourse](https://github.com/discourse/discourse-prometheus) (port `9394`)
+The server is started in HTTP mode (port `3000`) serving all the content. Alongside it there's a standalone process running the [Prometheus Exporter Plugin for Discourse](https://github.com/discourse/discourse-prometheus) (port `9394`).
 
 The workload that this container is running is defined in the [Discourse dockerfile in the charm repository](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse.Dockerfile).
 
 ## Docker Images
 
-The image defined in [Discourse dockerfile](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse.Dockerfile) in the charm repository are published to [Charmhub](https://charmhub.io/), the official repository of charms.
+The image defined in the [Discourse dockerfile](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse.Dockerfile) in the charm repository is published to [Charmhub](https://charmhub.io/), the official repository of charms.
 
 This is done by publishing a resource to Charmhub as described in the [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 
@@ -49,7 +49,7 @@ In this case, an existing Ingress controller is required. For more information, 
 
 ### PostgreSQL
 
-PostgreSQL is an open-source object-relational database used by Discourse as a source of all the data needed for its goal: event organization, archival, and collaboration.
+PostgreSQL is an open-source object-relational database used by Discourse to store all the data needed.
 
 ### Redis
 
@@ -86,4 +86,3 @@ CharmBase is the base class from which all Charms are formed, defined by [Ops](h
 See more information in [Charm](https://juju.is/docs/sdk/constructs#heading--charm).
 
 The `__init__` method guarantees that the charm observes all events relevant to its operation and handles them.
-

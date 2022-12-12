@@ -16,7 +16,7 @@ juju config nginx-ingress-integrator tls-secret-name=YOUR_TLS_SECRET_NAME
 juju trust nginx-ingress-integrator --scope cluster
 ```
 
-Because the pod-spec charm doesn't [store state]( https://discourse.charmhub.io/t/keeping-state-in-juju-controllers-in-operator-framework/3303) in the Juju controller, during the upgrade the charm stored state will be lost, so the database relations will have to be recreated in order to exchange the connection details again. This can be done by running:
+Because the pod-spec charm doesn't [store state](https://discourse.charmhub.io/t/keeping-state-in-juju-controllers-in-operator-framework/3303) in the Juju controller, during the upgrade the charm stored state will be lost, so the database relations will have to be recreated in order to exchange the connection details again. This can be done by running:
 ```
 juju remove-relation redis-k8s:redis discourse-k8s:redis
 juju remove-relation  postgresql-k8s:db-admin discourse-k8s:db
@@ -35,8 +35,8 @@ juju relate discourse-k8s redis-k8s
 * `tls_secret_name`: Providing the TLS secret via the charm configuration is not supported anymore. The secret must be provided now using the [Nginx Ingress Integrator charm](https://charmhub.io/nginx-ingress-integrator) using the `tls-secret-name` option. See above for an example.
 
 Given that the image is now packed and released as a charm resource, the following configuration options have been dropped too:
-*  `discourse_image`
+* `discourse_image`
 * `image_user`
-*  `image_pass`
+* `image_pass`
 
 You can use a different image than the one deployed by default with the charm using the [attach-resource](https://juju.is/docs/olm/juju-attach-resource) juju command.
