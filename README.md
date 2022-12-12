@@ -20,42 +20,6 @@ straightforward through Juju's clean interface. It will allow easy deployment
 into multiple environments for testing of changes, and supports scaling out for
 enterprise deployments.
 
-## Deployment options overview
-
-For overall concepts related to using Juju
-[see the Juju overview page](https://juju.is/). For easy local testing we
-recommend
-[this how to on using MicroK8s with Juju](https://juju.is/docs/olm/microk8s).
-Because this charm requires an ingress controller, you'll also need to enable
-the `ingress` add-on by running `microk8s enable ingress`.
-
-## How to deploy this charm (quick guide)
-
-To deploy the charm and relate it to
-[the PostgreSQL K8s charm](https://charmhub.io/postgresql-k8s) and
-[the Redis K8s charm](https://charmhub.io/redis-k8s) within a Juju Kubernetes model:
-
-    juju deploy postgresql-k8s
-    juju deploy redis-k8s
-    juju deploy discourse-k8s
-    juju relate discourse-k8s postgresql-k8s:db-admin
-    juju relate discourse-k8s redis-k8s
-
-The following config options are required in order for the charm to work: 
-`developer_emails`, `smtp_address` and `smtp_domain`.
-
-The charm also supports the `ingress` relation, which can be used with
-[nginx-ingress-integrator](https://charmhub.io/nginx-ingress-integrator/).
-
-    juju deploy nginx-ingress-integrator
-    juju relate discourse-k8s nginx-ingress-integrator
-
-Once the deployment is completed and the "discourse-k8s" workload state in
-`juju status` has changed to "active" you can add `discourse-k8s` to
-`/etc/hosts` with the IP address of your Kubernetes cluster's ingress
-(127.0.0.1 if you're using MicroK8s) and visit `http://discourse-k8s` in a
-browser and log in to your Discourse instance.
-
 ## Project and community
 
 The Discourse Operator is a member of the Ubuntu family. It's an open source
