@@ -1,6 +1,6 @@
 name: discourse-k8s
 display-name: Discourse
-summary: Discourse is the discussion platform built for the next decade of the Internet.
+summary: Discourse is modern forum for your community.
 description: Mailing list, discussion forum, chat room and more!
 docs: https://discourse.charmhub.io/t/discourse-documentation-overview/3773
 maintainers:
