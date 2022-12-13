@@ -19,7 +19,7 @@ The code for this charm can be downloaded as follows:
 git clone https://github.com/canonical/discourse-k8s-operator
 ```
 
-To run tests, simply run `tox` from within the charm code directory.
+To run tests, run `tox` from within the charm code directory.
 
 To build and deploy a local version of the charm, simply run:
 
