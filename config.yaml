@@ -33,7 +33,7 @@ options:
     default: ""
   smtp_authentication:
     type: string
-    description: "Type of smtp authentication to use. Accepted values: none, login, plain, cram_md5."
+    description: "Type of smtp authentication to use. Valid values: none, login, plain, cram_md5."
     default: "none"
   smtp_domain:
     type: string
