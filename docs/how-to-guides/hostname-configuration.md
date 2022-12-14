@@ -1,6 +1,6 @@
 This charm exposes the `external_hostname` configuration option to specify the external hostname of the application.
 
-To expose the application is recommended to set that configuration option and deploy and relate the [Nginx Ingress Integrator Operator](https://charmhub.io/nginx-ingress-integrator), that will be automatically configured with the values provided by the charm.
+To expose the application it is recommended to set that configuration option and deploy and relate the [Nginx Ingress Integrator Operator](https://charmhub.io/nginx-ingress-integrator), that will be automatically configured with the values provided by the charm.
 
 Assuming discourse is already up and running as `discourse-k8s`, you'll need to run the following commands:
 ```
