@@ -1,4 +1,4 @@
-An S3 bucket can be leveraged to serve the static resources packaged by Discourse, potentically improving performance. To configure it to set the following configuration options with the appropriate values for your existing bucket `juju config [charm_name] [configuration]=[value]`:
+An S3 bucket can be leveraged to serve the static resources packaged by Discourse, potentically improving performance. Moreover, it is required when scaling the charm to serve the uploaded files. To configure it to set the following configuration options with the appropriate values for your existing bucket `juju config [charm_name] [configuration]=[value]`:
 
 ```
 s3_access_key_id
