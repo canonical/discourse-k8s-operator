@@ -1,15 +1,15 @@
 options:
   cors_origin:
     type: string
-    description: "Cors origin string to use, defaults to '*'"
+    description: "Cors origin string to use, defaults to '*'."
     default: "*"
   developer_emails:
     type: string
-    description: "Comma delimited list of email addresses that should have developer level access"
+    description: "Comma delimited list of email addresses that should have developer level access."
     default: ""
   enable_cors:
     type: boolean
-    description: "Enable Cross-origin Resource Sharing (CORS) at the application level (required for SSO)"
+    description: "Enable Cross-origin Resource Sharing (CORS) at the application level (required for SSO)."
     default: true
   external_hostname:
     type: string
@@ -17,7 +17,7 @@ options:
     default: ""
   force_saml_login:
     type: boolean
-    description: "Force SAML login (full screen, no local database logins)"
+    description: "Force SAML login (full screen, no local database logins)."
     default: false
   saml_sync_groups:
     type: string
@@ -25,35 +25,35 @@ options:
     default: ""
   saml_target_url:
     type: string
-    description: "SAML authentication target url"
+    description: "SAML authentication target url."
     default: ""
   smtp_address:
     type: string
-    description: "Hostname / IP that should be used to send SMTP mail"
+    description: "Hostname / IP that should be used to send SMTP mail."
     default: ""
   smtp_authentication:
     type: string
-    description: "Type of smtp authentication to use"
+    description: "Type of smtp authentication to use. Valid values: none, login, plain, cram_md5."
     default: "none"
   smtp_domain:
     type: string
-    description: "Hostname that email sent by this discourse should appear to come from"
+    description: "Hostname that email sent by this discourse should appear to come from."
     default: ""
   smtp_openssl_verify_mode:
     type: string
-    description: "Should discourse verify SSL certs"
+    description: "Should discourse verify SSL certs."
     default: "none"
   smtp_password:
     type: string
-    description: "Password to use when sending mail via SMTP"
+    description: "Password to use when sending mail via SMTP."
     default: ""
   smtp_port:
     type: int
-    description: "Port to use when connecting to SMTP server"
+    description: "Port to use when connecting to SMTP server."
     default: 587
   smtp_username:
     type: string
-    description: "Username to use when sending mail via SMTP"
+    description: "Username to use when sending mail via SMTP."
     default: ""
   s3_access_key_id:
     type: string
@@ -126,5 +126,5 @@ options:
     default: true
   throttle_level:
     type: string
-    description: "Throttle level - blocks excessive usage by ip. Valid values: none, permissive, strict"
+    description: "Throttle level - blocks excessive usage by ip. Accepted values: none, permissive, strict."
     default: none
