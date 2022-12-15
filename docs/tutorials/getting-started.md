@@ -1,4 +1,4 @@
-In this tutorial, we'll walk you through the process of deploying the indico charm, relating it to the nginx-ingress-integrator charm, the postgresql-k8s charm and the redis-k8s charm, and inspecting kubernetes resources it creates. We'll then also look at changing the charm configuration via a juju configuration update.
+In this tutorial, we'll walk you through the process of deploying the Discourse charm, relating it to the nginx-ingress-integrator charm, the postgresql-k8s charm and the redis-k8s charm, and inspecting the kubernetes resources created.
 
 ## Requirements
 
