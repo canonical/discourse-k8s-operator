@@ -11,7 +11,7 @@ You will need:
 
 Discourse requires connections to PostgreSQL and Redis, so those will be deployed too and related to the Discourse charm. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
 
-All the above charms will the deployed in a new model names `discourse`:
+All the above charms will the deployed in a new model named `discourse`:
 
 ```
 # Add the model
