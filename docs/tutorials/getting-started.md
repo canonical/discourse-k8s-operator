@@ -11,7 +11,7 @@ You will need:
 
 Discourse requires connections to PostgreSQL and Redis, so those will be deployed too and related to the Discourse charm. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
 
-All the above charm will the deployed in a new model names `discourse`:
+All the above charms will the deployed in a new model names `discourse`:
 
 ```
 # Add the model
@@ -24,7 +24,7 @@ juju deploy discourse-k8s
 
 # Relate redis-k8s and postgresql-k8s to discourse-k8s
 juju relate redis-k8s discourse-k8s
-# For postgresql-k8s the interface db needs to be specified as the charm provides more than one
+# For postgresql-k8s the "db" interface needs to be specified as the charm provides more than one
 juju relate discourse-k8s postgresql-k8s:db
 
 ```
@@ -51,7 +51,7 @@ redis-k8s:redis      discourse-k8s:redis  redis      regular
 
 ```
 
-Run `kubectl get pods -n discourse` to see the pods that are being created by the charms
+Run `kubectl get pods -n discourse` to see the pods that are being created by the charms:
 ```
 NAME                             READY   STATUS    RESTARTS   AGE
 modeloperator-7879f68947-s4q59   1/1     Running   0          10m
@@ -70,7 +70,7 @@ juju deploy nginx-ingress-integrator
 # If your cluster has RBAC enabled you'll be prompted to run the following:
 juju trust nginx-ingress-integrator --scope=cluster
 
-juju relate discourse-k8s:ingress nginx-ingress-integrator:ingress
+juju relate discourse-k8s nginx-ingress-integrator
 ```
 
 Discourse will be deployed with `discourse-k8s` as default hostname. In order to reach it, modify your `/etc/hosts` file so that it points to `127.0.0.1`
