@@ -4,4 +4,4 @@ Discourse is a JavaScript application that runs in your web browser, using the [
 
 For more information on Redis and PostgreSQL relations see [this section](/t/discourse-documentation-database-relations/3776).
 
-For details on configuration options, see [this page](/discourse/configure).
+For details on configuration options, see [this page](https://charmhub.io/discourse-k8s/configure).
