@@ -398,9 +398,7 @@ class DiscourseCharm(CharmBase):
                 stdout, _ = process.wait_output()
                 logger.debug("%s stdout: %s", script, stdout)
             except ExecError as e:
-                logger.error("%s command exited with code %d. Stderr:", script, e.exit_code)
-                logger.error("%s stderr: %s", script, e.stderr)
-                logger.error("%s stdout: %s", script, e.stdout)
+                logger.exception("%s command exited with code %d.", script, e.exit_code)
                 raise
 
         # Then start the service
@@ -473,7 +471,7 @@ class DiscourseCharm(CharmBase):
                 process.wait_output()
                 event.set_results({"user": f"{email}"})
             except ExecError as ex:
-                logger.error(ex)
+                logger.exception("Action add-admin-user failed")
                 event.fail(
                     # Parameter validation errors are printed to stdout
                     f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
