@@ -13,4 +13,6 @@ jobs:
       chaos-enabled: true
       chaos-experiments: pod-delete
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
-      chaos-duration: 360
+      chaos-interval: 540
+      chaos-status-duration: 180
+      chaos-status-delay: 10
