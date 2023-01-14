@@ -15,5 +15,5 @@ jobs:
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
       chaos-interval: 540
       chaos-duration: 240
-      chaos-status-duration: 180
-      chaos-status-delay: 10
+      chaos-status-duration: 220
+      chaos-status-delay: 12
