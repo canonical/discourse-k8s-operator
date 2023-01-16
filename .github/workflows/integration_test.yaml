@@ -8,12 +8,12 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
-      extra-arguments: --s3-url http://172.17.0.1:4566
-      pre-run-script: localstack-installation.sh
+      chaos-app-label: app.kubernetes.io/name=discourse-k8s
+      chaos-duration: 240
       chaos-enabled: true
       chaos-experiments: pod-delete
-      chaos-app-label: app.kubernetes.io/name=discourse-k8s
       chaos-interval: 600
-      chaos-duration: 240
-      chaos-status-duration: 220
       chaos-status-delay: 12
+      chaos-status-duration: 220
+      extra-arguments: --s3-url http://172.17.0.1:4566
+      pre-run-script: localstack-installation.sh
