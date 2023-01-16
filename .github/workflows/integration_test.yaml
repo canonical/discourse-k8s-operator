@@ -9,7 +9,7 @@ jobs:
     secrets: inherit
     with:
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
-      chaos-duration: 240
+      chaos-duration: 540
       chaos-enabled: true
       chaos-experiments: pod-delete
       chaos-interval: 220
