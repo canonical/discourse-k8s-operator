@@ -12,7 +12,7 @@ jobs:
       chaos-duration: 540
       chaos-enabled: true
       chaos-experiments: pod-delete
-      chaos-interval: 220
+      chaos-interval: 540
       chaos-status-delay: 10
       chaos-status-duration: 180
       extra-arguments: --s3-url http://172.17.0.1:4566
