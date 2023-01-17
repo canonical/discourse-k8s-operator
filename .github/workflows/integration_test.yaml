@@ -9,11 +9,11 @@ jobs:
     secrets: inherit
     with:
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
-      chaos-duration: 600
+      chaos-duration: 666
       chaos-enabled: true
       chaos-experiments: pod-delete
-      chaos-interval: 600
+      chaos-interval: 666
       chaos-status-delay: 10
-      chaos-status-duration: 180
+      chaos-status-duration: 222
       extra-arguments: --s3-url http://172.17.0.1:4566
       pre-run-script: localstack-installation.sh
