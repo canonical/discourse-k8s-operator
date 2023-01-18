@@ -12,8 +12,6 @@ import requests
 from boto3 import client
 from botocore.config import Config
 from bs4 import BeautifulSoup
-from lightkube import AsyncClient
-from lightkube.resources.core_v1 import Pod
 from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import OpsTest
 from requests.adapters import HTTPAdapter, Retry
