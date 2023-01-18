@@ -12,16 +12,22 @@ import requests
 from boto3 import client
 from botocore.config import Config
 from bs4 import BeautifulSoup
+from lightkube import AsyncClient
+from lightkube.resources.core_v1 import Pod
 from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import OpsTest
 from requests.adapters import HTTPAdapter, Retry
 
 from charm import PROMETHEUS_PORT, SERVICE_NAME, SERVICE_PORT
+from tests.helpers import APP_NAME, METADATA, NUM_UNITS, TLS_RESOURCES
 from tests.integration.helpers import (
     DBInfo,
+    get_address,
     get_db_info,
     get_discourse_email_token,
     get_unit_address,
+    get_unit_map,
+    get_unit_number,
 )
 
 logger = logging.getLogger(__name__)
@@ -333,3 +339,30 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     object_count = sum(1 for _ in response["Contents"])
 
     assert object_count > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_delete_primary_discourse_pod(ops_test: OpsTest):
+    """Delete the pod that is the Discourse primary.
+    Check that the pod joins the deployment correctly after it's restored automatically
+    by the StatefulSet.
+    """
+    unit_map = await get_unit_map(ops_test=ops_test)
+    leader = unit_map["leader"]
+    k8sclient = AsyncClient(namespace=ops_test.model.info.name)
+
+    # Delete a non-leader pod
+    await k8sclient.delete(Pod, name=leader.replace("/", "-"))
+    logger.info('Deleted pod: %s', leader)
+    await k8sclient.get(Pod, name=leader.replace("/", "-"))
+
+    # Wait for `upgrade_charm` sequence
+    await ops_test.model.wait_for_idle(
+        apps=[APP_NAME], status="active", timeout=1000, idle_period=60
+    )
+
+    await k8sclient.get(Pod, name=leader.replace("/", "-"))
+    await k8sclient.log(Pod, name=leader.replace("/", "-"))
+
+    assert ops_test.model.applications[APP_NAME].units[0].workload_status == "active"
