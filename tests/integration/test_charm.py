@@ -237,71 +237,44 @@ async def test_setup_discourse(
     logger.info("Admin API Key: %s", {parsed_key["key"]["key"]})
 
 
-@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
+def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
     Assume that the charm has already been built and is running.
     This test requires a localstack deployed
     """
 
-    # Localstack doesn't require any specific value there, any random string will work
-    config_s3_bucket = {"access-key": "my-lovely-key", "secret-key": "this-is-very-secret"}
-
-    # Localstack enforce to use this domain and it resolves to localhost
-    s3_domain = "localhost.localstack.cloud"
-    s3_bucket = "tests"
-    s3_region = "us-east-1"
-
-    # Parse URL to get the IP address and the port, and compose the required variables
-    parsed_s3_url = urlparse(s3_url)
-    s3_ip_address = parsed_s3_url.hostname
-    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_domain}"
-    if parsed_s3_url:
-        s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
+    s3_settings = get_s3_settings(app, s3_url)
 
     logger.info("Updating discourse hosts")
 
     # Discourse S3 client uses subdomain bucket routing,
     # I need to inject subdomain in the DNS (not needed if everything runs localhost)
     # Application actually does have units
-    action = await app.units[0].run(  # type: ignore
-        f'echo "{s3_ip_address}  {s3_bucket}.{s3_domain}" >> /etc/hosts'
+    action = app.units[0].run(  # type: ignore
+        f'echo "{s3_settings["s3_ip_address"]}  {s3_settings["s3_bucket"]}.{s3_settings["s3_domain"]}" >> /etc/hosts'
     )
-    result = await action.wait()
+    result = action.wait()
     assert result.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
 
-    # Application does actually have attribute set_config
-    await app.set_config(  # type: ignore
-        {
-            "s3_enabled": "true",
-            # The final URL is computed by discourse, we need to pass the main URL
-            "s3_endpoint": s3_endpoint,
-            "s3_bucket": s3_bucket,
-            "s3_secret_access_key": config_s3_bucket["secret-key"],
-            "s3_access_key_id": config_s3_bucket["access-key"],
-            # Default localstack region
-            "s3_region": s3_region,
-        }
-    )
     assert ops_test.model
-    await ops_test.model.wait_for_idle(status="active")
+    ops_test.model.wait_for_idle(status="active")
 
     logger.info("Discourse config updated, checking bucket content")
 
     # Configuration for boto client
     s3_client_config = Config(
-        region_name=s3_region,
+        region_name=s3_settings['s3_region'],
         s3={
             "addressing_style": "virtual",
         },
     )
 
     # Trick to use when localstack is deployed on another location than locally
-    if s3_ip_address != "127.0.0.1":
+    if s3_settings['s3_ip_address'] != "127.0.0.1":
         proxy_definition = {
             "http": s3_url,
         }
@@ -314,10 +287,10 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     # Configure the boto client
     s3_client = client(
         "s3",
-        s3_region,
-        aws_access_key_id=config_s3_bucket["access-key"],
-        aws_secret_access_key=config_s3_bucket["secret-key"],
-        endpoint_url=s3_endpoint,
+        s3_settings['s3_region'],
+        aws_access_key_id=s3_settings['config_s3_bucket']["access-key"],
+        aws_secret_access_key=s3_settings['config_s3_bucket']["secret-key"],
+        endpoint_url=s3_settings['s3_endpoint'],
         use_ssl=False,
         config=s3_client_config,
     )
@@ -326,10 +299,56 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     response = s3_client.list_buckets()
     bucket_list = [*map(lambda a: a["Name"], response["Buckets"])]
 
-    assert s3_bucket in bucket_list
+    assert s3_settings['s3_bucket'] in bucket_list
 
     # Check content has been uploaded in the bucket
-    response = s3_client.list_objects(Bucket=s3_bucket)
+    response = s3_client.list_objects(Bucket=s3_settings['s3_bucket'])
     object_count = sum(1 for _ in response["Contents"])
 
     assert object_count > 0
+
+
+def get_s3_settings(app: Application, s3_url: str) -> Dict:
+    """get_s3_settings returns a dictionary of S3 settings used for testing
+    and configs the application to use S3 for a test, resetting the setting on test end"""
+    # Application does actually have attribute set_config
+    # Localstack doesn't require any specific value there, any random string will work
+    s3_settings: Dict = {}
+    s3_settings['config_s3_bucket'] = {"access-key": "my-lovely-key", "secret-key": "this-is-very-secret"}
+    # Localstack enforce to use this domain and it resolves to localhost
+    s3_settings['s3_domain'] = "localhost.localstack.cloud"
+    s3_settings['s3_bucket'] = "tests"
+    s3_settings['s3_region'] = "us-east-1"
+
+    # Parse URL to get the IP address and the port, and compose the required variables
+    s3_settings['parsed_s3_url'] = urlparse(s3_url)
+    s3_settings['s3_ip_address'] = s3_settings['parsed_s3_url'].hostname
+    s3_settings['s3_endpoint'] = f"{s3_settings['parsed_s3_url'].scheme}://{s3_settings['s3_domain']}"
+    if s3_settings['parsed_s3_url']:
+        s3_settings['s3_endpoint'] = f"{s3_settings['s3_endpoint']}:{s3_settings['parsed_s3_url'].port}"
+    app.set_config(  # type: ignore
+        {
+            "s3_enabled": "true",
+            # The final URL is computed by discourse, we need to pass the main URL
+            "s3_endpoint": s3_settings['s3_endpoint'],
+            "s3_bucket": s3_settings['s3_bucket'],
+            "s3_secret_access_key": s3_settings['config_s3_bucket']["secret-key"],
+            "s3_access_key_id": s3_settings['config_s3_bucket']["access-key"],
+            # Default localstack region
+            "s3_region": s3_settings['s3_region'],
+        }
+    )
+    yield s3_settings
+    # Reset S3 settings
+    app.set_config(  # type: ignore
+        {
+            "s3_enabled": "false",
+            # The final URL is computed by discourse, we need to pass the main URL
+            "s3_endpoint": "",
+            "s3_bucket": "",
+            "s3_secret_access_key": "",
+            "s3_access_key_id": "",
+            # Default localstack region
+            "s3_region": "",
+        }
+    )
