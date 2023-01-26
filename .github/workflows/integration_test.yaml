@@ -16,5 +16,3 @@ jobs:
       chaos-status-delay: 10
       chaos-status-duration: 260
       debug_enabled: true
-      extra-arguments: --s3-url http://172.17.0.1:4566
-      pre-run-script: localstack-installation.sh
