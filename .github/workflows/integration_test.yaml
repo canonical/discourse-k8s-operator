@@ -13,3 +13,4 @@ jobs:
       chaos-enabled: true
       chaos-experiments: pod-delete
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
+      trivy-image-config: "trivy.yaml"

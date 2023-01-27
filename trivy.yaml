@@ -1,4 +1,4 @@
-exit-code: 0
+exit-code: 2
 timeout: 20m
 scan:
   offline-scan: true
