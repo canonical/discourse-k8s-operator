@@ -5,16 +5,11 @@ on:
 
 jobs:
   integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@feat/add-debugging
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
-      chaos-duration: 777
       chaos-enabled: true
       chaos-experiments: pod-delete
-      chaos-interval: 777
-      chaos-status-delay: 10
-      chaos-status-duration: 260
-      debug_enabled: true
       extra-arguments: --s3-url http://172.17.0.1:4566
       pre-run-script: localstack-installation.sh
