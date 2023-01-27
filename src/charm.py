@@ -398,7 +398,6 @@ class DiscourseCharm(CharmBase):
                 stdout, _ = process.wait_output()
                 logger.debug("%s stdout: %s", script, stdout)
             except ExecError as cmd_err:
-                logger.info("full error trace: %s", cmd_err.stderr)
                 logger.exception("%s command exited with code %d.", script, cmd_err.exit_code)
                 raise
 
