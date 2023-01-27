@@ -13,3 +13,4 @@ jobs:
       chaos-experiments: pod-delete
       extra-arguments: --s3-url http://172.17.0.1:4566
       pre-run-script: localstack-installation.sh
+      trivy-image-config: "trivy.yaml"
