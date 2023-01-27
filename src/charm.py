@@ -162,8 +162,7 @@ class DiscourseCharm(CharmBase):
             Dictionary with the SAML configuration settings..
         """
         saml_fingerprints = {
-            "https://login.ubuntu.com/+saml":
-            "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
+            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
         }
         saml_config = {}
 
@@ -310,8 +309,7 @@ class DiscourseCharm(CharmBase):
         return layer_config
 
     def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        """Determine if the setup script is to be run based on the current plan
-        and the new S3 settings.
+        """Determine if the setup script is to be run based on the current plan and the new S3 settings.
 
         Args:
             current_plan: Dictionary containing the current plan.
