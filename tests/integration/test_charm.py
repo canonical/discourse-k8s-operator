@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Discourse integration tests."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
@@ -246,20 +247,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     This test requires a localstack deployed
     """
 
-    # Localstack doesn't require any specific value there, any random string will work
-    config_s3_bucket = {"access-key": "my-lovely-key", "secret-key": "this-is-very-secret"}
-
-    # Localstack enforce to use this domain and it resolves to localhost
-    s3_domain = "localhost.localstack.cloud"
-    s3_bucket = "tests"
-    s3_region = "us-east-1"
-
-    # Parse URL to get the IP address and the port, and compose the required variables
-    parsed_s3_url = urlparse(s3_url)
-    s3_ip_address = parsed_s3_url.hostname
-    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_domain}"
-    if parsed_s3_url:
-        s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
+    s3_conf: Dict = generate_s3_config(s3_url)
 
     logger.info("Updating discourse hosts")
 
@@ -267,7 +255,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     # I need to inject subdomain in the DNS (not needed if everything runs localhost)
     # Application actually does have units
     action = await app.units[0].run(  # type: ignore
-        f'echo "{s3_ip_address}  {s3_bucket}.{s3_domain}" >> /etc/hosts'
+        f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.{s3_conf["domain"]}" >> /etc/hosts'
     )
     result = await action.wait()
     assert result.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
@@ -279,12 +267,12 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
         {
             "s3_enabled": "true",
             # The final URL is computed by discourse, we need to pass the main URL
-            "s3_endpoint": s3_endpoint,
-            "s3_bucket": s3_bucket,
-            "s3_secret_access_key": config_s3_bucket["secret-key"],
-            "s3_access_key_id": config_s3_bucket["access-key"],
+            "s3_endpoint": s3_conf["endpoint"],
+            "s3_bucket": s3_conf["bucket"],
+            "s3_secret_access_key": s3_conf["credentials"]["secret-key"],
+            "s3_access_key_id": s3_conf["credentials"]["access-key"],
             # Default localstack region
-            "s3_region": s3_region,
+            "s3_region": s3_conf["region"],
         }
     )
     assert ops_test.model
@@ -294,14 +282,14 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
 
     # Configuration for boto client
     s3_client_config = Config(
-        region_name=s3_region,
+        region_name=s3_conf["region"],
         s3={
             "addressing_style": "virtual",
         },
     )
 
     # Trick to use when localstack is deployed on another location than locally
-    if s3_ip_address != "127.0.0.1":
+    if s3_conf["ip_address"] != "127.0.0.1":
         proxy_definition = {
             "http": s3_url,
         }
@@ -314,10 +302,10 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     # Configure the boto client
     s3_client = client(
         "s3",
-        s3_region,
-        aws_access_key_id=config_s3_bucket["access-key"],
-        aws_secret_access_key=config_s3_bucket["secret-key"],
-        endpoint_url=s3_endpoint,
+        s3_conf["region"],
+        aws_access_key_id=s3_conf["credentials"]["access-key"],
+        aws_secret_access_key=s3_conf["credentials"]["secret-key"],
+        endpoint_url=s3_conf["endpoint"],
         use_ssl=False,
         config=s3_client_config,
     )
@@ -326,10 +314,10 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     response = s3_client.list_buckets()
     bucket_list = [*map(lambda a: a["Name"], response["Buckets"])]
 
-    assert s3_bucket in bucket_list
+    assert s3_conf["bucket"] in bucket_list
 
     # Check content has been uploaded in the bucket
-    response = s3_client.list_objects(Bucket=s3_bucket)
+    response = s3_client.list_objects(Bucket=s3_conf["bucket"])
     object_count = sum(1 for _ in response["Contents"])
 
     assert object_count > 0
@@ -349,3 +337,25 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     )
     assert ops_test.model
     await ops_test.model.wait_for_idle(status="active")
+
+
+def generate_s3_config(s3_url: str) -> Dict:
+    """Generate an S3 config for localstack based test."""
+    s3_config: Dict = {
+        # Localstack doesn't require any specific value there, any random string will work
+        "credentials": {"access-key": "my-lovely-key", "secret-key": "this-is-very-secret"},
+        # Localstack enforce to use this domain and it resolves to localhost
+        "domain": "localhost.localstack.cloud",
+        "bucket": "tests",
+        "region": "us-east-1",
+    }
+
+    # Parse URL to get the IP address and the port, and compose the required variables
+    parsed_s3_url = urlparse(s3_url)
+    s3_ip_address = parsed_s3_url.hostname
+    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_config['s3_domain']}"
+    if parsed_s3_url:
+        s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
+    s3_config["ip_address"] = s3_ip_address
+    s3_config["endpoint"] = s3_endpoint
+    return s3_config

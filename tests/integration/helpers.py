@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Helper functions for Discourse charm tests."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 

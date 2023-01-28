@@ -18,6 +18,8 @@ from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseChar
 
 
 class MockExecProcess:
+    """Mocks wait_output for ExecProcess."""
+
     wait_output: MagicMock = MagicMock(return_value=("", None))
 
 
