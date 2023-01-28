@@ -162,7 +162,7 @@ class DiscourseCharm(CharmBase):
             Dictionary with the SAML configuration settings..
         """
         saml_fingerprints = {
-            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
+            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"  # pylint: disable=line-too-long
         }
         saml_config = {}
 
@@ -317,7 +317,7 @@ class DiscourseCharm(CharmBase):
 
         Returns:
             If no services are planned yet (first run) or S3 settings have changed.
-        """
+        """  # pylint: disable=line-too-long
         # Properly type checks would require defining a complex TypedMap for the pebble plan
         return not current_plan.services or (  # type: ignore
             # Or S3 is enabled and one S3 parameter has changed

@@ -1,3 +1,4 @@
+"""Discourse integration tests fixtures."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
@@ -18,13 +19,13 @@ logger = logging.getLogger(__name__)
 @fixture(scope="module")
 def metadata():
     """Provides charm metadata."""
-    yield yaml.safe_load(Path("./metadata.yaml").read_text())
+    yield yaml.safe_load(Path("./metadata.yaml").read_text(encoding="UTF-8"))
 
 
 @fixture(scope="module")
-def app_name(metadata):
+def app_name(meta):
     """Provides app name from the metadata."""
-    yield metadata["name"]
+    yield meta["name"]
 
 
 @fixture(scope="module")
@@ -54,7 +55,7 @@ def requests_timeout():
 
 
 @pytest_asyncio.fixture(scope="module")
-async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pytestconfig: Config):
+async def app(ops_test: OpsTest, name: str, config: Dict[str, str], pytestconfig: Config):
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
@@ -71,15 +72,15 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     }
 
     application = await ops_test.model.deploy(
-        charm, resources=resources, application_name=app_name, config=app_config, series="focal"
+        charm, resources=resources, application_name=name, config=config, series="focal"
     )
     await ops_test.model.wait_for_idle()
 
     # Add required relations
-    assert ops_test.model.applications[app_name].units[0].workload_status == WaitingStatus.name  # type: ignore
+    assert ops_test.model.applications[name].units[0].workload_status == WaitingStatus.name  # type: ignore
     await asyncio.gather(
-        ops_test.model.add_relation(app_name, "postgresql-k8s:db-admin"),
-        ops_test.model.add_relation(app_name, "redis-k8s"),
+        ops_test.model.add_relation(name, "postgresql-k8s:db-admin"),
+        ops_test.model.add_relation(name, "redis-k8s"),
     )
     await ops_test.model.wait_for_idle(status="active")
 
