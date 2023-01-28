@@ -11,6 +11,7 @@ jobs:
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
       chaos-enabled: true
       chaos-experiments: pod-delete
+      chaos-duration: 180
       extra-arguments: --s3-url http://172.17.0.1:4566
       pre-run-script: localstack-installation.sh
       trivy-image-config: "trivy.yaml"
