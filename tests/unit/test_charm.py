@@ -14,7 +14,9 @@ from ops.testing import Harness
 from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseCharm, pgsql_patch
 
 
-class MockExecProcess(object):
+class MockExecProcess:
+    """Mocks wait_output for ExecProcess."""
+
     wait_output: MagicMock = MagicMock(return_value=("", None))
 
 
