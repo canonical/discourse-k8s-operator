@@ -108,27 +108,23 @@ async def test_setup_discourse(
 
     # Get the form info
     assert parsed_registration.body
-    utf8 = parsed_registration.body.find("input", attrs={"name": "utf8"}).get("value")  # type: ignore
-    authenticity_token = parsed_registration.body.find("input", attrs={"name": "authenticity_token"}).get("value")  # type: ignore
-    form_fields = {
-        "utf8": utf8,
-        "authenticity_token": authenticity_token,
-        "username": "admin",
-        "email": app_config["developer_emails"],
-        "password": "MyLovelySecurePassword2022!",
-    }
-
-    form_headers = {
-        "Host": f"{app_config['external_hostname']}",
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
-
     logger.info("Submitting registration form")
 
     response = session.post(
         f"{discourse_url}/finish-installation/register",
-        headers=form_headers,
-        data=urlencode(form_fields),
+        headers={
+            "Host": f"{app_config['external_hostname']}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        data=urlencode(
+            {
+                "utf8": parsed_registration.body.find("input", attrs={"name": "utf8"}).get("value"),  # type: ignore # pylint: disable=line-too-long
+                "authenticity_token": parsed_registration.body.find("input", attrs={"name": "authenticity_token"}).get("value"),  # type: ignore # pylint: disable=line-too-long
+                "username": "admin",
+                "email": app_config["developer_emails"],
+                "password": "MyLovelySecurePassword2022!",
+            }
+        ),
         allow_redirects=False,
         timeout=requests_timeout,
     )
@@ -171,17 +167,15 @@ async def test_setup_discourse(
     )
 
     assert response.status_code == 200
-    parsed_challenge = response.json()
 
     assert parsed_validation.body
-    authenticity_token = parsed_validation.body.find("input", attrs={"name": "authenticity_token"}).get("value")  # type: ignore
     form_fields = {
         "_method": "put",
-        "authenticity_token": authenticity_token,
-        "password_confirmation": parsed_challenge["value"],
+        "authenticity_token": parsed_validation.body.find("input", attrs={"name": "authenticity_token"}).get("value"),  # type: ignore # pylint: disable=line-too-long
+        "password_confirmation": response.json()["value"],
         # The challenge string is reversed see
         # https://github.com/discourse/discourse/blob/main/app/assets/javascripts/discourse/scripts/activate-account.js
-        "challenge": parsed_challenge["challenge"][::-1],
+        "challenge": response.json()["challenge"][::-1],
     }
 
     logger.info("Submitting account validation form")
@@ -189,7 +183,10 @@ async def test_setup_discourse(
     # Submit the activation of the account
     response = session.post(
         f"{discourse_url}/u/activate-account/{email_token}",
-        headers=form_headers,
+        headers={
+            "Host": f"{app_config['external_hostname']}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
         data=urlencode(form_fields),
         allow_redirects=False,
         timeout=requests_timeout,
@@ -213,12 +210,9 @@ async def test_setup_discourse(
     # Extract the CSRF token
     parsed_admin: BeautifulSoup = BeautifulSoup(response.content, features="html.parser")
     assert parsed_admin.head
-    csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get("content")  # type: ignore
+    csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get("content")  # type: ignore # pylint: disable=line-too-long
 
     logger.info("Getting admin API key")
-
-    # Finally create an API Key, which will be used on the next integration tests
-    api_key_payload = {"key": {"description": "Key to The Batmobile", "username": "admin"}}
 
     response = session.post(
         f"{discourse_url}/admin/api/keys",
@@ -228,14 +222,13 @@ async def test_setup_discourse(
             "X-CSRF-Token": csrf_token,  # type: ignore
             "Content-Type": "application/json",
         },
-        data=json.dumps(api_key_payload),
+        data=json.dumps({"key": {"description": "Key to The Batmobile", "username": "admin"}}),
         timeout=requests_timeout,
     )
 
     assert response.status_code == 200
 
-    parsed_key = response.json()
-    logger.info("Admin API Key: %s", {parsed_key["key"]["key"]})
+    logger.info("Admin API Key: %s", {response.json()["key"]["key"]})
 
 
 @pytest.mark.asyncio
