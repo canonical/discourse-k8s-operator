@@ -16,20 +16,20 @@ from pytest_operator.plugin import OpsTest
 logger = logging.getLogger(__name__)
 
 
-@fixture(scope="module")
-def metadata():
+@fixture(scope="module", name="metadata")
+def fixture_metadata():
     """Provides charm metadata."""
     yield yaml.safe_load(Path("./metadata.yaml").read_text(encoding="UTF-8"))
 
 
-@fixture(scope="module")
-def app_name(meta):
+@fixture(scope="module", name="app_name")
+def fixture_app_name(metadata):
     """Provides app name from the metadata."""
-    yield meta["name"]
+    yield metadata["name"]
 
 
-@fixture(scope="module")
-def app_config():
+@fixture(scope="module", name="app_config")
+def fixture_app_config():
     """Provides app config."""
     yield {
         "developer_emails": "noreply@canonical.com",
@@ -55,7 +55,7 @@ def requests_timeout():
 
 
 @pytest_asyncio.fixture(scope="module")
-async def app(ops_test: OpsTest, name: str, config: Dict[str, str], pytestconfig: Config):
+async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pytestconfig: Config):
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
@@ -72,15 +72,15 @@ async def app(ops_test: OpsTest, name: str, config: Dict[str, str], pytestconfig
     }
 
     application = await ops_test.model.deploy(
-        charm, resources=resources, application_name=name, config=config, series="focal"
+        charm, resources=resources, application_name=app_name, config=app_config, series="focal"
     )
     await ops_test.model.wait_for_idle()
 
     # Add required relations
-    assert ops_test.model.applications[name].units[0].workload_status == WaitingStatus.name  # type: ignore
+    assert ops_test.model.applications[app_name].units[0].workload_status == WaitingStatus.name  # type: ignore # pylint: disable=line-too-long
     await asyncio.gather(
-        ops_test.model.add_relation(name, "postgresql-k8s:db-admin"),
-        ops_test.model.add_relation(name, "redis-k8s"),
+        ops_test.model.add_relation(app_name, "postgresql-k8s:db-admin"),
+        ops_test.model.add_relation(app_name, "redis-k8s"),
     )
     await ops_test.model.wait_for_idle(status="active")
 
