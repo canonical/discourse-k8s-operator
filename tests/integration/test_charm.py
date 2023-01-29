@@ -346,7 +346,7 @@ def generate_s3_config(s3_url: str) -> Dict:
     # Parse URL to get the IP address and the port, and compose the required variables
     parsed_s3_url = urlparse(s3_url)
     s3_ip_address = parsed_s3_url.hostname
-    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_config['s3_domain']}"
+    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_config['domain']}"
     if parsed_s3_url:
         s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
     s3_config["ip_address"] = s3_ip_address
