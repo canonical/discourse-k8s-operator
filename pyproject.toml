@@ -50,3 +50,6 @@ copyright-regexp = "Copyright\\s\\d{4}([-,]\\d{4})*\\s+%(author)s"
 ignore_missing_imports = true
 explicit_package_bases = true
 namespace_packages = true
+
+[tool.pylint.SIMILARITIES]
+min-similarity-lines=10
