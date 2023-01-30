@@ -1,3 +1,4 @@
+"""Discourse integration tests fixtures."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 @fixture(scope="module", name="metadata")
 def fixture_metadata():
     """Provides charm metadata."""
-    yield yaml.safe_load(Path("./metadata.yaml").read_text())
+    yield yaml.safe_load(Path("./metadata.yaml").read_text(encoding="UTF-8"))
 
 
 @fixture(scope="module", name="app_name")

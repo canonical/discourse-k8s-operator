@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Unit tests for Discourse charm.
+"""
 
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
@@ -15,6 +18,8 @@ from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseChar
 
 
 class TestDiscourseK8sCharm(unittest.TestCase):
+    """Unit tests for Discourse charm."""
+
     def setUp(self):
         pgsql_patch.start()
         self.harness = Harness(DiscourseCharm)
@@ -349,7 +354,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         arrange: an email and a password
         act: when the _on_add_admin_user_action mtehod is executed
-        assert: the underlying rake command to add the user is executed with the appropriate parameters.
+        assert: the underlying rake command to add the user is executed
+        with the appropriate parameters.
         """
         mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.harness.disable_hooks()

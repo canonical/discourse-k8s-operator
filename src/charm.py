@@ -81,11 +81,11 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
 
-        self.db = pgsql.PostgreSQLClient(self, "db")
+        self.db_client = pgsql.PostgreSQLClient(self, "db")
         self.framework.observe(
-            self.db.on.database_relation_joined, self._on_database_relation_joined
+            self.db_client.on.database_relation_joined, self._on_database_relation_joined
         )
-        self.framework.observe(self.db.on.master_changed, self._on_database_changed)
+        self.framework.observe(self.db_client.on.master_changed, self._on_database_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
 
         self.redis = RedisRequires(self, self._stored)
@@ -162,7 +162,7 @@ class DiscourseCharm(CharmBase):
             Dictionary with the SAML configuration settings..
         """
         saml_fingerprints = {
-            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
+            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"  # pylint: disable=line-too-long
         }
         saml_config = {}
 
@@ -317,7 +317,7 @@ class DiscourseCharm(CharmBase):
 
         Returns:
             If no services are planned yet (first run) or S3 settings have changed.
-        """
+        """  # pylint: disable=line-too-long
         # Properly type checks would require defining a complex TypedMap for the pebble plan
         return not current_plan.services or (  # type: ignore
             # Or S3 is enabled and one S3 parameter has changed
@@ -397,8 +397,8 @@ class DiscourseCharm(CharmBase):
             try:
                 stdout, _ = process.wait_output()
                 logger.debug("%s stdout: %s", script, stdout)
-            except ExecError as e:
-                logger.exception("%s command exited with code %d.", script, e.exit_code)
+            except ExecError as cmd_err:
+                logger.exception("%s command exited with code %d.", script, cmd_err.exit_code)
                 raise
 
         # Then start the service
@@ -461,7 +461,7 @@ class DiscourseCharm(CharmBase):
                 [
                     "bash",
                     "-c",
-                    f"./bin/bundle exec rake admin:create <<< $'{email}\n{password}\n{password}\nY'",
+                    f"./bin/bundle exec rake admin:create <<< $'{email}\n{password}\n{password}\nY'",  # pylint: disable=line-too-long
                 ],
                 user="discourse",
                 working_dir=DISCOURSE_PATH,
