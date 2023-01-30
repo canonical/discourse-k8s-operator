@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""
-Unit tests for Discourse charm.
-"""
 
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Unit tests for Discourse charm."""
 
 import typing
 import unittest

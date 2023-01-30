@@ -1,6 +1,6 @@
-"""Discourse integration tests fixtures."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Discourse integration tests fixtures."""
 
 import asyncio
 import logging
