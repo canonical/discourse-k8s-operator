@@ -17,12 +17,6 @@ from ops.testing import Harness
 from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseCharm, pgsql_patch
 
 
-class MockExecProcess:
-    """Mocks wait_output for ExecProcess."""
-
-    wait_output: MagicMock = MagicMock(return_value=("", None))
-
-
 class TestDiscourseK8sCharm(unittest.TestCase):
     """Unit tests for Discourse charm."""
 
@@ -147,30 +141,31 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             BlockedStatus("'s3_enabled' requires 's3_bucket'"),
         )
 
-    def test_config_changed_when_valid_no_s3_backup_nor_cdn(self):
+    @patch.object(Container, "exec")
+    def test_config_changed_when_valid_no_s3_backup_nor_cdn(self, mock_exec):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
         """
+        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
-        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
-            self.harness.update_config(
-                {
-                    "s3_access_key_id": "3|33+",
-                    "s3_bucket": "who-s-a-good-bucket?",
-                    "s3_enabled": True,
-                    "s3_endpoint": "s3.endpoint",
-                    "s3_region": "the-infinite-and-beyond",
-                    "s3_secret_access_key": "s|kI0ure_k3Y",
-                }
-            )
-            self.harness.container_pebble_ready("discourse")
+        self.harness.update_config(
+            {
+                "s3_access_key_id": "3|33+",
+                "s3_bucket": "who-s-a-good-bucket?",
+                "s3_enabled": True,
+                "s3_endpoint": "s3.endpoint",
+                "s3_region": "the-infinite-and-beyond",
+                "s3_secret_access_key": "s|kI0ure_k3Y",
+            }
+        )
+        self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        exec_mock.assert_any_call(
+        mock_exec.assert_any_call(
             [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
             working_dir="/srv/discourse/app",
@@ -199,28 +194,29 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "discourse-k8s", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
-    def test_config_changed_when_valid_no_fingerprint(self):
+    @patch.object(Container, "exec")
+    def test_config_changed_when_valid_no_fingerprint(self, mock_exec):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
         """
+        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
-        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
-            self.harness.update_config(
-                {
-                    "force_saml_login": True,
-                    "saml_target_url": "https://login.sample.com/+saml",
-                    "saml_sync_groups": "group1",
-                    "s3_enabled": False,
-                }
-            )
-            self.harness.container_pebble_ready("discourse")
+        self.harness.update_config(
+            {
+                "force_saml_login": True,
+                "saml_target_url": "https://login.sample.com/+saml",
+                "saml_sync_groups": "group1",
+                "s3_enabled": False,
+            }
+        )
+        self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        exec_mock.assert_any_call(
+        mock_exec.assert_any_call(
             [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
             working_dir="/srv/discourse/app",
@@ -251,42 +247,43 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "discourse-k8s", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
-    def test_config_changed_when_valid(self):
+    @patch.object(Container, "exec")
+    def test_config_changed_when_valid(self, mock_exec):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
         """
+        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
-        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
-            self.harness.update_config(
-                {
-                    "developer_emails": "user@foo.internal",
-                    "enable_cors": True,
-                    "external_hostname": "discourse.local",
-                    "force_saml_login": True,
-                    "saml_target_url": "https://login.ubuntu.com/+saml",
-                    "saml_sync_groups": "group1",
-                    "smtp_address": "smtp.internal",
-                    "smtp_domain": "foo.internal",
-                    "smtp_password": "OBV10USLYF4K3",
-                    "smtp_username": "apikey",
-                    "s3_access_key_id": "3|33+",
-                    "s3_backup_bucket": "back-bucket",
-                    "s3_bucket": "who-s-a-good-bucket?",
-                    "s3_cdn_url": "s3.cdn",
-                    "s3_enabled": True,
-                    "s3_endpoint": "s3.endpoint",
-                    "s3_region": "the-infinite-and-beyond",
-                    "s3_secret_access_key": "s|kI0ure_k3Y",
-                }
-            )
-            self.harness.container_pebble_ready("discourse")
+        self.harness.update_config(
+            {
+                "developer_emails": "user@foo.internal",
+                "enable_cors": True,
+                "external_hostname": "discourse.local",
+                "force_saml_login": True,
+                "saml_target_url": "https://login.ubuntu.com/+saml",
+                "saml_sync_groups": "group1",
+                "smtp_address": "smtp.internal",
+                "smtp_domain": "foo.internal",
+                "smtp_password": "OBV10USLYF4K3",
+                "smtp_username": "apikey",
+                "s3_access_key_id": "3|33+",
+                "s3_backup_bucket": "back-bucket",
+                "s3_bucket": "who-s-a-good-bucket?",
+                "s3_cdn_url": "s3.cdn",
+                "s3_enabled": True,
+                "s3_endpoint": "s3.endpoint",
+                "s3_region": "the-infinite-and-beyond",
+                "s3_secret_access_key": "s|kI0ure_k3Y",
+            }
+        )
+        self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        exec_mock.assert_any_call(
+        mock_exec.assert_any_call(
             [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
             working_dir="/srv/discourse/app",
@@ -352,30 +349,31 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "database name should be set after relation joined",
         )
 
-    def test_add_admin_user(self):
+    @patch.object(Container, "exec")
+    def test_add_admin_user(self, mock_exec):
         """
         arrange: an email and a password
         act: when the _on_add_admin_user_action mtehod is executed
         assert: the underlying rake command to add the user is executed
         with the appropriate parameters.
         """
+        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.harness.disable_hooks()
         self.add_database_relations()
 
         charm: DiscourseCharm = typing.cast(DiscourseCharm, self.harness.charm)
-        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
-            self.harness.container_pebble_ready("discourse")
+        self.harness.container_pebble_ready("discourse")
 
-            email = "sample@email.com"
-            password = "somepassword"  # nosec
-            event = MagicMock(spec=ActionEvent)
-            event.params = {
-                "email": email,
-                "password": password,
-            }
-            charm._on_add_admin_user_action(event)
+        email = "sample@email.com"
+        password = "somepassword"  # nosec
+        event = MagicMock(spec=ActionEvent)
+        event.params = {
+            "email": email,
+            "password": password,
+        }
+        charm._on_add_admin_user_action(event)  # pylint: disable=protected-access
 
-        exec_mock.assert_any_call(
+        mock_exec.assert_any_call(
             [
                 "bash",
                 "-c",
@@ -383,16 +381,20 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             ],
             user="discourse",
             working_dir=DISCOURSE_PATH,
-            environment=charm._create_discourse_environment_settings(),
+            environment=charm._create_discourse_environment_settings(),  # pylint: disable=protected-access
         )
 
     def add_postgres_relation(self):
         "Add postgresql relation and relation data to the charm."
-        self.harness.charm._stored.db_name = "discourse-k8s"
-        self.harness.charm._stored.db_user = "someuser"
-        self.harness.charm._stored.db_password = "somepasswd"  # nosec
-        self.harness.charm._stored.db_host = "dbhost"
-        self.db_relation_id = self.harness.add_relation("db", "postgresql")
+        self.harness.charm._stored.db_name = "discourse-k8s"  # pylint: disable=protected-access
+        self.harness.charm._stored.db_user = "someuser"  # pylint: disable=protected-access
+        self.harness.charm._stored.db_password = (  # pylint: disable=protected-access
+            "somepasswd"  # nosec
+        )
+        self.harness.charm._stored.db_host = "dbhost"  # pylint: disable=protected-access
+        self.db_relation_id = (  # pylint: disable=attribute-defined-outside-init
+            self.harness.add_relation("db", "postgresql")
+        )
         self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
 
     def add_database_relations(self):
@@ -401,6 +403,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         redis_relation_id = self.harness.add_relation("redis", "redis")
         self.harness.add_relation_unit(redis_relation_id, "redis/0")
-        self.harness.charm._stored.redis_relation = {
+        self.harness.charm._stored.redis_relation = {  # pylint: disable=protected-access
             redis_relation_id: {"hostname": "redis-host", "port": 1010}
         }
