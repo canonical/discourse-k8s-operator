@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Discourse integration tests."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Discourse integration tests."""
 
 import json
 import logging
