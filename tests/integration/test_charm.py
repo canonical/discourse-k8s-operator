@@ -222,6 +222,7 @@ async def test_setup_discourse(
 
     logger.info("Getting admin API key")
 
+    # Finally create an API Key, which will be used on the next integration tests
     response = session.post(
         f"{discourse_url}/admin/api/keys",
         headers={
