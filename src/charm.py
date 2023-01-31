@@ -162,7 +162,9 @@ class DiscourseCharm(CharmBase):
             Dictionary with the SAML configuration settings..
         """
         saml_fingerprints = {
-            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"  # pylint: disable=line-too-long
+            "https://login.ubuntu.com/+saml": (
+                "32:15:20:9F:A4:3C:8E:3E:8E:47:" "72:62:9A:86:8D:0E:E6:CF:45:D5"
+            )
         }
         saml_config = {}
 
@@ -309,7 +311,9 @@ class DiscourseCharm(CharmBase):
         return layer_config
 
     def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        """Determine if the setup script is to be run based on the current plan and the new S3 settings.
+        """Determine if the setup script is to be run.
+
+           This is based on the current plan and the new S3 settings.
 
         Args:
             current_plan: Dictionary containing the current plan.
@@ -317,7 +321,7 @@ class DiscourseCharm(CharmBase):
 
         Returns:
             If no services are planned yet (first run) or S3 settings have changed.
-        """  # pylint: disable=line-too-long
+        """
         # Properly type checks would require defining a complex TypedMap for the pebble plan
         return not current_plan.services or (  # type: ignore
             # Or S3 is enabled and one S3 parameter has changed
@@ -461,7 +465,8 @@ class DiscourseCharm(CharmBase):
                 [
                     "bash",
                     "-c",
-                    f"./bin/bundle exec rake admin:create <<< $'{email}\n{password}\n{password}\nY'",  # pylint: disable=line-too-long
+                    "./bin/bundle exec rake admin:create",
+                    f"<<< $'{email}\n{password}\n{password}\nY'",
                 ],
                 user="discourse",
                 working_dir=DISCOURSE_PATH,
