@@ -377,7 +377,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             [
                 "bash",
                 "-c",
-                f"./bin/bundle exec rake admin:create <<< $'{email}\n{password}\n{password}\nY'",
+                "./bin/bundle exec rake admin:create",
+                f"<<< $'{email}\n{password}\n{password}\nY'",
             ],
             user="discourse",
             working_dir=DISCOURSE_PATH,
