@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Helper functions for Discourse charm tests."""
 
 import itertools
 from collections import namedtuple

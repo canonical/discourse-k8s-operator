@@ -1,5 +1,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Discourse integration tests fixtures."""
 
 import asyncio
 import logging
@@ -15,20 +16,20 @@ from pytest_operator.plugin import OpsTest
 logger = logging.getLogger(__name__)
 
 
-@fixture(scope="module")
-def metadata():
+@fixture(scope="module", name="metadata")
+def fixture_metadata():
     """Provides charm metadata."""
-    yield yaml.safe_load(Path("./metadata.yaml").read_text())
+    yield yaml.safe_load(Path("./metadata.yaml").read_text(encoding="UTF-8"))
 
 
-@fixture(scope="module")
-def app_name(metadata):
+@fixture(scope="module", name="app_name")
+def fixture_app_name(metadata):
     """Provides app name from the metadata."""
     yield metadata["name"]
 
 
-@fixture(scope="module")
-def app_config():
+@fixture(scope="module", name="app_config")
+def fixture_app_config():
     """Provides app config."""
     yield {
         "developer_emails": "noreply@canonical.com",
@@ -76,7 +77,8 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     await ops_test.model.wait_for_idle()
 
     # Add required relations
-    assert ops_test.model.applications[app_name].units[0].workload_status == WaitingStatus.name  # type: ignore
+    unit = ops_test.model.applications[app_name].units[0]
+    assert unit.workload_status == WaitingStatus.name  # type: ignore
     await asyncio.gather(
         ops_test.model.add_relation(app_name, "postgresql-k8s:db-admin"),
         ops_test.model.add_relation(app_name, "redis-k8s"),

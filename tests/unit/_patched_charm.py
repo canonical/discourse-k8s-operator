@@ -24,8 +24,7 @@ def _use(*args, **kwargs):
     print("use: ", args)
     if args == ("pgsql", 1, "postgresql-charmers@lists.launchpad.net"):
         return pgsql
-    else:
-        return _og_use(*args, **kwargs)
+    return _og_use(*args, **kwargs)
 
 
 ops.lib.use = _use
@@ -47,10 +46,12 @@ class _PGSQLPatch:
         self._leadership_data.clear()
 
     def start(self):
+        """start PostgreSQL."""
         self._reset_leadership_data()
         self._patch.start()
 
     def stop(self):
+        """stop PostgreSQL."""
         self._reset_leadership_data()
         self._patch.stop()
 

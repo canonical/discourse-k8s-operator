@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Discourse integration tests."""
 
 import json
 import logging
@@ -107,27 +108,27 @@ async def test_setup_discourse(
 
     # Get the form info
     assert parsed_registration.body
-    utf8 = parsed_registration.body.find("input", attrs={"name": "utf8"}).get("value")  # type: ignore
-    authenticity_token = parsed_registration.body.find("input", attrs={"name": "authenticity_token"}).get("value")  # type: ignore
-    form_fields = {
-        "utf8": utf8,
-        "authenticity_token": authenticity_token,
-        "username": "admin",
-        "email": app_config["developer_emails"],
-        "password": "MyLovelySecurePassword2022!",
-    }
-
-    form_headers = {
-        "Host": f"{app_config['external_hostname']}",
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
-
     logger.info("Submitting registration form")
 
     response = session.post(
         f"{discourse_url}/finish-installation/register",
-        headers=form_headers,
-        data=urlencode(form_fields),
+        headers={
+            "Host": f"{app_config['external_hostname']}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        data=urlencode(
+            {
+                "utf8": parsed_registration.body.find(
+                    "input", attrs={"name": "utf8"}  # type: ignore
+                ).get("value"),
+                "authenticity_token": parsed_registration.body.find(
+                    "input", attrs={"name": "authenticity_token"}  # type: ignore
+                ).get("value"),
+                "username": "admin",
+                "email": app_config["developer_emails"],
+                "password": "MyLovelySecurePassword2022!",
+            }
+        ),
         allow_redirects=False,
         timeout=requests_timeout,
     )
@@ -170,17 +171,17 @@ async def test_setup_discourse(
     )
 
     assert response.status_code == 200
-    parsed_challenge = response.json()
 
     assert parsed_validation.body
-    authenticity_token = parsed_validation.body.find("input", attrs={"name": "authenticity_token"}).get("value")  # type: ignore
     form_fields = {
         "_method": "put",
-        "authenticity_token": authenticity_token,
-        "password_confirmation": parsed_challenge["value"],
+        "authenticity_token": parsed_validation.body.find(
+            "input", attrs={"name": "authenticity_token"}  # type: ignore
+        ).get("value"),
+        "password_confirmation": response.json()["value"],
         # The challenge string is reversed see
         # https://github.com/discourse/discourse/blob/main/app/assets/javascripts/discourse/scripts/activate-account.js
-        "challenge": parsed_challenge["challenge"][::-1],
+        "challenge": response.json()["challenge"][::-1],
     }
 
     logger.info("Submitting account validation form")
@@ -188,7 +189,10 @@ async def test_setup_discourse(
     # Submit the activation of the account
     response = session.post(
         f"{discourse_url}/u/activate-account/{email_token}",
-        headers=form_headers,
+        headers={
+            "Host": f"{app_config['external_hostname']}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
         data=urlencode(form_fields),
         allow_redirects=False,
         timeout=requests_timeout,
@@ -212,13 +216,13 @@ async def test_setup_discourse(
     # Extract the CSRF token
     parsed_admin: BeautifulSoup = BeautifulSoup(response.content, features="html.parser")
     assert parsed_admin.head
-    csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get("content")  # type: ignore
+    csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get(  # type: ignore
+        "content"
+    )
 
     logger.info("Getting admin API key")
 
     # Finally create an API Key, which will be used on the next integration tests
-    api_key_payload = {"key": {"description": "Key to The Batmobile", "username": "admin"}}
-
     response = session.post(
         f"{discourse_url}/admin/api/keys",
         headers={
@@ -227,14 +231,13 @@ async def test_setup_discourse(
             "X-CSRF-Token": csrf_token,  # type: ignore
             "Content-Type": "application/json",
         },
-        data=json.dumps(api_key_payload),
+        data=json.dumps({"key": {"description": "Key to The Batmobile", "username": "admin"}}),
         timeout=requests_timeout,
     )
 
     assert response.status_code == 200
 
-    parsed_key = response.json()
-    logger.info("Admin API Key: %s", {parsed_key["key"]["key"]})
+    logger.info("Admin API Key: %s", {response.json()["key"]["key"]})
 
 
 @pytest.mark.asyncio
@@ -246,20 +249,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     This test requires a localstack deployed
     """
 
-    # Localstack doesn't require any specific value there, any random string will work
-    config_s3_bucket = {"access-key": "my-lovely-key", "secret-key": "this-is-very-secret"}
-
-    # Localstack enforce to use this domain and it resolves to localhost
-    s3_domain = "localhost.localstack.cloud"
-    s3_bucket = "tests"
-    s3_region = "us-east-1"
-
-    # Parse URL to get the IP address and the port, and compose the required variables
-    parsed_s3_url = urlparse(s3_url)
-    s3_ip_address = parsed_s3_url.hostname
-    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_domain}"
-    if parsed_s3_url:
-        s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
+    s3_conf: Dict = generate_s3_config(s3_url)
 
     logger.info("Updating discourse hosts")
 
@@ -267,7 +257,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     # I need to inject subdomain in the DNS (not needed if everything runs localhost)
     # Application actually does have units
     action = await app.units[0].run(  # type: ignore
-        f'echo "{s3_ip_address}  {s3_bucket}.{s3_domain}" >> /etc/hosts'
+        f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.{s3_conf["domain"]}" >> /etc/hosts'
     )
     result = await action.wait()
     assert result.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
@@ -279,12 +269,12 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
         {
             "s3_enabled": "true",
             # The final URL is computed by discourse, we need to pass the main URL
-            "s3_endpoint": s3_endpoint,
-            "s3_bucket": s3_bucket,
-            "s3_secret_access_key": config_s3_bucket["secret-key"],
-            "s3_access_key_id": config_s3_bucket["access-key"],
+            "s3_endpoint": s3_conf["endpoint"],
+            "s3_bucket": s3_conf["bucket"],
+            "s3_secret_access_key": s3_conf["credentials"]["secret-key"],
+            "s3_access_key_id": s3_conf["credentials"]["access-key"],
             # Default localstack region
-            "s3_region": s3_region,
+            "s3_region": s3_conf["region"],
         }
     )
     assert ops_test.model
@@ -294,14 +284,14 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
 
     # Configuration for boto client
     s3_client_config = Config(
-        region_name=s3_region,
+        region_name=s3_conf["region"],
         s3={
             "addressing_style": "virtual",
         },
     )
 
     # Trick to use when localstack is deployed on another location than locally
-    if s3_ip_address != "127.0.0.1":
+    if s3_conf["ip_address"] != "127.0.0.1":
         proxy_definition = {
             "http": s3_url,
         }
@@ -314,10 +304,10 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     # Configure the boto client
     s3_client = client(
         "s3",
-        s3_region,
-        aws_access_key_id=config_s3_bucket["access-key"],
-        aws_secret_access_key=config_s3_bucket["secret-key"],
-        endpoint_url=s3_endpoint,
+        s3_conf["region"],
+        aws_access_key_id=s3_conf["credentials"]["access-key"],
+        aws_secret_access_key=s3_conf["credentials"]["secret-key"],
+        endpoint_url=s3_conf["endpoint"],
         use_ssl=False,
         config=s3_client_config,
     )
@@ -326,10 +316,48 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     response = s3_client.list_buckets()
     bucket_list = [*map(lambda a: a["Name"], response["Buckets"])]
 
-    assert s3_bucket in bucket_list
+    assert s3_conf["bucket"] in bucket_list
 
     # Check content has been uploaded in the bucket
-    response = s3_client.list_objects(Bucket=s3_bucket)
+    response = s3_client.list_objects(Bucket=s3_conf["bucket"])
     object_count = sum(1 for _ in response["Contents"])
 
     assert object_count > 0
+
+    # Cleanup
+    await app.set_config(  # type: ignore
+        {
+            "s3_enabled": "false",
+            # The final URL is computed by discourse, we need to pass the main URL
+            "s3_endpoint": "",
+            "s3_bucket": "",
+            "s3_secret_access_key": "",
+            "s3_access_key_id": "",
+            # Default localstack region
+            "s3_region": "",
+        }
+    )
+    assert ops_test.model
+    await ops_test.model.wait_for_idle(status="active")
+
+
+def generate_s3_config(s3_url: str) -> Dict:
+    """Generate an S3 config for localstack based test."""
+    s3_config: Dict = {
+        # Localstack doesn't require any specific value there, any random string will work
+        "credentials": {"access-key": "my-lovely-key", "secret-key": "this-is-very-secret"},
+        # Localstack enforce to use this domain and it resolves to localhost
+        "domain": "localhost.localstack.cloud",
+        "bucket": "tests",
+        "region": "us-east-1",
+    }
+
+    # Parse URL to get the IP address and the port, and compose the required variables
+    parsed_s3_url = urlparse(s3_url)
+    s3_ip_address = parsed_s3_url.hostname
+    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_config['domain']}"
+    if parsed_s3_url:
+        s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
+    s3_config["ip_address"] = s3_ip_address
+    s3_config["endpoint"] = s3_endpoint
+    return s3_config
