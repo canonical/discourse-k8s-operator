@@ -1,4 +1,3 @@
-"""Module for test customizations."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Module for test customizations."""
