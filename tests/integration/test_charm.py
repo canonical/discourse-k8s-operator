@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Discourse integration tests."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Discourse integration tests."""
 
 import json
 import logging
@@ -118,8 +118,12 @@ async def test_setup_discourse(
         },
         data=urlencode(
             {
-                "utf8": parsed_registration.body.find("input", attrs={"name": "utf8"}).get("value"),  # type: ignore # pylint: disable=line-too-long
-                "authenticity_token": parsed_registration.body.find("input", attrs={"name": "authenticity_token"}).get("value"),  # type: ignore # pylint: disable=line-too-long
+                "utf8": parsed_registration.body.find(
+                    "input", attrs={"name": "utf8"}  # type: ignore
+                ).get("value"),
+                "authenticity_token": parsed_registration.body.find(
+                    "input", attrs={"name": "authenticity_token"}  # type: ignore
+                ).get("value"),
                 "username": "admin",
                 "email": app_config["developer_emails"],
                 "password": "MyLovelySecurePassword2022!",
@@ -171,7 +175,9 @@ async def test_setup_discourse(
     assert parsed_validation.body
     form_fields = {
         "_method": "put",
-        "authenticity_token": parsed_validation.body.find("input", attrs={"name": "authenticity_token"}).get("value"),  # type: ignore # pylint: disable=line-too-long
+        "authenticity_token": parsed_validation.body.find(
+            "input", attrs={"name": "authenticity_token"}  # type: ignore
+        ).get("value"),
         "password_confirmation": response.json()["value"],
         # The challenge string is reversed see
         # https://github.com/discourse/discourse/blob/main/app/assets/javascripts/discourse/scripts/activate-account.js
@@ -210,10 +216,13 @@ async def test_setup_discourse(
     # Extract the CSRF token
     parsed_admin: BeautifulSoup = BeautifulSoup(response.content, features="html.parser")
     assert parsed_admin.head
-    csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get("content")  # type: ignore # pylint: disable=line-too-long
+    csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get(  # type: ignore
+        "content"
+    )
 
     logger.info("Getting admin API key")
 
+    # Finally create an API Key, which will be used on the next integration tests
     response = session.post(
         f"{discourse_url}/admin/api/keys",
         headers={

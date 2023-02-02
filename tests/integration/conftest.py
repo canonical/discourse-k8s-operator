@@ -1,6 +1,6 @@
-"""Discourse integration tests fixtures."""
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Discourse integration tests fixtures."""
 
 import asyncio
 import logging
@@ -77,7 +77,8 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     await ops_test.model.wait_for_idle()
 
     # Add required relations
-    assert ops_test.model.applications[app_name].units[0].workload_status == WaitingStatus.name  # type: ignore # pylint: disable=line-too-long
+    unit = ops_test.model.applications[app_name].units[0]
+    assert unit.workload_status == WaitingStatus.name  # type: ignore
     await asyncio.gather(
         ops_test.model.add_relation(app_name, "postgresql-k8s:db-admin"),
         ops_test.model.add_relation(app_name, "redis-k8s"),

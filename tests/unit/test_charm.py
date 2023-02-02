@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""
-Unit tests for Discourse charm.
-"""
 
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
+"""Unit tests for Discourse charm."""
+# pylint: disable=protected-access
+# Protected access check is disabled in tests as we're injecting test data
 
 import typing
 import unittest
@@ -371,27 +371,27 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "email": email,
             "password": password,
         }
-        charm._on_add_admin_user_action(event)  # pylint: disable=protected-access
+        charm._on_add_admin_user_action(event)
 
         mock_exec.assert_any_call(
             [
                 "bash",
                 "-c",
-                f"./bin/bundle exec rake admin:create <<< $'{email}\n{password}\n{password}\nY'",
+                "./bin/bundle exec rake admin:create",
+                f"<<< $'{email}\n{password}\n{password}\nY'",
             ],
             user="discourse",
             working_dir=DISCOURSE_PATH,
-            environment=charm._create_discourse_environment_settings(),  # pylint: disable=protected-access
+            environment=charm._create_discourse_environment_settings(),
         )
 
     def add_postgres_relation(self):
         "Add postgresql relation and relation data to the charm."
-        self.harness.charm._stored.db_name = "discourse-k8s"  # pylint: disable=protected-access
-        self.harness.charm._stored.db_user = "someuser"  # pylint: disable=protected-access
-        self.harness.charm._stored.db_password = (  # pylint: disable=protected-access
-            "somepasswd"  # nosec
-        )
-        self.harness.charm._stored.db_host = "dbhost"  # pylint: disable=protected-access
+        self.harness.charm._stored.db_name = "discourse-k8s"
+        self.harness.charm._stored.db_user = "someuser"
+        self.harness.charm._stored.db_password = "somepasswd"  # nosec
+        self.harness.charm._stored.db_host = "dbhost"
+        # get a relation ID for the test outside of __init__ (note pylint disable)
         self.db_relation_id = (  # pylint: disable=attribute-defined-outside-init
             self.harness.add_relation("db", "postgresql")
         )
@@ -403,6 +403,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         redis_relation_id = self.harness.add_relation("redis", "redis")
         self.harness.add_relation_unit(redis_relation_id, "redis/0")
-        self.harness.charm._stored.redis_relation = {  # pylint: disable=protected-access
+        self.harness.charm._stored.redis_relation = {
             redis_relation_id: {"hostname": "redis-host", "port": 1010}
         }
