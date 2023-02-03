@@ -7,5 +7,5 @@ on:
 
 jobs:
   issues-to-jira:
-    uses: beliaev-maksim/github-to-jira-automation/.github/workflows/issues_to_jira.yaml@master
+    uses: canonical/operator-workflows/.github/workflows/jira.yaml@main
     secrets: inherit
