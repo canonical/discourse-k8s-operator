@@ -1,3 +1,5 @@
+# Contributing
+
 This document explains the processes and practices recommended for contributing enhancements to the Discourse operator.
 
 * Generally, before developing enhancements to this charm, you should consider [opening an issue](https://github.com/canonical/discourse-k8s-operator/issues) explaining your use case.
