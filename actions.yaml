@@ -8,4 +8,10 @@ add-admin-user:
       type: string
       description: User password.
   required: [email, password]
+force-https:
+  description: Configure Discourse to use https. Use lowercase true/false word values.
+  params:
+    force_bool:
+      type: string
+      default: "true"
 

@@ -26,7 +26,7 @@ options:
   saml_target_url:
     type: string
     description: "SAML authentication target url."
-    default: ""
+    default: "https://login.staging.ubuntu.com/+saml"
   smtp_address:
     type: string
     description: "Hostname / IP that should be used to send SMTP mail."

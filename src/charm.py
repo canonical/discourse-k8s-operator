@@ -87,6 +87,7 @@ class DiscourseCharm(CharmBase):
         )
         self.framework.observe(self.db.on.master_changed, self._on_database_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
+        self.framework.observe(self.on.force_https_action, self._on_force_https_action)
 
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._config_changed)
@@ -162,7 +163,8 @@ class DiscourseCharm(CharmBase):
             Dictionary with the SAML configuration settings..
         """
         saml_fingerprints = {
-            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
+            "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5",
+            "https://login.staging.ubuntu.com/+saml": "D2:B4:86:49:1B:AC:29:F6:A4:C8:CF:0D:3A:8F:AD:86:36:0A:77:C0"
         }
         saml_config = {}
 
@@ -475,6 +477,34 @@ class DiscourseCharm(CharmBase):
                 event.fail(
                     # Parameter validation errors are printed to stdout
                     f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
+                )
+
+    def _on_force_https_action(self, event: ActionEvent) -> None:
+        """Force Discourse to use https.
+
+        Args:
+            event: Event triggering the force-https action.
+        """
+        container = self.unit.get_container("discourse")
+        if container.can_connect():
+            force_bool = event.params["force_bool"]
+            process = container.exec(
+                [
+                    "bash",
+                    "-c",
+                    f"./bin/rails runner 'SiteSetting.force_https={force_bool}'",
+                ],
+                user="discourse",
+                working_dir=DISCOURSE_PATH,
+                environment=self._create_discourse_environment_settings(),
+            )
+            try:
+                process.wait_output()
+            except ExecError as ex:
+                logger.exception("force_https failed")
+                event.fail(
+                    # Parameter validation errors are printed to stdout
+                    f"force-https action failed: {ex.stdout}"  # type: ignore
                 )
 
 
