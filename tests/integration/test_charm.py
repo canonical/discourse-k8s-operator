@@ -341,6 +341,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
+@pytest.mark.requires_secrets
 async def test_saml_login(
     ops_test: OpsTest,
     app: Application,
