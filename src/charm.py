@@ -81,11 +81,11 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
 
-        self.db = pgsql.PostgreSQLClient(self, "db")
+        self.db_client = pgsql.PostgreSQLClient(self, "db")
         self.framework.observe(
-            self.db.on.database_relation_joined, self._on_database_relation_joined
+            self.db_client.on.database_relation_joined, self._on_database_relation_joined
         )
-        self.framework.observe(self.db.on.master_changed, self._on_database_changed)
+        self.framework.observe(self.db_client.on.master_changed, self._on_database_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
         self.framework.observe(self.on.force_https_action, self._on_force_https_action)
 
@@ -311,7 +311,9 @@ class DiscourseCharm(CharmBase):
         return layer_config
 
     def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        """Determine if the setup script is to be run based on the current plan and the new S3 settings.
+        """Determine if the setup script is to be run.
+
+           This is based on the current plan and the new S3 settings.
 
         Args:
             current_plan: Dictionary containing the current plan.
@@ -399,8 +401,8 @@ class DiscourseCharm(CharmBase):
             try:
                 stdout, _ = process.wait_output()
                 logger.debug("%s stdout: %s", script, stdout)
-            except ExecError as e:
-                logger.exception("%s command exited with code %d.", script, e.exit_code)
+            except ExecError as cmd_err:
+                logger.exception("%s command exited with code %d.", script, cmd_err.exit_code)
                 raise
 
         # Then start the service
@@ -463,7 +465,8 @@ class DiscourseCharm(CharmBase):
                 [
                     "bash",
                     "-c",
-                    f"./bin/bundle exec rake admin:create <<< $'{email}\n{password}\n{password}\nY'",
+                    "./bin/bundle exec rake admin:create",
+                    f"<<< $'{email}\n{password}\n{password}\nY'",
                 ],
                 user="discourse",
                 working_dir=DISCOURSE_PATH,

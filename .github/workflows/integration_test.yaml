@@ -8,8 +8,10 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
-      extra-arguments: --s3-url http://172.17.0.1:4566 -m "not (requires_secret)"
-      pre-run-script: localstack-installation.sh
+      chaos-app-label: app.kubernetes.io/name=discourse-k8s
+      chaos-duration: 180
       chaos-enabled: true
       chaos-experiments: pod-delete
-      chaos-app-label: app.kubernetes.io/name=discourse-k8s
+      extra-arguments: --s3-url http://172.17.0.1:4566 -m "not (requires_secret)"
+      pre-run-script: localstack-installation.sh
+      trivy-image-config: "trivy.yaml"
