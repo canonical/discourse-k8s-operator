@@ -1,4 +1,4 @@
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Unit tests for Discourse charm."""
@@ -18,9 +18,6 @@ from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
 from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseCharm, pgsql_patch
-
-# Copyright 2022 Canonical Ltd.
-# See LICENSE file for licensing details.
 
 
 class TestDiscourseK8sCharm(unittest.TestCase):
@@ -48,10 +45,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         else:
             exec_process_mock.wait_output = unittest.mock.Mock()
             exec_process_mock.wait_output.side_effect = ops.pebble.ExecError([], 1, "", "")
-        with unittest.mock.patch.multiple(
-            ops.model.Container, exec=unittest.mock.MagicMock(return_value=exec_process_mock)
-        ):
-            yield
+        exec_function_mock = unittest.mock.MagicMock(return_value=exec_process_mock)
+        with unittest.mock.patch.multiple(ops.model.Container, exec=exec_function_mock):
+            yield exec_function_mock
 
     def test_db_relation_not_ready(self):
         """
@@ -237,17 +233,15 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "discourse-k8s", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
-    @patch.object(Container, "exec")
-    def test_config_changed_when_valid_no_fingerprint(self, mock_exec):
+    def test_config_changed_when_valid_no_fingerprint(self):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
-        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
+        with self._patch_exec() as exec_mock:
             self.harness.update_config(
                 {
                     "force_saml_login": True,
@@ -261,7 +255,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        mock_exec.assert_any_call(
+        exec_mock.assert_any_call(
             [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
             working_dir="/srv/discourse/app",
@@ -292,17 +286,15 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             "discourse-k8s", self.harness.charm.ingress.config_dict["service-hostname"]
         )
 
-    @patch.object(Container, "exec")
-    def test_config_changed_when_valid(self, mock_exec):
+    def test_config_changed_when_valid(self):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
-        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
+        with self._patch_exec() as exec_mock:
             self.harness.update_config(
                 {
                     "developer_emails": "user@foo.internal",
@@ -330,7 +322,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        mock_exec.assert_any_call(
+        exec_mock.assert_any_call(
             [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
             working_dir="/srv/discourse/app",

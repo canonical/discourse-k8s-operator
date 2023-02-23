@@ -371,7 +371,7 @@ def generate_s3_config(s3_url: str) -> Dict:
 @pytest.mark.abort_on_fail
 @pytest.mark.requires_secrets
 @pytest.mark.usefixtures("setup_saml_config")
-async def test_saml_login(
+async def test_saml_login(  # pylint: disable=too-many-locals
     ops_test: OpsTest,
     app: Application,
     pytestconfig: pytest.Config,
@@ -467,5 +467,3 @@ async def test_saml_login(
             timeout=requests_timeout,
         )
         assert preference_page.status_code == 200
-
-
