@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-
-# Copyright 2022 Canonical Ltd.
-# See LICENSE file for licensing details.
-
+import contextlib
 import typing
 import unittest
 from unittest.mock import MagicMock, patch
 
+import ops.model
+import ops.pebble
 from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
 from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseCharm, pgsql_patch
+
+# Copyright 2022 Canonical Ltd.
+# See LICENSE file for licensing details.
 
 
 class MockExecProcess(object):
@@ -28,6 +30,23 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
     def tearDown(self):
         pgsql_patch.stop()
+
+    @contextlib.contextmanager
+    def _patch_exec(self, fail: bool = False):
+        """Patch the ops.model.Container.exec method.
+
+        When fail argument is true, the execution will fail
+        """
+        exec_process_mock = unittest.mock.MagicMock()
+        if not fail:
+            exec_process_mock.wait_output = unittest.mock.MagicMock(return_value=("", ""))
+        else:
+            exec_process_mock.wait_output = unittest.mock.Mock()
+            exec_process_mock.wait_output.side_effect = ops.pebble.ExecError([], 1, "", "")
+        with unittest.mock.patch.multiple(
+            ops.model.Container, exec=unittest.mock.MagicMock(return_value=exec_process_mock)
+        ):
+            yield
 
     def test_db_relation_not_ready(self):
         """
@@ -63,8 +82,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: it will get to blocked status waiting for the latter.
         """
         self.add_database_relations()
-        self.harness.update_config({"force_saml_login": True})
-        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config({"force_saml_login": True, "saml_target_url": ""})
+        with self._patch_exec():
+            self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
             self.harness.model.unit.status,
@@ -78,8 +98,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: it will get to blocked status waiting for the latter.
         """
         self.add_database_relations()
-        self.harness.update_config({"saml_sync_groups": "group1"})
-        self.harness.container_pebble_ready("discourse")
+        self.harness.update_config({"saml_sync_groups": "group1", "saml_target_url": ""})
+        with self._patch_exec():
+            self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
             self.harness.model.unit.status,
@@ -113,7 +134,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         self.assertEqual(
             self.harness.model.unit.status.name,
-            BlockedStatus.name,
+            BlockedStatus.name,  # type: ignore
         )
         self.assertTrue("none permissive strict" in self.harness.model.unit.status.message)
 
@@ -377,6 +398,24 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             working_dir=DISCOURSE_PATH,
             environment=charm._create_discourse_environment_settings(),
         )
+
+    def test_force_https(self):
+        """
+        arrange: none
+        act: run the force-https action
+        assert: the action should succeed when the command execution is success, and fail
+            when the command execution is failure.
+        """
+        action_event = unittest.mock.MagicMock()
+        with self._patch_exec():
+            self.harness.container_pebble_ready("discourse")
+            self.harness.charm._on_force_https_action(action_event)
+        action_event.fail.assert_not_called()
+
+        action_event = unittest.mock.MagicMock()
+        with self._patch_exec(fail=True):
+            self.harness.charm._on_force_https_action(action_event)
+        action_event.fail.assert_called_once_with("force-https action failed: ")
 
     def add_postgres_relation(self):
         "Add postgresql relation and relation data to the charm."

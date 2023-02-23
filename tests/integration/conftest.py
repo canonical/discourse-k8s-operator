@@ -4,7 +4,7 @@
 import asyncio
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Any, Awaitable, Callable, Dict
 
 import pytest_asyncio
 import yaml
@@ -32,7 +32,7 @@ def app_config():
     """Provides app config."""
     yield {
         "developer_emails": "noreply@canonical.com",
-        "external_hostname": "test.local:3000",
+        "external_hostname": "discourse-k8s",
         "smtp_address": "test.local",
         "smtp_domain": "test.local",
         "s3_install_cors_rule": "false",
@@ -53,6 +53,30 @@ def requests_timeout():
     yield 15
 
 
+@fixture(scope="module")
+def run_action(ops_test: OpsTest) -> Callable[..., Awaitable[Any]]:
+    """Create an async function to run action and return results."""
+
+    async def _run_action(application_name: str, action_name: str, **params):
+        """Run a specified action.
+
+        Args:
+            application_name: Name the application is deployed with.
+            action_name: Name of the action to be executed.
+            params: Dictionary with action parameters.
+
+        Returns:
+            The results of the executed action
+        """
+        assert ops_test.model
+        application = ops_test.model.applications[application_name]
+        action = await application.units[0].run_action(action_name, **params)
+        await action.wait()
+        return action.results
+
+    return _run_action
+
+
 @pytest_asyncio.fixture(scope="module")
 async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pytestconfig: Config):
     """Discourse charm used for integration testing.
@@ -63,6 +87,7 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     await asyncio.gather(
         ops_test.model.deploy("postgresql-k8s", series="focal"),
         ops_test.model.deploy("redis-k8s", series="focal"),
+        ops_test.model.deploy("nginx-ingress-integrator", series="focal", trust=True),
     )
 
     charm = await ops_test.build_charm(".")
@@ -80,6 +105,7 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     await asyncio.gather(
         ops_test.model.add_relation(app_name, "postgresql-k8s:db-admin"),
         ops_test.model.add_relation(app_name, "redis-k8s"),
+        ops_test.model.add_relation(app_name, "nginx-ingress-integrator"),
     )
     await ops_test.model.wait_for_idle(status="active")
 

@@ -4,11 +4,15 @@
 
 import json
 import logging
+import re
+import socket
+import unittest.mock
 from typing import Dict, Optional
 from urllib.parse import urlencode, urlparse
 
 import pytest
 import requests
+import urllib3.exceptions
 from boto3 import client
 from botocore.config import Config
 from bs4 import BeautifulSoup
@@ -333,3 +337,104 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
     object_count = sum(1 for _ in response["Contents"])
 
     assert object_count > 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_saml_login(
+    ops_test: OpsTest,
+    app: Application,
+    pytestconfig: pytest.Config,
+    requests_timeout: int,
+    run_action,
+):
+    """
+    arrange: after discourse charm has been deployed, with all required relation established.
+    act: add an admin user and enable force-https mode.
+    assert: user can login discourse using SAML Authentication.
+    """
+    assert ops_test.model
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    email = pytestconfig.getoption("--saml-email")
+    password = pytestconfig.getoption("--saml-password")
+    if not (email and password):
+        raise RuntimeError(
+            "--saml-email and --saml-password arguments are required for running test_saml_login"
+        )
+    await run_action(app.name, "force-https")
+    await run_action(app.name, "add-admin-user", email=email, password=password)
+    await ops_test.model.wait_for_idle(status="active")
+
+    username = email.split("@")[0]
+    host = app.name
+    original_getaddrinfo = socket.getaddrinfo
+
+    def patched_getaddrinfo(*args):
+        if args[0] == host:
+            return original_getaddrinfo("127.0.0.1", *args[1:])
+        return original_getaddrinfo(*args)
+
+    with unittest.mock.patch.multiple(socket, getaddrinfo=patched_getaddrinfo):
+        session = requests.session()
+        preference_page = session.get(
+            f"https://{host}/u/{username}/preferences/account",
+            verify=False,
+            timeout=requests_timeout,
+        )
+        assert preference_page.status_code == 404
+
+        session.get(f"https://{host}", verify=False)
+        response = session.get(
+            f"https://{host}/session/csrf",
+            headers={"Accept": "application/json"},
+            timeout=requests_timeout,
+        )
+        csrf_token = response.json()["csrf"]
+        login_page = session.post(
+            f"https://{host}/auth/saml",
+            data={"authenticity_token": csrf_token},
+            timeout=requests_timeout,
+        )
+        csrf_token = re.findall(
+            "<input type='hidden' name='csrfmiddlewaretoken' value='([^']+)' />", login_page.text
+        )[0]
+        saml_callback = session.post(
+            "https://login.staging.ubuntu.com/+login",
+            data={
+                "csrfmiddlewaretoken": csrf_token,
+                "email": email,
+                "user-intentions": "login",
+                "password": password,
+                "next": "/saml/process",
+                "continue": "",
+                "openid.usernamesecret": "",
+            },
+            headers={"Referer": login_page.url},
+            timeout=requests_timeout,
+        )
+        saml_response = re.findall(
+            '<input type="hidden" name="SAMLResponse" value="([^"]+)" />', saml_callback.text
+        )[0]
+        session.post(
+            f"https://{host}/auth/saml/callback",
+            data={
+                "RelayState": "None",
+                "SAMLResponse": saml_response,
+                "openid.usernamesecret": "",
+            },
+            verify=False,
+            timeout=requests_timeout,
+        )
+        session.post(
+            f"https://{host}/auth/saml/callback",
+            data={"SAMLResponse": saml_response, "SameSite": "1"},
+            verify=False,
+            timeout=requests_timeout,
+        )
+
+        preference_page = session.get(
+            f"https://{host}/u/{username}/preferences/account",
+            verify=False,
+            timeout=requests_timeout,
+        )
+        assert preference_page.status_code == 200

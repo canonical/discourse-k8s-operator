@@ -35,7 +35,7 @@ class _PGSQLPatch:
     def __init__(self):
         # borrow some code from
         # https://github.com/canonical/ops-lib-pgsql/blob/master/tests/test_client.py
-        self._leadership_data = {}
+        self._leadership_data = {}  # type: ignore
         self._patch = patch.multiple(
             pgsql.client,
             _is_ready=MagicMock(return_value=True),

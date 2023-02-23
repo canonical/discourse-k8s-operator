@@ -164,7 +164,7 @@ class DiscourseCharm(CharmBase):
         """
         saml_fingerprints = {
             "https://login.ubuntu.com/+saml": "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5",
-            "https://login.staging.ubuntu.com/+saml": "D2:B4:86:49:1B:AC:29:F6:A4:C8:CF:0D:3A:8F:AD:86:36:0A:77:C0"
+            "https://login.staging.ubuntu.com/+saml": "D2:B4:86:49:1B:AC:29:F6:A4:C8:CF:0D:3A:8F:AD:86:36:0A:77:C0",
         }
         saml_config = {}
 
