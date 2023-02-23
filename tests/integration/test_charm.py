@@ -370,6 +370,7 @@ def generate_s3_config(s3_url: str) -> Dict:
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
 @pytest.mark.requires_secrets
+@pytest.mark.usefixtures("setup_saml_config")
 async def test_saml_login(
     ops_test: OpsTest,
     app: Application,
@@ -390,7 +391,6 @@ async def test_saml_login(
         raise RuntimeError(
             "--saml-email and --saml-password arguments are required for running test_saml_login"
         )
-    await run_action(app.name, "force-https")
     await run_action(app.name, "add-admin-user", email=email, password=password)
     await ops_test.model.wait_for_idle(status="active")
 

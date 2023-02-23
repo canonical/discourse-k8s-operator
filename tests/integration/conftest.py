@@ -9,7 +9,7 @@ from typing import Any, Awaitable, Callable, Dict
 
 import pytest_asyncio
 import yaml
-from ops.model import WaitingStatus
+from ops.model import Application, WaitingStatus
 from pytest import Config, fixture
 from pytest_operator.plugin import OpsTest
 
@@ -112,3 +112,15 @@ async def app(ops_test: OpsTest, app_name: str, app_config: Dict[str, str], pyte
     await ops_test.model.wait_for_idle(status="active")
 
     yield application
+
+
+@pytest_asyncio.fixture(scope="module")
+async def setup_saml_config(ops_test: OpsTest, app: Application):
+    """Set SAML related charm config to enable SAML authentication."""
+    assert ops_test.model
+    discourse_app = ops_test.model.applications[app.name]
+    await discourse_app.set_config(
+        {"saml_target_url": "https://login.staging.ubuntu.com/+saml", "force_https": "true"}
+    )
+    yield
+    await discourse_app.set_config({"saml_target_url": "", "force_https": "false"})

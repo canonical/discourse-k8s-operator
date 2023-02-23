@@ -112,6 +112,24 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             BlockedStatus("'saml_sync_groups' cannot be specified without a 'saml_target_url'"),
         )
 
+    def test_config_changed_when_saml_target_url_and_force_https_disabled(self):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: when saml_target_url configuration is provided and force_https is False
+        assert: it will get to blocked status waiting for the latter.
+        """
+        self.add_database_relations()
+        self.harness.update_config({"saml_target_url": "group1", "force_https": False})
+        with self._patch_exec():
+            self.harness.container_pebble_ready("discourse")
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            BlockedStatus(
+                "'saml_target_url' cannot be specified without 'force_https' being true"
+            ),
+        )
+
     def test_config_changed_when_no_cors(self):
         """
         arrange: given a deployed discourse charm with all the required relations
@@ -229,15 +247,17 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
-        self.harness.update_config(
-            {
-                "force_saml_login": True,
-                "saml_target_url": "https://login.sample.com/+saml",
-                "saml_sync_groups": "group1",
-                "s3_enabled": False,
-            }
-        )
-        self.harness.container_pebble_ready("discourse")
+        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
+            self.harness.update_config(
+                {
+                    "force_saml_login": True,
+                    "saml_target_url": "https://login.sample.com/+saml",
+                    "saml_sync_groups": "group1",
+                    "s3_enabled": False,
+                    "force_https": True,
+                }
+            )
+            self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -282,29 +302,31 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
-        self.harness.update_config(
-            {
-                "developer_emails": "user@foo.internal",
-                "enable_cors": True,
-                "external_hostname": "discourse.local",
-                "force_saml_login": True,
-                "saml_target_url": "https://login.ubuntu.com/+saml",
-                "saml_sync_groups": "group1",
-                "smtp_address": "smtp.internal",
-                "smtp_domain": "foo.internal",
-                "smtp_password": "OBV10USLYF4K3",
-                "smtp_username": "apikey",
-                "s3_access_key_id": "3|33+",
-                "s3_backup_bucket": "back-bucket",
-                "s3_bucket": "who-s-a-good-bucket?",
-                "s3_cdn_url": "s3.cdn",
-                "s3_enabled": True,
-                "s3_endpoint": "s3.endpoint",
-                "s3_region": "the-infinite-and-beyond",
-                "s3_secret_access_key": "s|kI0ure_k3Y",
-            }
-        )
-        self.harness.container_pebble_ready("discourse")
+        with patch.object(Container, "exec", return_value=MockExecProcess()) as exec_mock:
+            self.harness.update_config(
+                {
+                    "developer_emails": "user@foo.internal",
+                    "enable_cors": True,
+                    "external_hostname": "discourse.local",
+                    "force_saml_login": True,
+                    "saml_target_url": "https://login.ubuntu.com/+saml",
+                    "saml_sync_groups": "group1",
+                    "smtp_address": "smtp.internal",
+                    "smtp_domain": "foo.internal",
+                    "smtp_password": "OBV10USLYF4K3",
+                    "smtp_username": "apikey",
+                    "s3_access_key_id": "3|33+",
+                    "s3_backup_bucket": "back-bucket",
+                    "s3_bucket": "who-s-a-good-bucket?",
+                    "s3_cdn_url": "s3.cdn",
+                    "s3_enabled": True,
+                    "s3_endpoint": "s3.endpoint",
+                    "s3_region": "the-infinite-and-beyond",
+                    "s3_secret_access_key": "s|kI0ure_k3Y",
+                    "force_https": True,
+                }
+            )
+            self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -409,24 +431,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             working_dir=DISCOURSE_PATH,
             environment=charm._create_discourse_environment_settings(),
         )
-
-    def test_force_https(self):
-        """
-        arrange: none
-        act: run the force-https action
-        assert: the action should succeed when the command execution is success, and fail
-            when the command execution is failure.
-        """
-        action_event = unittest.mock.MagicMock()
-        with self._patch_exec():
-            self.harness.container_pebble_ready("discourse")
-            self.harness.charm._on_force_https_action(action_event)
-        action_event.fail.assert_not_called()
-
-        action_event = unittest.mock.MagicMock()
-        with self._patch_exec(fail=True):
-            self.harness.charm._on_force_https_action(action_event)
-        action_event.fail.assert_called_once_with("force-https action failed: ")
 
     def add_postgres_relation(self):
         "Add postgresql relation and relation data to the charm."

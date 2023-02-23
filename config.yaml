@@ -26,7 +26,7 @@ options:
   saml_target_url:
     type: string
     description: "SAML authentication target url."
-    default: "https://login.staging.ubuntu.com/+saml"
+    default: ""
   smtp_address:
     type: string
     description: "Hostname / IP that should be used to send SMTP mail."
@@ -128,3 +128,7 @@ options:
     type: string
     description: "Throttle level - blocks excessive usage by ip. Accepted values: none, permissive, strict."
     default: none
+  force_https:
+    type: boolean
+    description: Configure Discourse to use https.
+    default: false

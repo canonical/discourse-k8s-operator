@@ -87,7 +87,6 @@ class DiscourseCharm(CharmBase):
         )
         self.framework.observe(self.db_client.on.master_changed, self._on_database_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
-        self.framework.observe(self.on.force_https_action, self._on_force_https_action)
 
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._config_changed)
@@ -144,6 +143,9 @@ class DiscourseCharm(CharmBase):
 
         if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
             errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
+
+        if self.config["saml_target_url"] and not self.config["force_https"]:
+            errors.append("'saml_target_url' cannot be specified without 'force_https' being true")
 
         if self.config.get("s3_enabled"):
             errors.extend(
@@ -411,6 +413,7 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
+            self._config_force_https()
             self.model.unit.status = ActiveStatus()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
@@ -482,33 +485,21 @@ class DiscourseCharm(CharmBase):
                     f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
                 )
 
-    def _on_force_https_action(self, event: ActionEvent) -> None:
-        """Force Discourse to use https.
-
-        Args:
-            event: Event triggering the force-https action.
-        """
+    def _config_force_https(self) -> None:
+        """Config Discourse to force_https option based on charm configuration."""
         container = self.unit.get_container("discourse")
-        if container.can_connect():
-            force_bool = event.params["force_bool"]
-            process = container.exec(
-                [
-                    "bash",
-                    "-c",
-                    f"./bin/rails runner 'SiteSetting.force_https={force_bool}'",
-                ],
-                user="discourse",
-                working_dir=DISCOURSE_PATH,
-                environment=self._create_discourse_environment_settings(),
-            )
-            try:
-                process.wait_output()
-            except ExecError as ex:
-                logger.exception("force_https failed")
-                event.fail(
-                    # Parameter validation errors are printed to stdout
-                    f"force-https action failed: {ex.stdout}"  # type: ignore
-                )
+        force_bool = str(self.config["force_https"]).lower()
+        process = container.exec(
+            [
+                "bash",
+                "-c",
+                f"./bin/rails runner 'SiteSetting.force_https={force_bool}'",
+            ],
+            user="discourse",
+            working_dir=DISCOURSE_PATH,
+            environment=self._create_discourse_environment_settings(),
+        )
+        process.wait_output()
 
 
 if __name__ == "__main__":  # pragma: no cover
