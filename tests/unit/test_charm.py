@@ -414,14 +414,16 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         mock_exec.assert_any_call(
             [
-                "bash",
-                "-c",
-                "./bin/bundle exec rake admin:create",
-                f"<<< $'{email}\n{password}\n{password}\nY'",
+                "/srv/discourse/app/bin/bundle",
+                "exec",
+                "rake",
+                "admin:create",
             ],
             user="discourse",
             working_dir=DISCOURSE_PATH,
             environment=charm._create_discourse_environment_settings(),
+            stdin=f"{email}\n{password}\n{password}\nY\n",
+            timeout=60,
         )
 
     def add_postgres_relation(self):

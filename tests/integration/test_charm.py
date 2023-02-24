@@ -391,7 +391,9 @@ async def test_saml_login(  # pylint: disable=too-many-locals
         raise RuntimeError(
             "--saml-email and --saml-password arguments are required for running test_saml_login"
         )
-    await run_action(app.name, "add-admin-user", email=email, password=password)
+    action_result = await run_action(app.name, "add-admin-user", email=email, password=password)
+    assert "user" in action_result
+
     await ops_test.model.wait_for_idle(status="active")
 
     username = email.split("@")[0]

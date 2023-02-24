@@ -4,6 +4,7 @@
 
 """Charm for Discourse on kubernetes."""
 import logging
+import os.path
 from collections import namedtuple
 from typing import Any, Dict, List, Optional
 
@@ -470,14 +471,16 @@ class DiscourseCharm(CharmBase):
         if container.can_connect():
             process = container.exec(
                 [
-                    "bash",
-                    "-c",
-                    "./bin/bundle exec rake admin:create",
-                    f"<<< $'{email}\n{password}\n{password}\nY'",
+                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                    "exec",
+                    "rake",
+                    "admin:create",
                 ],
+                stdin=f"{email}\n{password}\n{password}\nY\n",
                 user="discourse",
                 working_dir=DISCOURSE_PATH,
                 environment=self._create_discourse_environment_settings(),
+                timeout=60,
             )
             try:
                 process.wait_output()
@@ -488,6 +491,8 @@ class DiscourseCharm(CharmBase):
                     # Parameter validation errors are printed to stdout
                     f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
                 )
+        else:
+            event.fail("Container is not ready")
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""
