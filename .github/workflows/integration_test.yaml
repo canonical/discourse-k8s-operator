@@ -12,6 +12,6 @@ jobs:
       chaos-duration: 180
       chaos-enabled: true
       chaos-experiments: pod-delete
-      extra-arguments: --s3-url http://172.17.0.1:4566 -m "not (requires_secret)"
+      extra-arguments: --s3-url http://172.17.0.1:4566 -m "not (requires_secrets)"
       pre-run-script: localstack-installation.sh
       trivy-image-config: "trivy.yaml"
