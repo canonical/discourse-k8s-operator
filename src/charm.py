@@ -500,9 +500,9 @@ class DiscourseCharm(CharmBase):
         force_bool = str(self.config["force_https"]).lower()
         process = container.exec(
             [
-                "bash",
-                "-c",
-                f"./bin/rails runner 'SiteSetting.force_https={force_bool}'",
+                os.path.join(DISCOURSE_PATH, "bin/rails"),
+                "runner",
+                f"SiteSetting.force_https={force_bool}",
             ],
             user="discourse",
             working_dir=DISCOURSE_PATH,
