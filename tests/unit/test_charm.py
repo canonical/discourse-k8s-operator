@@ -19,6 +19,8 @@ from ops.testing import Harness
 
 from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseCharm, pgsql_patch
 
+BLOCKED_STATUS = BlockedStatus.name  # type: ignore
+
 
 class TestDiscourseK8sCharm(unittest.TestCase):
     """Unit tests for Discourse charm."""
@@ -151,10 +153,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.update_config({"throttle_level": "Scream"})
         self.harness.container_pebble_ready("discourse")
 
-        self.assertEqual(
-            self.harness.model.unit.status.name,
-            BlockedStatus.name,  # type: ignore
-        )
+        self.assertEqual(self.harness.model.unit.status.name, BLOCKED_STATUS)
         self.assertTrue("none permissive strict" in self.harness.model.unit.status.message)
 
     def test_config_changed_when_s3_and_no_bucket_invalid(self):
