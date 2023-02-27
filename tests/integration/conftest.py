@@ -121,8 +121,15 @@ async def setup_saml_config(ops_test: OpsTest, app: Application):
     """Set SAML related charm config to enable SAML authentication."""
     assert ops_test.model
     discourse_app = ops_test.model.applications[app.name]
+    original_config: dict = await discourse_app.get_config()
+    original_config = {k: v["value"] for k, v in original_config.items()}
     await discourse_app.set_config(
         {"saml_target_url": "https://login.staging.ubuntu.com/+saml", "force_https": "true"}
     )
     yield
-    await discourse_app.set_config({"saml_target_url": "", "force_https": "false"})
+    await discourse_app.set_config(
+        {
+            "saml_target_url": original_config["saml_target_url"],
+            "force_https": str(original_config["force_https"]).lower(),
+        }
+    )
