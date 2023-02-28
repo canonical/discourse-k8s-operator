@@ -18,7 +18,7 @@ from boto3 import client
 from botocore.config import Config
 from bs4 import BeautifulSoup
 from ops.model import ActiveStatus, Application
-from pytest_operator.plugin import OpsTest
+from pytest_operator.plugin import Model, OpsTest
 from requests.adapters import HTTPAdapter, Retry
 
 from charm import PROMETHEUS_PORT, SERVICE_NAME, SERVICE_PORT
@@ -246,7 +246,7 @@ async def test_setup_discourse(
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
+async def test_s3_conf(app: Application, s3_url: str, model: Model):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
     Assume that the charm has already been built and is running.
@@ -281,8 +281,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
             "s3_region": s3_conf["region"],
         }
     )
-    assert ops_test.model
-    await ops_test.model.wait_for_idle(status="active")
+    await model.wait_for_idle(status="active")
 
     logger.info("Discourse config updated, checking bucket content")
 
@@ -341,8 +340,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
             "s3_region": "",
         }
     )
-    assert ops_test.model
-    await ops_test.model.wait_for_idle(status="active")
+    await model.wait_for_idle(status="active")
 
 
 def generate_s3_config(s3_url: str) -> Dict:
@@ -371,32 +369,28 @@ def generate_s3_config(s3_url: str) -> Dict:
 @pytest.mark.abort_on_fail
 @pytest.mark.requires_secrets
 @pytest.mark.usefixtures("setup_saml_config")
-async def test_saml_login(  # pylint: disable=too-many-locals
-    ops_test: OpsTest,
+async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     app: Application,
-    pytestconfig: pytest.Config,
     requests_timeout: int,
     run_action,
+    model: Model,
+    saml_email: str,
+    saml_password: str,
 ):
     """
     arrange: after discourse charm has been deployed, with all required relation established.
     act: add an admin user and enable force-https mode.
     assert: user can login discourse using SAML Authentication.
     """
-    assert ops_test.model
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    email = pytestconfig.getoption("--saml-email")
-    password = pytestconfig.getoption("--saml-password")
-    if not (email and password):
-        raise RuntimeError(
-            "--saml-email and --saml-password arguments are required for running test_saml_login"
-        )
-    action_result = await run_action(app.name, "add-admin-user", email=email, password=password)
+    action_result = await run_action(
+        app.name, "add-admin-user", email=saml_email, password=saml_password
+    )
     assert "user" in action_result
 
-    await ops_test.model.wait_for_idle(status="active")
+    await model.wait_for_idle(status="active")
 
-    username = email.split("@")[0]
+    username = saml_email.split("@")[0]
     host = app.name
     original_getaddrinfo = socket.getaddrinfo
 
@@ -433,9 +427,9 @@ async def test_saml_login(  # pylint: disable=too-many-locals
             "https://login.staging.ubuntu.com/+login",
             data={
                 "csrfmiddlewaretoken": csrf_token,
-                "email": email,
+                "email": saml_email,
                 "user-intentions": "login",
-                "password": password,
+                "password": saml_password,
                 "next": "/saml/process",
                 "continue": "",
                 "openid.usernamesecret": "",
