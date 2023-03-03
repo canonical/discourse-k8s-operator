@@ -4,6 +4,7 @@
 
 """Charm for Discourse on kubernetes."""
 import logging
+import os.path
 from collections import namedtuple
 from typing import Any, Dict, List, Optional
 
@@ -144,6 +145,9 @@ class DiscourseCharm(CharmBase):
         if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
             errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
 
+        if self.config["saml_target_url"] and not self.config["force_https"]:
+            errors.append("'saml_target_url' cannot be specified without 'force_https' being true")
+
         if self.config.get("s3_enabled"):
             errors.extend(
                 f"'s3_enabled' requires '{s3_config}'"
@@ -161,10 +165,13 @@ class DiscourseCharm(CharmBase):
         Returns:
             Dictionary with the SAML configuration settings..
         """
+        ubuntu_one_fingerprint = "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
+        ubuntu_one_staging_fingerprint = (
+            "D2:B4:86:49:1B:AC:29:F6:A4:C8:CF:0D:3A:8F:AD:86:36:0A:77:C0"
+        )
         saml_fingerprints = {
-            "https://login.ubuntu.com/+saml": (
-                "32:15:20:9F:A4:3C:8E:3E:8E:47:" "72:62:9A:86:8D:0E:E6:CF:45:D5"
-            )
+            "https://login.ubuntu.com/+saml": ubuntu_one_fingerprint,
+            "https://login.staging.ubuntu.com/+saml": ubuntu_one_staging_fingerprint,
         }
         saml_config = {}
 
@@ -411,6 +418,7 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
+            self._config_force_https()
             self.model.unit.status = ActiveStatus()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
@@ -463,14 +471,16 @@ class DiscourseCharm(CharmBase):
         if container.can_connect():
             process = container.exec(
                 [
-                    "bash",
-                    "-c",
-                    "./bin/bundle exec rake admin:create",
-                    f"<<< $'{email}\n{password}\n{password}\nY'",
+                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                    "exec",
+                    "rake",
+                    "admin:create",
                 ],
+                stdin=f"{email}\n{password}\n{password}\nY\n",
                 user="discourse",
                 working_dir=DISCOURSE_PATH,
                 environment=self._create_discourse_environment_settings(),
+                timeout=60,
             )
             try:
                 process.wait_output()
@@ -481,6 +491,24 @@ class DiscourseCharm(CharmBase):
                     # Parameter validation errors are printed to stdout
                     f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
                 )
+        else:
+            event.fail("Container is not ready")
+
+    def _config_force_https(self) -> None:
+        """Config Discourse to force_https option based on charm configuration."""
+        container = self.unit.get_container("discourse")
+        force_bool = str(self.config["force_https"]).lower()
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/rails"),
+                "runner",
+                f"SiteSetting.force_https={force_bool}",
+            ],
+            user="discourse",
+            working_dir=DISCOURSE_PATH,
+            environment=self._create_discourse_environment_settings(),
+        )
+        process.wait_output()
 
 
 if __name__ == "__main__":  # pragma: no cover

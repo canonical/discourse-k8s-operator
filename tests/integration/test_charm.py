@@ -5,16 +5,20 @@
 
 import json
 import logging
+import re
+import socket
+import unittest.mock
 from typing import Dict, Optional
 from urllib.parse import urlencode, urlparse
 
 import pytest
 import requests
+import urllib3.exceptions
 from boto3 import client
 from botocore.config import Config
 from bs4 import BeautifulSoup
 from ops.model import ActiveStatus, Application
-from pytest_operator.plugin import OpsTest
+from pytest_operator.plugin import Model, OpsTest
 from requests.adapters import HTTPAdapter, Retry
 
 from charm import PROMETHEUS_PORT, SERVICE_NAME, SERVICE_PORT
@@ -242,7 +246,7 @@ async def test_setup_discourse(
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
+async def test_s3_conf(app: Application, s3_url: str, model: Model):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
     Assume that the charm has already been built and is running.
@@ -277,8 +281,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
             "s3_region": s3_conf["region"],
         }
     )
-    assert ops_test.model
-    await ops_test.model.wait_for_idle(status="active")
+    await model.wait_for_idle(status="active")
 
     logger.info("Discourse config updated, checking bucket content")
 
@@ -337,8 +340,7 @@ async def test_s3_conf(ops_test: OpsTest, app: Application, s3_url: str):
             "s3_region": "",
         }
     )
-    assert ops_test.model
-    await ops_test.model.wait_for_idle(status="active")
+    await model.wait_for_idle(status="active")
 
 
 def generate_s3_config(s3_url: str) -> Dict:
@@ -361,3 +363,103 @@ def generate_s3_config(s3_url: str) -> Dict:
     s3_config["ip_address"] = s3_ip_address
     s3_config["endpoint"] = s3_endpoint
     return s3_config
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+@pytest.mark.requires_secrets
+@pytest.mark.usefixtures("setup_saml_config")
+async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
+    app: Application,
+    requests_timeout: int,
+    run_action,
+    model: Model,
+    saml_email: str,
+    saml_password: str,
+):
+    """
+    arrange: after discourse charm has been deployed, with all required relation established.
+    act: add an admin user and enable force-https mode.
+    assert: user can login discourse using SAML Authentication.
+    """
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    action_result = await run_action(
+        app.name, "add-admin-user", email=saml_email, password=saml_password
+    )
+    assert "user" in action_result
+
+    await model.wait_for_idle(status="active")
+
+    username = saml_email.split("@")[0]
+    host = app.name
+    original_getaddrinfo = socket.getaddrinfo
+
+    def patched_getaddrinfo(*args):
+        if args[0] == host:
+            return original_getaddrinfo("127.0.0.1", *args[1:])
+        return original_getaddrinfo(*args)
+
+    with unittest.mock.patch.multiple(socket, getaddrinfo=patched_getaddrinfo):
+        session = requests.session()
+        preference_page = session.get(
+            f"https://{host}/u/{username}/preferences/account",
+            verify=False,
+            timeout=requests_timeout,
+        )
+        assert preference_page.status_code == 404
+
+        session.get(f"https://{host}", verify=False)
+        response = session.get(
+            f"https://{host}/session/csrf",
+            headers={"Accept": "application/json"},
+            timeout=requests_timeout,
+        )
+        csrf_token = response.json()["csrf"]
+        login_page = session.post(
+            f"https://{host}/auth/saml",
+            data={"authenticity_token": csrf_token},
+            timeout=requests_timeout,
+        )
+        csrf_token = re.findall(
+            "<input type='hidden' name='csrfmiddlewaretoken' value='([^']+)' />", login_page.text
+        )[0]
+        saml_callback = session.post(
+            "https://login.staging.ubuntu.com/+login",
+            data={
+                "csrfmiddlewaretoken": csrf_token,
+                "email": saml_email,
+                "user-intentions": "login",
+                "password": saml_password,
+                "next": "/saml/process",
+                "continue": "",
+                "openid.usernamesecret": "",
+            },
+            headers={"Referer": login_page.url},
+            timeout=requests_timeout,
+        )
+        saml_response = re.findall(
+            '<input type="hidden" name="SAMLResponse" value="([^"]+)" />', saml_callback.text
+        )[0]
+        session.post(
+            f"https://{host}/auth/saml/callback",
+            data={
+                "RelayState": "None",
+                "SAMLResponse": saml_response,
+                "openid.usernamesecret": "",
+            },
+            verify=False,
+            timeout=requests_timeout,
+        )
+        session.post(
+            f"https://{host}/auth/saml/callback",
+            data={"SAMLResponse": saml_response, "SameSite": "1"},
+            verify=False,
+            timeout=requests_timeout,
+        )
+
+        preference_page = session.get(
+            f"https://{host}/u/{username}/preferences/account",
+            verify=False,
+            timeout=requests_timeout,
+        )
+        assert preference_page.status_code == 200

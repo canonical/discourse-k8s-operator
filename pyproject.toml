@@ -18,6 +18,9 @@ show_missing = true
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli_level = "INFO"
+markers = [
+    "requires_secrets: mark tests that require external secrets"
+]
 
 # Formatting tools configuration
 [tool.black]
@@ -50,6 +53,7 @@ copyright-regexp = "Copyright\\s\\d{4}([-,]\\d{4})*\\s+%(author)s"
 ignore_missing_imports = true
 explicit_package_bases = true
 namespace_packages = true
+check_untyped_defs = true
 
 [tool.pylint.SIMILARITIES]
 min-similarity-lines=10
