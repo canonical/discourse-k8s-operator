@@ -8,3 +8,10 @@ add-admin-user:
       type: string
       description: User password.
   required: [email, password]
+anonymize-user:
+  description: Anonymize a user.
+  params:
+    username:
+      type: string
+      description: Username.
+  required: [username]

@@ -5,7 +5,7 @@
 """Charm for Discourse on kubernetes."""
 import logging
 import os.path
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from typing import Any, Dict, List, Optional
 
 import ops.lib
@@ -27,27 +27,26 @@ S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
 DATABASE_NAME = "discourse"
 DISCOURSE_PATH = "/srv/discourse/app"
-THROTTLE_LEVELS = {
-    "none": {
-        "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
-        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-    },
-    "permissive": {
-        "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
-        "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 1000,
-        "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 100,
-        "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 400,
-        "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 400,
-        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-    },
-    "strict": {
-        "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
-        "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 200,
-        "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 50,
-        "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 100,
-        "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 200,
-        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-    },
+THROTTLE_LEVELS: Dict = defaultdict(dict)
+THROTTLE_LEVELS["none"] = {
+    "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
+    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
+}
+THROTTLE_LEVELS["permissive"] = {
+    "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
+    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 1000,
+    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 100,
+    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 400,
+    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 400,
+    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
+}
+THROTTLE_LEVELS["strict"] = {
+    "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
+    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 200,
+    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 50,
+    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 100,
+    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 200,
+    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
 }
 LOG_PATHS = [
     "/srv/discourse/app/log/production.log",
@@ -88,6 +87,7 @@ class DiscourseCharm(CharmBase):
         )
         self.framework.observe(self.db_client.on.master_changed, self._on_database_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
+        self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._config_changed)
@@ -283,9 +283,7 @@ class DiscourseCharm(CharmBase):
 
         # We only get valid throttle levels here, otherwise it would be caught
         # by `check_for_config_problems`.
-        if THROTTLE_LEVELS.get(self.config["throttle_level"]):
-            # self.config return an Any type
-            pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
+        pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
 
         return pod_config
 
@@ -446,12 +444,11 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database master changed handler.
         """
-        if event.master is None:
-            self._stored.db_name = None
-            self._stored.db_user = None
-            self._stored.db_password = None
-            self._stored.db_host = None
-        else:
+        self._stored.db_name = None
+        self._stored.db_user = None
+        self._stored.db_password = None
+        self._stored.db_host = None
+        if event.master is not None:
             self._stored.db_name = event.master.dbname
             self._stored.db_user = event.master.user
             self._stored.db_password = event.master.password
@@ -486,7 +483,6 @@ class DiscourseCharm(CharmBase):
                 process.wait_output()
                 event.set_results({"user": f"{email}"})
             except ExecError as ex:
-                logger.exception("Action add-admin-user failed")
                 event.fail(
                     # Parameter validation errors are printed to stdout
                     f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
@@ -509,6 +505,35 @@ class DiscourseCharm(CharmBase):
             environment=self._create_discourse_environment_settings(),
         )
         process.wait_output()
+
+    def _on_anonymize_user_action(self, event: ActionEvent) -> None:
+        """Anonymize data from a user.
+
+        Args:
+            event: Event triggering the anonymize_admin_user action.
+        """
+        username = event.params["username"]
+        container = self.unit.get_container("discourse")
+        if container.can_connect():
+            process = container.exec(
+                [
+                    "bash",
+                    "-c",
+                    f"./bin/bundle exec rake users:anonymize[{username}]",
+                ],
+                user="discourse",
+                working_dir=DISCOURSE_PATH,
+                environment=self._create_discourse_environment_settings(),
+            )
+            try:
+                process.wait_output()
+                event.set_results({"user": f"{username}"})
+            except ExecError as ex:
+                event.fail(
+                    # Parameter validation errors are printed to stdout
+                    f"Failed to anonymize user with username {username}:"
+                    f"{ex.stdout}"  # type: ignore
+                )
 
 
 if __name__ == "__main__":  # pragma: no cover
