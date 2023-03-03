@@ -59,6 +59,8 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     && git -C "${CONTAINER_APP_ROOT}" clone --depth 1 --branch "${CONTAINER_APP_VERSION}" https://github.com/discourse/discourse.git app
 
 # Apply patches
+# https://github.com/discourse/discourse/pull/20522
+# https://github.com/discourse/discourse/pull/20523
 COPY image/patches /srv/patches
 RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
     && git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/anonymize_user.patch \
