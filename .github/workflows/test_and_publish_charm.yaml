@@ -21,3 +21,4 @@ jobs:
     with:
      integration-test-extra-arguments: --s3-url http://172.17.0.1:4566
      integration-test-pre-run-script: localstack-installation.sh
+     trivy-image-config: "trivy.yaml"
