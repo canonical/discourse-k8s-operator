@@ -511,7 +511,7 @@ class DiscourseCharm(CharmBase):
         """Anonymize data from a user.
 
         Args:
-            event: Event triggering the anonymize_admin_user action.
+            event: Event triggering the anonymize_user action.
         """
         username = event.params["username"]
         container = self.unit.get_container("discourse")
