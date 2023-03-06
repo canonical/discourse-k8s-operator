@@ -60,7 +60,7 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
 
 # Apply patches
 # https://github.com/discourse/discourse/pull/20522
-# https://github.com/discourse/discourse/pull/20523
+# https://github.com/discourse/discourse/pull/20523 LP#1903695
 COPY image/patches /srv/patches
 RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
     && git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/anonymize_user.patch \
