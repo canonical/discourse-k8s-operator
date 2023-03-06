@@ -532,8 +532,8 @@ class DiscourseCharm(CharmBase):
             except ExecError as ex:
                 event.fail(
                     # Parameter validation errors are printed to stdout
-                    f"Failed to anonymize user with username {username}:"
-                    f"{ex.stdout}"  # type: ignore
+                    # Ignore mypy warning when formatting stdout
+                    f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
                 )
 
 
