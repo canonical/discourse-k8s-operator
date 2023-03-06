@@ -283,6 +283,7 @@ class DiscourseCharm(CharmBase):
 
         # We only get valid throttle levels here, otherwise it would be caught
         # by `check_for_config_problems`.
+        # self.config return an Any type
         pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
 
         return pod_config
