@@ -13,5 +13,5 @@ anonymize-user:
   params:
     username:
       type: string
-      description: Username.
+      description: The unique identifier of the user to anonymize.
   required: [username]
