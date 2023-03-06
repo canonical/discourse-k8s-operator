@@ -1,24 +1,14 @@
 FROM ubuntu:focal
 
-# ARGS become environment variables, but can be overridden using the
-# --build-arg var=foo option to docker build. This allows you to have a
-# default build image, but customize certain options such as app version or
-# userids, etc.
-ARG CONTAINER_APP_VERSION
-ARG CONTAINER_APP_USERNAME
-ARG CONTAINER_APP_UID
-ARG CONTAINER_APP_GROUP
-ARG CONTAINER_APP_GID
-
 # Used in Launchpad OCI Recipe build to tag the image.
-LABEL org.label-schema.version=${CONTAINER_APP_VERSION:-v2.7.10}
+LABEL org.label-schema.version=v2.7.10
 
 # Copy any args we got into the environment.
-ENV CONTAINER_APP_VERSION ${CONTAINER_APP_VERSION:-v2.7.10}
-ENV CONTAINER_APP_USERNAME ${CONTAINER_APP_USERNAME:-discourse}
-ENV CONTAINER_APP_UID ${CONTAINER_APP_UID:-200}
-ENV CONTAINER_APP_GROUP ${CONTAINER_APP_GROUP:-discourse}
-ENV CONTAINER_APP_GID ${CONTAINER_APP_GID:-200}
+ENV CONTAINER_APP_VERSION v2.7.10
+ENV CONTAINER_APP_USERNAME discourse
+ENV CONTAINER_APP_UID 200
+ENV CONTAINER_APP_GROUP discourse
+ENV CONTAINER_APP_GID 200
 
 # CONTAINER_APP_ROOT is where files related to this application go.
 ENV CONTAINER_APP_ROOT=/srv/discourse
@@ -68,9 +58,12 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
 # Run build process.
     && git -C "${CONTAINER_APP_ROOT}" clone --depth 1 --branch "${CONTAINER_APP_VERSION}" https://github.com/discourse/discourse.git app
 
-# Apply patch for LP#1903695
+# Apply patches
+# https://github.com/discourse/discourse/pull/20522
+# https://github.com/discourse/discourse/pull/20523 LP#1903695
 COPY image/patches /srv/patches
 RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
+    && git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/anonymize_user.patch \
     && rm -rf /srv/patches \
     && mkdir -p "${CONTAINER_APP_ROOT}/.gem" \
 # Create the backup and upload directories as Discourse doesn't like it 

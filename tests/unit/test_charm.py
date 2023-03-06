@@ -185,7 +185,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
-        reaches Active status.
+            reaches Active status.
         """
         mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
@@ -237,7 +237,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
-        reaches Active status.
+            reaches Active status.
         """
         self.add_database_relations()
         with self._patch_exec() as exec_mock:
@@ -290,7 +290,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
-        reaches Active status.
+            reaches Active status.
         """
         self.add_database_relations()
         with self._patch_exec() as exec_mock:
@@ -393,7 +393,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         arrange: an email and a password
         act: when the _on_add_admin_user_action mtehod is executed
         assert: the underlying rake command to add the user is executed
-        with the appropriate parameters.
+            with the appropriate parameters.
         """
         mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.harness.disable_hooks()
@@ -423,6 +423,37 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             environment=charm._create_discourse_environment_settings(),
             stdin=f"{email}\n{password}\n{password}\nY\n",
             timeout=60,
+        )
+
+    @patch.object(Container, "exec")
+    def test_anonymize_user(self, mock_exec):
+        """
+        arrange: set up discourse
+        act: execute the _on_anonymize_user_action method
+        assert: the underlying rake command to anonymize the user is executed
+            with the appropriate parameters.
+        """
+        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
+        self.harness.disable_hooks()
+        self.add_database_relations()
+
+        charm: DiscourseCharm = typing.cast(DiscourseCharm, self.harness.charm)
+        self.harness.container_pebble_ready("discourse")
+
+        username = "someusername"
+        event = MagicMock(spec=ActionEvent)
+        event.params = {"username": username}
+        charm._on_anonymize_user_action(event)
+
+        mock_exec.assert_any_call(
+            [
+                "bash",
+                "-c",
+                f"./bin/bundle exec rake users:anonymize[{username}]",
+            ],
+            user="discourse",
+            working_dir=DISCOURSE_PATH,
+            environment=charm._create_discourse_environment_settings(),
         )
 
     def add_postgres_relation(self):

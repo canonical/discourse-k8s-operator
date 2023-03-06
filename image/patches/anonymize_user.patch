@@ -1,0 +1,16 @@
+--- a/lib/tasks/users.rake
++++ b/lib/tasks/users.rake
+@@ -201,3 +201,13 @@
+ 
+   user
+ end
++
++desc "Anonymize user with the given username"
++task "users:anonymize", [:username] => [:environment] do |_, args|
++  username = args[:username]
++  user = find_user(username)
++  system_user = Discourse.system_user
++  UserAnonymizer.new(user, system_user).make_anonymous
++  puts "User #{username} anonymized"
++end
++
