@@ -1,6 +1,6 @@
 --- a/lib/tasks/users.rake
 +++ b/lib/tasks/users.rake
-@@ -201,3 +201,13 @@
+@@ -210,3 +210,12 @@ def find_user(username)
  
    user
  end
@@ -13,4 +13,3 @@
 +  UserAnonymizer.new(user, system_user).make_anonymous
 +  puts "User #{username} anonymized"
 +end
-+
