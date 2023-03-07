@@ -426,7 +426,7 @@ class DiscourseCharm(CharmBase):
                     process.wait_output()
 
             except ExecError as cmd_err:
-                logger.exception("Set up discourse exited with code %d.", cmd_err.exit_code)
+                logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
                 raise
 
         # Then start the service
