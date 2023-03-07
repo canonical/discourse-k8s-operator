@@ -316,22 +316,21 @@ class DiscourseCharm(CharmBase):
         }
         return layer_config
 
-    def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        """Determine if the setup script is to be run.
+    def _should_run_s3_migration(self, s3info: Optional[S3Info]) -> bool:
+        """Determine if the S3 migration is to be run.
 
            This is based on the current plan and the new S3 settings.
 
         Args:
-            current_plan: Dictionary containing the current plan.
             s3info: S3Info object containing the S3 configuration options.
 
         Returns:
-            If no services are planned yet (first run) or S3 settings have changed.
+            If S3 settings have changed.
         """
         # Properly type checks would require defining a complex TypedMap for the pebble plan
-        return not current_plan.services or (  # type: ignore
-            # Or S3 is enabled and one S3 parameter has changed
-            self.config.get("s3_enabled")
+        # S3 is enabled and one S3 parameter has changed
+        return (
+            self.config.get("s3_enabled")  # type: ignore
             and s3info
             and (
                 s3info.enabled != self.config.get("s3_enabled")
@@ -392,30 +391,27 @@ class DiscourseCharm(CharmBase):
         # Execute the commands on 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        if (
-            self._is_config_valid()
-            and self.model.unit.is_leader()
-            and self._should_run_setup(current_plan, previous_s3_info)
-        ):
+        if self._is_config_valid() and self.model.unit.is_leader():
             env_settings = self._create_discourse_environment_settings()
             try:
-                self.model.unit.status = MaintenanceStatus("Running migrations")
-                process = container.exec(
-                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-                    environment=env_settings,
-                    working_dir=DISCOURSE_PATH,
-                    user="discourse",
-                )
-                process.wait_output()
-                self.model.unit.status = MaintenanceStatus("Compiling assets")
-                process = container.exec(
-                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-                    environment=env_settings,
-                    working_dir=DISCOURSE_PATH,
-                    user="discourse",
-                )
-                process.wait_output()
-                if env_settings.get("DISCOURSE_USE_S3") == "true":
+                if not current_plan.services:
+                    self.model.unit.status = MaintenanceStatus("Running migrations")
+                    process = container.exec(
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                        environment=env_settings,
+                        working_dir=DISCOURSE_PATH,
+                        user="discourse",
+                    )
+                    process.wait_output()
+                    self.model.unit.status = MaintenanceStatus("Compiling assets")
+                    process = container.exec(
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                        environment=env_settings,
+                        working_dir=DISCOURSE_PATH,
+                        user="discourse",
+                    )
+                    process.wait_output()
+                if self._should_run_s3_migration(previous_s3_info):
                     self.model.unit.status = MaintenanceStatus("Running S3 migration")
                     process = container.exec(
                         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
