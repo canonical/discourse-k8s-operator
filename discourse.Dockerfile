@@ -1,10 +1,10 @@
 FROM ubuntu:focal
 
 # Used in Launchpad OCI Recipe build to tag the image.
-LABEL org.label-schema.version=v2.8.14
+LABEL org.label-schema.version=v2.7.10
 
 # Copy any args we got into the environment.
-ENV CONTAINER_APP_VERSION v2.8.14
+ENV CONTAINER_APP_VERSION v2.7.10
 ENV CONTAINER_APP_USERNAME discourse
 ENV CONTAINER_APP_UID 200
 ENV CONTAINER_APP_GROUP discourse
@@ -90,9 +90,12 @@ COPY --chown="${CONTAINER_APP_UID}:${CONTAINER_APP_GID}" image/scripts /srv/scri
 
 ENV PLUGINS_DIR="${CONTAINER_APP_ROOT}/app/plugins"
 RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/discourse-saml" \
+# Remove additions incompatible with Discourse versions < 2.8
+    && git -C "${PLUGINS_DIR}/discourse-saml" reset --hard 851f6cebe3fdd48019660b236a447abb6ddf9c89 \
     && mkdir -p "${PLUGINS_DIR}/discourse-saml/gems" \
 # Have to determine the gems needed and install them now, otherwise Discourse will
 # try to install them at runtime, which may not work due to network access issues.
+    && echo 'source "https://rubygems.org"' > "${PLUGINS_DIR}/discourse-saml/Gemfile" \
     && grep -e ^gem "${PLUGINS_DIR}/discourse-saml/plugin.rb" >> "${PLUGINS_DIR}/discourse-saml/Gemfile" \
     && git clone https://github.com/discourse/discourse-solved.git "${PLUGINS_DIR}/discourse-solved" \
     && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git "${PLUGINS_DIR}/discourse-markdown-note" \
