@@ -389,7 +389,7 @@ class DiscourseCharm(CharmBase):
                 else "",
             )
 
-        # Execute the commands under 2 conditions:
+        # Execute the commands on 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
         if (
