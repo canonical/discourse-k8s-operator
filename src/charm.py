@@ -49,9 +49,9 @@ THROTTLE_LEVELS["strict"] = {
     "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
 }
 LOG_PATHS = [
-    "/srv/discourse/app/log/production.log",
-    "/srv/discourse/app/log/unicorn.stderr.log",
-    "/srv/discourse/app/log/unicorn.stdout.log",
+    f"{DISCOURSE_PATH}/log/production.log",
+    f"{DISCOURSE_PATH}/log/unicorn.stderr.log",
+    f"{DISCOURSE_PATH}/log/unicorn.stdout.log",
 ]
 PROMETHEUS_PORT = 9394
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
@@ -389,7 +389,7 @@ class DiscourseCharm(CharmBase):
                 else "",
             )
 
-        # First execute the setup script in 2 conditions:
+        # Execute the commands under 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
         if (
@@ -397,18 +397,36 @@ class DiscourseCharm(CharmBase):
             and self.model.unit.is_leader()
             and self._should_run_setup(current_plan, previous_s3_info)
         ):
-            self.model.unit.status = MaintenanceStatus("Compiling assets")
-            script = f"{SCRIPT_PATH}/pod_setup.sh"
-            process = container.exec(
-                [script],
-                environment=self._create_discourse_environment_settings(),
-                working_dir="/srv/discourse/app",
-            )
+            env_settings = self._create_discourse_environment_settings()
             try:
-                stdout, _ = process.wait_output()
-                logger.debug("%s stdout: %s", script, stdout)
+                self.model.unit.status = MaintenanceStatus("Running migrations")
+                process = container.exec(
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
+                    user="discourse",
+                )
+                process.wait_output()
+                self.model.unit.status = MaintenanceStatus("Compiling assets")
+                process = container.exec(
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
+                    user="discourse",
+                )
+                process.wait_output()
+                if env_settings.get("DISCOURSE_USE_S3") == "true":
+                    self.model.unit.status = MaintenanceStatus("Running S3 migration")
+                    process = container.exec(
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+                        environment=env_settings,
+                        working_dir=DISCOURSE_PATH,
+                        user="discourse",
+                    )
+                    process.wait_output()
+
             except ExecError as cmd_err:
-                logger.exception("%s command exited with code %d.", script, cmd_err.exit_code)
+                logger.exception("Set up discourse exited with code %d.", cmd_err.exit_code)
                 raise
 
         # Then start the service
