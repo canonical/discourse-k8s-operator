@@ -393,16 +393,17 @@ class DiscourseCharm(CharmBase):
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
         if self._is_config_valid() and self.model.unit.is_leader():
             env_settings = self._create_discourse_environment_settings()
+
             try:
                 if not current_plan.services:
-                    # self.model.unit.status = MaintenanceStatus("Running migrations")
-                    # process = container.exec(
-                    #     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-                    #     environment=env_settings,
-                    #     working_dir=DISCOURSE_PATH,
-                    #     user="discourse",
-                    # )
-                    # process.wait_output()
+                    self.model.unit.status = MaintenanceStatus("Running migrations")
+                    process = container.exec(
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                        environment=env_settings,
+                        working_dir=DISCOURSE_PATH,
+                        user="discourse",
+                    )
+                    process.wait_output()
                     self.model.unit.status = MaintenanceStatus("Compiling assets")
                     process = container.exec(
                         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
@@ -423,6 +424,7 @@ class DiscourseCharm(CharmBase):
 
             except ExecError as cmd_err:
                 logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
+                logger.error(env_settings)
                 raise
 
         # Then start the service
