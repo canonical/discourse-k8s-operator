@@ -329,21 +329,6 @@ class DiscourseCharm(CharmBase):
         """
         # Properly type checks would require defining a complex TypedMap for the pebble plan
         # S3 is enabled and one S3 parameter has changed
-        print("ENTROOOOOOOOO")
-        print(self.config.get("s3_enabled"))
-        print("ENTROOOOOOOOO2")
-        print(s3info)
-        print("ENTROOOOOOOOO3")
-        print(
-            self.config.get("s3_enabled")  # type: ignore
-            and s3info
-            and (
-                s3info.enabled != self.config.get("s3_enabled")
-                or s3info.region != self.config.get("s3_region")
-                or s3info.bucket != self.config.get("s3_bucket")
-                or s3info.endpoint != self.config.get("s3_endpoint")
-            )
-        )
         return (
             self.config.get("s3_enabled")  # type: ignore
             and s3info

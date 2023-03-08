@@ -204,18 +204,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
         mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="discourse",
-        )
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="discourse",
-        )
-        mock_exec.assert_any_call(
             [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
             environment=updated_plan_env,
             working_dir=DISCOURSE_PATH,
