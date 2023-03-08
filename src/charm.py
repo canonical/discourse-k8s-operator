@@ -395,14 +395,14 @@ class DiscourseCharm(CharmBase):
             env_settings = self._create_discourse_environment_settings()
             try:
                 if not current_plan.services:
-                    self.model.unit.status = MaintenanceStatus("Running migrations")
-                    process = container.exec(
-                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-                        environment=env_settings,
-                        working_dir=DISCOURSE_PATH,
-                        user="discourse",
-                    )
-                    process.wait_output()
+                    # self.model.unit.status = MaintenanceStatus("Running migrations")
+                    # process = container.exec(
+                    #     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                    #     environment=env_settings,
+                    #     working_dir=DISCOURSE_PATH,
+                    #     user="discourse",
+                    # )
+                    # process.wait_output()
                     self.model.unit.status = MaintenanceStatus("Compiling assets")
                     process = container.exec(
                         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
