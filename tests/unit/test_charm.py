@@ -189,6 +189,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.add_database_relations()
+        self.harness.container_pebble_ready("discourse")
         self.harness.update_config(
             {
                 "s3_access_key_id": "3|33+",
@@ -199,7 +200,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 "s3_secret_access_key": "s|kI0ure_k3Y",
             }
         )
-        self.harness.container_pebble_ready("discourse")
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
