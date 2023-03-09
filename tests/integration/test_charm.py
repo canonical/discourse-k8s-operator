@@ -25,7 +25,7 @@ from charm import PROMETHEUS_PORT, SERVICE_NAME, SERVICE_PORT
 from tests.integration.helpers import (
     DBInfo,
     get_db_info,
-    get_discourse_email_token,
+    get_discourse_email_token_hash,
     get_unit_address,
 )
 
@@ -143,7 +143,9 @@ async def test_setup_discourse(
     # Fecth the email token from DB
     postgresql_info: Optional[DBInfo] = await get_db_info(app, SERVICE_NAME)
     assert postgresql_info is not None
-    email_token = await get_discourse_email_token(postgresql_info, app_config["developer_emails"])
+    email_token = await get_discourse_email_token_hash(
+        postgresql_info, app_config["developer_emails"]
+    )
     assert email_token is not None
 
     # Confirm email with token
