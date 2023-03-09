@@ -36,7 +36,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         pgsql_patch.stop()
 
     @contextlib.contextmanager
-    def _patch_exec(self, fail: bool = False):
+    def _patch_exec(self, fail: bool = False) -> typing.Generator[unittest.mock.Mock, None, None]:
         """Patch the ops.model.Container.exec method.
 
         When fail argument is true, the execution will fail
@@ -206,7 +206,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         mock_exec.assert_any_call(
             [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
-            working_dir="/srv/discourse/app",
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
         )
         self.assertNotIn("DISCOURSE_BACKUP_LOCATION", updated_plan_env)
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
@@ -240,7 +241,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             reaches Active status.
         """
         self.add_database_relations()
-        with self._patch_exec() as exec_mock:
+        with self._patch_exec() as mock_exec:
             self.harness.update_config(
                 {
                     "force_saml_login": True,
@@ -254,10 +255,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        exec_mock.assert_any_call(
+        mock_exec.assert_any_call(
             [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
-            working_dir="/srv/discourse/app",
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
         )
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
@@ -324,7 +326,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         exec_mock.assert_any_call(
             [f"{SCRIPT_PATH}/pod_setup.sh"],
             environment=updated_plan_env,
-            working_dir="/srv/discourse/app",
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
         )
         self.assertEqual("s3", updated_plan_env["DISCOURSE_BACKUP_LOCATION"])
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
@@ -413,7 +416,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         mock_exec.assert_any_call(
             [
-                "/srv/discourse/app/bin/bundle",
+                f"{DISCOURSE_PATH}/bin/bundle",
                 "exec",
                 "rake",
                 "admin:create",

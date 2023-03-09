@@ -19,6 +19,9 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/test_and_publish_charm.yaml@main
     secrets: inherit
     with:
-     integration-test-extra-arguments: --s3-url http://172.17.0.1:4566
+     integration-test-extra-arguments: >
+      --s3-url http://172.17.0.1:4566
+      --saml-email ${{ secrets.TEST_SAML_EMAIL }}
+      --saml-password ${{ secrets.TEST_SAML_PASSWORD }}
      integration-test-pre-run-script: localstack-installation.sh
      trivy-image-config: "trivy.yaml"
