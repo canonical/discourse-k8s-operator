@@ -54,7 +54,7 @@ async def get_db_info(app: Application, app_name: str = "operator") -> Optional[
     )
 
 
-async def get_discourse_email_token(db_info: DBInfo, email: str):
+async def get_discourse_email_token_hash(db_info: DBInfo, email: str):
     """Look for token related to an email address in Discourse DB
     Args:
         db_info: The DBInfo object containing host, schema, username and password
