@@ -103,6 +103,7 @@ async def test_setup_discourse(
         f"{discourse_url}/finish-installation/register",
         headers={"Host": f"{app_config['external_hostname']}"},
         timeout=requests_timeout,
+        allow_redirects=True,
     )
 
     assert response.status_code == 200
