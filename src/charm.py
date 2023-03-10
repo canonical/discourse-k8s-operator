@@ -316,22 +316,27 @@ class DiscourseCharm(CharmBase):
         }
         return layer_config
 
-    def _should_run_s3_migration(self, s3info: Optional[S3Info]) -> bool:
+    def _should_run_s3_migration(self, current_plan: Dict, s3info: S3Info) -> bool:
         """Determine if the S3 migration is to be run.
            This is based on the current plan and the new S3 settings.
 
         Args:
+            current_plan: Dictionary containing the current plan.
             s3info: S3Info object containing the S3 configuration options.
 
         Returns:
-            If S3 settings have changed.
+            If no services are planned yet (first run) or S3 settings have changed.
         """
-        # S3 is enabled and one S3 parameter has changed
-        return self.config.get("s3_enabled") and (
-            s3info.enabled != self.config.get("s3_enabled")
-            or s3info.region != self.config.get("s3_region")
-            or s3info.bucket != self.config.get("s3_bucket")
-            or s3info.endpoint != self.config.get("s3_endpoint")
+        return not current_plan.services or (  # type: ignore
+            # Or S3 is enabled and one S3 parameter has changed
+            self.config.get("s3_enabled")
+            and s3info
+            and (
+                s3info.enabled != self.config.get("s3_enabled")
+                or s3info.region != self.config.get("s3_region")
+                or s3info.bucket != self.config.get("s3_bucket")
+                or s3info.endpoint != self.config.get("s3_endpoint")
+            )
         )
 
     def _are_db_relations_ready(self) -> bool:
@@ -406,7 +411,7 @@ class DiscourseCharm(CharmBase):
                         user="discourse",
                     )
                     process.wait_output()
-                if self._should_run_s3_migration(previous_s3_info):
+                if self._should_run_s3_migration(current_plan, previous_s3_info):
                     self.model.unit.status = MaintenanceStatus("Running S3 migration")
                     process = container.exec(
                         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
