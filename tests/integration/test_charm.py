@@ -205,7 +205,7 @@ async def test_setup_discourse(
         timeout=requests_timeout,
     )
 
-    assert response.status_code == 302
+    assert response.status_code == 200
 
     logger.info("Getting admin page")
 
