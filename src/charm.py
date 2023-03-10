@@ -316,9 +316,8 @@ class DiscourseCharm(CharmBase):
         }
         return layer_config
 
-    def _should_run_s3_migration(self, current_plan: Dict, s3info: S3Info) -> bool:
+    def _should_run_s3_migration(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
         """Determine if the S3 migration is to be run.
-           This is based on the current plan and the new S3 settings.
 
         Args:
             current_plan: Dictionary containing the current plan.
