@@ -322,6 +322,7 @@ class DiscourseCharm(CharmBase):
 
         Args:
             s3info: S3Info object containing the S3 configuration options.
+
         Returns:
             If S3 settings have changed.
         """
