@@ -17,7 +17,7 @@ from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
-from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseCharm, pgsql_patch
+from tests.unit._patched_charm import DISCOURSE_PATH, DiscourseCharm, pgsql_patch
 
 BLOCKED_STATUS = BlockedStatus.name  # type: ignore
 
@@ -204,7 +204,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
         mock_exec.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup.sh"],
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "db:migrate"],
             environment=updated_plan_env,
             working_dir=DISCOURSE_PATH,
             user="discourse",
@@ -268,7 +268,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
         mock_exec.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup.sh"],
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "db:migrate"],
             environment=updated_plan_env,
             working_dir=DISCOURSE_PATH,
             user="discourse",

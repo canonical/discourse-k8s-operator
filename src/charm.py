@@ -393,10 +393,9 @@ class DiscourseCharm(CharmBase):
             env_settings = self._create_discourse_environment_settings()
             try:
                 if not current_plan.services:
-                    self.model.unit.status = MaintenanceStatus("Compiling assets")
-                    script = f"{SCRIPT_PATH}/pod_setup.sh"
+                    self.model.unit.status = MaintenanceStatus("Running migration")
                     process = container.exec(
-                        [script],
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "db:migrate"],
                         environment=env_settings,
                         working_dir="/srv/discourse/app",
                         user="discourse",
