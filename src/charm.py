@@ -385,26 +385,27 @@ class DiscourseCharm(CharmBase):
         # First execute the setup script in 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        if self._is_config_valid() and self.model.unit.is_leader() and not current_plan.services:
+        if self._is_config_valid() and self.model.unit.is_leader():
             env_settings = self._create_discourse_environment_settings()
             try:
-                self.model.unit.status = MaintenanceStatus("Compiling assets")
-                script = f"{SCRIPT_PATH}/pod_setup.sh"
-                process = container.exec(
-                    [script],
-                    environment=env_settings,
-                    working_dir="/srv/discourse/app",
-                    user="discourse",
-                )
-                process.wait_output()
-                self.model.unit.status = MaintenanceStatus("Compiling assets")
-                process = container.exec(
-                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-                    environment=env_settings,
-                    working_dir=DISCOURSE_PATH,
-                    user="discourse",
-                )
-                process.wait_output()
+                if not current_plan.services:
+                    self.model.unit.status = MaintenanceStatus("Compiling assets")
+                    script = f"{SCRIPT_PATH}/pod_setup.sh"
+                    process = container.exec(
+                        [script],
+                        environment=env_settings,
+                        working_dir="/srv/discourse/app",
+                        user="discourse",
+                    )
+                    process.wait_output()
+                    self.model.unit.status = MaintenanceStatus("Compiling assets")
+                    process = container.exec(
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                        environment=env_settings,
+                        working_dir=DISCOURSE_PATH,
+                        user="discourse",
+                    )
+                    process.wait_output()
                 if self._should_run_s3_migration(previous_s3_info):
                     self.model.unit.status = MaintenanceStatus("Running S3 migration")
                     process = container.exec(

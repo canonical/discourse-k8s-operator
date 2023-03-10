@@ -315,7 +315,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             reaches Active status.
         """
         self.add_database_relations()
-        with self._patch_exec() as exec_mock:
+        with self._patch_exec():
             self.harness.update_config(
                 {
                     "developer_emails": "user@foo.internal",
