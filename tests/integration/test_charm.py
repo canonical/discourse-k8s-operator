@@ -223,8 +223,7 @@ async def test_setup_discourse(
     # Extract the CSRF token
     parsed_admin: BeautifulSoup = BeautifulSoup(response.content, features="html.parser")
     assert parsed_admin.head
-    print(parsed_admin.head)
-    print(parsed_admin.head.attrs)
+
     csrf_token = parsed_admin.head.find("meta", attrs={"name": "csrf-token"}).get(  # type: ignore
         "content"
     )

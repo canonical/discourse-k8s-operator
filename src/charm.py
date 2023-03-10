@@ -316,29 +316,21 @@ class DiscourseCharm(CharmBase):
         }
         return layer_config
 
-    def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        """Determine if the setup script is to be run.
-
+    def _should_run_s3_migration(self, s3info: Optional[S3Info]) -> bool:
+        """Determine if the S3 migration is to be run.
            This is based on the current plan and the new S3 settings.
 
         Args:
-            current_plan: Dictionary containing the current plan.
             s3info: S3Info object containing the S3 configuration options.
-
         Returns:
-            If no services are planned yet (first run) or S3 settings have changed.
+            If S3 settings have changed.
         """
-        # Properly type checks would require defining a complex TypedMap for the pebble plan
-        return not current_plan.services or (  # type: ignore
-            # Or S3 is enabled and one S3 parameter has changed
-            self.config.get("s3_enabled")
-            and s3info
-            and (
-                s3info.enabled != self.config.get("s3_enabled")
-                or s3info.region != self.config.get("s3_region")
-                or s3info.bucket != self.config.get("s3_bucket")
-                or s3info.endpoint != self.config.get("s3_endpoint")
-            )
+        # S3 is enabled and one S3 parameter has changed
+        return self.config.get("s3_enabled") and (
+            s3info.enabled != self.config.get("s3_enabled")
+            or s3info.region != self.config.get("s3_region")
+            or s3info.bucket != self.config.get("s3_bucket")
+            or s3info.endpoint != self.config.get("s3_endpoint")
         )
 
     def _are_db_relations_ready(self) -> bool:
@@ -392,21 +384,35 @@ class DiscourseCharm(CharmBase):
         # First execute the setup script in 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        if (
-            self._is_config_valid()
-            and self.model.unit.is_leader()
-            and self._should_run_setup(current_plan, previous_s3_info)
-        ):
+        if self._is_config_valid() and self.model.unit.is_leader() and not current_plan.services:
+            env_settings = self._create_discourse_environment_settings()
             try:
                 self.model.unit.status = MaintenanceStatus("Compiling assets")
                 script = f"{SCRIPT_PATH}/pod_setup.sh"
                 process = container.exec(
                     [script],
-                    environment=self._create_discourse_environment_settings(),
+                    environment=env_settings,
                     working_dir="/srv/discourse/app",
                     user="discourse",
                 )
                 process.wait_output()
+                self.model.unit.status = MaintenanceStatus("Compiling assets")
+                process = container.exec(
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
+                    user="discourse",
+                )
+                process.wait_output()
+                if self._should_run_s3_migration(previous_s3_info):
+                    self.model.unit.status = MaintenanceStatus("Running S3 migration")
+                    process = container.exec(
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+                        environment=env_settings,
+                        working_dir=DISCOURSE_PATH,
+                        user="discourse",
+                    )
+                    process.wait_output()
             except ExecError as cmd_err:
                 logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
                 raise

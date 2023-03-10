@@ -209,6 +209,18 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             working_dir=DISCOURSE_PATH,
             user="discourse",
         )
+        mock_exec.assert_any_call(
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+            environment=updated_plan_env,
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
+        )
+        mock_exec.assert_any_call(
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+            environment=updated_plan_env,
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
+        )
         self.assertNotIn("DISCOURSE_BACKUP_LOCATION", updated_plan_env)
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
@@ -261,6 +273,14 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             working_dir=DISCOURSE_PATH,
             user="discourse",
         )
+        mock_exec.assert_any_call(
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+            environment=updated_plan_env,
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
+        )
+        mock_exec.reset_mock()
+        mock_exec.assert_not_called()
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_DB_NAME"])
@@ -323,12 +343,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        exec_mock.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup.sh"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="discourse",
-        )
         self.assertEqual("s3", updated_plan_env["DISCOURSE_BACKUP_LOCATION"])
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
