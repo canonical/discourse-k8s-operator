@@ -326,15 +326,17 @@ class DiscourseCharm(CharmBase):
         Returns:
             If no services are planned yet (first run) or S3 settings have changed.
         """
-        return not current_plan.services or (  # type: ignore
-            # Or S3 is enabled and one S3 parameter has changed
+        return (
             self.config.get("s3_enabled")
-            and s3info
-            and (
-                s3info.enabled != self.config.get("s3_enabled")
-                or s3info.region != self.config.get("s3_region")
-                or s3info.bucket != self.config.get("s3_bucket")
-                or s3info.endpoint != self.config.get("s3_endpoint")
+            and not current_plan.services
+            or (  # type: ignore
+                s3info
+                and (
+                    s3info.enabled != self.config.get("s3_enabled")
+                    or s3info.region != self.config.get("s3_region")
+                    or s3info.bucket != self.config.get("s3_bucket")
+                    or s3info.endpoint != self.config.get("s3_endpoint")
+                )
             )
         )
 
