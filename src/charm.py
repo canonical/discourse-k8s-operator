@@ -396,20 +396,20 @@ class DiscourseCharm(CharmBase):
             env_settings = self._create_discourse_environment_settings()
             try:
                 if not current_plan.services:
+                    self.model.unit.status = MaintenanceStatus("Compiling assets")
+                    process = container.exec(
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                        environment=env_settings,
+                        working_dir=DISCOURSE_PATH,
+                        user="discourse",
+                    )
+                    process.wait_output()
                     self.model.unit.status = MaintenanceStatus("Executing migrations")
                     script = f"{SCRIPT_PATH}/pod_setup.sh"
                     process = container.exec(
                         [script],
                         environment=env_settings,
                         working_dir="/srv/discourse/app",
-                        user="discourse",
-                    )
-                    process.wait_output()
-                    self.model.unit.status = MaintenanceStatus("Compiling assets")
-                    process = container.exec(
-                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-                        environment=env_settings,
-                        working_dir=DISCOURSE_PATH,
                         user="discourse",
                     )
                     process.wait_output()
