@@ -210,7 +210,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             user="discourse",
         )
         mock_exec.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup.sh"],
+            [f"{DISCOURSE_PATH}/app/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
             environment=updated_plan_env,
             working_dir=DISCOURSE_PATH,
             user="discourse",
@@ -274,7 +274,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             user="discourse",
         )
         mock_exec.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup.sh"],
+            [f"{DISCOURSE_PATH}/app/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
             environment=updated_plan_env,
             working_dir=DISCOURSE_PATH,
             user="discourse",
