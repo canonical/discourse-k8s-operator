@@ -327,15 +327,17 @@ class DiscourseCharm(CharmBase):
             If no services are planned yet (first run) or S3 settings have changed.
         """
         # Properly type checks would require defining a complex TypedMap for the pebble plan
-        return not current_plan.services or (  # type: ignore
-            # Or S3 is enabled and one S3 parameter has changed
-            self.config.get("s3_enabled")
-            and s3info
-            and (
-                s3info.enabled != self.config.get("s3_enabled")
-                or s3info.region != self.config.get("s3_region")
-                or s3info.bucket != self.config.get("s3_bucket")
-                or s3info.endpoint != self.config.get("s3_endpoint")
+        return self.config.get("s3_enabled") and (
+            not current_plan.services  # type: ignore
+            or (
+                self.config.get("s3_enabled")
+                and s3info
+                and (
+                    s3info.enabled != self.config.get("s3_enabled")
+                    or s3info.region != self.config.get("s3_region")
+                    or s3info.bucket != self.config.get("s3_bucket")
+                    or s3info.endpoint != self.config.get("s3_endpoint")
+                )
             )
         )
 
