@@ -330,8 +330,7 @@ class DiscourseCharm(CharmBase):
         return self.config.get("s3_enabled") and (
             not current_plan.services  # type: ignore
             or (
-                self.config.get("s3_enabled")
-                and s3info
+                s3info
                 and (
                     s3info.enabled != self.config.get("s3_enabled")
                     or s3info.region != self.config.get("s3_region")
