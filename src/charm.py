@@ -391,20 +391,20 @@ class DiscourseCharm(CharmBase):
             env_settings = self._create_discourse_environment_settings()
             try:
                 if not current_plan.services:
-                    self.model.unit.status = MaintenanceStatus("Compiling assets")
-                    process = container.exec(
-                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-                        environment=env_settings,
-                        working_dir=DISCOURSE_PATH,
-                        user="discourse",
-                    )
-                    process.wait_output()
                     self.model.unit.status = MaintenanceStatus("Executing migrations")
                     script = f"{SCRIPT_PATH}/pod_setup.sh"
                     process = container.exec(
                         [script],
                         environment=env_settings,
                         working_dir="/srv/discourse/app",
+                        user="discourse",
+                    )
+                    process.wait_output()
+                    self.model.unit.status = MaintenanceStatus("Compiling assets")
+                    process = container.exec(
+                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                        environment=env_settings,
+                        working_dir=DISCOURSE_PATH,
                         user="discourse",
                     )
                     process.wait_output()
@@ -455,12 +455,6 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database master changed handler.
         """
-        changes = (
-            self._stored.db_name != event.master.dbname
-            or self._stored.db_user != event.master.user
-            or self._stored.db_password != event.master.password
-            or self._stored.db_host != event.master.host
-        )
         if event.master is None:
             self._stored.db_name = None
             self._stored.db_user = None
@@ -472,8 +466,7 @@ class DiscourseCharm(CharmBase):
             self._stored.db_password = event.master.password
             self._stored.db_host = event.master.host
 
-        if changes:
-            self._config_changed(event)
+        # self._config_changed(event)
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
         """Add a new admin user to Discourse.
