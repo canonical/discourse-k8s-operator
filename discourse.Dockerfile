@@ -93,7 +93,7 @@ RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/di
     && grep -e ^gem "${PLUGINS_DIR}/discourse-saml/plugin.rb" >> "${PLUGINS_DIR}/discourse-saml/Gemfile" \
     && git clone https://github.com/discourse/discourse-solved.git "${PLUGINS_DIR}/discourse-solved" \
 # Checkout commit prior to migration error introduced by renaming a variable in 882dd61e11f9bab8e99510296938b0cdbc3269c4
-    && git -C "${PLUGINS_DIR}/discourse-solved" reset --hard d6c8089ca38611b09a8edb29d64f359bcef11f11
+    && git -C "${PLUGINS_DIR}/discourse-solved" reset --hard d6c8089ca38611b09a8edb29d64f359bcef11f11 \
     && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git "${PLUGINS_DIR}/discourse-markdown-note" \
     && git clone https://github.com/unfoldingWord-dev/discourse-mermaid.git "${PLUGINS_DIR}/discourse-mermaid" \
     && chown -R "${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP}" "${PLUGINS_DIR}" \
