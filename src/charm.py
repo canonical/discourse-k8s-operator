@@ -356,6 +356,39 @@ class DiscourseCharm(CharmBase):
             return False
         return True
 
+    def _set_up_discourse(self, event: HookEvent) -> None:
+        """Run Discourse migrations and recompile assets.
+
+        Args:
+            event: Event triggering the handler.
+        """
+        container = self.unit.get_container(SERVICE_NAME)
+        if not self._are_db_relations_ready() or not container.can_connect():
+            event.defer()
+            return
+
+        env_settings = self._create_discourse_environment_settings()
+        try:
+            self.model.unit.status = MaintenanceStatus("Executing migrations")
+            process = container.exec(
+                [f"{DISCOURSE_PATH}/app/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            process.wait_output()
+            self.model.unit.status = MaintenanceStatus("Compiling assets")
+            process = container.exec(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            process.wait_output()
+        except ExecError as cmd_err:
+            logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
+            raise
+
     def _config_changed(self, event: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
@@ -386,43 +419,22 @@ class DiscourseCharm(CharmBase):
         # First execute the setup script in 2 conditions:
         # - First run (when no services are planned in pebble)
         # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        if self._is_config_valid() and self.model.unit.is_leader():
-            env_settings = self._create_discourse_environment_settings()
+        if (
+            self._is_config_valid()
+            and self.model.unit.is_leader()
+            and self._should_run_s3_migration(current_plan, previous_s3_info)
+        ):
             try:
-                if not current_plan.services:
-                    self.model.unit.status = MaintenanceStatus("Executing migrations")
-                    process = container.exec(
-                        [
-                            f"{DISCOURSE_PATH}/app/bin/bundle",
-                            "exec",
-                            "rake",
-                            "--trace",
-                            "db:migrate",
-                        ],
-                        environment=env_settings,
-                        working_dir="/srv/discourse/app",
-                        user="discourse",
-                    )
-                    process.wait_output()
-                    self.model.unit.status = MaintenanceStatus("Compiling assets")
-                    process = container.exec(
-                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-                        environment=env_settings,
-                        working_dir=DISCOURSE_PATH,
-                        user="discourse",
-                    )
-                    process.wait_output()
-                if self._should_run_s3_migration(current_plan, previous_s3_info):
-                    self.model.unit.status = MaintenanceStatus("Running S3 migration")
-                    process = container.exec(
-                        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
-                        environment=env_settings,
-                        working_dir=DISCOURSE_PATH,
-                        user="discourse",
-                    )
-                    process.wait_output()
+                self.model.unit.status = MaintenanceStatus("Running S3 migration")
+                process = container.exec(
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+                    environment=self._create_discourse_environment_settings(),
+                    working_dir=DISCOURSE_PATH,
+                    user="discourse",
+                )
+                process.wait_output()
             except ExecError as cmd_err:
-                logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
+                logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
                 raise
 
         # Then start the service
