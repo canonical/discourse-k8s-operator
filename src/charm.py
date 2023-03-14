@@ -363,10 +363,6 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the handler.
         """
-        self.model.unit.status = MaintenanceStatus("Configuring service")
-        if not self._are_db_relations_ready():
-            event.defer()
-            return
 
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_db_relations_ready() or not container.can_connect():
@@ -460,17 +456,25 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database master changed handler.
         """
-        self._stored.db_name = None
-        self._stored.db_user = None
-        self._stored.db_password = None
-        self._stored.db_host = None
-        if event.master is not None:
+        changes = (
+            self._stored.db_name != event.master.dbname
+            or self._stored.db_user != event.master.user
+            or self._stored.db_password != event.master.password
+            or self._stored.db_host != event.master.host
+        )
+        if event.master is None:
+            self._stored.db_name = None
+            self._stored.db_user = None
+            self._stored.db_password = None
+            self._stored.db_host = None
+        elif event.master is not None:
             self._stored.db_name = event.master.dbname
             self._stored.db_user = event.master.user
             self._stored.db_password = event.master.password
             self._stored.db_host = event.master.host
 
-        self._config_changed(event)
+        if changes:
+            self._config_changed(event)
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
         """Add a new admin user to Discourse.
