@@ -363,7 +363,6 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the handler.
         """
-
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_db_relations_ready() or not container.can_connect():
             event.defer()
