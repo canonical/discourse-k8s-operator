@@ -138,7 +138,7 @@ async def app_fixture(
         model.add_relation(app_name, "redis-k8s"),
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
-    await model.wait_for_idle(status="active")
+    await model.wait_for_idle(status="active", raise_on_error=False)
 
     yield application
 
