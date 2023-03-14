@@ -35,6 +35,7 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     libxslt1-dev \
     libz-dev \
     uglifyjs.terser \
+    node-uglify \
     optipng \
     pngquant \
     postgresql-client \
@@ -50,7 +51,9 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
 # command but not the terser command, terser command exists in $PATH is
 # vital to trigger js assets compression using node. Manually create the
 # terser command if it does not exist. Please remove this line if the
-# base image is >= 22.04.
+# base image is >= 22.04. Also, please consider removing the node-uglify
+# when upgrading to discourse > 2.8, since the node-uglify is not
+# required to trigger node js assets compression, only terser will do fine.
     && which terser || ln -s $(which uglifyjs.terser) /usr/local/bin/terser \
 # Run build process.
     && git -C "${CONTAINER_APP_ROOT}" clone --depth 1 --branch "${CONTAINER_APP_VERSION}" https://github.com/discourse/discourse.git app
