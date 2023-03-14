@@ -396,7 +396,7 @@ class DiscourseCharm(CharmBase):
             env_settings = self._create_discourse_environment_settings()
             try:
                 if not current_plan.services:
-                    self.model.unit.status = MaintenanceStatus("Compiling assets")
+                    self.model.unit.status = MaintenanceStatus("Executing migrations")
                     script = f"{SCRIPT_PATH}/pod_setup.sh"
                     process = container.exec(
                         [script],
