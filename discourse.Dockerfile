@@ -35,7 +35,6 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     libxslt1-dev \
     libz-dev \
     uglifyjs.terser \
-    node-uglify \
     optipng \
     pngquant \
     postgresql-client \
@@ -51,9 +50,7 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
 # command but not the terser command, terser command exists in $PATH is
 # vital to trigger js assets compression using node. Manually create the
 # terser command if it does not exist. Please remove this line if the
-# base image is >= 22.04. Also, please consider removing the node-uglify
-# when upgrading to discourse >= 2.8.0, since the node-uglify is not
-# required to trigger node js assets compression, only terser will do fine.
+# base image is >= 22.04.
     && which terser || ln -s $(which uglifyjs.terser) /usr/local/bin/terser \
 # Run build process.
     && git -C "${CONTAINER_APP_ROOT}" clone --depth 1 --branch "${CONTAINER_APP_VERSION}" https://github.com/discourse/discourse.git app
@@ -95,6 +92,8 @@ RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/di
 # try to install them at runtime, which may not work due to network access issues.
     && grep -e ^gem "${PLUGINS_DIR}/discourse-saml/plugin.rb" >> "${PLUGINS_DIR}/discourse-saml/Gemfile" \
     && git clone https://github.com/discourse/discourse-solved.git "${PLUGINS_DIR}/discourse-solved" \
+# Checkout commit prior to migration error introduced by renaming a variable in 882dd61e11f9bab8e99510296938b0cdbc3269c4
+    && git -C "${PLUGINS_DIR}/discourse-solved" reset --hard d6c8089ca38611b09a8edb29d64f359bcef11f11
     && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git "${PLUGINS_DIR}/discourse-markdown-note" \
     && git clone https://github.com/unfoldingWord-dev/discourse-mermaid.git "${PLUGINS_DIR}/discourse-mermaid" \
     && chown -R "${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP}" "${PLUGINS_DIR}" \
