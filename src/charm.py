@@ -443,7 +443,7 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
-            self._config_force_https()
+            # self._config_force_https()
             self.model.unit.status = ActiveStatus()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
