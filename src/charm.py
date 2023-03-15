@@ -78,6 +78,8 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
+        self.framework.observe(self.on.install, self._set_up_discourse)
+        self.framework.observe(self.on.upgrade, self._set_up_discourse)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
 
@@ -369,13 +371,14 @@ class DiscourseCharm(CharmBase):
 
         env_settings = self._create_discourse_environment_settings()
         try:
-            self.model.unit.status = MaintenanceStatus("Executing migrations")
-            process = container.exec(
-                [f"{DISCOURSE_PATH}/app/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-                environment=env_settings,
-                working_dir=DISCOURSE_PATH,
-                user="discourse",
-            )
+            if self.model.unit.is_leader():
+                self.model.unit.status = MaintenanceStatus("Executing migrations")
+                process = container.exec(
+                    [f"{DISCOURSE_PATH}/app/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
+                    user="discourse",
+                )
             process.wait_output()
             self.model.unit.status = MaintenanceStatus("Compiling assets")
             process = container.exec(
