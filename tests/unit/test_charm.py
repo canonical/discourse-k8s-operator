@@ -77,7 +77,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             WaitingStatus("Waiting for redis relation"),
         )
 
-    def test_config_changed_when_no_saml_target(self):
+    @patch.object(Container, "exec")
+    def test_config_changed_when_no_saml_target(self, _):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when force_saml_login configuration is True and there's no saml_target_url
@@ -135,7 +136,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         self._add_database_relations()
         self.harness.update_config({"cors_origin": ""})
-        self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
             self.harness.model.unit.status,
@@ -186,7 +186,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.harness.disable_hooks()
         self.harness.set_leader(True)
         self._add_database_relations()
@@ -386,7 +385,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the underlying rake command to add the user is executed
             with the appropriate parameters.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.harness.disable_hooks()
         self._add_database_relations()
 
@@ -424,7 +422,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the underlying rake command to anonymize the user is executed
             with the appropriate parameters.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.harness.disable_hooks()
         self._add_database_relations()
 
@@ -454,7 +451,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: trigger the install event on a leader unit
         assert: migrations are executed and assets are precompiled.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.harness.set_leader(True)
         self._add_database_relations()
         self.harness.container_pebble_ready("discourse")
@@ -482,7 +478,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: trigger the install event on a leader unit
         assert: migrations are executed and assets are precompiled.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
         self.harness.set_leader(False)
         self._add_database_relations()
         self.harness.container_pebble_ready("discourse")
