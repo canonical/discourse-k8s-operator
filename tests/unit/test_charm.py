@@ -135,6 +135,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """
         self._add_database_relations()
         self.harness.update_config({"cors_origin": ""})
+        with self._patch_exec():
+            self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
             self.harness.model.unit.status,
