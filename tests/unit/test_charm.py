@@ -116,9 +116,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: it will get to blocked status waiting for the latter.
         """
         self._add_database_relations()
-        self.harness.update_config({"saml_target_url": "group1", "force_https": False})
         with self._patch_exec():
             self.harness.container_pebble_ready("discourse")
+        self.harness.update_config({"saml_target_url": "group1", "force_https": False})
 
         self.assertEqual(
             self.harness.model.unit.status,
