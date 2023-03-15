@@ -49,7 +49,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         with unittest.mock.patch.multiple(ops.model.Container, exec=exec_function_mock):
             yield exec_function_mock
 
-    def test_db_relation_not_ready(self):
+    def test_relations_not_ready(self):
         """
         arrange: given a deployed discourse charm
         act: when pebble ready event is triggered
@@ -63,11 +63,26 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             WaitingStatus("Waiting for database relation"),
         )
 
-    def test_redis_relation_not_ready(self):
+    def test_db_relation_not_ready(self):
         """
-        arrange: given a deployed discourse charm
+        arrange: given a deployed discourse charm with the redis relation stablished
         act: when pebble ready event is triggered
         assert: it will wait for the db relation.
+        """
+        self.harness.begin_with_initial_hooks()
+        self._add_redis_relation()
+        self.harness.container_pebble_ready("discourse")
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            WaitingStatus("Waiting for database relation"),
+        )
+
+    def test_redis_relation_not_ready(self):
+        """
+        arrange: given a deployed discourse charm with the redis db stablished
+        act: when pebble ready event is triggered
+        assert: it will wait for the redis relation.
         """
         self.harness.begin_with_initial_hooks()
         self._add_postgres_relation()
@@ -520,12 +535,15 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         )
         self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
 
-    def _add_database_relations(self):
-        "Add postgresql and redis relations and relation data to the charm."
-        self._add_postgres_relation()
-
+    def _add_redis_relation(self):
+        "Add redis relation and relation data to the charm."
         redis_relation_id = self.harness.add_relation("redis", "redis")
         self.harness.add_relation_unit(redis_relation_id, "redis/0")
         self.harness.charm._stored.redis_relation = {
             redis_relation_id: {"hostname": "redis-host", "port": 1010}
         }
+
+    def _add_database_relations(self):
+        "Add postgresql and redis relations and relation data to the charm."
+        self._add_postgres_relation()
+        self._add_redis_relation()
