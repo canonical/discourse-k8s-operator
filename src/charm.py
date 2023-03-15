@@ -92,7 +92,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
         self.redis = RedisRequires(self, self._stored)
-        self.framework.observe(self.on.redis_relation_updated, self._config_changed)
+        self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
 
         self._metrics_endpoint = MetricsEndpointProvider(
             self, jobs=[{"static_configs": [{"targets": [f"*:{PROMETHEUS_PORT}"]}]}]
@@ -368,7 +368,6 @@ class DiscourseCharm(CharmBase):
         if not self._are_db_relations_ready() or not container.can_connect():
             event.defer()
             return
-
         env_settings = self._create_discourse_environment_settings()
         try:
             if self.model.unit.is_leader():
@@ -379,7 +378,7 @@ class DiscourseCharm(CharmBase):
                     working_dir=DISCOURSE_PATH,
                     user="discourse",
                 )
-            process.wait_output()
+                process.wait_output()
             self.model.unit.status = MaintenanceStatus("Compiling assets")
             process = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
@@ -441,8 +440,9 @@ class DiscourseCharm(CharmBase):
                 raise
 
         self._reload_configuration()
-        self._config_force_https()
-        self.model.unit.status = ActiveStatus()
+        if self._is_config_valid():
+            self._config_force_https()
+            self.model.unit.status = ActiveStatus()
 
     def _reload_configuration(self) -> None:
         if self._is_config_valid():
@@ -451,6 +451,9 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
+
+    def _redis_relation_changed(self, _: HookEvent) -> None:
+        self._reload_configuration()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
     def _on_database_relation_joined(
