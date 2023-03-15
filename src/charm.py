@@ -452,7 +452,10 @@ class DiscourseCharm(CharmBase):
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
 
-    def _redis_relation_changed(self, _: HookEvent) -> None:
+    def _redis_relation_changed(self, event: HookEvent) -> None:
+        if not self._are_db_relations_ready() or not container.can_connect():
+            event.defer()
+            return
         self._reload_configuration()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
