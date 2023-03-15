@@ -440,20 +440,20 @@ class DiscourseCharm(CharmBase):
                 raise
 
         self._reload_configuration()
-        if self._is_config_valid():
+        if self._is_config_valid() and container.can_connect():
             self._config_force_https()
             self.model.unit.status = ActiveStatus()
 
     def _reload_configuration(self) -> None:
-        if self._is_config_valid():
+        container = self.unit.get_container(SERVICE_NAME)
+        if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
-            container = self.unit.get_container(SERVICE_NAME)
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
 
     def _redis_relation_changed(self, event: HookEvent) -> None:
-        if not self._are_db_relations_ready() or not container.can_connect():
+        if not self._are_db_relations_ready():
             event.defer()
             return
         self._reload_configuration()
@@ -494,8 +494,7 @@ class DiscourseCharm(CharmBase):
             self._stored.db_password = event.master.password
             self._stored.db_host = event.master.host
 
-        container = self.unit.get_container(SERVICE_NAME)
-        if not self._are_db_relations_ready() or not container.can_connect():
+        if not self._are_db_relations_ready():
             event.defer()
             return
         self._reload_configuration()
