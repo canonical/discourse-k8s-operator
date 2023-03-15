@@ -77,8 +77,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             WaitingStatus("Waiting for redis relation"),
         )
 
-    @patch.object(Container, "exec")
-    def test_config_changed_when_no_saml_target(self, _):
+    def test_config_changed_when_no_saml_target(self):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when force_saml_login configuration is True and there's no saml_target_url
