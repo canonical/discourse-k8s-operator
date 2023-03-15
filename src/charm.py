@@ -79,7 +79,7 @@ class DiscourseCharm(CharmBase):
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
         self.framework.observe(self.on.install, self._set_up_discourse)
-        self.framework.observe(self.on.upgrade, self._set_up_discourse)
+        self.framework.observe(self.on.upgrade_charm, self._set_up_discourse)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
 
@@ -374,7 +374,7 @@ class DiscourseCharm(CharmBase):
             if self.model.unit.is_leader():
                 self.model.unit.status = MaintenanceStatus("Executing migrations")
                 process = container.exec(
-                    [f"{DISCOURSE_PATH}/app/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
                     user="discourse",
@@ -441,6 +441,8 @@ class DiscourseCharm(CharmBase):
                 raise
 
         self._reload_configuration()
+        self._config_force_https()
+        self.model.unit.status = ActiveStatus()
 
     def _reload_configuration(self) -> None:
         if self._is_config_valid():
@@ -449,8 +451,6 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
-            self._config_force_https()
-            self.model.unit.status = ActiveStatus()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
     def _on_database_relation_joined(
@@ -488,6 +488,10 @@ class DiscourseCharm(CharmBase):
             self._stored.db_password = event.master.password
             self._stored.db_host = event.master.host
 
+        container = self.unit.get_container(SERVICE_NAME)
+        if not self._are_db_relations_ready() or not container.can_connect():
+            event.defer()
+            return
         self._reload_configuration()
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
