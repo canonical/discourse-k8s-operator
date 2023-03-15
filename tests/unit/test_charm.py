@@ -29,7 +29,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         pgsql_patch.start()
         self.harness = Harness(DiscourseCharm)
         self.addCleanup(self.harness.cleanup)
-        self.harness.begin()
 
     def tearDown(self):
         pgsql_patch.stop()
@@ -56,6 +55,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when pebble ready event is triggered
         assert: it will wait for the db relation.
         """
+        self.harness.begin_with_initial_hooks()
         self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
@@ -69,6 +69,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when pebble ready event is triggered
         assert: it will wait for the db relation.
         """
+        self.harness.begin_with_initial_hooks()
         self._add_postgres_relation()
         self.harness.container_pebble_ready("discourse")
 
@@ -83,6 +84,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when force_saml_login configuration is True and there's no saml_target_url
         assert: it will get to blocked status waiting for the latter.
         """
+        self.harness.begin()
         self._add_database_relations()
         self.harness.update_config({"force_saml_login": True, "saml_target_url": ""})
         with self._patch_exec():
@@ -99,6 +101,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when saml_sync_groups configuration is provided and there's no saml_target_url
         assert: it will get to blocked status waiting for the latter.
         """
+        self.harness.begin()
         self._add_database_relations()
         self.harness.update_config({"saml_sync_groups": "group1", "saml_target_url": ""})
         with self._patch_exec():
@@ -115,6 +118,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when saml_target_url configuration is provided and force_https is False
         assert: it will get to blocked status waiting for the latter.
         """
+        self.harness.begin()
         self._add_database_relations()
         self.harness.update_config({"saml_target_url": "group1", "force_https": False})
         with self._patch_exec():
@@ -133,6 +137,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when cors_origin configuration is empty
         assert: it will get to blocked status waiting for it.
         """
+        self.harness.begin()
         self._add_database_relations()
         self.harness.update_config({"cors_origin": ""})
         with self._patch_exec():
@@ -149,6 +154,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when throttle_level configuration is invalid
         assert: it will get to blocked status waiting for a valid value to be provided.
         """
+        self.harness.begin()
         self._add_database_relations()
         self.harness.update_config({"throttle_level": "Scream"})
         self.harness.container_pebble_ready("discourse")
@@ -162,6 +168,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when s3_enabled configuration is True and there's no s3_bucket
         assert: it will get to blocked status waiting for the latter.
         """
+        self.harness.begin()
         self._add_database_relations()
         self.harness.update_config(
             {
@@ -187,6 +194,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
+        self.harness.begin()
         self.harness.disable_hooks()
         self.harness.set_leader(True)
         self._add_database_relations()
@@ -241,6 +249,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
+        self.harness.begin()
         self.harness.disable_hooks()
         self._add_database_relations()
         with self._patch_exec():
@@ -290,6 +299,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
+        self.harness.begin()
         self.harness.disable_hooks()
         self._add_database_relations()
         with self._patch_exec():
@@ -363,6 +373,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when the database relation is added
         assert: the appropriate database name is set.
         """
+        self.harness.begin()
         self._add_database_relations()
         self.harness.set_leader(True)
         # testing harness not re-emits deferred events, manually trigger that
@@ -386,6 +397,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the underlying rake command to add the user is executed
             with the appropriate parameters.
         """
+        self.harness.begin()
         self.harness.disable_hooks()
         self._add_database_relations()
 
@@ -423,6 +435,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the underlying rake command to anonymize the user is executed
             with the appropriate parameters.
         """
+        self.harness.begin()
         self.harness.disable_hooks()
         self._add_database_relations()
 
@@ -452,6 +465,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: trigger the install event on a leader unit
         assert: migrations are executed and assets are precompiled.
         """
+        self.harness.begin()
         self.harness.set_leader(True)
         self._add_database_relations()
         self.harness.container_pebble_ready("discourse")
@@ -479,6 +493,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: trigger the install event on a leader unit
         assert: migrations are executed and assets are precompiled.
         """
+        self.harness.begin()
         self.harness.set_leader(False)
         self._add_database_relations()
         self.harness.container_pebble_ready("discourse")
