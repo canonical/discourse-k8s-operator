@@ -437,13 +437,16 @@ class DiscourseCharm(CharmBase):
                 logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
                 raise
 
-        # Then start the service
+        self._reload_configuration()
+
+    def _reload_configuration(self) -> None:
         if self._is_config_valid():
             layer_config = self._create_layer_config()
+            container = self.unit.get_container(SERVICE_NAME)
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
-            # self._config_force_https()
+            self._config_force_https()
             self.model.unit.status = ActiveStatus()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
@@ -476,13 +479,13 @@ class DiscourseCharm(CharmBase):
             self._stored.db_user = None
             self._stored.db_password = None
             self._stored.db_host = None
-        elif event.master is not None:
+        else:
             self._stored.db_name = event.master.dbname
             self._stored.db_user = event.master.user
             self._stored.db_password = event.master.password
             self._stored.db_host = event.master.host
 
-        # self._config_changed(event)
+        self._reload_configuration()
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
         """Add a new admin user to Discourse.
