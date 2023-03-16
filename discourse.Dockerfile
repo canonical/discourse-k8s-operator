@@ -45,7 +45,7 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     tzdata \
     ubuntu-dev-tools \
     zlib1g-dev \
-    && curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash - \
+    && curl --silent --location https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get update \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/* \
