@@ -22,6 +22,7 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     && adduser --uid "${CONTAINER_APP_UID}" --home "${CONTAINER_APP_ROOT}" --gid "${CONTAINER_APP_GID}" --system "${CONTAINER_APP_USERNAME}" \
     && apt-get update \
     && apt-get install -y brotli \
+    curl \
     gettext-base \
     gifsicle \
     git \
@@ -34,8 +35,6 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     libxml2-dev \
     libxslt1-dev \
     libz-dev \
-    uglifyjs.terser \
-    node-uglify \
     optipng \
     pngquant \
     postgresql-client \
@@ -46,16 +45,11 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     tzdata \
     ubuntu-dev-tools \
     zlib1g-dev \
-    && rm /var/lib/apt/lists/* \
-# Older versions of the uglifyjs.terser package install a uglifyjs.terser
-# command but not the terser command, terser command exists in $PATH is
-# vital to trigger js assets compression using node. Manually create the
-# terser command if it does not exist. Please remove this line if the
-# base image is >= 22.04. Also, please consider removing the node-uglify
-# when upgrading to discourse > 2.8, since the node-uglify is not
-# required to trigger node js assets compression, only terser will do fine.
-    && which terser || ln -s $(which uglifyjs.terser) /usr/local/bin/terser \
-# Run build process.
+    && curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash - \
+    && apt-get update \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g terser uglify-js pnpm yarn \
     && git -C "${CONTAINER_APP_ROOT}" clone --depth 1 --branch "${CONTAINER_APP_VERSION}" https://github.com/discourse/discourse.git app
 
 # Apply patches
@@ -84,6 +78,9 @@ RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
     && find "${CONTAINER_APP_ROOT}" -name tmp -type d -exec rm -rf {} + \
     && apt-get autoremove \
     && apt-get clean
+
+RUN su -s /bin/bash -c 'yarn --cwd ${CONTAINER_APP_ROOT}/app install --production --frozen-lockfile' \
+    && su -s /bin/bash -c 'yarn --cwd ${CONTAINER_APP_ROOT}/app cache clean' "${CONTAINER_APP_USERNAME}"
 
 # Copy run-time scripts into the container.
 COPY --chown="${CONTAINER_APP_UID}:${CONTAINER_APP_GID}" image/scripts /srv/scripts
