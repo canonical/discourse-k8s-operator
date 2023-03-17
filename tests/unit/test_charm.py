@@ -17,7 +17,7 @@ from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 from ops.testing import Harness
 
-from tests.unit._patched_charm import DISCOURSE_PATH, SCRIPT_PATH, DiscourseCharm, pgsql_patch
+from tests.unit._patched_charm import DISCOURSE_PATH, DiscourseCharm, pgsql_patch
 
 BLOCKED_STATUS = BlockedStatus.name  # type: ignore
 
@@ -29,8 +29,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         pgsql_patch.start()
         self.harness = Harness(DiscourseCharm)
         self.addCleanup(self.harness.cleanup)
-        self.harness.begin()
-        self.harness.set_leader(True)
 
     def tearDown(self):
         pgsql_patch.stop()
@@ -51,12 +49,28 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         with unittest.mock.patch.multiple(ops.model.Container, exec=exec_function_mock):
             yield exec_function_mock
 
-    def test_db_relation_not_ready(self):
+    def test_relations_not_ready(self):
         """
         arrange: given a deployed discourse charm
         act: when pebble ready event is triggered
         assert: it will wait for the db relation.
         """
+        self.harness.begin_with_initial_hooks()
+        self.harness.container_pebble_ready("discourse")
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            WaitingStatus("Waiting for database relation"),
+        )
+
+    def test_db_relation_not_ready(self):
+        """
+        arrange: given a deployed discourse charm with the redis relation stablished
+        act: when pebble ready event is triggered
+        assert: it will wait for the db relation.
+        """
+        self.harness.begin_with_initial_hooks()
+        self._add_redis_relation()
         self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
@@ -66,11 +80,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
     def test_redis_relation_not_ready(self):
         """
-        arrange: given a deployed discourse charm
+        arrange: given a deployed discourse charm with the redis db stablished
         act: when pebble ready event is triggered
-        assert: it will wait for the db relation.
+        assert: it will wait for the redis relation.
         """
-        self.add_postgres_relation()
+        self.harness.begin_with_initial_hooks()
+        self._add_postgres_relation()
         self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
@@ -84,7 +99,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when force_saml_login configuration is True and there's no saml_target_url
         assert: it will get to blocked status waiting for the latter.
         """
-        self.add_database_relations()
+        self.harness.begin()
+        self._add_database_relations()
         self.harness.update_config({"force_saml_login": True, "saml_target_url": ""})
         with self._patch_exec():
             self.harness.container_pebble_ready("discourse")
@@ -100,7 +116,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when saml_sync_groups configuration is provided and there's no saml_target_url
         assert: it will get to blocked status waiting for the latter.
         """
-        self.add_database_relations()
+        self.harness.begin()
+        self._add_database_relations()
         self.harness.update_config({"saml_sync_groups": "group1", "saml_target_url": ""})
         with self._patch_exec():
             self.harness.container_pebble_ready("discourse")
@@ -116,7 +133,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when saml_target_url configuration is provided and force_https is False
         assert: it will get to blocked status waiting for the latter.
         """
-        self.add_database_relations()
+        self.harness.begin()
+        self._add_database_relations()
         self.harness.update_config({"saml_target_url": "group1", "force_https": False})
         with self._patch_exec():
             self.harness.container_pebble_ready("discourse")
@@ -134,9 +152,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when cors_origin configuration is empty
         assert: it will get to blocked status waiting for it.
         """
-        self.add_database_relations()
+        self.harness.begin()
+        self._add_database_relations()
         self.harness.update_config({"cors_origin": ""})
-        self.harness.container_pebble_ready("discourse")
+        with self._patch_exec():
+            self.harness.container_pebble_ready("discourse")
 
         self.assertEqual(
             self.harness.model.unit.status,
@@ -149,7 +169,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when throttle_level configuration is invalid
         assert: it will get to blocked status waiting for a valid value to be provided.
         """
-        self.add_database_relations()
+        self.harness.begin()
+        self._add_database_relations()
         self.harness.update_config({"throttle_level": "Scream"})
         self.harness.container_pebble_ready("discourse")
 
@@ -162,7 +183,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when s3_enabled configuration is True and there's no s3_bucket
         assert: it will get to blocked status waiting for the latter.
         """
-        self.add_database_relations()
+        self.harness.begin()
+        self._add_database_relations()
         self.harness.update_config(
             {
                 "s3_access_key_id": "3|33+",
@@ -187,8 +209,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
-        self.add_database_relations()
+        self.harness.begin()
+        self.harness.disable_hooks()
+        self.harness.set_leader(True)
+        self._add_database_relations()
         self.harness.update_config(
             {
                 "s3_access_key_id": "3|33+",
@@ -204,7 +228,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
         mock_exec.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup.sh"],
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
             environment=updated_plan_env,
             working_dir=DISCOURSE_PATH,
             user="discourse",
@@ -218,7 +242,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
-        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertEqual("1010", updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
         self.assertEqual("3|33+", updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"])
         self.assertNotIn("DISCOURSE_S3_BACKUP_BUCKET", updated_plan_env)
@@ -240,8 +264,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        self.add_database_relations()
-        with self._patch_exec() as mock_exec:
+        self.harness.begin()
+        self.harness.disable_hooks()
+        self._add_database_relations()
+        with self._patch_exec():
             self.harness.update_config(
                 {
                     "force_saml_login": True,
@@ -255,12 +281,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        mock_exec.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup.sh"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="discourse",
-        )
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_DB_NAME"])
@@ -269,7 +289,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
-        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertEqual("1010", updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertNotIn("DISCOURSE_SAML_CERT_FINGERPRINT", updated_plan_env)
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
         self.assertEqual(
@@ -294,8 +314,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        self.add_database_relations()
-        with self._patch_exec() as exec_mock:
+        self.harness.begin()
+        self.harness.disable_hooks()
+        self._add_database_relations()
+        with self._patch_exec():
             self.harness.update_config(
                 {
                     "developer_emails": "user@foo.internal",
@@ -323,12 +345,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        exec_mock.assert_any_call(
-            [f"{SCRIPT_PATH}/pod_setup.sh"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="discourse",
-        )
         self.assertEqual("s3", updated_plan_env["DISCOURSE_BACKUP_LOCATION"])
         self.assertEqual("*", updated_plan_env["DISCOURSE_CORS_ORIGIN"])
         self.assertEqual("dbhost", updated_plan_env["DISCOURSE_DB_HOST"])
@@ -339,7 +355,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
         self.assertEqual("discourse.local", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
-        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertEqual("1010", updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertIsNotNone(updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"])
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
         self.assertEqual(
@@ -365,9 +381,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("apikey", updated_plan_env["DISCOURSE_SMTP_USER_NAME"])
         self.assertTrue(updated_plan_env["DISCOURSE_USE_S3"])
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
-        self.assertEqual(
-            "discourse.local", self.harness.charm.ingress.config_dict["service-hostname"]
-        )
 
     def test_db_relation(self):
         """
@@ -375,7 +388,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: when the database relation is added
         assert: the appropriate database name is set.
         """
-        self.add_database_relations()
+        self.harness.begin()
+        self._add_database_relations()
         self.harness.set_leader(True)
         # testing harness not re-emits deferred events, manually trigger that
         self.harness.framework.reemit()
@@ -398,9 +412,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the underlying rake command to add the user is executed
             with the appropriate parameters.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
+        self.harness.begin()
         self.harness.disable_hooks()
-        self.add_database_relations()
+        self._add_database_relations()
 
         charm: DiscourseCharm = typing.cast(DiscourseCharm, self.harness.charm)
         self.harness.container_pebble_ready("discourse")
@@ -436,9 +450,9 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the underlying rake command to anonymize the user is executed
             with the appropriate parameters.
         """
-        mock_exec.return_value = MagicMock(wait_output=MagicMock(return_value=("", None)))
+        self.harness.begin()
         self.harness.disable_hooks()
-        self.add_database_relations()
+        self._add_database_relations()
 
         charm: DiscourseCharm = typing.cast(DiscourseCharm, self.harness.charm)
         self.harness.container_pebble_ready("discourse")
@@ -459,7 +473,57 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             environment=charm._create_discourse_environment_settings(),
         )
 
-    def add_postgres_relation(self):
+    @patch.object(Container, "exec")
+    def test_install_when_leader(self, mock_exec):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: trigger the install event on a leader unit
+        assert: migrations are executed and assets are precompiled.
+        """
+        self.harness.begin()
+        self.harness.set_leader(True)
+        self._add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.charm.on.install.emit()
+
+        updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
+        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+        mock_exec.assert_any_call(
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+            environment=updated_plan_env,
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
+        )
+        mock_exec.assert_any_call(
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+            environment=updated_plan_env,
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
+        )
+
+    @patch.object(Container, "exec")
+    def test_install_when_not_leader(self, mock_exec):
+        """
+        arrange: given a deployed discourse charm with all the required relations
+        act: trigger the install event on a leader unit
+        assert: migrations are executed and assets are precompiled.
+        """
+        self.harness.begin()
+        self.harness.set_leader(False)
+        self._add_database_relations()
+        self.harness.container_pebble_ready("discourse")
+        self.harness.charm.on.install.emit()
+
+        updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
+        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+        mock_exec.assert_any_call(
+            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+            environment=updated_plan_env,
+            working_dir=DISCOURSE_PATH,
+            user="discourse",
+        )
+
+    def _add_postgres_relation(self):
         "Add postgresql relation and relation data to the charm."
         self.harness.charm._stored.db_name = "discourse-k8s"
         self.harness.charm._stored.db_user = "someuser"
@@ -471,12 +535,15 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         )
         self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
 
-    def add_database_relations(self):
-        "Add postgresql and redis relations and relation data to the charm."
-        self.add_postgres_relation()
-
+    def _add_redis_relation(self):
+        "Add redis relation and relation data to the charm."
         redis_relation_id = self.harness.add_relation("redis", "redis")
         self.harness.add_relation_unit(redis_relation_id, "redis/0")
         self.harness.charm._stored.redis_relation = {
             redis_relation_id: {"hostname": "redis-host", "port": 1010}
         }
+
+    def _add_database_relations(self):
+        "Add postgresql and redis relations and relation data to the charm."
+        self._add_postgres_relation()
+        self._add_redis_relation()

@@ -18,7 +18,7 @@ from ops.charm import ActionEvent, CharmBase, HookEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
-from ops.pebble import ExecError
+from ops.pebble import ExecError, Plan
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -34,18 +34,18 @@ THROTTLE_LEVELS["none"] = {
 }
 THROTTLE_LEVELS["permissive"] = {
     "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 1000,
-    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 100,
-    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 400,
-    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 400,
+    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "1000",
+    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "100",
+    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "400",
+    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "400",
     "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
 }
 THROTTLE_LEVELS["strict"] = {
     "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 200,
-    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 50,
-    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 100,
-    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 200,
+    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "200",
+    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "50",
+    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "100",
+    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "200",
     "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
 }
 LOG_PATHS = [
@@ -78,6 +78,8 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
+        self.framework.observe(self.on.install, self._set_up_discourse)
+        self.framework.observe(self.on.upgrade_charm, self._set_up_discourse)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
 
@@ -90,7 +92,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
         self.redis = RedisRequires(self, self._stored)
-        self.framework.observe(self.on.redis_relation_updated, self._config_changed)
+        self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
 
         self._metrics_endpoint = MetricsEndpointProvider(
             self, jobs=[{"static_configs": [{"targets": [f"*:{PROMETHEUS_PORT}"]}]}]
@@ -263,7 +265,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
             "DISCOURSE_HOSTNAME": self._get_external_hostname(),
             "DISCOURSE_REDIS_HOST": redis_hostname,
-            "DISCOURSE_REDIS_PORT": redis_port,
+            "DISCOURSE_REDIS_PORT": str(redis_port),
             "DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS": "0",
             "DISCOURSE_SERVE_STATIC_ASSETS": "true",
             "DISCOURSE_SMTP_ADDRESS": self.config["smtp_address"],
@@ -316,10 +318,8 @@ class DiscourseCharm(CharmBase):
         }
         return layer_config
 
-    def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        """Determine if the setup script is to be run.
-
-           This is based on the current plan and the new S3 settings.
+    def _should_run_s3_migration(self, current_plan: Plan, s3info: Optional[S3Info]) -> bool:
+        """Determine if the S3 migration is to be run.
 
         Args:
             current_plan: Dictionary containing the current plan.
@@ -328,18 +328,19 @@ class DiscourseCharm(CharmBase):
         Returns:
             If no services are planned yet (first run) or S3 settings have changed.
         """
-        # Properly type checks would require defining a complex TypedMap for the pebble plan
-        return not current_plan.services or (  # type: ignore
-            # Or S3 is enabled and one S3 parameter has changed
-            self.config.get("s3_enabled")
-            and s3info
-            and (
-                s3info.enabled != self.config.get("s3_enabled")
-                or s3info.region != self.config.get("s3_region")
-                or s3info.bucket != self.config.get("s3_bucket")
-                or s3info.endpoint != self.config.get("s3_endpoint")
+        result = self.config.get("s3_enabled") and (
+            not current_plan.services
+            or (
+                s3info
+                and (
+                    s3info.enabled != self.config.get("s3_enabled")
+                    or s3info.region != self.config.get("s3_region")
+                    or s3info.bucket != self.config.get("s3_bucket")
+                    or s3info.endpoint != self.config.get("s3_endpoint")
+                )
             )
         )
+        return bool(result)
 
     def _are_db_relations_ready(self) -> bool:
         """Check if the needed database relations are established.
@@ -357,20 +358,50 @@ class DiscourseCharm(CharmBase):
             return False
         return True
 
+    def _set_up_discourse(self, event: HookEvent) -> None:
+        """Run Discourse migrations and recompile assets.
+
+        Args:
+            event: Event triggering the handler.
+        """
+        container = self.unit.get_container(SERVICE_NAME)
+        if not self._are_db_relations_ready() or not container.can_connect():
+            event.defer()
+            return
+        env_settings = self._create_discourse_environment_settings()
+        try:
+            if self.model.unit.is_leader():
+                self.model.unit.status = MaintenanceStatus("Executing migrations")
+                process = container.exec(
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
+                    user="discourse",
+                )
+                process.wait_output()
+            self.model.unit.status = MaintenanceStatus("Compiling assets")
+            process = container.exec(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            process.wait_output()
+        except ExecError as cmd_err:
+            logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
+            raise
+
     def _config_changed(self, event: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
             event: Event triggering the handler.
         """
-        self.model.unit.status = MaintenanceStatus("Configuring service")
-        if not self._are_db_relations_ready():
-            event.defer()
-            return
-
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_db_relations_ready() or not container.can_connect():
             event.defer()
+            return
+        if not self._is_config_valid():
             return
 
         # Get previous plan and extract env vars values to check is some S3 params has changed
@@ -388,37 +419,39 @@ class DiscourseCharm(CharmBase):
                 if "DISCOURSE_S3_ENDPOINT" in current_env
                 else "",
             )
-
-        # First execute the setup script in 2 conditions:
-        # - First run (when no services are planned in pebble)
-        # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        if (
-            self._is_config_valid()
-            and self.model.unit.is_leader()
-            and self._should_run_setup(current_plan, previous_s3_info)
-        ):
-            try:
-                self.model.unit.status = MaintenanceStatus("Compiling assets")
-                script = f"{SCRIPT_PATH}/pod_setup.sh"
+        env_settings = self._create_discourse_environment_settings()
+        try:
+            if self.model.unit.is_leader() and self._should_run_s3_migration(
+                current_plan, previous_s3_info
+            ):
+                self.model.unit.status = MaintenanceStatus("Running S3 migration")
                 process = container.exec(
-                    [script],
-                    environment=self._create_discourse_environment_settings(),
-                    working_dir="/srv/discourse/app",
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
                     user="discourse",
                 )
                 process.wait_output()
-            except ExecError as cmd_err:
-                logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
-                raise
+        except ExecError as cmd_err:
+            logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
+            raise
 
-        # Then start the service
-        if self._is_config_valid():
+        self._reload_configuration()
+        if container.can_connect():
+            self._config_force_https()
+            self.model.unit.status = ActiveStatus()
+
+    def _reload_configuration(self) -> None:
+        container = self.unit.get_container(SERVICE_NAME)
+        if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
-            self._config_force_https()
-            self.model.unit.status = ActiveStatus()
+
+    def _redis_relation_changed(self, _: HookEvent) -> None:
+        if self._are_db_relations_ready():
+            self._reload_configuration()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
     def _on_database_relation_joined(
@@ -445,17 +478,19 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database master changed handler.
         """
-        self._stored.db_name = None
-        self._stored.db_user = None
-        self._stored.db_password = None
-        self._stored.db_host = None
-        if event.master is not None:
+        if event.master is None:
+            self._stored.db_name = None
+            self._stored.db_user = None
+            self._stored.db_password = None
+            self._stored.db_host = None
+        else:
             self._stored.db_name = event.master.dbname
             self._stored.db_user = event.master.user
             self._stored.db_password = event.master.password
             self._stored.db_host = event.master.host
 
-        self._config_changed(event)
+        if self._are_db_relations_ready():
+            self._reload_configuration()
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
         """Add a new admin user to Discourse.

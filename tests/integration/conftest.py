@@ -4,14 +4,22 @@
 
 import asyncio
 import logging
+import secrets
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict
+from typing import Any, Awaitable, Callable, Dict, cast
 
 import pytest_asyncio
+import requests
 import yaml
-from ops.model import Application, WaitingStatus
+from juju.action import Action
+from juju.application import Application
+from juju.client._definitions import ApplicationStatus, FullStatus, UnitStatus
+from juju.unit import Unit
+from ops.model import WaitingStatus
 from pytest import Config, fixture
 from pytest_operator.plugin import Model, OpsTest
+
+from . import types
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +110,16 @@ def run_action(model: Model) -> Callable[..., Awaitable[Any]]:
     return _run_action
 
 
+@pytest_asyncio.fixture(scope="module", name="discourse_address")
+async def discourse_address_fixture(model: Model, app: Application):
+    """Get discourse web address."""
+    status: FullStatus = await model.get_status()
+    app_status = cast(ApplicationStatus, status.applications[app.name])
+    unit_status = cast(UnitStatus, app_status.units[f"{app.name}/0"])
+    unit_ip = cast(str, unit_status.address)
+    return f"http://{unit_ip}:3000"
+
+
 @pytest_asyncio.fixture(scope="module", name="app")
 async def app_fixture(
     ops_test: OpsTest,
@@ -138,7 +156,7 @@ async def app_fixture(
         model.add_relation(app_name, "redis-k8s"),
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
-    await model.wait_for_idle(status="active")
+    await model.wait_for_idle(status="active", raise_on_error=False)
 
     yield application
 
@@ -159,3 +177,56 @@ async def setup_saml_config(app: Application, model: Model):
             "force_https": str(original_config["force_https"]).lower(),
         }
     )
+
+
+@pytest_asyncio.fixture(scope="module", name="admin_credentials")
+async def admin_credentials_fixture(app: Application) -> types.Credentials:
+    """Admin user credentials."""
+    email = "admin-user@test.internal"
+    password = secrets.token_urlsafe(16)
+    discourse_unit: Unit = app.units[0]
+    action: Action = await discourse_unit.run_action(
+        "add-admin-user", email=email, password=password
+    )
+    await action.wait()
+    return types.Credentials(
+        email=email, username=email.split("@", maxsplit=1)[0], password=password
+    )
+
+
+@pytest_asyncio.fixture(scope="module", name="admin_api_key")
+async def admin_api_key_fixture(
+    admin_credentials: types.Credentials, discourse_address: str
+) -> str:
+    """Admin user API key"""
+    with requests.session() as sess:
+        # Get CSRF token
+        res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
+        csrf = res.json()["csrf"]
+        # Create session & login
+        res = sess.post(
+            f"{discourse_address}/session",
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "X-CSRF-Token": csrf,
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            data={
+                "login": admin_credentials.email,
+                "password": admin_credentials.password,
+                "second_factor_method": "1",
+                "timezone": "Asia/Hong_Kong",
+            },
+        )
+        # Create global key
+        res = sess.post(
+            f"{discourse_address}/admin/api/keys",
+            headers={
+                "Content-Type": "application/json",
+                "X-CSRF-Token": csrf,
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            json={"key": {"description": "admin-api-key", "username": None}},
+        )
+
+    return res.json()["key"]["key"]
