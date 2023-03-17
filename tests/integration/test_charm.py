@@ -29,6 +29,8 @@ from tests.integration.helpers import (
     get_unit_address,
 )
 
+from . import types
+
 logger = logging.getLogger(__name__)
 
 
@@ -130,7 +132,7 @@ async def test_setup_discourse(
                 ).get("value"),
                 "username": "admin",
                 "email": app_config["developer_emails"],
-                "password": "MyLovelySecurePassword2022!",
+                "password": "MyLovelySecurePassword2023!",
             }
         ),
         allow_redirects=False,
@@ -463,3 +465,31 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             timeout=requests_timeout,
         )
         assert preference_page.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_create_category(
+    app: Application,
+    discourse_address: str,
+    admin_credentials: types.Credentials,
+    admin_api_key: str,
+):
+    """
+    arrange: Given discourse application and an admin user
+    act: if an admin user creates a category
+    assert: a category should be created normally.
+    """
+    category_info = {"name": "test", "color": "FFFFFF"}
+    res = requests.post(
+        f"{discourse_address}/categories.json",
+        headers={
+            "Api-Key": admin_api_key,
+            "Api-Username": admin_credentials.username,
+        },
+        json=category_info,
+    )
+    category_id = res.json()["category"]["id"]
+    category = requests.get(f"{discourse_address}/c/{category_id}/show.json").json()["category"]
+
+    assert category["name"] == category_info["name"]
+    assert category["color"] == category_info["color"]

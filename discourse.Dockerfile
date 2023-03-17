@@ -1,10 +1,10 @@
 FROM ubuntu:focal
 
 # Used in Launchpad OCI Recipe build to tag the image.
-LABEL org.label-schema.version=v2.7.10
+LABEL org.label-schema.version=v2.7.13
 
 # Copy any args we got into the environment.
-ENV CONTAINER_APP_VERSION v2.7.10
+ENV CONTAINER_APP_VERSION v2.7.13
 ENV CONTAINER_APP_USERNAME discourse
 ENV CONTAINER_APP_UID 200
 ENV CONTAINER_APP_GROUP discourse
