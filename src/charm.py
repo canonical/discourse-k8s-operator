@@ -421,9 +421,6 @@ class DiscourseCharm(CharmBase):
             )
         env_settings = self._create_discourse_environment_settings()
         try:
-            # First execute the setup script in 2 conditions:
-            # - First run (when no services are planned in pebble)
-            # - Change in important S3 parameter (comparing value with envVars in pebble plan)
             if self.model.unit.is_leader() and self._should_run_s3_migration(
                 current_plan, previous_s3_info
             ):
