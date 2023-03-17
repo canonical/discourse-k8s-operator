@@ -21,7 +21,6 @@ jobs:
     with:
      integration-test-extra-arguments: >
       --s3-url http://172.17.0.1:4566
-      --saml-email ${{ secrets.TEST_SAML_EMAIL }}
-      --saml-password ${{ secrets.TEST_SAML_PASSWORD }}
+      -m "not (requires_secrets)"
      integration-test-pre-run-script: localstack-installation.sh
      trivy-image-config: "trivy.yaml"
