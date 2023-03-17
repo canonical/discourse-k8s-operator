@@ -155,7 +155,7 @@ async def test_setup_discourse(
     logger.info("Getting account activation page")
 
     response = session.get(
-        f"{discourse_url}/u/activate-account/{email_token}",
+        f"{discourse_url}/u/password-reset//{email_token}",
         headers={"Host": f"{app_config['external_hostname']}"},
         timeout=requests_timeout,
     )
