@@ -16,11 +16,10 @@ import urllib3.exceptions
 from boto3 import client
 from botocore.config import Config
 from ops.model import ActiveStatus, Application
-from pytest_operator.plugin import Model, OpsTest
+from pytest_operator.plugin import Model
 from requests.adapters import HTTPAdapter, Retry
 
-from charm import PROMETHEUS_PORT, SERVICE_PORT
-from tests.integration.helpers import get_unit_address
+from charm import PROMETHEUS_PORT
 
 from . import types
 
@@ -40,19 +39,17 @@ async def test_active(app: Application):
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_discourse_up(ops_test: OpsTest, app: Application, requests_timeout: float):
+async def test_discourse_up(requests_timeout: float, discourse_address: str):
     """Check that the bootstrap page is reachable.
     Assume that the charm has already been built and is running.
     """
-
-    address = await get_unit_address(ops_test, app.name)
     # Send request to bootstrap page and set Host header to app_name (which the application
     # expects)
     session = requests.Session()
     retries = Retry(total=5, backoff_factor=1)
     session.mount("http://", HTTPAdapter(max_retries=retries))
     response = session.get(
-        f"http://{address}:{SERVICE_PORT}/finish-installation/register",
+        f"{discourse_address}/finish-installation/register",
         timeout=requests_timeout,
     )
     assert response.status_code == 200
