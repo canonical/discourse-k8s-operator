@@ -63,9 +63,9 @@ async def get_discourse_email_token_hash(db_info: DBInfo, email: str):
         The token associated to this email address$
     """
     sql_output = await execute_query_on_unit(
-        db_info, f"SELECT \"token_hash\" FROM email_tokens WHERE email = '{email}'"  # nosec
+        db_info,
+        f"SELECT token_hash FROM email_tokens WHERE email = '{email}' AND expired = 'f'",  # nosec
     )
-
     return sql_output[0] if sql_output else None
 
 
