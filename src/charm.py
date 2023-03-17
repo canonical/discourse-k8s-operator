@@ -389,8 +389,6 @@ class DiscourseCharm(CharmBase):
             process.wait_output()
         except ExecError as cmd_err:
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
-            logger.error(cmd_err.stdout)
-            logger.error(cmd_err.stderr)
             raise
 
     def _config_changed(self, event: HookEvent) -> None:
