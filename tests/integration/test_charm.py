@@ -469,7 +469,6 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
 
 @pytest.mark.asyncio
 async def test_create_category(
-    app: Application,
     discourse_address: str,
     admin_credentials: types.Credentials,
     admin_api_key: str,
@@ -487,9 +486,12 @@ async def test_create_category(
             "Api-Username": admin_credentials.username,
         },
         json=category_info,
+        timeout=60,
     )
     category_id = res.json()["category"]["id"]
-    category = requests.get(f"{discourse_address}/c/{category_id}/show.json").json()["category"]
+    category = requests.get(f"{discourse_address}/c/{category_id}/show.json", timeout=60).json()[
+        "category"
+    ]
 
     assert category["name"] == category_info["name"]
     assert category["color"] == category_info["color"]

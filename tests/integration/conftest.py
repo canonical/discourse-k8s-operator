@@ -152,8 +152,8 @@ async def app_fixture(
     yield application
 
 
-@pytest_asyncio.fixture(scope="module")
-async def discourse_address(model: Model, app: Application):
+@pytest_asyncio.fixture(scope="module", name="discourse_address")
+async def discourse_address_fixture(model: Model, app: Application):
     """Get discourse web address."""
     status: FullStatus = await model.get_status()
     app_status = typing.cast(ApplicationStatus, status.applications[app.name])
@@ -180,8 +180,8 @@ async def setup_saml_config(app: Application, model: Model):
     )
 
 
-@pytest_asyncio.fixture(scope="module")
-async def admin_credentials(app: Application) -> types.Credentials:
+@pytest_asyncio.fixture(scope="module", name="admin_credentials")
+async def admin_credentials_fixture(app: Application) -> types.Credentials:
     """Admin user credentials."""
     email = "admin-user@test.internal"
     password = secrets.token_urlsafe(16)
@@ -190,11 +190,15 @@ async def admin_credentials(app: Application) -> types.Credentials:
         "add-admin-user", email=email, password=password
     )
     await action.wait()
-    return types.Credentials(email=email, username=email.split("@")[0], password=password)
+    return types.Credentials(
+        email=email, username=email.split("@", maxsplit=1)[0], password=password
+    )
 
 
-@pytest_asyncio.fixture(scope="module")
-async def admin_api_key(admin_credentials: types.Credentials, discourse_address: str) -> str:
+@pytest_asyncio.fixture(scope="module", name="admin_api_key")
+async def admin_api_key_fixture(
+    admin_credentials: types.Credentials, discourse_address: str
+) -> str:
     """Admin user API key"""
     with requests.session() as sess:
         # Get CSRF token
