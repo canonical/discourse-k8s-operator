@@ -242,7 +242,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
-        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertEqual("1010", updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertTrue(updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"])
         self.assertEqual("3|33+", updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"])
         self.assertNotIn("DISCOURSE_S3_BACKUP_BUCKET", updated_plan_env)
@@ -289,7 +289,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
         self.assertEqual("discourse-k8s", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
-        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertEqual("1010", updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertNotIn("DISCOURSE_SAML_CERT_FINGERPRINT", updated_plan_env)
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
         self.assertEqual(
@@ -355,7 +355,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertTrue(updated_plan_env["DISCOURSE_ENABLE_CORS"])
         self.assertEqual("discourse.local", updated_plan_env["DISCOURSE_HOSTNAME"])
         self.assertEqual("redis-host", updated_plan_env["DISCOURSE_REDIS_HOST"])
-        self.assertEqual(1010, updated_plan_env["DISCOURSE_REDIS_PORT"])
+        self.assertEqual("1010", updated_plan_env["DISCOURSE_REDIS_PORT"])
         self.assertIsNotNone(updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"])
         self.assertEqual("true", updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"])
         self.assertEqual(
