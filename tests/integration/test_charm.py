@@ -346,3 +346,21 @@ async def test_create_category(
 
     assert category["name"] == category_info["name"]
     assert category["color"] == category_info["color"]
+
+
+@pytest.mark.asyncio
+async def test_serve_compiled_assets(
+    discourse_address: str,
+):
+    """
+    arrange: Given discourse application
+    act: when accessing a page that does not exist
+    assert: a compiled asset should be served.
+    """
+    res = requests.get(f"{discourse_address}/404", timeout=60)
+    not_found_page = str(res.content)
+
+    asset_matches = re.search(
+        r"(onpopstate-handler).+.js", not_found_page
+    )  # a non-compiled asset will be named onpopstate-handler.js
+    assert asset_matches, "Compiled asset not found."
