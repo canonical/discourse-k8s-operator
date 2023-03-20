@@ -18,7 +18,7 @@ from ops.charm import ActionEvent, CharmBase, HookEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
-from ops.pebble import ExecError, Plan
+from ops.pebble import ExecError, ExecProcess, Plan
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -372,7 +372,7 @@ class DiscourseCharm(CharmBase):
         try:
             if self.model.unit.is_leader():
                 self.model.unit.status = MaintenanceStatus("Executing migrations")
-                process = container.exec(
+                process: ExecProcess = container.exec(
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
@@ -380,7 +380,7 @@ class DiscourseCharm(CharmBase):
                 )
                 process.wait_output()
             self.model.unit.status = MaintenanceStatus("Compiling assets")
-            process = container.exec(
+            process: ExecProcess = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
@@ -446,7 +446,8 @@ class DiscourseCharm(CharmBase):
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
-            container.pebble.replan_services()
+            container.stop("discourse")
+            container.start("discourse")
             self.ingress.update_config(self._make_ingress_config())
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
