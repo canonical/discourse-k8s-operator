@@ -301,7 +301,7 @@ class DiscourseCharm(CharmBase):
             "summary": "Discourse layer",
             "description": "Discourse layer",
             "services": {
-                "discourse": {
+                SERVICE_NAME: {
                     "override": "replace",
                     "summary": "Discourse web application",
                     "command": f"sh -c '{SCRIPT_PATH}/app_launch.sh'",
@@ -446,8 +446,8 @@ class DiscourseCharm(CharmBase):
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
-            container.stop("discourse")
-            container.start("discourse")
+            container.stop(SERVICE_NAME)
+            container.start(SERVICE_NAME)
             self.ingress.update_config(self._make_ingress_config())
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
