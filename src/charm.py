@@ -18,7 +18,7 @@ from ops.charm import ActionEvent, CharmBase, HookEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
-from ops.pebble import ExecError, Plan
+from ops.pebble import ExecError, ExecProcess, Plan
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -301,7 +301,7 @@ class DiscourseCharm(CharmBase):
             "summary": "Discourse layer",
             "description": "Discourse layer",
             "services": {
-                "discourse": {
+                SERVICE_NAME: {
                     "override": "replace",
                     "summary": "Discourse web application",
                     "command": f"sh -c '{SCRIPT_PATH}/app_launch.sh'",
@@ -372,21 +372,21 @@ class DiscourseCharm(CharmBase):
         try:
             if self.model.unit.is_leader():
                 self.model.unit.status = MaintenanceStatus("Executing migrations")
-                process = container.exec(
+                migration_process: ExecProcess = container.exec(
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
                     user="discourse",
                 )
-                process.wait_output()
+                migration_process.wait_output()
             self.model.unit.status = MaintenanceStatus("Compiling assets")
-            process = container.exec(
+            precompile_process: ExecProcess = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
                 user="discourse",
             )
-            process.wait_output()
+            precompile_process.wait_output()
         except ExecError as cmd_err:
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
@@ -446,7 +446,11 @@ class DiscourseCharm(CharmBase):
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
-            container.pebble.replan_services()
+            # Currently, pebble replan will cause
+            # ChangeError("cannot start service while terminating".)
+            # Link to issue: https://github.com/canonical/pebble/issues/206
+            container.stop(SERVICE_NAME)
+            container.start(SERVICE_NAME)
             self.ingress.update_config(self._make_ingress_config())
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
