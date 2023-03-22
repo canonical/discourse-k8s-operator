@@ -75,6 +75,7 @@ class DiscourseCharm(CharmBase):
             db_user=None,
             db_password=None,
             db_host=None,
+            setup_completed=False,
             redis_relation={},
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
@@ -387,6 +388,7 @@ class DiscourseCharm(CharmBase):
                 user="discourse",
             )
             precompile_process.wait_output()
+            self._stored.setup_completed = True
         except ExecError as cmd_err:
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
@@ -442,6 +444,9 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = ActiveStatus()
 
     def _reload_configuration(self) -> None:
+        if not self._stored.setup_completed:
+            logger.info("Defer starting the discourse server until discourse setup completed")
+            return
         container = self.unit.get_container(SERVICE_NAME)
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
