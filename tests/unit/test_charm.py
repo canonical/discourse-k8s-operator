@@ -209,7 +209,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        self.harness.begin()
+        self.harness.begin_with_initial_hooks()
         self.harness.disable_hooks()
         self.harness.set_leader(True)
         self._add_database_relations()
@@ -224,6 +224,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             }
         )
         self.harness.container_pebble_ready("discourse")
+        self.harness.framework.reemit()
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -264,7 +265,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        self.harness.begin()
+        self.harness.begin_with_initial_hooks()
         self.harness.disable_hooks()
         self._add_database_relations()
         with self._patch_exec():
@@ -278,6 +279,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 }
             )
             self.harness.container_pebble_ready("discourse")
+            self.harness.framework.reemit()
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -314,7 +316,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        self.harness.begin()
+        self.harness.begin_with_initial_hooks()
         self.harness.disable_hooks()
         self._add_database_relations()
         with self._patch_exec():
@@ -342,6 +344,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 }
             )
             self.harness.container_pebble_ready("discourse")
+            self.harness.framework.reemit()
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -480,11 +483,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: trigger the install event on a leader unit
         assert: migrations are executed and assets are precompiled.
         """
-        self.harness.begin()
+        self.harness.begin_with_initial_hooks()
         self.harness.set_leader(True)
         self._add_database_relations()
         self.harness.container_pebble_ready("discourse")
         self.harness.charm.on.install.emit()
+        self.harness.framework.reemit()
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
@@ -508,11 +512,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         act: trigger the install event on a leader unit
         assert: migrations are executed and assets are precompiled.
         """
-        self.harness.begin()
+        self.harness.begin_with_initial_hooks()
         self.harness.set_leader(False)
         self._add_database_relations()
         self.harness.container_pebble_ready("discourse")
-        self.harness.charm.on.install.emit()
+        self.harness.framework.reemit()
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]

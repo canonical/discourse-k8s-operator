@@ -444,7 +444,8 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = ActiveStatus()
 
     def _reload_configuration(self) -> None:
-        if not self._stored.setup_completed:
+        # mypy has some trouble with dynamic attributes
+        if not self._stored.setup_completed:  # type: ignore
             logger.info("Defer starting the discourse server until discourse setup completed")
             return
         container = self.unit.get_container(SERVICE_NAME)
