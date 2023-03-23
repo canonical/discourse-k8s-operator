@@ -452,11 +452,7 @@ class DiscourseCharm(CharmBase):
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
-            # Currently, pebble replan will cause
-            # ChangeError("cannot start service while terminating".)
-            # Link to issue: https://github.com/canonical/pebble/issues/206
-            container.stop(SERVICE_NAME)
-            container.start(SERVICE_NAME)
+            container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
