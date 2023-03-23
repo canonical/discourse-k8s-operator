@@ -37,7 +37,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
     def _patch_exec(self, fail: bool = False) -> typing.Generator[unittest.mock.Mock, None, None]:
         """Patch the ops.model.Container.exec method.
 
-        When fail argument is true, the execution will fail
+        When fail argument is true, the execution will fail.
+
+        Yields:
+            Mock for the exec method.
         """
         exec_process_mock = unittest.mock.MagicMock()
         if not fail:
