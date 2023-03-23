@@ -37,7 +37,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
     def _patch_exec(self, fail: bool = False) -> typing.Generator[unittest.mock.Mock, None, None]:
         """Patch the ops.model.Container.exec method.
 
-        When fail argument is true, the execution will fail
+        When fail argument is true, the execution will fail.
+
+        Yields:
+            Mock for the exec method.
         """
         exec_process_mock = unittest.mock.MagicMock()
         if not fail:
@@ -473,8 +476,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             environment=charm._create_discourse_environment_settings(),
         )
 
-    @patch.object(Container, "exec")
-    def test_install_when_leader(self, mock_exec):
+    def test_install_when_leader(self):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: trigger the install event on a leader unit
@@ -483,26 +485,32 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.begin()
         self.harness.set_leader(True)
         self._add_database_relations()
-        self.harness.container_pebble_ready("discourse")
-        self.harness.charm.on.install.emit()
+        with self._patch_exec() as mock_exec:
+            self.harness.container_pebble_ready("discourse")
+            self.harness.charm.on.install.emit()
 
-        updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
-        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="discourse",
-        )
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="discourse",
-        )
+            updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
+            updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+            mock_exec.assert_any_call(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                environment=updated_plan_env,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            mock_exec.assert_any_call(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                environment=updated_plan_env,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            mock_exec.assert_any_call(
+                [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
+                environment=updated_plan_env,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
 
-    @patch.object(Container, "exec")
-    def test_install_when_not_leader(self, mock_exec):
+    def test_install_when_not_leader(self):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: trigger the install event on a leader unit
@@ -511,17 +519,24 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.begin()
         self.harness.set_leader(False)
         self._add_database_relations()
-        self.harness.container_pebble_ready("discourse")
-        self.harness.charm.on.install.emit()
+        with self._patch_exec() as mock_exec:
+            self.harness.container_pebble_ready("discourse")
+            self.harness.charm.on.install.emit()
 
-        updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
-        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="discourse",
-        )
+            updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
+            updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+            mock_exec.assert_any_call(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                environment=updated_plan_env,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            mock_exec.assert_any_call(
+                [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
+                environment=updated_plan_env,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
 
     def _add_postgres_relation(self):
         "Add postgresql relation and relation data to the charm."
