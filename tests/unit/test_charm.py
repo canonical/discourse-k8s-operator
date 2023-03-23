@@ -500,6 +500,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 working_dir=DISCOURSE_PATH,
                 user="discourse",
             )
+            mock_exec.assert_any_call(
+                [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
+                environment=updated_plan_env,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
 
     def test_install_when_not_leader(self):
         """
@@ -518,6 +524,12 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             updated_plan_env = updated_plan["services"]["discourse"]["environment"]
             mock_exec.assert_any_call(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                environment=updated_plan_env,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            mock_exec.assert_any_call(
+                [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=updated_plan_env,
                 working_dir=DISCOURSE_PATH,
                 user="discourse",
