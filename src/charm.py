@@ -389,6 +389,14 @@ class DiscourseCharm(CharmBase):
             )
             precompile_process.wait_output()
             self._stored.setup_completed = True
+            get_version_process = container.exec(
+                [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            version, _ = get_version_process.wait_output()
+            self.unit.set_workload_version(version)
         except ExecError as cmd_err:
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
