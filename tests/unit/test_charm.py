@@ -204,30 +204,30 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             BlockedStatus("'s3_enabled' requires 's3_bucket'"),
         )
 
-    @patch.object(Container, "exec")
-    def test_config_changed_when_valid_no_s3_backup_nor_cdn(self, mock_exec):
+    def test_config_changed_when_valid_no_s3_backup_nor_cdn(self):
         """
         arrange: given a deployed discourse charm with all the required relations
         act: when a valid configuration is provided
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        self.harness.begin_with_initial_hooks()
-        self.harness.disable_hooks()
-        self.harness.set_leader(True)
-        self._add_database_relations()
-        self.harness.update_config(
-            {
-                "s3_access_key_id": "3|33+",
-                "s3_bucket": "who-s-a-good-bucket?",
-                "s3_enabled": True,
-                "s3_endpoint": "s3.endpoint",
-                "s3_region": "the-infinite-and-beyond",
-                "s3_secret_access_key": "s|kI0ure_k3Y",
-            }
-        )
-        self.harness.container_pebble_ready("discourse")
-        self.harness.framework.reemit()
+        with self._patch_exec() as mock_exec:
+            self.harness.begin_with_initial_hooks()
+            self.harness.disable_hooks()
+            self.harness.set_leader(True)
+            self._add_database_relations()
+            self.harness.update_config(
+                {
+                    "s3_access_key_id": "3|33+",
+                    "s3_bucket": "who-s-a-good-bucket?",
+                    "s3_enabled": True,
+                    "s3_endpoint": "s3.endpoint",
+                    "s3_region": "the-infinite-and-beyond",
+                    "s3_secret_access_key": "s|kI0ure_k3Y",
+                }
+            )
+            self.harness.container_pebble_ready("discourse")
+            self.harness.framework.reemit()
 
         updated_plan = self.harness.get_container_pebble_plan("discourse").to_dict()
         updated_plan_env = updated_plan["services"]["discourse"]["environment"]
