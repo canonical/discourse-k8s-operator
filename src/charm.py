@@ -5,7 +5,6 @@
 """Charm for Discourse on kubernetes."""
 import logging
 import os.path
-import pathlib
 from collections import defaultdict, namedtuple
 from typing import Any, Dict, List, Optional
 
@@ -59,7 +58,7 @@ REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
-SETUP_COMPLETED_FLAG_FILE = pathlib.Path("/run/discourse-k8s-operator/setup_completed")
+SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 
 
 class DiscourseCharm(CharmBase):
@@ -134,12 +133,13 @@ class DiscourseCharm(CharmBase):
         Returns:
             True if the _set_up_discourse process has finished.
         """
-        return SETUP_COMPLETED_FLAG_FILE.is_file()
+        container = self.unit.get_container(SERVICE_NAME)
+        return container.can_connect() and container.exists(SETUP_COMPLETED_FLAG_FILE)
 
     def _set_setup_completed(self) -> None:
         """Mark the _set_up_discourse process as completed."""
-        SETUP_COMPLETED_FLAG_FILE.parent.mkdir(exist_ok=True)
-        SETUP_COMPLETED_FLAG_FILE.touch(exist_ok=True)
+        container = self.unit.get_container(SERVICE_NAME)
+        container.push(SETUP_COMPLETED_FLAG_FILE, "", make_dirs=True)
 
     def _is_config_valid(self) -> bool:
         """Check that the provided config is valid.

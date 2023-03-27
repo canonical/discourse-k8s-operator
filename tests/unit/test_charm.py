@@ -7,7 +7,6 @@
 # Protected access check is disabled in tests as we're injecting test data
 
 import contextlib
-import pathlib
 import typing
 import unittest
 from unittest.mock import MagicMock, patch
@@ -58,16 +57,14 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         """Patch filesystem calls in the _is_setup_completed and _set_setup_completed functions."""
         setup_completed = False
 
-        def is_file(*_args, **_kwargs):
+        def exists(*_args, **_kwargs):
             return setup_completed
 
-        def touch(*_args, **_kwargs):
+        def push(*_args, **_kwargs):
             nonlocal setup_completed
             setup_completed = True
 
-        with unittest.mock.patch.multiple(
-            pathlib.Path, is_file=is_file, touch=touch, parent=MagicMock()
-        ):
+        with unittest.mock.patch.multiple(Container, exists=exists, push=push):
             yield
 
     def test_relations_not_ready(self):
