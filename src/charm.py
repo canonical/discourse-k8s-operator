@@ -139,7 +139,7 @@ class DiscourseCharm(CharmBase):
     def _set_setup_completed(self) -> None:
         """Mark the _set_up_discourse process as completed."""
         SETUP_COMPLETED_FLAG_FILE.parent.mkdir(exist_ok=True)
-        pathlib.Path("/run/discourse-k8s-operator/setup_completed").touch(exist_ok=True)
+        SETUP_COMPLETED_FLAG_FILE.touch(exist_ok=True)
 
     def _is_config_valid(self) -> bool:
         """Check that the provided config is valid.
