@@ -5,6 +5,7 @@
 """Charm for Discourse on kubernetes."""
 import logging
 import os.path
+import pathlib
 from collections import defaultdict, namedtuple
 from typing import Any, Dict, List, Optional
 
@@ -58,6 +59,7 @@ REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
+SETUP_COMPLETED_FLAG_FILE = pathlib.Path("/run/discourse-k8s-operator/setup_completed")
 
 
 class DiscourseCharm(CharmBase):
@@ -75,7 +77,6 @@ class DiscourseCharm(CharmBase):
             db_user=None,
             db_password=None,
             db_host=None,
-            setup_completed=False,
             redis_relation={},
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
@@ -126,6 +127,19 @@ class DiscourseCharm(CharmBase):
         return (
             self.config["external_hostname"] if self.config["external_hostname"] else self.app.name
         )
+
+    def _is_setup_completed(self) -> bool:
+        """Check if the _set_up_discourse process has finished.
+
+        Returns:
+            True if the _set_up_discourse process has finished.
+        """
+        return SETUP_COMPLETED_FLAG_FILE.is_file()
+
+    def _set_setup_completed(self) -> None:
+        """Mark the _set_up_discourse process as completed."""
+        SETUP_COMPLETED_FLAG_FILE.parent.mkdir(exist_ok=True)
+        pathlib.Path("/run/discourse-k8s-operator/setup_completed").touch(exist_ok=True)
 
     def _is_config_valid(self) -> bool:
         """Check that the provided config is valid.
@@ -388,7 +402,7 @@ class DiscourseCharm(CharmBase):
                 user="discourse",
             )
             precompile_process.wait_output()
-            self._stored.setup_completed = True
+            self._set_setup_completed()
             get_version_process = container.exec(
                 [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=env_settings,
@@ -453,7 +467,7 @@ class DiscourseCharm(CharmBase):
 
     def _reload_configuration(self) -> None:
         # mypy has some trouble with dynamic attributes
-        if not self._stored.setup_completed:  # type: ignore
+        if not self._is_setup_completed():
             logger.info("Defer starting the discourse server until discourse setup completed")
             return
         container = self.unit.get_container(SERVICE_NAME)

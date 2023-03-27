@@ -7,6 +7,7 @@
 # Protected access check is disabled in tests as we're injecting test data
 
 import contextlib
+import pathlib
 import typing
 import unittest
 from unittest.mock import MagicMock, patch
@@ -51,6 +52,23 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         exec_function_mock = unittest.mock.MagicMock(return_value=exec_process_mock)
         with unittest.mock.patch.multiple(ops.model.Container, exec=exec_function_mock):
             yield exec_function_mock
+
+    @contextlib.contextmanager
+    def _patch_setup_completed(self):
+        """Patch filesystem calls in the _is_setup_completed and _set_setup_completed functions."""
+        setup_completed = False
+
+        def is_file(*_args, **_kwargs):
+            return setup_completed
+
+        def touch(*_args, **_kwargs):
+            nonlocal setup_completed
+            setup_completed = True
+
+        with unittest.mock.patch.multiple(
+            pathlib.Path, is_file=is_file, touch=touch, parent=MagicMock()
+        ):
+            yield
 
     def test_relations_not_ready(self):
         """
@@ -211,7 +229,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         assert: the appropriate configuration values are passed to the pod and the unit
             reaches Active status.
         """
-        with self._patch_exec() as mock_exec:
+        with self._patch_exec() as mock_exec, self._patch_setup_completed():
             self.harness.begin_with_initial_hooks()
             self.harness.disable_hooks()
             self.harness.set_leader(True)
@@ -271,7 +289,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.begin_with_initial_hooks()
         self.harness.disable_hooks()
         self._add_database_relations()
-        with self._patch_exec():
+        with self._patch_exec(), self._patch_setup_completed():
             self.harness.update_config(
                 {
                     "force_saml_login": True,
@@ -322,7 +340,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.begin_with_initial_hooks()
         self.harness.disable_hooks()
         self._add_database_relations()
-        with self._patch_exec():
+        with self._patch_exec(), self._patch_setup_completed():
             self.harness.update_config(
                 {
                     "developer_emails": "user@foo.internal",
@@ -488,7 +506,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.begin_with_initial_hooks()
         self.harness.set_leader(True)
         self._add_database_relations()
-        with self._patch_exec() as mock_exec:
+        with self._patch_exec() as mock_exec, self._patch_setup_completed():
             self.harness.container_pebble_ready("discourse")
             self.harness.charm.on.install.emit()
             self.harness.framework.reemit()
@@ -523,7 +541,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.begin_with_initial_hooks()
         self.harness.set_leader(False)
         self._add_database_relations()
-        with self._patch_exec() as mock_exec:
+        with self._patch_exec() as mock_exec, self._patch_setup_completed():
             self.harness.container_pebble_ready("discourse")
             self.harness.charm.on.install.emit()
             self.harness.framework.reemit()
