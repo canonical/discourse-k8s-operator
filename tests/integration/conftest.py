@@ -49,11 +49,12 @@ def fixture_app_config():
 
 
 @fixture(scope="module")
-def s3_url(pytestconfig: Config):
-    """Provides S3 IP address to inject to discourse hosts"""
-    yield pytestconfig.getoption("--s3-url") if pytestconfig.getoption(
-        "--s3-url"
-    ) else "http://127.0.0.1:4566"
+def localstack_address(pytestconfig: Config):
+    """Provides localstack IP address to be used in the integration test"""
+    address = pytestconfig.getoption("--localstack-address")
+    if not address:
+        raise ValueError("--localstack-address argument is required for selected test cases")
+    yield address
 
 
 @fixture(scope="module")
