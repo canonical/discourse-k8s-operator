@@ -166,7 +166,7 @@ async def test_s3_conf(app: Application, s3_url: str, model: Model):
         s3_conf["region"],
         aws_access_key_id=s3_conf["credentials"]["access-key"],
         aws_secret_access_key=s3_conf["credentials"]["secret-key"],
-        endpoint_url=s3_conf["endpoint"],
+        endpoint_url=s3_url,
         use_ssl=False,
         config=s3_client_config,
     )
