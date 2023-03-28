@@ -114,19 +114,22 @@ async def test_s3_conf(app: Application, s3_url: str, model: Model):
     # I need to inject subdomain in the DNS (not needed if everything runs localhost)
     # Application actually does have units
     action = await app.units[0].run(  # type: ignore
-        f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.{s3_conf["domain"]}" >> /etc/hosts'
+        f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.s3.{s3_conf["domain"]}" >> /etc/hosts'
     )
     result = await action.wait()
     assert result.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
-
+    charm_s3_endpoint = s3_conf["endpoint"]
+    charm_s3_endpoint = urlparse(charm_s3_endpoint)
+    charm_s3_endpoint = charm_s3_endpoint._replace(netloc=f"s3.{charm_s3_endpoint.netloc}")
+    charm_s3_endpoint = charm_s3_endpoint.geturl()
     # Application does actually have attribute set_config
     await app.set_config(  # type: ignore
         {
             "s3_enabled": "true",
             # The final URL is computed by discourse, we need to pass the main URL
-            "s3_endpoint": s3_conf["endpoint"],
+            "s3_endpoint": charm_s3_endpoint,
             "s3_bucket": s3_conf["bucket"],
             "s3_secret_access_key": s3_conf["credentials"]["secret-key"],
             "s3_access_key_id": s3_conf["credentials"]["access-key"],
