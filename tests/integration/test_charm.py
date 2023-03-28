@@ -149,17 +149,6 @@ async def test_s3_conf(app: Application, s3_url: str, model: Model):
         },
     )
 
-    # Trick to use when localstack is deployed on another location than locally
-    if s3_conf["ip_address"] != "127.0.0.1":
-        proxy_definition = {
-            "http": s3_url,
-        }
-        s3_client_config = s3_client_config.merge(
-            Config(
-                proxies=proxy_definition,
-            )
-        )
-
     # Configure the boto client
     s3_client = client(
         "s3",
