@@ -20,7 +20,7 @@ jobs:
     secrets: inherit
     with:
      integration-test-extra-arguments: >
-      --s3-url http://172.17.0.1:4566
+      --localstack-address 172.17.0.1
       -m "not (requires_secrets)"
      integration-test-pre-run-script: localstack-installation.sh
      trivy-image-config: "trivy.yaml"
