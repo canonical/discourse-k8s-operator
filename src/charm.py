@@ -58,6 +58,7 @@ REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
+SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 
 
 class DiscourseCharm(CharmBase):
@@ -125,6 +126,20 @@ class DiscourseCharm(CharmBase):
         return (
             self.config["external_hostname"] if self.config["external_hostname"] else self.app.name
         )
+
+    def _is_setup_completed(self) -> bool:
+        """Check if the _set_up_discourse process has finished.
+
+        Returns:
+            True if the _set_up_discourse process has finished.
+        """
+        container = self.unit.get_container(SERVICE_NAME)
+        return container.can_connect() and container.exists(SETUP_COMPLETED_FLAG_FILE)
+
+    def _set_setup_completed(self) -> None:
+        """Mark the _set_up_discourse process as completed."""
+        container = self.unit.get_container(SERVICE_NAME)
+        container.push(SETUP_COMPLETED_FLAG_FILE, "", make_dirs=True)
 
     def _is_config_valid(self) -> bool:
         """Check that the provided config is valid.
@@ -387,6 +402,7 @@ class DiscourseCharm(CharmBase):
                 user="discourse",
             )
             precompile_process.wait_output()
+            self._set_setup_completed()
             get_version_process = container.exec(
                 [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=env_settings,
@@ -450,15 +466,15 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = ActiveStatus()
 
     def _reload_configuration(self) -> None:
+        # mypy has some trouble with dynamic attributes
+        if not self._is_setup_completed():
+            logger.info("Defer starting the discourse server until discourse setup completed")
+            return
         container = self.unit.get_container(SERVICE_NAME)
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
-            # Currently, pebble replan will cause
-            # ChangeError("cannot start service while terminating".)
-            # Link to issue: https://github.com/canonical/pebble/issues/206
-            container.stop(SERVICE_NAME)
-            container.start(SERVICE_NAME)
+            container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
 
     def _redis_relation_changed(self, _: HookEvent) -> None:

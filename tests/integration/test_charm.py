@@ -8,7 +8,6 @@ import re
 import socket
 import unittest.mock
 from typing import Dict
-from urllib.parse import urlparse
 
 import pytest
 import requests
@@ -99,14 +98,14 @@ async def test_setup_discourse(
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_s3_conf(app: Application, s3_url: str, model: Model):
+async def test_s3_conf(app: Application, localstack_address: str, model: Model):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
     Assume that the charm has already been built and is running.
     This test requires a localstack deployed
     """
 
-    s3_conf: Dict = generate_s3_config(s3_url)
+    s3_conf: Dict = generate_s3_config(localstack_address)
 
     logger.info("Updating discourse hosts")
 
@@ -114,13 +113,12 @@ async def test_s3_conf(app: Application, s3_url: str, model: Model):
     # I need to inject subdomain in the DNS (not needed if everything runs localhost)
     # Application actually does have units
     action = await app.units[0].run(  # type: ignore
-        f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.{s3_conf["domain"]}" >> /etc/hosts'
+        f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.s3.{s3_conf["domain"]}" >> /etc/hosts'
     )
     result = await action.wait()
     assert result.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
-
     # Application does actually have attribute set_config
     await app.set_config(  # type: ignore
         {
@@ -146,24 +144,13 @@ async def test_s3_conf(app: Application, s3_url: str, model: Model):
         },
     )
 
-    # Trick to use when localstack is deployed on another location than locally
-    if s3_conf["ip_address"] != "127.0.0.1":
-        proxy_definition = {
-            "http": s3_url,
-        }
-        s3_client_config = s3_client_config.merge(
-            Config(
-                proxies=proxy_definition,
-            )
-        )
-
     # Configure the boto client
     s3_client = client(
         "s3",
         s3_conf["region"],
         aws_access_key_id=s3_conf["credentials"]["access-key"],
         aws_secret_access_key=s3_conf["credentials"]["secret-key"],
-        endpoint_url=s3_conf["endpoint"],
+        endpoint_url=f"http://{localstack_address}:4566",
         use_ssl=False,
         config=s3_client_config,
     )
@@ -196,26 +183,18 @@ async def test_s3_conf(app: Application, s3_url: str, model: Model):
     await model.wait_for_idle(status="active")
 
 
-def generate_s3_config(s3_url: str) -> Dict:
+def generate_s3_config(localstack_address: str) -> Dict:
     """Generate an S3 config for localstack based test."""
-    s3_config: Dict = {
+    return {
         # Localstack doesn't require any specific value there, any random string will work
         "credentials": {"access-key": "my-lovely-key", "secret-key": "this-is-very-secret"},
         # Localstack enforce to use this domain and it resolves to localhost
         "domain": "localhost.localstack.cloud",
         "bucket": "tests",
         "region": "us-east-1",
+        "ip_address": localstack_address,
+        "endpoint": "http://s3.localhost.localstack.cloud:4566",
     }
-
-    # Parse URL to get the IP address and the port, and compose the required variables
-    parsed_s3_url = urlparse(s3_url)
-    s3_ip_address = parsed_s3_url.hostname
-    s3_endpoint = f"{parsed_s3_url.scheme}://{s3_config['domain']}"
-    if parsed_s3_url:
-        s3_endpoint = f"{s3_endpoint}:{parsed_s3_url.port}"
-    s3_config["ip_address"] = s3_ip_address
-    s3_config["endpoint"] = s3_endpoint
-    return s3_config
 
 
 @pytest.mark.asyncio
