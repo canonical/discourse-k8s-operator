@@ -2,15 +2,16 @@ name: discourse-k8s
 display-name: Discourse
 summary: Discourse is the modern forum for your community.
 description: |
-  A juju charm deploying and managing Discourse on Kubernetes. Discourse is the
-  100% open source discussion platform. Use it as a mailing list, discussion
-  forum or long-form chat room.
+  A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
+  deploying and managing [Discourse](https://www.discourse.org/) on Kubernetes.
+  Discourse is the 100% open source discussion platform. Use it as a mailing list,
+  discussion forum or long-form chat room.
 
   This charm simplifies initial deployment and "day N" operations of Discourse
   on Kubernetes, such as scaling the number of instances, integration with SSO,
   access to S3 for redundant file storage and more. It allows for deployment on
   many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) or
-  [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud Kubernetes
+  [Charmed Kubernetes](https://ubuntu.com/kubernetes) and public cloud Kubernetes
   offerings.
 
   As such, the charm makes it easy for those looking to take control of their own
