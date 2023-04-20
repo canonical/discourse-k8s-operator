@@ -1,4 +1,4 @@
-# Hostname configuration
+# How to configure the hostname
 
 This charm exposes the `external_hostname` configuration option to specify the external hostname of the application.
 
