@@ -1,3 +1,5 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 FROM ubuntu:focal
 
 # Used in Launchpad OCI Recipe build to tag the image.

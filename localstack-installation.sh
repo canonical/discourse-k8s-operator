@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 
 pip install pip --upgrade
 pip install pyopenssl --upgrade
