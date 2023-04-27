@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 
 export UNICORN_BIND_ALL=0.0.0.0
 export UNICORN_SIDEKIQS=1
