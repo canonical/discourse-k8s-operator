@@ -1,3 +1,5 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 name: discourse-k8s
 display-name: Discourse
 summary: Discourse is the modern forum for your community.
