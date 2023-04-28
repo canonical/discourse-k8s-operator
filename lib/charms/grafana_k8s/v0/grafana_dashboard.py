@@ -218,7 +218,8 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 25
+
+LIBPATCH = 29
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +230,7 @@ RELATION_INTERFACE_NAME = "grafana_dashboard"
 
 TOPOLOGY_TEMPLATE_DROPDOWNS = [  # type: ignore
     {
-        "allValue": None,
+        "allValue": ".*",
         "datasource": "${prometheusds}",
         "definition": "label_values(up,juju_model)",
         "description": None,
@@ -254,9 +255,9 @@ TOPOLOGY_TEMPLATE_DROPDOWNS = [  # type: ignore
         "useTags": False,
     },
     {
-        "allValue": None,
+        "allValue": ".*",
         "datasource": "${prometheusds}",
-        "definition": 'label_values(up{juju_model="$juju_model"},juju_model_uuid)',
+        "definition": 'label_values(up{juju_model=~"$juju_model"},juju_model_uuid)',
         "description": None,
         "error": None,
         "hide": 0,
@@ -265,7 +266,7 @@ TOPOLOGY_TEMPLATE_DROPDOWNS = [  # type: ignore
         "multi": True,
         "name": "juju_model_uuid",
         "query": {
-            "query": 'label_values(up{juju_model="$juju_model"},juju_model_uuid)',
+            "query": 'label_values(up{juju_model=~"$juju_model"},juju_model_uuid)',
             "refId": "StandardVariableQuery",
         },
         "refresh": 1,
@@ -279,9 +280,9 @@ TOPOLOGY_TEMPLATE_DROPDOWNS = [  # type: ignore
         "useTags": False,
     },
     {
-        "allValue": None,
+        "allValue": ".*",
         "datasource": "${prometheusds}",
-        "definition": 'label_values(up{juju_model="$juju_model",juju_model_uuid="$juju_model_uuid"},juju_application)',
+        "definition": 'label_values(up{juju_model=~"$juju_model",juju_model_uuid=~"$juju_model_uuid"},juju_application)',
         "description": None,
         "error": None,
         "hide": 0,
@@ -290,7 +291,7 @@ TOPOLOGY_TEMPLATE_DROPDOWNS = [  # type: ignore
         "multi": True,
         "name": "juju_application",
         "query": {
-            "query": 'label_values(up{juju_model="$juju_model",juju_model_uuid="$juju_model_uuid"},juju_application)',
+            "query": 'label_values(up{juju_model=~"$juju_model",juju_model_uuid=~"$juju_model_uuid"},juju_application)',
             "refId": "StandardVariableQuery",
         },
         "refresh": 1,
@@ -304,9 +305,9 @@ TOPOLOGY_TEMPLATE_DROPDOWNS = [  # type: ignore
         "useTags": False,
     },
     {
-        "allValue": None,
+        "allValue": ".*",
         "datasource": "${prometheusds}",
-        "definition": 'label_values(up{juju_model="$juju_model",juju_model_uuid="$juju_model_uuid",juju_application="$juju_application"},juju_unit)',
+        "definition": 'label_values(up{juju_model=~"$juju_model",juju_model_uuid=~"$juju_model_uuid",juju_application=~"$juju_application"},juju_unit)',
         "description": None,
         "error": None,
         "hide": 0,
@@ -315,7 +316,7 @@ TOPOLOGY_TEMPLATE_DROPDOWNS = [  # type: ignore
         "multi": True,
         "name": "juju_unit",
         "query": {
-            "query": 'label_values(up{juju_model="$juju_model",juju_model_uuid="$juju_model_uuid",juju_application="$juju_application"},juju_unit)',
+            "query": 'label_values(up{juju_model=~"$juju_model",juju_model_uuid=~"$juju_model_uuid",juju_application=~"$juju_application"},juju_unit)',
             "refId": "StandardVariableQuery",
         },
         "refresh": 1,
@@ -336,7 +337,7 @@ DATASOURCE_TEMPLATE_DROPDOWNS = [  # type: ignore
         "error": None,
         "hide": 0,
         "includeAll": True,
-        "label": None,
+        "label": "Prometheus datasource",
         "multi": True,
         "name": "prometheusds",
         "options": [],
@@ -351,7 +352,7 @@ DATASOURCE_TEMPLATE_DROPDOWNS = [  # type: ignore
         "error": None,
         "hide": 0,
         "includeAll": True,
-        "label": None,
+        "label": "Loki datasource",
         "multi": True,
         "name": "lokids",
         "options": [],
@@ -1416,11 +1417,6 @@ class GrafanaDashboardConsumer(Object):
         # The only piece of data needed on this side of the relations is "templates"
         templates = data.pop("templates")
 
-        # Import only if a charmed operator uses the consumer, we don't impose these
-        # dependencies on the client
-        from jinja2 import Template
-        from jinja2.exceptions import TemplateSyntaxError
-
         # The dashboards are WAY too big since this ultimately calls out to Juju to
         # set the relation data, and it overflows the maximum argument length for
         # subprocess, so we have to use b64, annoyingly.
@@ -1433,14 +1429,12 @@ class GrafanaDashboardConsumer(Object):
         relation_has_invalid_dashboards = False
 
         for _, (fname, template) in enumerate(templates.items()):
-            decoded_content = None
             content = None
             error = None
             topology = template.get("juju_topology", {})
             try:
-                decoded_content = _decode_dashboard_content(template["content"])
+                content = _decode_dashboard_content(template["content"])
                 inject_dropdowns = template.get("inject_dropdowns", True)
-                content = Template(decoded_content).render()
                 content = self._manage_dashboard_uid(content, template)
                 content = _convert_dashboard_fields(content, inject_dropdowns)
 
@@ -1455,9 +1449,6 @@ class GrafanaDashboardConsumer(Object):
                 error = str(e.msg)
                 logger.warning("Invalid JSON in Grafana dashboard: {}".format(fname))
                 continue
-            except TemplateSyntaxError as e:
-                error = str(e)
-                relation_has_invalid_dashboards = True
 
             # Prepend the relation name and ID to the dashboard ID to avoid clashes with
             # multiple relations with apps from the same charm, or having dashboards with
@@ -1684,12 +1675,17 @@ class GrafanaDashboardAggregator(Object):
             "uuid": str(uuid.uuid4()),
         }
 
-        for grafana_relation in self.model.relations[self._grafana_relation]:
-            grafana_relation.data[self._charm.app]["dashboards"] = json.dumps(stored_data)
+        if self._charm.unit.is_leader():
+            for grafana_relation in self.model.relations[self._grafana_relation]:
+                grafana_relation.data[self._charm.app]["dashboards"] = json.dumps(stored_data)
 
     def remove_dashboards(self, event: RelationBrokenEvent) -> None:
         """Remove a dashboard if the relation is broken."""
-        app_ids = _type_convert_stored(self._stored.id_mappings[event.app.name])  # type: ignore
+        app_ids = _type_convert_stored(self._stored.id_mappings.get(event.app.name, ""))  # type: ignore
+
+        if not app_ids:
+            logger.info("Could not look up stored dashboards for %s", event.app.name)  # type: ignore
+            return
 
         del self._stored.id_mappings[event.app.name]  # type: ignore
         for id in app_ids:
@@ -1700,11 +1696,12 @@ class GrafanaDashboardAggregator(Object):
             "uuid": str(uuid.uuid4()),
         }
 
-        for grafana_relation in self.model.relations[self._grafana_relation]:
-            grafana_relation.data[self._charm.app]["dashboards"] = json.dumps(stored_data)
+        if self._charm.unit.is_leader():
+            for grafana_relation in self.model.relations[self._grafana_relation]:
+                grafana_relation.data[self._charm.app]["dashboards"] = json.dumps(stored_data)
 
     # Yes, this has a fair amount of branching. It's not that complex, though
-    def _strip_existing_datasources(self, template: dict) -> dict:  # noqa: C901
+    def _strip_existing_datasources(self, dash: dict) -> dict:  # noqa: C901
         """Remove existing reactive charm datasource templating out.
 
         This method iterates through *known* places where reactive charms may set
@@ -1723,20 +1720,15 @@ class GrafanaDashboardAggregator(Object):
 
         Further properties may be discovered.
         """
-        dash = template["dashboard"]
         try:
             if "list" in dash["templating"]:
                 for i in range(len(dash["templating"]["list"])):
                     if (
                         "datasource" in dash["templating"]["list"][i]
-                        and "Juju" in dash["templating"]["list"][i]["datasource"]
+                        and dash["templating"]["list"][i]["datasource"] is not None
                     ):
-                        dash["templating"]["list"][i]["datasource"] = r"${prometheusds}"
-                    if (
-                        "name" in dash["templating"]["list"][i]
-                        and dash["templating"]["list"][i]["name"] == "host"
-                    ):
-                        dash["templating"]["list"][i] = REACTIVE_CONVERTER
+                        if "Juju" in dash["templating"]["list"][i].get("datasource", ""):
+                            dash["templating"]["list"][i]["datasource"] = r"${prometheusds}"
 
                 # Strip out newly-added 'juju_application' template variables which
                 # don't line up with our drop-downs
@@ -1744,7 +1736,7 @@ class GrafanaDashboardAggregator(Object):
                 for i in range(len(dash["templating"]["list"])):
                     if (
                         "name" in dash["templating"]["list"][i]
-                        and dash["templating"]["list"][i]["name"] == "app"
+                        and dash["templating"]["list"][i].get("name", "") == "app"
                     ):
                         del dash_mutable["templating"]["list"][i]
 
@@ -1756,18 +1748,20 @@ class GrafanaDashboardAggregator(Object):
         if "__inputs" in dash:
             inputs = dash
             for i in range(len(dash["__inputs"])):
-                if dash["__inputs"][i]["pluginName"] == "Prometheus":
+                if dash["__inputs"][i].get("pluginName", "") == "Prometheus":
                     del inputs["__inputs"][i]
             if inputs:
                 dash["__inputs"] = inputs["__inputs"]
             else:
                 del dash["__inputs"]
 
-        template["dashboard"] = dash
-        return template
+        return dash
 
     def _handle_reactive_dashboards(self, event: RelationEvent) -> Optional[Dict]:
         """Look for a dashboard in relation data (during a reactive hook) or builtin by name."""
+        if not self._charm.unit.is_leader():
+            return {}
+
         templates = []
         id = ""
 
@@ -1790,9 +1784,6 @@ class GrafanaDashboardAggregator(Object):
 
         dashboards = {}
         for t in templates:
-            # Replace values with LMA-style templating
-            t = self._strip_existing_datasources(t)
-
             # This seems ridiculous, too, but to get it from a "dashboards" key in serialized JSON
             # in the bucket back out to the actual "dashboard" we _need_, this is the way
             # This is not a mistake -- there's a double nesting in reactive charms, and
@@ -1803,11 +1794,18 @@ class GrafanaDashboardAggregator(Object):
             # Apparently SOME newer dashboards (such as Ceph) do not have this double nesting, so
             # now we get to account for both :toot:
             dash = t.get("dashboard", {}) or t
+
+            # Replace values with LMA-style templating
+            dash = self._strip_existing_datasources(dash)
             dash = json.dumps(dash)
 
             # Replace the old-style datasource templates
             dash = re.sub(r"<< datasource >>", r"${prometheusds}", dash)
             dash = re.sub(r'"datasource": "prom.*?"', r'"datasource": "${prometheusds}"', dash)
+            dash = re.sub(
+                r'"datasource": "\$datasource"', r'"datasource": "${prometheusds}"', dash
+            )
+            dash = re.sub(r'"uid": "\$datasource"', r'"uid": "${prometheusds}"', dash)
             dash = re.sub(
                 r'"datasource": "(!?\w)[\w|\s|-]+?Juju generated.*?"',
                 r'"datasource": "${prometheusds}"',
@@ -1815,12 +1813,17 @@ class GrafanaDashboardAggregator(Object):
             )
 
             # Yank out "new"+old LMA topology
-            dash = re.sub(r'(,?juju_application=~)"\$app"', r'\1"\$juju_application"', dash)
+            dash = re.sub(
+                r'(,?\s?juju_application=~)\\"\$app\\"', r'\1\\"$juju_application\\"', dash
+            )
 
-            from jinja2 import Template
+            # Replace old piechart panels
+            dash = re.sub(r'"type": "grafana-piechart-panel"', '"type": "piechart"', dash)
+
+            from jinja2 import DebugUndefined, Template
 
             content = _encode_dashboard_content(
-                Template(dash).render(host=r"$host", datasource=r"${prometheusds}")  # type: ignore
+                Template(dash, undefined=DebugUndefined).render(datasource=r"${prometheusds}")  # type: ignore
             )
             id = "prog:{}".format(content[-24:-16])
 
@@ -1984,7 +1987,7 @@ class CosTool:
         args.extend(["--", "{}".format(expression)])
         # noinspection PyBroadException
         try:
-            return self._exec(args)
+            return re.sub(r'="\$juju', r'=~"$juju', self._exec(args))
         except subprocess.CalledProcessError as e:
             logger.debug('Applying the expression failed: "%s", falling back to the original', e)
             return expression
