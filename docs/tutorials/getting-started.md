@@ -19,7 +19,7 @@ juju add-model discourse
 
 # Deploy the charms
 juju deploy redis-k8s
-juju deploy postgresql-k8s
+juju deploy postgresql-k8s --channel latest/stable
 juju deploy discourse-k8s
 
 # Relate redis-k8s and postgresql-k8s to discourse-k8s
