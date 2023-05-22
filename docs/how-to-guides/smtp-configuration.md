@@ -1,3 +1,5 @@
+# How to configure SMTP
+
 To configure Discourse's SMTP you'll have to set the following configuration options with the appropriate values for your SMTP server by running `juju config [charm_name] [configuration]=[value]`.
 
 Set `smtp_address`to the SMTP server IP or hostname, `smtp_port` for the SMTP sever port if different from the default and `smtp_domain` to set the sender domain address.

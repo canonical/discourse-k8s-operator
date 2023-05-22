@@ -449,13 +449,12 @@ import socket
 import subprocess
 import tempfile
 import typing
-import uuid
 from copy import deepcopy
 from gzip import GzipFile
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 from urllib import request
 from urllib.error import HTTPError
 
@@ -484,7 +483,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 12
+LIBPATCH = 18
 
 logger = logging.getLogger(__name__)
 
@@ -766,7 +765,7 @@ class AlertRules:
                         # any string as a "wildcard" which the topology labels will
                         # filter down
                         alert_rule["expr"] = self.tool.inject_label_matchers(
-                            re.sub(r"%%juju_topology%%", r'job=".+"', alert_rule["expr"]),
+                            re.sub(r"%%juju_topology%%", r'job=~".+"', alert_rule["expr"]),
                             self.topology.label_matcher_dict,
                         )
 
@@ -936,7 +935,7 @@ def _resolve_dir_against_charm_path(charm: CharmBase, *path_elements: str) -> st
 class NoRelationWithInterfaceFoundError(Exception):
     """No relations with the given interface are found in the charm meta."""
 
-    def __init__(self, charm: CharmBase, relation_interface: str = None):
+    def __init__(self, charm: CharmBase, relation_interface: Optional[str] = None):
         self.charm = charm
         self.relation_interface = relation_interface
         self.message = (
@@ -1097,7 +1096,6 @@ class LokiPushApiProvider(Object):
         self._relation_name = relation_name
         self._tool = CosTool(self)
         self.port = int(port)
-        self.container = self._charm._container
         self.scheme = scheme
         self.address = address
         self.path = path
@@ -1229,7 +1227,7 @@ class LokiPushApiProvider(Object):
 
         return {"promtail_binary_zip_url": json.dumps(promtail_binaries)}
 
-    def update_endpoint(self, url: str = None, relation: Relation = None) -> None:
+    def update_endpoint(self, url: str = "", relation: Optional[Relation] = None) -> None:
         """Triggers programmatically the update of endpoint in unit relation data.
 
         This method should be used when the charm relying on this library needs
@@ -1242,15 +1240,20 @@ class LokiPushApiProvider(Object):
             url: An optional url value to update relation data.
             relation: An optional instance of `class:ops.model.Relation` to update.
         """
+        # if no relation is specified update all of them
         if not relation:
-            if not self._charm.model.get_relation(self._relation_name):
+            if not self._charm.model.relations.get(self._relation_name):
                 return
 
-            relation = self._charm.model.get_relation(self._relation_name)
+            relations_list = self._charm.model.relations.get(self._relation_name)
+        else:
+            relations_list = [relation]
 
         endpoint = self._endpoint(url or self._url)
 
-        relation.data[self._charm.unit].update({"endpoint": json.dumps(endpoint)})
+        for relation in relations_list:
+            relation.data[self._charm.unit].update({"endpoint": json.dumps(endpoint)})
+
         logger.debug("Saved endpoint in unit relation data")
 
     @property
@@ -1307,59 +1310,135 @@ class LokiPushApiProvider(Object):
         """
         alerts = {}  # type: Dict[str, dict] # mapping b/w juju identifiers and alert rule files
         for relation in self._charm.model.relations[self._relation_name]:
-            if not relation.units:
+            if not relation.units or not relation.app:
                 continue
 
             alert_rules = json.loads(relation.data[relation.app].get("alert_rules", "{}"))
             if not alert_rules:
                 continue
 
-            errors = []
-            try:
-                # NOTE: this `metadata` key SHOULD NOT be changed to `scrape_metadata`
-                # to align with Prometheus without careful consideration'
-                metadata = json.loads(relation.data[relation.app]["metadata"])
-                identifier = JujuTopology.from_dict(metadata).identifier
-                labeled_alerts = self._tool.apply_label_matchers(alert_rules)
+            alert_rules = self._inject_alert_expr_labels(alert_rules)
 
-                _, errmsg = self._tool.validate_alert_rules(alert_rules)
-                if errmsg:
-                    errors.append(errmsg)
-                    continue
+            identifier, topology = self._get_identifier_by_alert_rules(alert_rules)
+            if not topology:
+                try:
+                    metadata = json.loads(relation.data[relation.app]["metadata"])
+                    identifier = JujuTopology.from_dict(metadata).identifier
+                    alerts[identifier] = self._tool.apply_label_matchers(alert_rules)  # type: ignore
 
-                alerts[identifier] = labeled_alerts
-            except KeyError as e:
-                logger.warning(
-                    "Relation %s has no 'metadata': %s",
-                    relation.id,
-                    e,
+                except KeyError as e:
+                    logger.debug(
+                        "Relation %s has no 'metadata': %s",
+                        relation.id,
+                        e,
+                    )
+
+            if not identifier:
+                logger.error(
+                    "Alert rules were found but no usable group or identifier was present."
                 )
+                continue
 
-                if "groups" not in alert_rules:
-                    logger.warning("No alert groups were found in relation data")
-                    continue
-                # Construct an ID based on what's in the alert rules
-                for group in alert_rules["groups"]:
-                    try:
-                        labels = group["rules"][0]["labels"]
-                        identifier = "{}_{}_{}".format(
-                            labels["juju_model"],
-                            labels["juju_model_uuid"],
-                            labels["juju_application"],
-                        )
+            _, errmsg = self._tool.validate_alert_rules(alert_rules)
+            if errmsg:
+                relation.data[self._charm.app]["event"] = json.dumps({"errors": errmsg})
+                continue
 
-                        _, errmsg = self._tool.validate_alert_rules(alert_rules)
-                        if errmsg:
-                            errors.append(errmsg)
-                            continue
-
-                        alerts[identifier] = alert_rules
-                    except KeyError:
-                        logger.error("Alert rules were found but no usable labels were present")
-            if errors:
-                relation.data[self._charm.app]["event"] = json.dumps({"errors": "; ".join(errors)})
+            alerts[identifier] = alert_rules
 
         return alerts
+
+    def _get_identifier_by_alert_rules(
+        self, rules: dict
+    ) -> Tuple[Union[str, None], Union[JujuTopology, None]]:
+        """Determine an appropriate dict key for alert rules.
+
+        The key is used as the filename when writing alerts to disk, so the structure
+        and uniqueness is important.
+
+        Args:
+            rules: a dict of alert rules
+        Returns:
+            A tuple containing an identifier, if found, and a JujuTopology, if it could
+            be constructed.
+        """
+        if "groups" not in rules:
+            logger.debug("No alert groups were found in relation data")
+            return None, None
+
+        # Construct an ID based on what's in the alert rules if they have labels
+        for group in rules["groups"]:
+            try:
+                labels = group["rules"][0]["labels"]
+                topology = JujuTopology(
+                    # Don't try to safely get required constructor fields. There's already
+                    # a handler for KeyErrors
+                    model_uuid=labels["juju_model_uuid"],
+                    model=labels["juju_model"],
+                    application=labels["juju_application"],
+                    unit=labels.get("juju_unit", ""),
+                    charm_name=labels.get("juju_charm", ""),
+                )
+                return topology.identifier, topology
+            except KeyError:
+                logger.debug("Alert rules were found but no usable labels were present")
+                continue
+
+        logger.warning(
+            "No labeled alert rules were found, and no 'scrape_metadata' "
+            "was available. Using the alert group name as filename."
+        )
+        try:
+            for group in rules["groups"]:
+                return group["name"], None
+        except KeyError:
+            logger.debug("No group name was found to use as identifier")
+
+        return None, None
+
+    def _inject_alert_expr_labels(self, rules: Dict[str, Any]) -> Dict[str, Any]:
+        """Iterate through alert rules and inject topology into expressions.
+
+        Args:
+            rules: a dict of alert rules
+        """
+        if "groups" not in rules:
+            return rules
+
+        modified_groups = []
+        for group in rules["groups"]:
+            # Copy off rules, so we don't modify an object we're iterating over
+            rules_copy = group["rules"]
+            for idx, rule in enumerate(rules_copy):
+                labels = rule.get("labels")
+
+                if labels:
+                    try:
+                        topology = JujuTopology(
+                            # Don't try to safely get required constructor fields. There's already
+                            # a handler for KeyErrors
+                            model_uuid=labels["juju_model_uuid"],
+                            model=labels["juju_model"],
+                            application=labels["juju_application"],
+                            unit=labels.get("juju_unit", ""),
+                            charm_name=labels.get("juju_charm", ""),
+                        )
+
+                        # Inject topology and put it back in the list
+                        rule["expr"] = self._tool.inject_label_matchers(
+                            re.sub(r"%%juju_topology%%,?", "", rule["expr"]),
+                            topology.label_matcher_dict,
+                        )
+                    except KeyError:
+                        # Some required JujuTopology key is missing. Just move on.
+                        pass
+
+                    group["rules"][idx] = rule
+
+            modified_groups.append(group)
+
+        rules["groups"] = modified_groups
+        return rules
 
 
 class ConsumerBase(Object):
@@ -1371,6 +1450,7 @@ class ConsumerBase(Object):
         relation_name: str = DEFAULT_RELATION_NAME,
         alert_rules_path: str = DEFAULT_ALERT_RULES_RELATIVE_PATH,
         recursive: bool = False,
+        skip_alert_topology_labeling: bool = False,
     ):
         super().__init__(charm, relation_name)
         self._charm = charm
@@ -1386,6 +1466,7 @@ class ConsumerBase(Object):
                 e.message,
             )
         self._alert_rules_path = alert_rules_path
+        self._skip_alert_topology_labeling = skip_alert_topology_labeling
 
         self._recursive = recursive
 
@@ -1393,7 +1474,9 @@ class ConsumerBase(Object):
         if not self._charm.unit.is_leader():
             return
 
-        alert_rules = AlertRules(self.topology)
+        alert_rules = (
+            AlertRules(None) if self._skip_alert_topology_labeling else AlertRules(self.topology)
+        )
         alert_rules.add_path(self._alert_rules_path, recursive=self._recursive)
         alert_rules_as_dict = alert_rules.as_dict()
 
@@ -1441,6 +1524,7 @@ class LokiPushApiConsumer(ConsumerBase):
         relation_name: str = DEFAULT_RELATION_NAME,
         alert_rules_path: str = DEFAULT_ALERT_RULES_RELATIVE_PATH,
         recursive: bool = True,
+        skip_alert_topology_labeling: bool = False,
     ):
         """Construct a Loki charm client.
 
@@ -1486,7 +1570,9 @@ class LokiPushApiConsumer(ConsumerBase):
         _validate_relation_by_interface_and_direction(
             charm, relation_name, RELATION_INTERFACE_NAME, RelationRole.requires
         )
-        super().__init__(charm, relation_name, alert_rules_path, recursive)
+        super().__init__(
+            charm, relation_name, alert_rules_path, recursive, skip_alert_topology_labeling
+        )
         events = self._charm.on[relation_name]
         self.framework.observe(self._charm.on.upgrade_charm, self._on_lifecycle_event)
         self.framework.observe(events.relation_joined, self._on_logging_relation_joined)
@@ -1676,7 +1762,7 @@ class LogProxyConsumer(ConsumerBase):
     def __init__(
         self,
         charm,
-        log_files: list = None,
+        log_files: Optional[list] = None,
         relation_name: str = DEFAULT_LOG_PROXY_RELATION_NAME,
         enable_syslog: bool = False,
         syslog_port: int = 1514,
@@ -1807,7 +1893,7 @@ class LogProxyConsumer(ConsumerBase):
             logger.warning(msg)
             self.on.promtail_digest_error.emit(msg)
 
-    def _get_container_name(self, container_name: str = None) -> str:
+    def _get_container_name(self, container_name: str = "") -> str:
         """Helper function for getting/validating a container name.
 
         Args:
@@ -2311,11 +2397,9 @@ class CosTool:
             #         expr: up
             transformed_rules = {"groups": []}  # type: ignore
             for rule in rules["groups"]:
-                transformed = {"name": str(uuid.uuid4()), "rules": [rule]}
-                transformed_rules["groups"].append(transformed)
+                transformed_rules["groups"].append(rule)
 
             rule_path.write_text(yaml.dump(transformed_rules))
-
             args = [str(self.path), "--format", "logql", "validate", str(rule_path)]
             # noinspection PyBroadException
             try:

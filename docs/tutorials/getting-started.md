@@ -1,3 +1,5 @@
+# Getting started
+
 In this tutorial, we'll walk you through the process of deploying the Discourse charm, relating it to the nginx-ingress-integrator charm, the postgresql-k8s charm and the redis-k8s charm, and inspecting the kubernetes resources created.
 
 ## Requirements
@@ -78,3 +80,5 @@ Discourse will be deployed with `discourse-k8s` as default hostname. In order to
 `echo 127.0.0.1 discourse-k8s >> /etc/hosts`
 
 After that, visit `http://discourse-k8s` to reach Discourse.
+
+This charm allows you to add a admin user by executing the corresponding action. Instead of interacting with the Discourse UI just run `juju run-action discourse-k8s/0 add-admin-user email=email@example.com password=somepwd --wait` and it will be registered and validated.

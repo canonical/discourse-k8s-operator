@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Charm for Discourse on kubernetes."""
 import logging
-from collections import namedtuple
+import os.path
+from collections import defaultdict, namedtuple
 from typing import Any, Dict, List, Optional
 
 import ops.lib
@@ -17,7 +18,7 @@ from ops.charm import ActionEvent, CharmBase, HookEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
-from ops.pebble import ExecError
+from ops.pebble import ExecError, ExecProcess, Plan
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -26,38 +27,38 @@ S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
 DATABASE_NAME = "discourse"
 DISCOURSE_PATH = "/srv/discourse/app"
-THROTTLE_LEVELS = {
-    "none": {
-        "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
-        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-    },
-    "permissive": {
-        "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
-        "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 1000,
-        "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 100,
-        "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 400,
-        "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 400,
-        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-    },
-    "strict": {
-        "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
-        "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": 200,
-        "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": 50,
-        "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": 100,
-        "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": 200,
-        "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-    },
+THROTTLE_LEVELS: Dict = defaultdict(dict)
+THROTTLE_LEVELS["none"] = {
+    "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
+    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
+}
+THROTTLE_LEVELS["permissive"] = {
+    "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
+    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "1000",
+    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "100",
+    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "400",
+    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "400",
+    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
+}
+THROTTLE_LEVELS["strict"] = {
+    "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
+    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "200",
+    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "50",
+    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "100",
+    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "200",
+    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
 }
 LOG_PATHS = [
-    "/srv/discourse/app/log/production.log",
-    "/srv/discourse/app/log/unicorn.stderr.log",
-    "/srv/discourse/app/log/unicorn.stdout.log",
+    f"{DISCOURSE_PATH}/log/production.log",
+    f"{DISCOURSE_PATH}/log/unicorn.stderr.log",
+    f"{DISCOURSE_PATH}/log/unicorn.stdout.log",
 ]
 PROMETHEUS_PORT = 9394
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
+SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 
 
 class DiscourseCharm(CharmBase):
@@ -78,6 +79,8 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self.ingress = IngressRequires(self, self._make_ingress_config())
+        self.framework.observe(self.on.install, self._set_up_discourse)
+        self.framework.observe(self.on.upgrade_charm, self._set_up_discourse)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
 
@@ -87,9 +90,10 @@ class DiscourseCharm(CharmBase):
         )
         self.framework.observe(self.db_client.on.master_changed, self._on_database_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
+        self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
         self.redis = RedisRequires(self, self._stored)
-        self.framework.observe(self.on.redis_relation_updated, self._config_changed)
+        self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
 
         self._metrics_endpoint = MetricsEndpointProvider(
             self, jobs=[{"static_configs": [{"targets": [f"*:{PROMETHEUS_PORT}"]}]}]
@@ -123,6 +127,20 @@ class DiscourseCharm(CharmBase):
             self.config["external_hostname"] if self.config["external_hostname"] else self.app.name
         )
 
+    def _is_setup_completed(self) -> bool:
+        """Check if the _set_up_discourse process has finished.
+
+        Returns:
+            True if the _set_up_discourse process has finished.
+        """
+        container = self.unit.get_container(SERVICE_NAME)
+        return container.can_connect() and container.exists(SETUP_COMPLETED_FLAG_FILE)
+
+    def _set_setup_completed(self) -> None:
+        """Mark the _set_up_discourse process as completed."""
+        container = self.unit.get_container(SERVICE_NAME)
+        container.push(SETUP_COMPLETED_FLAG_FILE, "", make_dirs=True)
+
     def _is_config_valid(self) -> bool:
         """Check that the provided config is valid.
 
@@ -144,6 +162,9 @@ class DiscourseCharm(CharmBase):
         if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
             errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
 
+        if self.config["saml_target_url"] and not self.config["force_https"]:
+            errors.append("'saml_target_url' cannot be specified without 'force_https' being true")
+
         if self.config.get("s3_enabled"):
             errors.extend(
                 f"'s3_enabled' requires '{s3_config}'"
@@ -161,10 +182,13 @@ class DiscourseCharm(CharmBase):
         Returns:
             Dictionary with the SAML configuration settings..
         """
+        ubuntu_one_fingerprint = "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
+        ubuntu_one_staging_fingerprint = (
+            "D2:B4:86:49:1B:AC:29:F6:A4:C8:CF:0D:3A:8F:AD:86:36:0A:77:C0"
+        )
         saml_fingerprints = {
-            "https://login.ubuntu.com/+saml": (
-                "32:15:20:9F:A4:3C:8E:3E:8E:47:" "72:62:9A:86:8D:0E:E6:CF:45:D5"
-            )
+            "https://login.ubuntu.com/+saml": ubuntu_one_fingerprint,
+            "https://login.staging.ubuntu.com/+saml": ubuntu_one_staging_fingerprint,
         }
         saml_config = {}
 
@@ -256,7 +280,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
             "DISCOURSE_HOSTNAME": self._get_external_hostname(),
             "DISCOURSE_REDIS_HOST": redis_hostname,
-            "DISCOURSE_REDIS_PORT": redis_port,
+            "DISCOURSE_REDIS_PORT": str(redis_port),
             "DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS": "0",
             "DISCOURSE_SERVE_STATIC_ASSETS": "true",
             "DISCOURSE_SMTP_ADDRESS": self.config["smtp_address"],
@@ -276,9 +300,8 @@ class DiscourseCharm(CharmBase):
 
         # We only get valid throttle levels here, otherwise it would be caught
         # by `check_for_config_problems`.
-        if THROTTLE_LEVELS.get(self.config["throttle_level"]):
-            # self.config return an Any type
-            pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
+        # self.config return an Any type
+        pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
 
         return pod_config
 
@@ -293,7 +316,7 @@ class DiscourseCharm(CharmBase):
             "summary": "Discourse layer",
             "description": "Discourse layer",
             "services": {
-                "discourse": {
+                SERVICE_NAME: {
                     "override": "replace",
                     "summary": "Discourse web application",
                     "command": f"sh -c '{SCRIPT_PATH}/app_launch.sh'",
@@ -310,10 +333,8 @@ class DiscourseCharm(CharmBase):
         }
         return layer_config
 
-    def _should_run_setup(self, current_plan: Dict, s3info: Optional[S3Info]) -> bool:
-        """Determine if the setup script is to be run.
-
-           This is based on the current plan and the new S3 settings.
+    def _should_run_s3_migration(self, current_plan: Plan, s3info: Optional[S3Info]) -> bool:
+        """Determine if the S3 migration is to be run.
 
         Args:
             current_plan: Dictionary containing the current plan.
@@ -322,18 +343,19 @@ class DiscourseCharm(CharmBase):
         Returns:
             If no services are planned yet (first run) or S3 settings have changed.
         """
-        # Properly type checks would require defining a complex TypedMap for the pebble plan
-        return not current_plan.services or (  # type: ignore
-            # Or S3 is enabled and one S3 parameter has changed
-            self.config.get("s3_enabled")
-            and s3info
-            and (
-                s3info.enabled != self.config.get("s3_enabled")
-                or s3info.region != self.config.get("s3_region")
-                or s3info.bucket != self.config.get("s3_bucket")
-                or s3info.endpoint != self.config.get("s3_endpoint")
+        result = self.config.get("s3_enabled") and (
+            not current_plan.services
+            or (
+                s3info
+                and (
+                    s3info.enabled != self.config.get("s3_enabled")
+                    or s3info.region != self.config.get("s3_region")
+                    or s3info.bucket != self.config.get("s3_bucket")
+                    or s3info.endpoint != self.config.get("s3_endpoint")
+                )
             )
         )
+        return bool(result)
 
     def _are_db_relations_ready(self) -> bool:
         """Check if the needed database relations are established.
@@ -351,20 +373,59 @@ class DiscourseCharm(CharmBase):
             return False
         return True
 
+    def _set_up_discourse(self, event: HookEvent) -> None:
+        """Run Discourse migrations and recompile assets.
+
+        Args:
+            event: Event triggering the handler.
+        """
+        container = self.unit.get_container(SERVICE_NAME)
+        if not self._are_db_relations_ready() or not container.can_connect():
+            event.defer()
+            return
+        env_settings = self._create_discourse_environment_settings()
+        try:
+            if self.model.unit.is_leader():
+                self.model.unit.status = MaintenanceStatus("Executing migrations")
+                migration_process: ExecProcess = container.exec(
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
+                    user="discourse",
+                )
+                migration_process.wait_output()
+            self.model.unit.status = MaintenanceStatus("Compiling assets")
+            precompile_process: ExecProcess = container.exec(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            precompile_process.wait_output()
+            self._set_setup_completed()
+            get_version_process = container.exec(
+                [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user="discourse",
+            )
+            version, _ = get_version_process.wait_output()
+            self.unit.set_workload_version(version)
+        except ExecError as cmd_err:
+            logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
+            raise
+
     def _config_changed(self, event: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
             event: Event triggering the handler.
         """
-        self.model.unit.status = MaintenanceStatus("Configuring service")
-        if not self._are_db_relations_ready():
-            event.defer()
-            return
-
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_db_relations_ready() or not container.can_connect():
             event.defer()
+            return
+        if not self._is_config_valid():
             return
 
         # Get previous plan and extract env vars values to check is some S3 params has changed
@@ -382,36 +443,43 @@ class DiscourseCharm(CharmBase):
                 if "DISCOURSE_S3_ENDPOINT" in current_env
                 else "",
             )
+        env_settings = self._create_discourse_environment_settings()
+        try:
+            if self.model.unit.is_leader() and self._should_run_s3_migration(
+                current_plan, previous_s3_info
+            ):
+                self.model.unit.status = MaintenanceStatus("Running S3 migration")
+                process = container.exec(
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
+                    user="discourse",
+                )
+                process.wait_output()
+        except ExecError as cmd_err:
+            logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
+            raise
 
-        # First execute the setup script in 2 conditions:
-        # - First run (when no services are planned in pebble)
-        # - Change in important S3 parameter (comparing value with envVars in pebble plan)
-        if (
-            self._is_config_valid()
-            and self.model.unit.is_leader()
-            and self._should_run_setup(current_plan, previous_s3_info)
-        ):
-            self.model.unit.status = MaintenanceStatus("Compiling assets")
-            script = f"{SCRIPT_PATH}/pod_setup.sh"
-            process = container.exec(
-                [script],
-                environment=self._create_discourse_environment_settings(),
-                working_dir="/srv/discourse/app",
-            )
-            try:
-                stdout, _ = process.wait_output()
-                logger.debug("%s stdout: %s", script, stdout)
-            except ExecError as cmd_err:
-                logger.exception("%s command exited with code %d.", script, cmd_err.exit_code)
-                raise
+        self._reload_configuration()
+        if container.can_connect():
+            self._config_force_https()
+            self.model.unit.status = ActiveStatus()
 
-        # Then start the service
-        if self._is_config_valid():
+    def _reload_configuration(self) -> None:
+        # mypy has some trouble with dynamic attributes
+        if not self._is_setup_completed():
+            logger.info("Defer starting the discourse server until discourse setup completed")
+            return
+        container = self.unit.get_container(SERVICE_NAME)
+        if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
             self.ingress.update_config(self._make_ingress_config())
-            self.model.unit.status = ActiveStatus()
+
+    def _redis_relation_changed(self, _: HookEvent) -> None:
+        if self._are_db_relations_ready():
+            self._reload_configuration()
 
     # pgsql.DatabaseRelationJoinedEvent is actually defined
     def _on_database_relation_joined(
@@ -449,7 +517,8 @@ class DiscourseCharm(CharmBase):
             self._stored.db_password = event.master.password
             self._stored.db_host = event.master.host
 
-        self._config_changed(event)
+        if self._are_db_relations_ready():
+            self._reload_configuration()
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
         """Add a new admin user to Discourse.
@@ -463,10 +532,58 @@ class DiscourseCharm(CharmBase):
         if container.can_connect():
             process = container.exec(
                 [
+                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                    "exec",
+                    "rake",
+                    "admin:create",
+                ],
+                stdin=f"{email}\n{password}\n{password}\nY\n",
+                user="discourse",
+                working_dir=DISCOURSE_PATH,
+                environment=self._create_discourse_environment_settings(),
+                timeout=60,
+            )
+            try:
+                process.wait_output()
+                event.set_results({"user": f"{email}"})
+            except ExecError as ex:
+                event.fail(
+                    # Parameter validation errors are printed to stdout
+                    f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
+                )
+        else:
+            event.fail("Container is not ready")
+
+    def _config_force_https(self) -> None:
+        """Config Discourse to force_https option based on charm configuration."""
+        container = self.unit.get_container("discourse")
+        force_bool = str(self.config["force_https"]).lower()
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/rails"),
+                "runner",
+                f"SiteSetting.force_https={force_bool}",
+            ],
+            user="discourse",
+            working_dir=DISCOURSE_PATH,
+            environment=self._create_discourse_environment_settings(),
+        )
+        process.wait_output()
+
+    def _on_anonymize_user_action(self, event: ActionEvent) -> None:
+        """Anonymize data from a user.
+
+        Args:
+            event: Event triggering the anonymize_user action.
+        """
+        username = event.params["username"]
+        container = self.unit.get_container("discourse")
+        if container.can_connect():
+            process = container.exec(
+                [
                     "bash",
                     "-c",
-                    "./bin/bundle exec rake admin:create",
-                    f"<<< $'{email}\n{password}\n{password}\nY'",
+                    f"./bin/bundle exec rake users:anonymize[{username}]",
                 ],
                 user="discourse",
                 working_dir=DISCOURSE_PATH,
@@ -474,12 +591,12 @@ class DiscourseCharm(CharmBase):
             )
             try:
                 process.wait_output()
-                event.set_results({"user": f"{email}"})
+                event.set_results({"user": f"{username}"})
             except ExecError as ex:
-                logger.exception("Action add-admin-user failed")
                 event.fail(
                     # Parameter validation errors are printed to stdout
-                    f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
+                    # Ignore mypy warning when formatting stdout
+                    f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
                 )
 
 
