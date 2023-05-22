@@ -68,9 +68,9 @@ async def test_prom_exporter_is_up(app: Application):
     assert: the response is 200 (HTTP OK)
     """
     # Application actually does have units
-    indico_unit = app.units[0]  # type: ignore
+    discourse_unit = app.units[0]  # type: ignore
     cmd = f"curl http://localhost:{PROMETHEUS_PORT}/metrics"
-    action = await indico_unit.run(cmd)
+    action = await discourse_unit.run(cmd)
     result = await action.wait()
     code = result.results.get("return-code")
     stdout = result.results.get("stdout")
