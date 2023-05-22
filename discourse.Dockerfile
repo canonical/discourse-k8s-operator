@@ -1,24 +1,16 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 FROM ubuntu:focal
 
-# ARGS become environment variables, but can be overridden using the
-# --build-arg var=foo option to docker build. This allows you to have a
-# default build image, but customize certain options such as app version or
-# userids, etc.
-ARG CONTAINER_APP_VERSION
-ARG CONTAINER_APP_USERNAME
-ARG CONTAINER_APP_UID
-ARG CONTAINER_APP_GROUP
-ARG CONTAINER_APP_GID
-
 # Used in Launchpad OCI Recipe build to tag the image.
-LABEL org.label-schema.version=${CONTAINER_APP_VERSION:-v2.7.10}
+LABEL org.label-schema.version=v2.8.14
 
 # Copy any args we got into the environment.
-ENV CONTAINER_APP_VERSION ${CONTAINER_APP_VERSION:-v2.7.10}
-ENV CONTAINER_APP_USERNAME ${CONTAINER_APP_USERNAME:-discourse}
-ENV CONTAINER_APP_UID ${CONTAINER_APP_UID:-200}
-ENV CONTAINER_APP_GROUP ${CONTAINER_APP_GROUP:-discourse}
-ENV CONTAINER_APP_GID ${CONTAINER_APP_GID:-200}
+ENV CONTAINER_APP_VERSION v2.8.14
+ENV CONTAINER_APP_USERNAME discourse
+ENV CONTAINER_APP_UID 200
+ENV CONTAINER_APP_GROUP discourse
+ENV CONTAINER_APP_GID 200
 
 # CONTAINER_APP_ROOT is where files related to this application go.
 ENV CONTAINER_APP_ROOT=/srv/discourse
@@ -32,6 +24,7 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     && adduser --uid "${CONTAINER_APP_UID}" --home "${CONTAINER_APP_ROOT}" --gid "${CONTAINER_APP_GID}" --system "${CONTAINER_APP_USERNAME}" \
     && apt-get update \
     && apt-get install -y brotli \
+    curl \
     gettext-base \
     gifsicle \
     git \
@@ -44,8 +37,6 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     libxml2-dev \
     libxslt1-dev \
     libz-dev \
-    uglifyjs.terser \
-    node-uglify \
     optipng \
     pngquant \
     postgresql-client \
@@ -56,21 +47,19 @@ RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime \
     tzdata \
     ubuntu-dev-tools \
     zlib1g-dev \
-    && rm /var/lib/apt/lists/* \
-# Older versions of the uglifyjs.terser package install a uglifyjs.terser
-# command but not the terser command, terser command exists in $PATH is
-# vital to trigger js assets compression using node. Manually create the
-# terser command if it does not exist. Please remove this line if the
-# base image is >= 22.04. Also, please consider removing the node-uglify
-# when upgrading to discourse >= 2.8.0, since the node-uglify is not
-# required to trigger node js assets compression, only terser will do fine.
-    && which terser || ln -s $(which uglifyjs.terser) /usr/local/bin/terser \
-# Run build process.
+    && curl --silent --location https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get update \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g terser uglify-js pnpm yarn \
     && git -C "${CONTAINER_APP_ROOT}" clone --depth 1 --branch "${CONTAINER_APP_VERSION}" https://github.com/discourse/discourse.git app
 
-# Apply patch for LP#1903695
+# Apply patches
+# https://github.com/discourse/discourse/pull/20522
+# https://github.com/discourse/discourse/pull/20523 LP#1903695
 COPY image/patches /srv/patches
 RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
+    && git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/anonymize_user.patch \
     && rm -rf /srv/patches \
     && mkdir -p "${CONTAINER_APP_ROOT}/.gem" \
 # Create the backup and upload directories as Discourse doesn't like it 
@@ -92,19 +81,21 @@ RUN git -C "${CONTAINER_APP_ROOT}/app" apply /srv/patches/lp1903695.patch \
     && apt-get autoremove \
     && apt-get clean
 
+RUN su -s /bin/bash -c 'yarn --cwd ${CONTAINER_APP_ROOT}/app install --production --frozen-lockfile' \
+    && su -s /bin/bash -c 'yarn --cwd ${CONTAINER_APP_ROOT}/app cache clean' "${CONTAINER_APP_USERNAME}"
+
 # Copy run-time scripts into the container.
 COPY --chown="${CONTAINER_APP_UID}:${CONTAINER_APP_GID}" image/scripts /srv/scripts
 
 ENV PLUGINS_DIR="${CONTAINER_APP_ROOT}/app/plugins"
 RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/discourse-saml" \
-# Remove additions incompatible with Discourse versions < 2.8
-    && git -C "${PLUGINS_DIR}/discourse-saml" reset --hard 851f6cebe3fdd48019660b236a447abb6ddf9c89 \
     && mkdir -p "${PLUGINS_DIR}/discourse-saml/gems" \
 # Have to determine the gems needed and install them now, otherwise Discourse will
 # try to install them at runtime, which may not work due to network access issues.
-    && echo 'source "https://rubygems.org"' > "${PLUGINS_DIR}/discourse-saml/Gemfile" \
     && grep -e ^gem "${PLUGINS_DIR}/discourse-saml/plugin.rb" >> "${PLUGINS_DIR}/discourse-saml/Gemfile" \
     && git clone https://github.com/discourse/discourse-solved.git "${PLUGINS_DIR}/discourse-solved" \
+# Checkout commit prior to migration error introduced by renaming a variable in 882dd61e11f9bab8e99510296938b0cdbc3269c4
+    && git -C "${PLUGINS_DIR}/discourse-solved" reset --hard d6c8089ca38611b09a8edb29d64f359bcef11f11 \
     && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git "${PLUGINS_DIR}/discourse-markdown-note" \
     && git clone https://github.com/unfoldingWord-dev/discourse-mermaid.git "${PLUGINS_DIR}/discourse-mermaid" \
     && chown -R "${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP}" "${PLUGINS_DIR}" \

@@ -1,3 +1,5 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 add-admin-user:
   description: Add a new admin user.
   params:
@@ -8,4 +10,10 @@ add-admin-user:
       type: string
       description: User password.
   required: [email, password]
-
+anonymize-user:
+  description: Anonymize a user.
+  params:
+    username:
+      type: string
+      description: The unique identifier of the user to anonymize.
+  required: [username]

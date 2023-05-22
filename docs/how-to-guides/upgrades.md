@@ -1,3 +1,5 @@
+# How to upgrade
+
 Upgrades are done just by running the `juju refresh` subcommand. Juju, Kubernetes, and Discourse then work together to ensure that one pod is upgraded to the new version and makes any database schema changes before the rest of the pods are upgraded in their turn.
 
 ## Upgrading from pod-spec to sidecar

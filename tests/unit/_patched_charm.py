@@ -1,4 +1,4 @@
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Patch the ``ops-lib-pgsql`` library for unit testing.
@@ -34,7 +34,7 @@ class _PGSQLPatch:
     def __init__(self):
         # borrow some code from
         # https://github.com/canonical/ops-lib-pgsql/blob/master/tests/test_client.py
-        self._leadership_data = {}
+        self._leadership_data = {}  # type: ignore
         self._patch = patch.multiple(
             pgsql.client,
             _is_ready=MagicMock(return_value=True),
@@ -58,5 +58,4 @@ class _PGSQLPatch:
 
 pgsql_patch = _PGSQLPatch()
 DiscourseCharm = __import__("charm").DiscourseCharm
-SCRIPT_PATH = __import__("charm").SCRIPT_PATH
 DISCOURSE_PATH = __import__("charm").DISCOURSE_PATH
