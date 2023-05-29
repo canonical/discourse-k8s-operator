@@ -134,9 +134,7 @@ async def app_fixture(
     """
     # Deploy relations to speed up overall execution
     await asyncio.gather(
-        model.deploy(
-            "postgresql-k8s", channel="latest/stable", series="jammy", revision=20, trust=True
-        ),
+        model.deploy("postgresql-k8s", channel="latest/stable", series="jammy", trust=True),
         model.deploy("redis-k8s", series="focal"),
         model.deploy("nginx-ingress-integrator", series="focal", trust=True),
     )
