@@ -139,8 +139,8 @@ async def app_fixture(
             "postgresql-k8s",
             "--channel",
             "latest/stable",
-            "--trust"
-            check=True
+            "--trust",
+            check=True,
         ),
         model.deploy("redis-k8s", series="focal"),
         model.deploy("nginx-ingress-integrator", series="focal", trust=True),
