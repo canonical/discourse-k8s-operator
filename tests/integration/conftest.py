@@ -137,6 +137,8 @@ async def app_fixture(
         ops_test.juju(
             "deploy",
             "postgresql-k8s",
+            "--series",
+            "focal",
             "--channel",
             "latest/stable",
             "--trust",
