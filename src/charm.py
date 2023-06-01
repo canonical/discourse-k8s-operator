@@ -110,7 +110,7 @@ class DiscourseCharm(CharmBase):
             service_hostname=self._get_external_hostname(),
             service_name=self.app.name,
             service_port=SERVICE_PORT,
-            session_cookie_max_age=3600
+            session_cookie_max_age=3600,
         )
 
     def _get_external_hostname(self) -> str:
