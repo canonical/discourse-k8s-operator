@@ -47,7 +47,7 @@ requires:
     interface: pgsql
     limit: 1
   ingress:
-    interface: ingress
+    interface: nginx-route
     limit: 1
   logging:
     interface: loki_push_api
