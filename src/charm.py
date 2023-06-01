@@ -471,7 +471,6 @@ class DiscourseCharm(CharmBase):
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
-            self.ingress.update_config(self._make_ingress_config())
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
         if self._are_db_relations_ready():
