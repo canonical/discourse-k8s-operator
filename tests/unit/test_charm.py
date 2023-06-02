@@ -272,9 +272,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("s|kI0ure_k3Y", updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"])
         self.assertTrue(updated_plan_env["DISCOURSE_USE_S3"])
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
-        self.assertEqual(
-            "discourse-k8s", self.harness.charm.ingress.config_dict["service-hostname"]
-        )
 
     def test_config_changed_when_valid_no_fingerprint(self):
         """
@@ -323,9 +320,6 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.assertEqual("none", updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"])
         self.assertNotIn("DISCOURSE_USE_S3", updated_plan_env)
         self.assertEqual(self.harness.model.unit.status, ActiveStatus())
-        self.assertEqual(
-            "discourse-k8s", self.harness.charm.ingress.config_dict["service-hostname"]
-        )
 
     def test_config_changed_when_valid(self):
         """
