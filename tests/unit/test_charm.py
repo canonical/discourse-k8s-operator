@@ -111,6 +111,21 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             WaitingStatus("Waiting for redis relation"),
         )
 
+    def test_ingress_relation_not_ready(self):
+        """
+        arrange: given a deployed discourse charm with the ingress established
+        act: when pebble ready event is triggered
+        assert: it will wait for the ingress relation.
+        """
+        self.harness.begin_with_initial_hooks()
+        self._add_ingress_relation()
+        self.harness.container_pebble_ready("discourse")
+
+        self.assertEqual(
+            self.harness.model.unit.status,
+            WaitingStatus("Waiting for database relation"),
+        )
+
     def test_config_changed_when_no_saml_target(self):
         """
         arrange: given a deployed discourse charm with all the required relations
@@ -571,6 +586,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.charm._stored.redis_relation = {
             redis_relation_id: {"hostname": "redis-host", "port": 1010}
         }
+
+    def _add_ingress_relation(self):
+        "Add ingress relation and relation data to the charm."
+        nginx_route_relation_id = self.harness.add_relation("nginx-route", "ingress")
+        self.harness.add_relation_unit(nginx_route_relation_id, "ingress/0")
 
     def _add_database_relations(self):
         "Add postgresql and redis relations and relation data to the charm."
