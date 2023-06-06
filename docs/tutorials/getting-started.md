@@ -81,4 +81,4 @@ Discourse will be deployed with `discourse-k8s` as default hostname. In order to
 
 After that, visit `http://discourse-k8s` to reach Discourse.
 
-This charm allows you to add a admin user by executing the corresponding action. Instead of interacting with the Discourse UI just run `juju run-action discourse-k8s/0 add-admin-user email=email@example.com password=somepwd --wait` and it will be registered and validated.
+This charm allows you to add a admin user by executing the corresponding action. Instead of interacting with the Discourse UI just run `juju run-action discourse-k8s/0 add-admin-user email=email@example.com password=<secure password> --wait` and it will be registered and validated. Note that the password needs to be **at minimum 10 characters long**, otherwise the action will fail.
