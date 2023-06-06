@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 import ops.lib
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
-from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
+from charms.nginx_ingress_integrator.v0.nginx_route import require_nginx_route
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
 from ops.charm import ActionEvent, CharmBase, HookEvent
@@ -78,7 +78,7 @@ class DiscourseCharm(CharmBase):
             db_host=None,
             redis_relation={},
         )
-        self.ingress = IngressRequires(self, self._make_ingress_config())
+        self._require_nginx_route()
         self.framework.observe(self.on.install, self._set_up_discourse)
         self.framework.observe(self.on.upgrade_charm, self._set_up_discourse)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
@@ -103,19 +103,15 @@ class DiscourseCharm(CharmBase):
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
-    def _make_ingress_config(self) -> Dict[str, Any]:
-        """Create minimal ingress configuration.
-
-        Returns:
-            Minimal ingress configuration with hostname, service name and service port.
-        """
-        ingress_config = {
-            "service-hostname": self._get_external_hostname(),
-            "service-name": self.app.name,
-            "service-port": SERVICE_PORT,
-            "session-cookie-max-age": 3600,
-        }
-        return ingress_config
+    def _require_nginx_route(self) -> None:
+        """Create minimal ingress configuration."""
+        require_nginx_route(
+            charm=self,
+            service_hostname=self._get_external_hostname(),
+            service_name=self.app.name,
+            service_port=SERVICE_PORT,
+            session_cookie_max_age=3600,
+        )
 
     def _get_external_hostname(self) -> str:
         """Extract and return hostname from site_url or default to [application name].
@@ -475,7 +471,6 @@ class DiscourseCharm(CharmBase):
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
-            self.ingress.update_config(self._make_ingress_config())
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
         if self._are_db_relations_ready():
