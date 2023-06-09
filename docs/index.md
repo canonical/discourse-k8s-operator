@@ -1,7 +1,11 @@
-Discourse is a from-scratch reboot, an attempt to reimagine what a modern Internet discussion forum should be today, in a world of ubiquitous smartphones, tablets, Facebook, and Twitter. See [this page](https://www.discourse.org/about) for more details about what's different about Discourse. And for a list of the features of Discourse, see [this page](https://www.discourse.org/features).
+A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
+ deploying and managing [Discourse](https://www.discourse.org/) on Kubernetes. Discourse is the 100% open source discussion platform. Use it as a mailing list, discussion  forum or long-form chat room.
 
-Discourse is a JavaScript application that runs in your web browser, using the [Ember.js](https://emberjs.com/) framework. The server side of Discourse is [Ruby on Rails](https://rubyonrails.org/) backed by a [Postgres](https://www.postgresql.org/) database and [Redis](https://redis.io/) cache. The code is licensed under the [Apache License, version 2](https://www.apache.org/licenses/LICENSE-2.0), and pull requests are accepted once you've signed a [Contributor License Agreement](https://en.wikipedia.org/wiki/Contributor_License_Agreement).
+This charm simplifies initial deployment and "day N" operations of Discourse on Kubernetes, such as scaling the number of instances, integration with SSO, access to S3 for redundant file storage and more. It allows for deployment on many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) or [Charmed Kubernetes](https://ubuntu.com/kubernetes) and public cloud Kubernetes offerings.
 
-For more information on Redis and PostgreSQL relations see [this section](https://charmhub.io/discourse-k8s/docs/database-relations).
-
-For details on configuration options, see [this page](https://charmhub.io/discourse-k8s/configure).
+As such, the charm makes it easy for those looking to take control of their own discussion platform whilst keeping operations simple, and gives them the freedom to deploy on the Kubernetes platform of their choice.
+ 
+For DevOps or SRE teams this charm will make operating Discourse simple and
+ straightforward through Juju's clean interface. It will allow easy deployment
+ into multiple environments for testing of changes, and supports scaling out for
+ enterprise deployments.
