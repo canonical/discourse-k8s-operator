@@ -19,8 +19,9 @@ on:
 
 jobs:
   promote-charm:
-    uses: canonical/operator-workflows/.github/workflows/promote_charm.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/promote_charm.yaml@upload-charm-docs-option
     with:
       origin-channel: ${{ github.event.inputs.origin-channel }}
       destination-channel: ${{ github.event.inputs.destination-channel }}
+      doc-automation-disabled: false
     secrets: inherit
