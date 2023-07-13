@@ -269,9 +269,11 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             headers={"Referer": login_page.url},
             timeout=requests_timeout,
         )
-        saml_response = re.findall(
+        saml_responses = re.findall(
             '<input type="hidden" name="SAMLResponse" value="([^"]+)" />', saml_callback.text
-        )[0]
+        )
+        assert len(saml_responses), saml_callback.text
+        saml_response = saml_responses[0]
         session.post(
             f"https://{host}/auth/saml/callback",
             data={
