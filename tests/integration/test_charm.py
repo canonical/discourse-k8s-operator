@@ -252,9 +252,11 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             data={"authenticity_token": csrf_token},
             timeout=requests_timeout,
         )
-        csrf_token = re.findall(
+        csrf_tokens = re.findall(
             "<input type='hidden' name='csrfmiddlewaretoken' value='([^']+)' />", login_page.text
-        )[0]
+        )
+        assert len(csrf_tokens), login_page.text
+        csrf_token = csrf_tokens[0]
         saml_callback = session.post(
             "https://login.staging.ubuntu.com/+login",
             data={
