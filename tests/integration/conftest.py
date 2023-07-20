@@ -139,16 +139,27 @@ async def app_fixture(
         model.deploy("nginx-ingress-integrator", series="focal", trust=True),
     )
 
-    charm = pytestconfig.getoption("--charm-file")
-    if not charm:
-        charm = await ops_test.build_charm(".")
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
     }
 
-    application = await model.deploy(
-        charm, resources=resources, application_name=app_name, config=app_config, series="focal"
-    )
+    if charm := pytestconfig.getoption("--charm-file"):
+        application = await model.deploy(
+            f"./{charm}",
+            resources=resources,
+            application_name=app_name,
+            config=app_config,
+            series="focal",
+        )
+    else:
+        charm = await ops_test.build_charm(".")
+        application = await model.deploy(
+            charm,
+            resources=resources,
+            application_name=app_name,
+            config=app_config,
+            series="focal",
+        )
     await model.wait_for_idle()
 
     # Add required relations
