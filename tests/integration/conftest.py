@@ -123,7 +123,6 @@ async def discourse_address_fixture(model: Model, app: Application):
 
 @pytest_asyncio.fixture(scope="module", name="app")
 async def app_fixture(
-    ops_test: OpsTest,
     app_name: str,
     app_config: Dict[str, str],
     pytestconfig: Config,
