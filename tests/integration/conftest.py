@@ -143,7 +143,8 @@ async def app_fixture(
         "discourse-image": pytestconfig.getoption("--discourse-image"),
     }
 
-    if charm := pytestconfig.getoption("--charm-file"):
+    charm = pytestconfig.getoption("--charm-file")
+    if charm:
         application = await model.deploy(
             f"./{charm}",
             resources=resources,
