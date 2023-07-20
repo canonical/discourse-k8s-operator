@@ -9,3 +9,4 @@ def pytest_addoption(parser):
     parser.addoption("--localstack-address", action="store")
     parser.addoption("--saml-email", action="store")
     parser.addoption("--saml-password", action="store")
+    parser.addoption("--charm-file", action="store")

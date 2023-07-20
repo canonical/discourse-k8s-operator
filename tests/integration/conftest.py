@@ -139,7 +139,7 @@ async def app_fixture(
         model.deploy("nginx-ingress-integrator", series="focal", trust=True),
     )
 
-    charm = await ops_test.build_charm(".")
+    charm = pytestconfig.getoption("--charm-file")
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
     }
