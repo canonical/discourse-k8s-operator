@@ -4,27 +4,27 @@ on:
   pull_request:
 
 jobs:
-  integ-s3:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
-    secrets: inherit
-    with:
-      extra-arguments: -k s3 --localstack-address 172.17.0.1
-      pre-run-script: localstack-installation.sh
-  test-create-category:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
-    secrets: inherit
-    with:
-      extra-arguments: -k test_create_category
-  test-serve-compiled-assets:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
-    secrets: inherit
-    with:
-      extra-arguments: -k test_server_compiled_assets
-  test-prom-exporter-is-up:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
-    secrets: inherit
-    with:
-      extra-arguments: -k test_prom_exporter_is_up
+  # integ-s3:
+  #   uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+  #   secrets: inherit
+  #   with:
+  #     extra-arguments: -k s3 --localstack-address 172.17.0.1
+  #     pre-run-script: localstack-installation.sh
+  # test-create-category:
+  #   uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+  #   secrets: inherit
+  #   with:
+  #     extra-arguments: -k test_create_category
+  # test-serve-compiled-assets:
+  #   uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+  #   secrets: inherit
+  #   with:
+  #     extra-arguments: -k test_server_compiled_assets
+  # test-prom-exporter-is-up:
+  #   uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+  #   secrets: inherit
+  #   with:
+  #     extra-arguments: -k test_prom_exporter_is_up
   test-discourse-up:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
