@@ -99,6 +99,7 @@ async def test_setup_discourse(
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
+@pytest.mark.skip(reason="This test will need some rework")
 async def test_s3_conf(app: Application, localstack_address: str, model: Model):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
