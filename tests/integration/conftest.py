@@ -217,7 +217,8 @@ async def admin_api_key_fixture(
     with requests.session() as sess:
         # Get CSRF token
         res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
-        assert res.status_code == requests.codes.ok, res.text
+        # pylint doesn't see the "ok" member
+        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
         data = res.json()
         assert data["csrf"], data
         csrf = data["csrf"]
@@ -236,7 +237,8 @@ async def admin_api_key_fixture(
                 "timezone": "Asia/Hong_Kong",
             },
         )
-        assert res.status_code == requests.codes.ok, res.text
+        # pylint doesn't see the "ok" member
+        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
         # Create global key
         res = sess.post(
             f"{discourse_address}/admin/api/keys",
@@ -247,7 +249,8 @@ async def admin_api_key_fixture(
             },
             json={"key": {"description": "admin-api-key", "username": None}},
         )
-        assert res.status_code == requests.codes.ok, res.text
+        # pylint doesn't see the "ok" member
+        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
 
     data = res.json()
     assert data["key"]["key"], data
