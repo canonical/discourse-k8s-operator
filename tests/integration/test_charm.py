@@ -304,7 +304,6 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
 
 
 @pytest.mark.asyncio
-@pytest.mark.xfail(reason="This test will need some rework")
 async def test_create_category(
     discourse_address: str,
     admin_credentials: types.Credentials,

@@ -203,9 +203,10 @@ async def admin_credentials_fixture(app: Application) -> types.Credentials:
         "add-admin-user", email=email, password=password
     )
     await action.wait()
-    return types.Credentials(
+    admin_credentials = types.Credentials(
         email=email, username=email.split("@", maxsplit=1)[0], password=password
     )
+    return admin_credentials
 
 
 @pytest_asyncio.fixture(scope="module", name="admin_api_key")
@@ -216,7 +217,10 @@ async def admin_api_key_fixture(
     with requests.session() as sess:
         # Get CSRF token
         res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
-        csrf = res.json()["csrf"]
+        assert res.status_code == requests.codes.ok, res.text
+        data = res.json()
+        assert data["csrf"], data
+        csrf = data["csrf"]
         # Create session & login
         res = sess.post(
             f"{discourse_address}/session",
@@ -232,6 +236,7 @@ async def admin_api_key_fixture(
                 "timezone": "Asia/Hong_Kong",
             },
         )
+        assert res.status_code == requests.codes.ok, res.text
         # Create global key
         res = sess.post(
             f"{discourse_address}/admin/api/keys",
@@ -242,5 +247,8 @@ async def admin_api_key_fixture(
             },
             json={"key": {"description": "admin-api-key", "username": None}},
         )
+        assert res.status_code == requests.codes.ok, res.text
 
-    return res.json()["key"]["key"]
+    data = res.json()
+    assert data["key"]["key"], data
+    return data["key"]["key"]
