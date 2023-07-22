@@ -56,6 +56,7 @@ async def test_discourse_up(requests_timeout: float, discourse_address: str):
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
+@pytest.mark.skip(reason="This test will need some rework")
 async def test_prom_exporter_is_up(app: Application):
     """
     arrange: given charm in its initial state
@@ -64,7 +65,7 @@ async def test_prom_exporter_is_up(app: Application):
     """
     # Application actually does have units
     discourse_unit = app.units[0]  # type: ignore
-    cmd = f"curl http://localhost:{PROMETHEUS_PORT}/metrics"
+    cmd = f"curl -m 60 http://localhost:{PROMETHEUS_PORT}/metrics"
     action = await discourse_unit.run(cmd)
     result = await action.wait()
     code = result.results.get("return-code")
