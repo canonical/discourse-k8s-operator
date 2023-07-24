@@ -593,3 +593,55 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         "Add ingress relation and relation data to the charm."
         nginx_route_relation_id = self.harness.add_relation("nginx-route", "ingress")
         self.harness.add_relation_unit(nginx_route_relation_id, "ingress/0")
+
+    def test_postgres_relation_data(self):
+        test_cases = [
+            (
+                {
+                    "database": DATABASE_NAME,
+                    "endpoints": "dbhost:5432,dbhost-2:5432",
+                    "password": "somepasswd",  # nosec
+                    "username": "someuser",
+                }, True
+            ),
+            (
+                {
+                    "database": DATABASE_NAME,
+                    "endpoints": "foo",
+                    "password": "somepasswd",  # nosec
+                    "username": "someuser",
+                }, False
+            ),
+            (
+                {
+                    "database": DATABASE_NAME,
+                    "endpoints": "dbhost:5432,dbhost-2:5432",
+                    "password": "",
+                    "username": "someuser",
+                }, False
+            ),
+        ]
+
+        for relation_data, should_be_ready in test_cases:
+            with self.subTest(relation_data=relation_data, should_be_ready=should_be_ready):
+                self.start_harness(with_postgres=False, with_redis=False)
+                # get a relation ID for the test outside of __init__ (note pylint disable)
+                self.db_relation_id = (  # pylint: disable=attribute-defined-outside-init
+                    self.harness.add_relation("database", "postgresql")
+                )
+                self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
+                self.harness.update_relation_data(
+                    self.db_relation_id,
+                    "postgresql",
+                    relation_data,
+                )
+                if should_be_ready:
+                    self.assertEqual(
+                        self.harness.model.unit.status,
+                        WaitingStatus("Waiting for redis relation"),
+                    )
+                else:
+                    self.assertEqual(
+                        self.harness.model.unit.status,
+                        WaitingStatus("Waiting for database relation"),
+                    )
