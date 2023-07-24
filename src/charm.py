@@ -377,17 +377,8 @@ class DiscourseCharm(CharmBase):
         Returns:
             If the needed relations have been established.
         """
-        db_rel = self._database.get_relation_data()
-        if db_rel is None:
+        if not self._database.is_relation_ready():
             self.model.unit.status = WaitingStatus("Waiting for database relation")
-            return False
-        if None in (
-            db_rel["POSTGRES_USER"],
-            db_rel["POSTGRES_PASSWORD"],
-            db_rel["POSTGRES_DB"],
-            db_rel["POSTGRES_HOST"],
-        ):
-            self.model.unit.status = WaitingStatus("Waiting for database relation to initialize")
             return False
         # mypy fails do detect this stored value can be False
         if not self._stored.redis_relation:  # type: ignore

@@ -36,6 +36,7 @@ class DatabaseObserver(Object):
 
         Returns:
             Dict: Information needed for setting environment variables.
+            Returns None if the relation data is not correctly initialized.
         """
         if self.model.get_relation(self._RELATION_NAME) is None:
             return None
@@ -43,12 +44,35 @@ class DatabaseObserver(Object):
         relation_id = self.database.relations[0].id
         relation_data = self.database.fetch_relation_data()[relation_id]
 
-        endpoint = relation_data.get("endpoints", ":")
+        endpoints = relation_data.get("endpoints", "").split(",")
+        if len(endpoints) < 1:
+            return None
 
-        return {
+        primary_endpoint = endpoints[0].split(":")
+        if len(primary_endpoint) < 2:
+            return None
+
+        data = {
             "POSTGRES_USER": relation_data.get("username"),
             "POSTGRES_PASSWORD": relation_data.get("password"),
-            "POSTGRES_HOST": endpoint.split(":")[0],
-            "POSTGRES_PORT": endpoint.split(":")[1],
+            "POSTGRES_HOST": primary_endpoint[0],
+            "POSTGRES_PORT": primary_endpoint[1],
             "POSTGRES_DB": relation_data.get("database"),
         }
+
+        if None in (
+            data["POSTGRES_USER"],
+            data["POSTGRES_PASSWORD"],
+            data["POSTGRES_DB"],
+        ):
+            return None
+
+        return data
+
+    def is_relation_ready(self) -> bool:
+        """Check if the relation is ready.
+
+        Returns:
+            bool: returns True if the relation is ready.
+        """
+        return self.get_relation_data() is not None
