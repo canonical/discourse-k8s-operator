@@ -44,8 +44,8 @@ requires:
     interface: redis
     limit: 1
   database:
-      interface: postgresql_client
-      limit: 1
+    interface: postgresql_client
+    limit: 1
   nginx-route:
     interface: nginx-route
     limit: 1
