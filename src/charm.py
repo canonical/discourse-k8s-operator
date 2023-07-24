@@ -252,6 +252,11 @@ class DiscourseCharm(CharmBase):
         return s3_env
 
     def _get_redis_relation_data(self) -> typing.Tuple[typing.Any, typing.Any]:
+        """Get the hostname and port from the redis relation data.
+
+        Returns:
+            Tuple with the hostname and port of the related redis
+        """
         # This is the current recommended way of accessing the relation data.
         for redis_unit in self._stored.redis_relation:  # type: ignore
             # mypy fails to see that this is indexable
