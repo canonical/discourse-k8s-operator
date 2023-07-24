@@ -56,7 +56,6 @@ async def test_discourse_up(requests_timeout: float, discourse_address: str):
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-@pytest.mark.skip(reason="This test will need some rework")
 async def test_prom_exporter_is_up(app: Application):
     """
     arrange: given charm in its initial state
@@ -99,7 +98,6 @@ async def test_setup_discourse(
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-@pytest.mark.skip(reason="This test will need some rework")
 async def test_s3_conf(app: Application, localstack_address: str, model: Model):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
