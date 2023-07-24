@@ -595,6 +595,11 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         self.harness.add_relation_unit(nginx_route_relation_id, "ingress/0")
 
     def test_postgres_relation_data(self):
+        """
+        arrange: given a deployed discourse charm and some relation data
+        act: add the postgresql relation to the charm
+        assert: the charm should wait for some correct relation data
+        """
         test_cases = [
             (
                 {
@@ -602,7 +607,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "endpoints": "dbhost:5432,dbhost-2:5432",
                     "password": "somepasswd",  # nosec
                     "username": "someuser",
-                }, True
+                },
+                True,
             ),
             (
                 {
@@ -610,7 +616,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "endpoints": "foo",
                     "password": "somepasswd",  # nosec
                     "username": "someuser",
-                }, False
+                },
+                False,
             ),
             (
                 {
@@ -618,7 +625,8 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                     "endpoints": "dbhost:5432,dbhost-2:5432",
                     "password": "",
                     "username": "someuser",
-                }, False
+                },
+                False,
             ),
         ]
 
