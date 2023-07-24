@@ -5,9 +5,10 @@
 """Charm for Discourse on kubernetes."""
 import logging
 import os.path
+import typing
 from collections import defaultdict, namedtuple
-from typing import Any, Dict, List, Optional
 
+import ops
 import ops.lib
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
@@ -27,7 +28,7 @@ S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
 DATABASE_NAME = "discourse"
 DISCOURSE_PATH = "/srv/discourse/app"
-THROTTLE_LEVELS: Dict = defaultdict(dict)
+THROTTLE_LEVELS: typing.Dict = defaultdict(dict)
 THROTTLE_LEVELS["none"] = {
     "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
     "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
@@ -172,7 +173,7 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = BlockedStatus(", ".join(errors))
         return not errors
 
-    def _get_saml_config(self) -> Dict[str, Any]:
+    def _get_saml_config(self) -> typing.Dict[str, typing.Any]:
         """Get SAML configuration.
 
         Returns:
@@ -210,7 +211,7 @@ class DiscourseCharm(CharmBase):
 
         return saml_config
 
-    def _get_missing_config_fields(self) -> List[str]:
+    def _get_missing_config_fields(self) -> typing.List[str]:
         """Check for missing fields in juju config.
 
         Returns:
@@ -219,7 +220,7 @@ class DiscourseCharm(CharmBase):
         needed_fields = ["cors_origin"]
         return [field for field in needed_fields if not self.config.get(field)]
 
-    def _get_s3_env(self) -> Dict[str, Any]:
+    def _get_s3_env(self) -> typing.Dict[str, typing.Any]:
         """Get the list of S3-related environment variables from charm's configuration.
 
         Returns:
@@ -244,7 +245,7 @@ class DiscourseCharm(CharmBase):
 
         return s3_env
 
-    def _create_discourse_environment_settings(self) -> Dict[str, Any]:
+    def _create_discourse_environment_settings(self) -> typing.Dict[str, typing.Any]:
         """Create a layer config based on our current configuration.
 
         Returns:
@@ -301,7 +302,7 @@ class DiscourseCharm(CharmBase):
 
         return pod_config
 
-    def _create_layer_config(self) -> Dict[str, Any]:
+    def _create_layer_config(self) -> ops.pebble.LayerDict:
         """Create a layer config based on our current configuration.
 
         Returns:
@@ -327,9 +328,11 @@ class DiscourseCharm(CharmBase):
                 },
             },
         }
-        return layer_config
+        return typing.cast(ops.pebble.LayerDict, layer_config)
 
-    def _should_run_s3_migration(self, current_plan: Plan, s3info: Optional[S3Info]) -> bool:
+    def _should_run_s3_migration(
+        self, current_plan: Plan, s3info: typing.Optional[S3Info]
+    ) -> bool:
         """Determine if the S3 migration is to be run.
 
         Args:

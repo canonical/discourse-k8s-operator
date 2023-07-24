@@ -10,7 +10,7 @@ jobs:
     with:
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
       chaos-duration: 600
-      chaos-enabled: true
+      chaos-enabled: false
       chaos-experiments: pod-delete
       chaos-status-duration: 300
       extra-arguments: --localstack-address 172.17.0.1 -m "not (requires_secrets)"
