@@ -56,7 +56,6 @@ async def test_discourse_up(requests_timeout: float, discourse_address: str):
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-@pytest.mark.skip(reason="This test will need some rework")
 async def test_prom_exporter_is_up(app: Application):
     """
     arrange: given charm in its initial state
@@ -65,13 +64,13 @@ async def test_prom_exporter_is_up(app: Application):
     """
     # Application actually does have units
     discourse_unit = app.units[0]  # type: ignore
-    cmd = f"curl -m 60 http://localhost:{PROMETHEUS_PORT}/metrics"
-    action = await discourse_unit.run(cmd)
-    result = await action.wait()
-    code = result.results.get("return-code")
-    stdout = result.results.get("stdout")
-    stderr = result.results.get("stderr")
-    assert code == 0, f"{cmd} failed ({code}): {stderr or stdout}"
+    assert discourse_unit
+    cmd = f"/usr/bin/curl -m 30 http://localhost:{PROMETHEUS_PORT}/metrics"
+    action = await discourse_unit.run(cmd, timeout=60)
+    code = action.results.get("Code")
+    stdout = action.results.get("Stdout")
+    stderr = action.results.get("Stderr")
+    assert code == "0", f"{cmd} failed ({code}): {stderr or stdout}"
 
 
 @pytest.mark.asyncio
@@ -99,7 +98,6 @@ async def test_setup_discourse(
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-@pytest.mark.skip(reason="This test will need some rework")
 async def test_s3_conf(app: Application, localstack_address: str, model: Model):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
@@ -117,8 +115,7 @@ async def test_s3_conf(app: Application, localstack_address: str, model: Model):
     action = await app.units[0].run(  # type: ignore
         f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.s3.{s3_conf["domain"]}" >> /etc/hosts'
     )
-    result = await action.wait()
-    assert result.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
+    assert action.results.get("Code") == "0", "Can't inject S3 IP in Discourse hosts"
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
     # Application does actually have attribute set_config
