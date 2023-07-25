@@ -62,6 +62,7 @@ SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
+DEFAULT_REDIS_PORT = 6379
 
 
 class DiscourseCharm(CharmBase):
@@ -262,7 +263,7 @@ class DiscourseCharm(CharmBase):
             # mypy fails to see that this is indexable
             redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
             redis_hostname = redis_unit_data.get("hostname", "")  # type: ignore
-            redis_port = redis_unit_data.get("port", 6379)  # type: ignore
+            redis_port = redis_unit_data.get("port", DEFAULT_REDIS_PORT)  # type: ignore
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
             )
