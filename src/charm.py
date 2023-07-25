@@ -512,7 +512,7 @@ class DiscourseCharm(CharmBase):
             self._config_force_https()
             self.model.unit.status = ActiveStatus()
 
-    def _reload_configuration(self, _=None) -> None:
+    def _reload_configuration(self) -> None:
         # mypy has some trouble with dynamic attributes
         if not self._is_setup_completed():
             logger.info("Defer starting the discourse server until discourse setup completed")
