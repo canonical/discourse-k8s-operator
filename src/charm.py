@@ -10,12 +10,16 @@ from collections import defaultdict, namedtuple
 
 import ops
 import ops.lib
+from charms.data_platform_libs.v0.data_interfaces import (
+    DatabaseCreatedEvent,
+    DatabaseEndpointsChangedEvent,
+)
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
 from charms.nginx_ingress_integrator.v0.nginx_route import require_nginx_route
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
-from ops.charm import ActionEvent, CharmBase, HookEvent
+from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
@@ -78,14 +82,14 @@ class DiscourseCharm(CharmBase):
         self._database = DatabaseObserver(self)
 
         self.framework.observe(
-            self._database.database.on.database_created, self._database_relation_changed
+            self._database.database.on.database_created, self._on_database_created
         )
         self.framework.observe(
-            self._database.database.on.endpoints_changed, self._database_relation_changed
+            self._database.database.on.endpoints_changed, self._on_database_endpoints_changed
         )
         self.framework.observe(
             self.on[self._database._RELATION_NAME].relation_broken,
-            self._reload_configuration,
+            self._on_database_relation_broken,
         )
 
         self._stored.set_default(
@@ -110,6 +114,32 @@ class DiscourseCharm(CharmBase):
             self, relation_name="logging", log_files=LOG_PATHS, container_name="discourse"
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
+
+    def _on_database_created(self, _: DatabaseCreatedEvent) -> None:
+        """Handle database created.
+
+        Args:
+            event: Event triggering the database created handler.
+        """
+        if self._are_db_relations_ready():
+            self._reload_configuration()
+
+    def _on_database_endpoints_changed(self, _: DatabaseEndpointsChangedEvent) -> None:
+        """Handle endpoints change.
+
+        Args:
+            event: Event triggering the endpoints changed handler.
+        """
+        if self._are_db_relations_ready():
+            self._reload_configuration()
+
+    def _on_database_relation_broken(self, _: RelationBrokenEvent) -> None:
+        """Handle broken relation.
+
+        Args:
+            event: Event triggering the broken relation handler.
+        """
+        self._reload_configuration()
 
     def _require_nginx_route(self) -> None:
         """Create minimal ingress configuration."""
