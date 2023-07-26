@@ -12,7 +12,7 @@ from ops.framework import Object
 DATABASE_NAME = "discourse"
 
 
-class DatabaseObserver(Object):
+class DatabaseHandler(Object):
     """The Database relation observer."""
 
     _RELATION_NAME = "database"

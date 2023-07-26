@@ -25,7 +25,7 @@ from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.pebble import ExecError, ExecProcess, Plan
 
-from database import DatabaseObserver
+from database import DatabaseHandler
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -79,7 +79,7 @@ class DiscourseCharm(CharmBase):
         """Initialize defaults and event handlers."""
         super().__init__(*args)
 
-        self._database = DatabaseObserver(self)
+        self._database = DatabaseHandler(self)
 
         self.framework.observe(
             self._database.database.on.database_created, self._on_database_created
