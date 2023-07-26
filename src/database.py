@@ -31,26 +31,34 @@ class DatabaseHandler(Object):
             database_name=DATABASE_NAME,
         )
 
-    def get_relation_data(self) -> typing.Optional[typing.Dict]:
+    def get_relation_data(self) -> typing.Dict[str, str]:
         """Get database data from relation.
 
         Returns:
             Dict: Information needed for setting environment variables.
-            Returns None if the relation data is not correctly initialized.
+            Returns default if the relation data is not correctly initialized.
         """
+        default = {
+            "POSTGRES_USER": "",
+            "POSTGRES_PASSWORD": "",
+            "POSTGRES_HOST": "",
+            "POSTGRES_PORT": "",
+            "POSTGRES_DB": "",
+        }
+
         if self.model.get_relation(self._RELATION_NAME) is None:
-            return None
+            return default
 
         relation_id = self.database.relations[0].id
         relation_data = self.database.fetch_relation_data()[relation_id]
 
         endpoints = relation_data.get("endpoints", "").split(",")
         if len(endpoints) < 1:
-            return None
+            return default
 
         primary_endpoint = endpoints[0].split(":")
         if len(primary_endpoint) < 2:
-            return None
+            return default
 
         data = {
             "POSTGRES_USER": relation_data.get("username"),
@@ -65,7 +73,7 @@ class DatabaseHandler(Object):
             data["POSTGRES_PASSWORD"],
             data["POSTGRES_DB"],
         ):
-            return None
+            return default
 
         return data
 
@@ -75,4 +83,4 @@ class DatabaseHandler(Object):
         Returns:
             bool: returns True if the relation is ready.
         """
-        return self.get_relation_data() is not None
+        return self.get_relation_data()["POSTGRES_HOST"] != ""

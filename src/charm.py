@@ -523,10 +523,6 @@ class DiscourseCharm(CharmBase):
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
 
-    def _database_relation_changed(self, _: HookEvent) -> None:
-        if self._are_db_relations_ready():
-            self._reload_configuration()
-
     def _redis_relation_changed(self, _: HookEvent) -> None:
         if self._are_db_relations_ready():
             self._reload_configuration()
