@@ -15,9 +15,7 @@ DATABASE_NAME = "discourse"
 class DatabaseHandler(Object):
     """The Database relation observer."""
 
-    _RELATION_NAME = "database"
-
-    def __init__(self, charm: CharmBase):
+    def __init__(self, charm: CharmBase, relation_name):
         """Initialize the observer and register event handlers.
 
         Args:
@@ -25,9 +23,10 @@ class DatabaseHandler(Object):
         """
         super().__init__(charm, "database-observer")
         self._charm = charm
+        self.relation_name = relation_name
         self.database = DatabaseRequires(
             self._charm,
-            relation_name=self._RELATION_NAME,
+            relation_name=self.relation_name,
             database_name=DATABASE_NAME,
         )
 
@@ -46,7 +45,7 @@ class DatabaseHandler(Object):
             "POSTGRES_DB": "",
         }
 
-        if self.model.get_relation(self._RELATION_NAME) is None:
+        if self.model.get_relation(self.relation_name) is None:
             return default
 
         relation_id = self.database.relations[0].id

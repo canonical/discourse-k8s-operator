@@ -7,6 +7,7 @@
 # Protected access check is disabled in tests as we're injecting test data
 
 import contextlib
+import secrets
 import typing
 import unittest
 from unittest.mock import MagicMock, patch
@@ -605,7 +606,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 {
                     "database": DATABASE_NAME,
                     "endpoints": "dbhost:5432,dbhost-2:5432",
-                    "password": "somepasswd",  # nosec
+                    "password": secrets.token_hex(16),
                     "username": "someuser",
                 },
                 True,
@@ -614,7 +615,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                 {
                     "database": DATABASE_NAME,
                     "endpoints": "foo",
-                    "password": "somepasswd",  # nosec
+                    "password": secrets.token_hex(16),
                     "username": "someuser",
                 },
                 False,

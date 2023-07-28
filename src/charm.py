@@ -67,6 +67,7 @@ SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 DEFAULT_REDIS_PORT = 6379
+DATABASE_RELATION_NAME = "database"
 
 
 class DiscourseCharm(CharmBase):
@@ -79,7 +80,7 @@ class DiscourseCharm(CharmBase):
         """Initialize defaults and event handlers."""
         super().__init__(*args)
 
-        self._database = DatabaseHandler(self)
+        self._database = DatabaseHandler(self, DATABASE_RELATION_NAME)
 
         self.framework.observe(
             self._database.database.on.database_created, self._on_database_created
@@ -88,7 +89,7 @@ class DiscourseCharm(CharmBase):
             self._database.database.on.endpoints_changed, self._on_database_endpoints_changed
         )
         self.framework.observe(
-            self.on[self._database._RELATION_NAME].relation_broken,
+            self.on[DATABASE_RELATION_NAME].relation_broken,
             self._on_database_relation_broken,
         )
 
@@ -282,7 +283,7 @@ class DiscourseCharm(CharmBase):
 
         return s3_env
 
-    def _get_redis_relation_data(self) -> typing.Tuple[typing.Any, typing.Any]:
+    def _get_redis_relation_data(self) -> typing.Tuple[str, int]:
         """Get the hostname and port from the redis relation data.
 
         Returns:
@@ -299,7 +300,7 @@ class DiscourseCharm(CharmBase):
             )
         return (redis_hostname, redis_port)
 
-    def _create_discourse_environment_settings(self) -> typing.Dict[str, typing.Any]:
+    def _create_discourse_environment_settings(self) -> typing.Dict[str, str]:
         """Create a layer config based on our current configuration.
 
         Returns:

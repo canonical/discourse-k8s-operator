@@ -135,7 +135,7 @@ async def app_fixture(
     # Deploy relations to speed up overall execution
     related_apps = await asyncio.gather(
         model.deploy("postgresql-k8s", channel="14/edge", series="jammy", trust=True),
-        model.deploy("redis-k8s", series="focal"),
+        model.deploy("redis-k8s", series="jammy", channel="latest/edge"),
         model.deploy("nginx-ingress-integrator", series="focal", trust=True),
     )
     postgres_app = related_apps[0]
@@ -162,7 +162,8 @@ async def app_fixture(
             series="focal",
         )
 
-    await model.wait_for_idle()
+    await model.wait_for_idle(apps=[application.name], status="waiting")
+    await model.wait_for_idle(apps=(app.name for app in related_apps), status="active")
 
     # configure postgres
     await postgres_app.set_config(
@@ -171,7 +172,7 @@ async def app_fixture(
             "plugin_pg_trgm_enable": "true",
         }
     )
-    await model.wait_for_idle()
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
     # Add required relations
     unit = model.applications[app_name].units[0]
@@ -181,7 +182,7 @@ async def app_fixture(
         model.add_relation(app_name, "redis-k8s"),
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
-    await model.wait_for_idle(status="active", raise_on_error=False)
+    await model.wait_for_idle(status="active")
 
     yield application
 
