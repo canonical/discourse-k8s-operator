@@ -133,11 +133,12 @@ async def app_fixture(
     Builds the charm and deploys it and the relations it depends on.
     """
     # Deploy relations to speed up overall execution
-    await asyncio.gather(
-        model.deploy("postgresql-k8s", channel="latest/stable", series="focal"),
-        model.deploy("redis-k8s", series="focal"),
+    related_apps = await asyncio.gather(
+        model.deploy("postgresql-k8s", channel="14/edge", series="jammy", trust=True),
+        model.deploy("redis-k8s", series="jammy", channel="latest/edge"),
         model.deploy("nginx-ingress-integrator", series="focal", trust=True),
     )
+    postgres_app = related_apps[0]
 
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
@@ -160,17 +161,28 @@ async def app_fixture(
             config=app_config,
             series="focal",
         )
-    await model.wait_for_idle()
+
+    await model.wait_for_idle(apps=[application.name], status="waiting")
+    await model.wait_for_idle(apps=(app.name for app in related_apps), status="active")
+
+    # configure postgres
+    await postgres_app.set_config(
+        {
+            "plugin_hstore_enable": "true",
+            "plugin_pg_trgm_enable": "true",
+        }
+    )
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
     # Add required relations
     unit = model.applications[app_name].units[0]
     assert unit.workload_status == WaitingStatus.name  # type: ignore
     await asyncio.gather(
-        model.add_relation(app_name, "postgresql-k8s:db-admin"),
+        model.add_relation(app_name, "postgresql-k8s:database"),
         model.add_relation(app_name, "redis-k8s"),
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
-    await model.wait_for_idle(status="active", raise_on_error=False)
+    await model.wait_for_idle(status="active")
 
     yield application
 

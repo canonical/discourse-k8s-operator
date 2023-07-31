@@ -10,16 +10,22 @@ from collections import defaultdict, namedtuple
 
 import ops
 import ops.lib
+from charms.data_platform_libs.v0.data_interfaces import (
+    DatabaseCreatedEvent,
+    DatabaseEndpointsChangedEvent,
+)
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
 from charms.nginx_ingress_integrator.v0.nginx_route import require_nginx_route
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
-from ops.charm import ActionEvent, CharmBase, HookEvent
+from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.pebble import ExecError, ExecProcess, Plan
+
+from database import DatabaseHandler
 
 logger = logging.getLogger(__name__)
 pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
@@ -60,6 +66,8 @@ SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
+DEFAULT_REDIS_PORT = 6379
+DATABASE_RELATION_NAME = "database"
 
 
 class DiscourseCharm(CharmBase):
@@ -72,11 +80,20 @@ class DiscourseCharm(CharmBase):
         """Initialize defaults and event handlers."""
         super().__init__(*args)
 
+        self._database = DatabaseHandler(self, DATABASE_RELATION_NAME)
+
+        self.framework.observe(
+            self._database.database.on.database_created, self._on_database_created
+        )
+        self.framework.observe(
+            self._database.database.on.endpoints_changed, self._on_database_endpoints_changed
+        )
+        self.framework.observe(
+            self.on[DATABASE_RELATION_NAME].relation_broken,
+            self._on_database_relation_broken,
+        )
+
         self._stored.set_default(
-            db_name=None,
-            db_user=None,
-            db_password=None,
-            db_host=None,
             redis_relation={},
         )
         self._require_nginx_route()
@@ -85,11 +102,6 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
 
-        self.db_client = pgsql.PostgreSQLClient(self, "db")
-        self.framework.observe(
-            self.db_client.on.database_relation_joined, self._on_database_relation_joined
-        )
-        self.framework.observe(self.db_client.on.master_changed, self._on_database_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
@@ -103,6 +115,32 @@ class DiscourseCharm(CharmBase):
             self, relation_name="logging", log_files=LOG_PATHS, container_name="discourse"
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
+
+    def _on_database_created(self, _: DatabaseCreatedEvent) -> None:
+        """Handle database created.
+
+        Args:
+            event: Event triggering the database created handler.
+        """
+        if self._are_db_relations_ready():
+            self._reload_configuration()
+
+    def _on_database_endpoints_changed(self, _: DatabaseEndpointsChangedEvent) -> None:
+        """Handle endpoints change.
+
+        Args:
+            event: Event triggering the endpoints changed handler.
+        """
+        if self._are_db_relations_ready():
+            self._reload_configuration()
+
+    def _on_database_relation_broken(self, _: RelationBrokenEvent) -> None:
+        """Handle broken relation.
+
+        Args:
+            event: Event triggering the broken relation handler.
+        """
+        self._reload_configuration()
 
     def _require_nginx_route(self) -> None:
         """Create minimal ingress configuration."""
@@ -245,22 +283,31 @@ class DiscourseCharm(CharmBase):
 
         return s3_env
 
-    def _create_discourse_environment_settings(self) -> typing.Dict[str, typing.Any]:
+    def _get_redis_relation_data(self) -> typing.Tuple[str, int]:
+        """Get the hostname and port from the redis relation data.
+
+        Returns:
+            Tuple with the hostname and port of the related redis
+        """
+        # This is the current recommended way of accessing the relation data.
+        for redis_unit in self._stored.redis_relation:  # type: ignore
+            # mypy fails to see that this is indexable
+            redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
+            redis_hostname = redis_unit_data.get("hostname", "")  # type: ignore
+            redis_port = redis_unit_data.get("port", DEFAULT_REDIS_PORT)  # type: ignore
+            logger.debug(
+                "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
+            )
+        return (redis_hostname, redis_port)
+
+    def _create_discourse_environment_settings(self) -> typing.Dict[str, str]:
         """Create a layer config based on our current configuration.
 
         Returns:
             Dictionary with all the environment settings.
         """
-        # Get redis connection information from the relation.
-        redis_hostname = None
-        redis_port = 6379
-        # This is the current recommended way of accessing the relation data.
-        for redis_unit in self._stored.redis_relation:  # type: ignore
-            redis_hostname = self._stored.redis_relation[redis_unit].get("hostname")  # type: ignore
-            redis_port = self._stored.redis_relation[redis_unit].get("port")  # type: ignore
-            logger.debug(
-                "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
-            )
+        database_relation_data = self._database.get_relation_data()
+        redis_relation_data = self._get_redis_relation_data()
 
         pod_config = {
             # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
@@ -269,15 +316,15 @@ class DiscourseCharm(CharmBase):
             "CONTAINER_APP_ROOT": "/srv/discourse",
             "CONTAINER_APP_USERNAME": "discourse",
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
-            "DISCOURSE_DB_HOST": self._stored.db_host,
-            "DISCOURSE_DB_NAME": self._stored.db_name,
-            "DISCOURSE_DB_PASSWORD": self._stored.db_password,
-            "DISCOURSE_DB_USERNAME": self._stored.db_user,
+            "DISCOURSE_DB_HOST": database_relation_data["POSTGRES_HOST"],
+            "DISCOURSE_DB_NAME": database_relation_data["POSTGRES_DB"],
+            "DISCOURSE_DB_PASSWORD": database_relation_data["POSTGRES_PASSWORD"],
+            "DISCOURSE_DB_USERNAME": database_relation_data["POSTGRES_USER"],
             "DISCOURSE_DEVELOPER_EMAILS": self.config["developer_emails"],
             "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
             "DISCOURSE_HOSTNAME": self._get_external_hostname(),
-            "DISCOURSE_REDIS_HOST": redis_hostname,
-            "DISCOURSE_REDIS_PORT": str(redis_port),
+            "DISCOURSE_REDIS_HOST": redis_relation_data[0],
+            "DISCOURSE_REDIS_PORT": str(redis_relation_data[1]),
             "DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS": "0",
             "DISCOURSE_SERVE_STATIC_ASSETS": "true",
             "DISCOURSE_SMTP_ADDRESS": self.config["smtp_address"],
@@ -362,13 +409,15 @@ class DiscourseCharm(CharmBase):
         Returns:
             If the needed relations have been established.
         """
-        # mypy fails do detect this stored value can be False
-        if not self._stored.db_name:  # type: ignore
+        if not self._database.is_relation_ready():
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             return False
         # mypy fails do detect this stored value can be False
         if not self._stored.redis_relation:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
+            return False
+        if self._get_redis_relation_data()[0] == "":
+            self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
             return False
         return True
 
@@ -476,45 +525,6 @@ class DiscourseCharm(CharmBase):
             container.pebble.replan_services()
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
-        if self._are_db_relations_ready():
-            self._reload_configuration()
-
-    # pgsql.DatabaseRelationJoinedEvent is actually defined
-    def _on_database_relation_joined(
-        self, event: pgsql.DatabaseRelationJoinedEvent  # type: ignore
-    ) -> None:
-        """Handle db-relation-joined.
-
-        Args:
-            event: Event triggering the database relation joined handler.
-        """
-        if self.model.unit.is_leader():
-            event.database = DATABASE_NAME
-            event.extensions = ["hstore:public", "pg_trgm:public"]
-        elif event.database != DATABASE_NAME:
-            # Leader has not yet set requirements. Defer, in case this unit
-            # becomes leader and needs to perform that operation.
-            event.defer()
-            return
-
-    # pgsql.DatabaseChangedEvent is actually defined
-    def _on_database_changed(self, event: pgsql.DatabaseChangedEvent) -> None:  # type: ignore
-        """Handle changes in the primary database unit.
-
-        Args:
-            event: Event triggering the database master changed handler.
-        """
-        if event.master is None:
-            self._stored.db_name = None
-            self._stored.db_user = None
-            self._stored.db_password = None
-            self._stored.db_host = None
-        else:
-            self._stored.db_name = event.master.dbname
-            self._stored.db_user = event.master.user
-            self._stored.db_password = event.master.password
-            self._stored.db_host = event.master.host
-
         if self._are_db_relations_ready():
             self._reload_configuration()
 
