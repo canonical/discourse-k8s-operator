@@ -654,3 +654,51 @@ class TestDiscourseK8sCharm(unittest.TestCase):
                         self.harness.model.unit.status,
                         WaitingStatus("Waiting for database relation"),
                     )
+
+    def test_redis_relation_data(self):
+        """
+        arrange: given a deployed discourse charm and some relation data
+        act: add the redis relation to the charm
+        assert: the charm should wait for some correct relation data
+        """
+        test_cases = [
+            (
+                {"hostname": "redis-host", "port": 1010},
+                True,
+            ),
+            (
+                {"hostname": "", "port": 1010},
+                False,
+            ),
+            (
+                {"hostname": "redis-host", "port": None},
+                False,
+            ),
+            (
+                {"hostname": None, "port": None},
+                False,
+            ),
+            (
+                {},
+                False,
+            ),
+            (
+                {"port": 6379},
+                False,
+            ),
+            (
+                {"hostname": "redis-port"},
+                False,
+            ),
+        ]
+
+        for relation_data, should_be_ready in test_cases:
+            with self.subTest(relation_data=relation_data, should_be_ready=should_be_ready):
+                self.start_harness(with_postgres=True, with_redis=False)
+                # get a relation ID for the test outside of __init__ (note pylint disable)
+                self.redis_relation_id = (  # pylint: disable=attribute-defined-outside-init
+                    self.harness.add_relation("redis", "redis")
+                )
+                self.harness.add_relation_unit(self.redis_relation_id, "redis/0")
+                self.harness.charm._stored.redis_relation = {self.redis_relation_id: relation_data}
+                self.assertEqual(should_be_ready, self.harness.charm._are_db_relations_ready())

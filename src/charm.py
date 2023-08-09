@@ -66,7 +66,6 @@ SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
-DEFAULT_REDIS_PORT = 6379
 DATABASE_RELATION_NAME = "database"
 
 
@@ -293,8 +292,15 @@ class DiscourseCharm(CharmBase):
         for redis_unit in self._stored.redis_relation:  # type: ignore
             # mypy fails to see that this is indexable
             redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
-            redis_hostname = redis_unit_data.get("hostname", "")  # type: ignore
-            redis_port = redis_unit_data.get("port", DEFAULT_REDIS_PORT)  # type: ignore
+            try:
+                redis_hostname = str(redis_unit_data.get("hostname"))  # type: ignore
+            # I need to catch all exceptions that str() can throw
+            except Exception:  # pylint: disable=broad-exception-caught
+                redis_hostname = ""
+            try:
+                redis_port = int(redis_unit_data.get("port"))  # type: ignore
+            except ValueError:
+                redis_port = 0
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
             )
@@ -416,7 +422,10 @@ class DiscourseCharm(CharmBase):
         if not self._stored.redis_relation:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
             return False
-        if self._get_redis_relation_data()[0] == "":
+        if (
+            self._get_redis_relation_data()[0] in ("", "None")
+            or self._get_redis_relation_data()[1] == 0
+        ):
             self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
             return False
         return True
