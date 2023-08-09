@@ -292,16 +292,8 @@ class DiscourseCharm(CharmBase):
         for redis_unit in self._stored.redis_relation:  # type: ignore
             # mypy fails to see that this is indexable
             redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
-            try:
-                redis_hostname = str(redis_unit_data.get("hostname"))  # type: ignore
-            # I need to catch all exceptions that str() can throw
-            except Exception:  # pylint: disable=broad-exception-caught
-                redis_hostname = ""
-            try:
-                redis_port = int(redis_unit_data.get("port"))  # type: ignore
-            # I need to catch all exceptions that int() can throw
-            except Exception:  # pylint: disable=broad-exception-caught
-                redis_port = 0
+            redis_hostname = str(redis_unit_data.get("hostname", "") or "")
+            redis_port = int(redis_unit_data.get("port", 0) or 0)
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
             )
