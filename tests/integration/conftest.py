@@ -135,7 +135,7 @@ async def app_fixture(
     # Deploy relations to speed up overall execution
 
     postgres_app = await model.deploy(
-        "postgresql-k8s", channel="14/edge", series="jammy", revision=116, trust=True
+        "postgresql-k8s", channel="14/beta", series="jammy", trust=True
     )
     await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
