@@ -133,12 +133,15 @@ async def app_fixture(
     Builds the charm and deploys it and the relations it depends on.
     """
     # Deploy relations to speed up overall execution
-    related_apps = await asyncio.gather(
-        model.deploy("postgresql-k8s", channel="14/edge", series="jammy", trust=True),
-        model.deploy("redis-k8s", series="jammy", channel="latest/edge"),
-        model.deploy("nginx-ingress-integrator", series="focal", trust=True),
-    )
-    postgres_app = related_apps[0]
+
+    postgres_app = await model.deploy("postgresql-k8s", channel="14/edge", series="jammy", trust=True)
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
+
+    redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
+    await model.wait_for_idle(apps=[redis_app.name], status="active")
+
+    nii_app = await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
+    await model.wait_for_idle(apps=[nii_app.name], status="active")
 
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
@@ -163,7 +166,6 @@ async def app_fixture(
         )
 
     await model.wait_for_idle(apps=[application.name], status="waiting")
-    await model.wait_for_idle(apps=(app.name for app in related_apps), status="active")
 
     # configure postgres
     await postgres_app.set_config(
