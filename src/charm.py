@@ -415,10 +415,7 @@ class DiscourseCharm(CharmBase):
         if not self._stored.redis_relation:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
             return False
-        if (
-            self._get_redis_relation_data()[0] in ("", "None")
-            or self._get_redis_relation_data()[1] == 0
-        ):
+        if not all(self._get_redis_relation_data()):
             self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
             return False
         return True
