@@ -299,7 +299,8 @@ class DiscourseCharm(CharmBase):
                 redis_hostname = ""
             try:
                 redis_port = int(redis_unit_data.get("port"))  # type: ignore
-            except ValueError:
+            # I need to catch all exceptions that int() can throw
+            except Exception:  # pylint: disable=broad-exception-caught
                 redis_port = 0
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
