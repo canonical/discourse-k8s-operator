@@ -634,13 +634,10 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         for relation_data, should_be_ready in test_cases:
             with self.subTest(relation_data=relation_data, should_be_ready=should_be_ready):
                 self.start_harness(with_postgres=False, with_redis=False)
-                # get a relation ID for the test outside of __init__ (note pylint disable)
-                self.db_relation_id = (  # pylint: disable=attribute-defined-outside-init
-                    self.harness.add_relation("database", "postgresql")
-                )
-                self.harness.add_relation_unit(self.db_relation_id, "postgresql/0")
+                db_relation_id = self.harness.add_relation("database", "postgresql")
+                self.harness.add_relation_unit(db_relation_id, "postgresql/0")
                 self.harness.update_relation_data(
-                    self.db_relation_id,
+                    db_relation_id,
                     "postgresql",
                     relation_data,
                 )
@@ -695,10 +692,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
         for relation_data, should_be_ready in test_cases:
             with self.subTest(relation_data=relation_data, should_be_ready=should_be_ready):
                 self.start_harness(with_postgres=True, with_redis=False)
-                # get a relation ID for the test outside of __init__ (note pylint disable)
-                self.redis_relation_id = (  # pylint: disable=attribute-defined-outside-init
-                    self.harness.add_relation("redis", "redis")
-                )
-                self.harness.add_relation_unit(self.redis_relation_id, "redis/0")
-                self.harness.charm._stored.redis_relation = {self.redis_relation_id: relation_data}
+                redis_relation_id = self.harness.add_relation("redis", "redis")
+                self.harness.add_relation_unit(redis_relation_id, "redis/0")
+                self.harness.charm._stored.redis_relation = {redis_relation_id: relation_data}
                 self.assertEqual(should_be_ready, self.harness.charm._are_db_relations_ready())

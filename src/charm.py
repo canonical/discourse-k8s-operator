@@ -292,8 +292,8 @@ class DiscourseCharm(CharmBase):
         for redis_unit in self._stored.redis_relation:  # type: ignore
             # mypy fails to see that this is indexable
             redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
-            redis_hostname = str(redis_unit_data.get("hostname", "") or "")
-            redis_port = int(redis_unit_data.get("port", 0) or 0)
+            redis_hostname = str(redis_unit_data.get("hostname"))
+            redis_port = int(redis_unit_data.get("port"))
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
             )
@@ -306,6 +306,9 @@ class DiscourseCharm(CharmBase):
             Dictionary with all the environment settings.
         """
         database_relation_data = self._database.get_relation_data()
+
+        # The following could fail if the data is malformed.
+        # We/don't catch it because we don't want to silently fail in those cases
         redis_relation_data = self._get_redis_relation_data()
 
         pod_config = {
@@ -415,8 +418,14 @@ class DiscourseCharm(CharmBase):
         if not self._stored.redis_relation:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
             return False
-        if not all(self._get_redis_relation_data()):
-            self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
+        try:
+            if (
+                self._get_redis_relation_data()[0] in ("", "None")
+                or self._get_redis_relation_data()[1] == 0
+            ):
+                self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
+                return False
+        except (ValueError, TypeError):
             return False
         return True
 
