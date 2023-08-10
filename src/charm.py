@@ -301,8 +301,8 @@ class DiscourseCharm(CharmBase):
             try:
                 redis_hostname = str(redis_unit_data.get("hostname"))
                 redis_port = int(redis_unit_data.get("port"))
-            except (ValueError, TypeError):
-                raise MissingRedisRelationDataError()
+            except (ValueError, TypeError) as exc:
+                raise MissingRedisRelationDataError() from exc
 
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
