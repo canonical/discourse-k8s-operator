@@ -665,7 +665,7 @@ class TestDiscourseK8sCharm(unittest.TestCase):
             ),
             (
                 {"hostname": "redis-host", "port": 0},
-                True,
+                False,
             ),
             (
                 {"hostname": "", "port": 1010},
