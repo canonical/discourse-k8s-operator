@@ -1,0 +1,194 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: discourse
+summary: Discourse rock
+description: Discourse OCI image for the Discourse charm
+base: ubuntu:20.04
+license: Apache-2.0
+version: "1.0"
+platforms:
+  amd64:
+parts:
+  debug-tools:
+    plugin: nil
+    stage-packages:
+      - git
+      - coreutils
+      - bash
+      - curl
+      - vim
+  install-node:
+    plugin: nil
+    source: .
+    build-environment:
+      - NODE_VERSION: "18.15.0"
+      - YARN_VERSION: "1.22.19"
+      - ARCH: "x64"
+    overlay-script: |
+      node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
+      curl -Ls $node_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
+  install-yarn:
+    plugin: nil
+    after:
+      - install-node
+    source: .
+    build-environment:
+      - YARN_VERSION: "1.22.19"
+      - ARCH: "x64"
+    overlay-script: |
+      yarn_uri="https://github.com/yarnpkg/yarn/releases/download/v${YARN_VERSION}/yarn-v${YARN_VERSION}.tar.gz"
+      curl -Ls $yarn_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
+  install-terser:
+    plugin: nil
+    source: .
+    after:
+      - install-node
+    overlay-script: |
+      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm --prefix $CRAFT_OVERLAY/usr/local/ i -g terser
+  install-runtime-packages:
+    plugin: nil
+    overlay-packages:
+      - brotli
+      - gettext-base
+      - gifsicle
+      - git
+      - imagemagick
+      - jhead
+      - jpegoptim
+      - libjpeg-turbo-progs
+      - libpq-dev
+      - libssl-dev
+      - libxml2-dev
+      - libxslt1-dev
+      - libz-dev
+      - optipng
+      - pngquant
+      - redis-tools
+      - ruby2.7
+      - ruby2.7-dev
+      - tzdata
+      - ubuntu-dev-tools
+      - zlib1g-dev
+  get-discourse:
+    plugin: dump
+    after:
+      - install-yarn
+      - install-runtime-packages
+    source: https://github.com/discourse/discourse.git
+    source-depth: 1
+    source-tag: v2.8.14
+    source-type: git
+    override-build: |
+      craftctl default
+      mkdir -p tmp/backups/default
+      mkdir -p public/backups/default
+      mkdir -p public/uploads/default
+      mkdir -p log/production.log
+      mkdir -p srv/discourse/app/bin
+      touch log/production.log
+      touch log/unicorn-stderr.log
+      yarn install --production --frozen-lockfile
+    organize:
+      "*.*": srv/discourse/app/
+      "*": srv/discourse/app/
+      ".*": srv/discourse/app/
+  get-solved-plugin-source:
+    plugin: dump
+    source: https://github.com/discourse/discourse-solved.git
+    source-depth: 1
+    source-commit: d6c8089ca38611b09a8edb29d64f359bcef11f11
+    after:
+      - get-discourse
+    organize:
+      "*": srv/discourse/app/plugins/discourse-solved/
+  get-markdown-note-plugin-source:
+    plugin: dump
+    after:
+      - get-discourse
+    source: https://github.com/canonical-web-and-design/discourse-markdown-note.git
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-markdown-note/
+  get-mermaid-plugin-source:
+    plugin: dump
+    after:
+      - get-discourse
+    source: https://github.com/unfoldingWord-dev/discourse-mermaid.git
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-mermaid/
+  get-saml-plugin-source:
+    plugin: dump
+    after:
+      - get-discourse
+    source: https://github.com/discourse/discourse-saml.git
+    source-depth: 1
+    override-build: |
+      craftctl default
+      grep -e ^gem plugin.rb >> Gemfile
+    organize:
+      "*": srv/discourse/app/plugins/discourse-saml/
+  get-patches:
+    plugin: dump
+    source: patches
+    organize:
+      "*": srv/discourse/app/patches/
+  apply-patches:
+    plugin: nil
+    build-packages:
+      - git
+    after:
+      - get-discourse
+      - get-patches
+    override-stage: |
+      git -C srv/discourse/app apply patches/lp1903695.patch
+      git -C srv/discourse/app apply patches/anonymize_user.patch
+      sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
+      sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
+  install-gems:
+    plugin: nil
+    after:
+      - get-discourse
+      - get-saml-plugin-source
+      - apply-patches
+    build-packages:
+      - gettext-base
+      - gifsicle
+      - git
+      - imagemagick
+      - jhead
+      - jpegoptim
+      - libjpeg-turbo-progs
+      - libpq-dev
+      - libssl-dev
+      - libxml2-dev
+      - libxslt1-dev
+      - libz-dev
+      - optipng
+      - pngquant
+      - redis-tools
+      - ruby2.7
+      - ruby2.7-dev
+      - tzdata
+      - ubuntu-dev-tools
+      - zlib1g-dev
+    override-build: |
+      cd $CRAFT_STAGE/srv/discourse/app
+      gem install -n "bin" bundler
+      sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' Gemfile.lock
+      echo "gem 'prometheus_exporter'" >> Gemfile
+      echo "gem 'rexml', '3.2.6'" >> Gemfile
+      bin/bundle install
+      bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
+    organize:
+      '/usr/local/bin/prometheus_exporter': usr/local/bin/
+      '/var/lib/gems': var/lib/gems
+      'srv/discourse/app/bin/*': srv/discourse/app/bin/
+      'srv/discourse/app/Rakefile': srv/discourse/app/
+      'srv/discourse/app/bundle': srv/discourse/app/
+  get-scripts:
+    plugin: dump
+    source: scripts
+    organize:
+      "*": srv/scripts/

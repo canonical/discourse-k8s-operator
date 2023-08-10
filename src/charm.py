@@ -8,7 +8,6 @@ import os.path
 import typing
 from collections import defaultdict, namedtuple
 
-import ops
 import ops.lib
 from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseCreatedEvent,
@@ -314,7 +313,7 @@ class DiscourseCharm(CharmBase):
             # I need to take the required envVars for the application to work properly
             "CONTAINER_APP_NAME": "discourse",
             "CONTAINER_APP_ROOT": "/srv/discourse",
-            "CONTAINER_APP_USERNAME": "discourse",
+            "CONTAINER_APP_USERNAME": "root",
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
             "DISCOURSE_DB_HOST": database_relation_data["POSTGRES_HOST"],
             "DISCOURSE_DB_NAME": database_relation_data["POSTGRES_DB"],
@@ -334,7 +333,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
             "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
-            "GEM_HOME": "/srv/discourse/.gem",
+            "GEM_HOME": "/var/lib/gems/2.7.0",
             "RAILS_ENV": "production",
         }
         pod_config.update(self._get_saml_config())
@@ -439,7 +438,6 @@ class DiscourseCharm(CharmBase):
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
-                    user="discourse",
                 )
                 migration_process.wait_output()
             self.model.unit.status = MaintenanceStatus("Compiling assets")
@@ -447,7 +445,6 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
-                user="discourse",
             )
             precompile_process.wait_output()
             self._set_setup_completed()
@@ -455,7 +452,6 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
-                user="discourse",
             )
             version, _ = get_version_process.wait_output()
             self.unit.set_workload_version(version)
@@ -501,7 +497,6 @@ class DiscourseCharm(CharmBase):
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
-                    user="discourse",
                 )
                 process.wait_output()
         except ExecError as cmd_err:
@@ -546,7 +541,6 @@ class DiscourseCharm(CharmBase):
                     "admin:create",
                 ],
                 stdin=f"{email}\n{password}\n{password}\nY\n",
-                user="discourse",
                 working_dir=DISCOURSE_PATH,
                 environment=self._create_discourse_environment_settings(),
                 timeout=60,
@@ -572,7 +566,6 @@ class DiscourseCharm(CharmBase):
                 "runner",
                 f"SiteSetting.force_https={force_bool}",
             ],
-            user="discourse",
             working_dir=DISCOURSE_PATH,
             environment=self._create_discourse_environment_settings(),
         )
@@ -593,7 +586,6 @@ class DiscourseCharm(CharmBase):
                     "-c",
                     f"./bin/bundle exec rake users:anonymize[{username}]",
                 ],
-                user="discourse",
                 working_dir=DISCOURSE_PATH,
                 environment=self._create_discourse_environment_settings(),
             )
