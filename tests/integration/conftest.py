@@ -132,8 +132,10 @@ async def app_fixture(
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
-    # Deploy relations to speed up overall execution
-
+    # We're using the '14/beta' channel here because of some hooks issues
+    # encountered on rev117 of the charm.
+    # https://github.com/canonical/discourse-k8s-operator/actions/runs/5800833433/job/15724726551#step:12:68
+    # We should switch back to '14/edge' when this is solved.
     postgres_app = await model.deploy(
         "postgresql-k8s", channel="14/beta", series="jammy", trust=True
     )
