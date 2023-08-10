@@ -69,6 +69,10 @@ SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 DATABASE_RELATION_NAME = "database"
 
 
+class MissingRedisRelationDataError(Exception):
+    """Custom exception to be raised in case of malformed/missing redis relation data."""
+
+
 class DiscourseCharm(CharmBase):
     """Charm for Discourse on kubernetes."""
 
@@ -287,13 +291,19 @@ class DiscourseCharm(CharmBase):
 
         Returns:
             Tuple with the hostname and port of the related redis
+        Raises:
+            MissingRedisRelationDataError if the some of redis relation data is malformed/missing
         """
         # This is the current recommended way of accessing the relation data.
         for redis_unit in self._stored.redis_relation:  # type: ignore
             # mypy fails to see that this is indexable
             redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
-            redis_hostname = str(redis_unit_data.get("hostname"))
-            redis_port = int(redis_unit_data.get("port"))
+            try:
+                redis_hostname = str(redis_unit_data.get("hostname"))
+                redis_port = int(redis_unit_data.get("port"))
+            except (ValueError, TypeError):
+                raise MissingRedisRelationDataError()
+
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
             )
@@ -425,7 +435,7 @@ class DiscourseCharm(CharmBase):
             ):
                 self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
                 return False
-        except (ValueError, TypeError):
+        except MissingRedisRelationDataError:
             return False
         return True
 
