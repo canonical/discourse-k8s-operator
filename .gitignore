@@ -4,3 +4,9 @@
 .coverage
 __pycache__
 build
+.vscode
+.env
+venv
+env
+.pytest_cache
+.mypy_cache

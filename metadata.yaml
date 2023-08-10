@@ -1,26 +1,58 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 name: discourse-k8s
 display-name: Discourse
-summary: Discourse is the 100% open source discussion platform built for the next decade of the Internet.
+summary: Discourse is the modern forum for your community.
 description: |
-  Discourse is the 100% open source discussion platform built for the next decade of the Internet.
-  Use it as a mailing list, discussion forum, long-form chat room and more!
-  https://www.discourse.org
+  A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators)
+  deploying and managing [Discourse](https://www.discourse.org/) on Kubernetes.
+  Discourse is the 100% open source discussion platform. Use it as a mailing list,
+  discussion forum or long-form chat room.
+
+  This charm simplifies initial deployment and "day N" operations of Discourse
+  on Kubernetes, such as scaling the number of instances, integration with SSO,
+  access to S3 for redundant file storage and more. It allows for deployment on
+  many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) or
+  [Charmed Kubernetes](https://ubuntu.com/kubernetes) and public cloud Kubernetes
+  offerings.
+
+  As such, the charm makes it easy for those looking to take control of their own
+  discussion platform whilst keeping operations simple, and gives them the
+  freedom to deploy on the Kubernetes platform of their choice.
+
+  For DevOps or SRE teams this charm will make operating Discourse simple and
+  straightforward through Juju's clean interface. It will allow easy deployment
+  into multiple environments for testing of changes, and supports scaling out for
+  enterprise deployments.
 docs: https://discourse.charmhub.io/t/discourse-documentation-overview/3773
 maintainers:
-  - Jay Kuri <jay.kuri@canonical.com>
-  - Gareth Woolridge <gareth.woolridge@canonical.com>
+  - launchpad.net/~canonical-is-devops
+issues: https://github.com/canonical/discourse-k8s-operator/issues
+source: https://github.com/canonical/discourse-k8s-operator
 tags:
   - applications
   - forum
+
+provides:
+  metrics-endpoint:
+    interface: prometheus_scrape
+  grafana-dashboard:
+    interface: grafana_dashboard
+
 requires:
   redis:
     interface: redis
-  db:
-    interface: pgsql
     limit: 1
-  ingress:
-    interface: ingress
+  database:
+    interface: postgresql_client
     limit: 1
+  nginx-route:
+    interface: nginx-route
+    limit: 1
+  logging:
+    interface: loki_push_api
+assumes:
+  - k8s-api
 
 containers:
   discourse:
@@ -29,4 +61,4 @@ containers:
 resources:
   discourse-image:
     type: oci-image
-    description: OCI image for discourse  
+    description: OCI image for discourse

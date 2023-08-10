@@ -1,18 +1,26 @@
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
+
+[tool.bandit]
+exclude_dirs = ["/venv/"]
+[tool.bandit.assert_used]
+skips = ["*tests/*.py"]
 
 # Testing tools configuration
 [tool.coverage.run]
 branch = true
 
 [tool.coverage.report]
-fail_under = 86
+fail_under = 88
 show_missing = true
 
 
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli_level = "INFO"
+markers = [
+    "requires_secrets: mark tests that require external secrets"
+]
 
 # Formatting tools configuration
 [tool.black]
@@ -20,6 +28,7 @@ line-length = 99
 target-version = ["py38"]
 
 [tool.isort]
+line_length = 99
 profile = "black"
 
 # Linting tools configuration
@@ -39,3 +48,12 @@ docstring-convention = "google"
 copyright-check = "True"
 copyright-author = "Canonical Ltd."
 copyright-regexp = "Copyright\\s\\d{4}([-,]\\d{4})*\\s+%(author)s"
+
+[tool.mypy]
+ignore_missing_imports = true
+explicit_package_bases = true
+namespace_packages = true
+check_untyped_defs = true
+
+[tool.pylint.SIMILARITIES]
+min-similarity-lines=10

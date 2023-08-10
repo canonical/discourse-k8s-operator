@@ -1,4 +1,4 @@
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Patch the ``ops-lib-pgsql`` library for unit testing.
@@ -24,8 +24,7 @@ def _use(*args, **kwargs):
     print("use: ", args)
     if args == ("pgsql", 1, "postgresql-charmers@lists.launchpad.net"):
         return pgsql
-    else:
-        return _og_use(*args, **kwargs)
+    return _og_use(*args, **kwargs)
 
 
 ops.lib.use = _use
@@ -35,7 +34,7 @@ class _PGSQLPatch:
     def __init__(self):
         # borrow some code from
         # https://github.com/canonical/ops-lib-pgsql/blob/master/tests/test_client.py
-        self._leadership_data = {}
+        self._leadership_data = {}  # type: ignore
         self._patch = patch.multiple(
             pgsql.client,
             _is_ready=MagicMock(return_value=True),
@@ -47,13 +46,16 @@ class _PGSQLPatch:
         self._leadership_data.clear()
 
     def start(self):
+        """start PostgreSQL."""
         self._reset_leadership_data()
         self._patch.start()
 
     def stop(self):
+        """stop PostgreSQL."""
         self._reset_leadership_data()
         self._patch.stop()
 
 
 pgsql_patch = _PGSQLPatch()
 DiscourseCharm = __import__("charm").DiscourseCharm
+DISCOURSE_PATH = __import__("charm").DISCOURSE_PATH

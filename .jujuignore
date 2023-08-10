@@ -1,6 +1,13 @@
-/env
-/image
+venv/
+env/
+image/
 *.py[cod]
 *.charm
 *.tar.gz
 Makefile
+.vscode/
+.env
+.pytest_cache/
+.github/
+.tox/
+*__pycache__*
