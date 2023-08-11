@@ -5,7 +5,7 @@ on:
 
 jobs:
   integration-tests-without-secrets:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@4e5a4c88987c9dccef264c130f47cd3764cda4d6
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
       chaos-app-label: app.kubernetes.io/name=discourse-k8s
@@ -14,17 +14,5 @@ jobs:
       chaos-experiments: pod-delete
       chaos-status-duration: 300
       extra-arguments: --localstack-address 172.17.0.1 -m "not (requires_secrets)"
-      pre-run-script: localstack-installation.sh
-      trivy-image-config: "trivy.yaml"
-  integration-tests-with-secrets:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@4e5a4c88987c9dccef264c130f47cd3764cda4d6
-    secrets: inherit
-    with:
-      chaos-app-label: app.kubernetes.io/name=discourse-k8s
-      chaos-duration: 600
-      chaos-enabled: false
-      chaos-experiments: pod-delete
-      chaos-status-duration: 300
-      extra-arguments: --localstack-address 172.17.0.1 -m "requires_secrets"
       pre-run-script: localstack-installation.sh
       trivy-image-config: "trivy.yaml"
