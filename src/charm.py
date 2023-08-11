@@ -66,8 +66,11 @@ SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
-DEFAULT_REDIS_PORT = 6379
 DATABASE_RELATION_NAME = "database"
+
+
+class MissingRedisRelationDataError(Exception):
+    """Custom exception to be raised in case of malformed/missing redis relation data."""
 
 
 class DiscourseCharm(CharmBase):
@@ -288,13 +291,19 @@ class DiscourseCharm(CharmBase):
 
         Returns:
             Tuple with the hostname and port of the related redis
+        Raises:
+            MissingRedisRelationDataError if the some of redis relation data is malformed/missing
         """
         # This is the current recommended way of accessing the relation data.
         for redis_unit in self._stored.redis_relation:  # type: ignore
             # mypy fails to see that this is indexable
             redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
-            redis_hostname = redis_unit_data.get("hostname", "")  # type: ignore
-            redis_port = redis_unit_data.get("port", DEFAULT_REDIS_PORT)  # type: ignore
+            try:
+                redis_hostname = str(redis_unit_data.get("hostname"))
+                redis_port = int(redis_unit_data.get("port"))
+            except (ValueError, TypeError) as exc:
+                raise MissingRedisRelationDataError() from exc
+
             logger.debug(
                 "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
             )
@@ -307,6 +316,9 @@ class DiscourseCharm(CharmBase):
             Dictionary with all the environment settings.
         """
         database_relation_data = self._database.get_relation_data()
+
+        # The following could fail if the data is malformed.
+        # We/don't catch it because we don't want to silently fail in those cases
         redis_relation_data = self._get_redis_relation_data()
 
         pod_config = {
@@ -416,7 +428,14 @@ class DiscourseCharm(CharmBase):
         if not self._stored.redis_relation:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
             return False
-        if self._get_redis_relation_data()[0] == "":
+        try:
+            if (
+                self._get_redis_relation_data()[0] in ("", "None")
+                or self._get_redis_relation_data()[1] == 0
+            ):
+                self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
+                return False
+        except MissingRedisRelationDataError:
             self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
             return False
         return True
