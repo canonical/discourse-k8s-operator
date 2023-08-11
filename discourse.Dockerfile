@@ -1,6 +1,6 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
-FROM ubuntu:focal
+FROM ubuntu:jammy
 
 # Used in Launchpad OCI Recipe build to tag the image.
 LABEL org.label-schema.version=v2.8.14
