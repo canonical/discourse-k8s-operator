@@ -436,6 +436,7 @@ class DiscourseCharm(CharmBase):
                 self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
                 return False
         except MissingRedisRelationDataError:
+            self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
             return False
         return True
 
