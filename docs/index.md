@@ -39,10 +39,3 @@ If there's a particular area of documentation that you'd like to see that's miss
 | 2 | integrations | [Integrations](https://charmhub.io/discourse-k8s/integrations) |
 | 1 | Explanation | [Explanation]() |
 | 2 | explanation-charm-architecture | [Charm Architecture](/t/discourse-docs-charm-architecture/8809) |
-
-# Redirects
-
-[details=Mapping table]
-| Path | Location |
-| -- | -- |
-[/details]
