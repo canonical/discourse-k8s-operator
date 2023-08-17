@@ -283,6 +283,10 @@ class DiscourseCharm(CharmBase):
             s3_env["DISCOURSE_S3_BACKUP_BUCKET"] = self.config["s3_backup_bucket"]
         if self.config.get("s3_cdn_url"):
             s3_env["DISCOURSE_S3_CDN_URL"] = self.config["s3_cdn_url"]
+        if self.config.get("s3_enabled"):
+            # We force assets to be uploaded to S3
+            # This should be considered as a workaround and revisited later
+            s3_env["FORCE_S3_UPLOADS"] = "true"
 
         return s3_env
 
