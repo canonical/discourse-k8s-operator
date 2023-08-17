@@ -511,6 +511,10 @@ class DiscourseCharm(CharmBase):
                 else "",
             )
         env_settings = self._create_discourse_environment_settings()
+        if self.config.get("s3_enabled"):
+            # We force assets to be uploaded to S3
+            # This should be considered as a workaround and revisited later
+            env_settings.update({"FORCE_S3_UPLOADS": "true"})
         try:
             if self.model.unit.is_leader() and self._should_run_s3_migration(
                 current_plan, previous_s3_info
