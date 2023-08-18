@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  integration-tests-without-secrets:
+  integration-tests:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
