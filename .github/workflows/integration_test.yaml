@@ -13,6 +13,6 @@ jobs:
       chaos-enabled: false
       chaos-experiments: pod-delete
       chaos-status-duration: 300
-      extra-arguments: --localstack-address 172.17.0.1 -m "not (requires_secrets)" -k test_active
+      extra-arguments: --localstack-address 172.17.0.1 -m "not (requires_secrets)"
       pre-run-script: localstack-installation.sh
       trivy-image-config: "trivy.yaml"
