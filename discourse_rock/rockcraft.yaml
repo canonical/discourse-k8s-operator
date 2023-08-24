@@ -10,20 +10,11 @@ version: "1.0"
 platforms:
   amd64:
 parts:
-  debug-tools:
-    plugin: nil
-    stage-packages:
-      - git
-      - coreutils
-      - bash
-      - curl
-      - vim
   install-node:
     plugin: nil
     source: .
     build-environment:
-      - NODE_VERSION: "18.15.0"
-      - YARN_VERSION: "1.22.19"
+      - NODE_VERSION: "18.17.1"
       - ARCH: "x64"
     overlay-script: |
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
@@ -153,26 +144,11 @@ parts:
       - get-saml-plugin-source
       - apply-patches
     build-packages:
-      - gettext-base
-      - gifsicle
-      - git
-      - imagemagick
-      - jhead
-      - jpegoptim
-      - libjpeg-turbo-progs
       - libpq-dev
-      - libssl-dev
-      - libxml2-dev
-      - libxslt1-dev
-      - libz-dev
-      - optipng
-      - pngquant
-      - redis-tools
       - ruby2.7
       - ruby2.7-dev
-      - tzdata
-      - ubuntu-dev-tools
-      - zlib1g-dev
+      - git
+      - libssl-dev
     override-build: |
       cd $CRAFT_STAGE/srv/discourse/app
       gem install -n "bin" bundler
