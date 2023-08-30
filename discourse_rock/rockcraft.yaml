@@ -11,6 +11,8 @@ platforms:
   amd64:
 parts:
   install-node:
+    # We need nodejs so that yarn works correctly
+    # This allows us to control the version of node
     plugin: nil
     source: .
     build-environment:
@@ -20,6 +22,7 @@ parts:
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
       curl -Ls $node_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
   install-yarn:
+    # We need yarn to compile discourse's assets
     plugin: nil
     after:
       - install-node
@@ -31,6 +34,9 @@ parts:
       yarn_uri="https://github.com/yarnpkg/yarn/releases/download/v${YARN_VERSION}/yarn-v${YARN_VERSION}.tar.gz"
       curl -Ls $yarn_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
   install-terser:
+    # Terser is needed to compile discourse's assets
+    # We don't use the system package to avoid pulling ubuntu's nodejs package
+    # Related to: https://git.launchpad.net/~weii-wang/charm-k8s-discourse/commit/?h=fix-terser-precompile&id=ada4ba97b28ab53dd0a619b3a9325b7a981afac1
     plugin: nil
     source: .
     after:
@@ -135,6 +141,8 @@ parts:
     override-stage: |
       git -C srv/discourse/app apply patches/lp1903695.patch
       git -C srv/discourse/app apply patches/anonymize_user.patch
+      # The following is a fix for UglifierJS assets compilation
+      # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
       sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
   install-gems:
@@ -152,8 +160,10 @@ parts:
     override-build: |
       cd $CRAFT_STAGE/srv/discourse/app
       gem install -n "bin" bundler
+      # rexml version is forced to avoid conflicting transient dependency issue
       sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' Gemfile.lock
       echo "gem 'prometheus_exporter'" >> Gemfile
+      # rexml version is forced to avoid conflicting transient dependency issue
       echo "gem 'rexml', '3.2.6'" >> Gemfile
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
