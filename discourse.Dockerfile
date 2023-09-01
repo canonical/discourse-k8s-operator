@@ -98,13 +98,13 @@ RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/di
     && git -C "${PLUGINS_DIR}/discourse-solved" reset --hard d6c8089ca38611b09a8edb29d64f359bcef11f11 \
     && git clone https://github.com/canonical-web-and-design/discourse-markdown-note.git "${PLUGINS_DIR}/discourse-markdown-note" \
     && git clone https://github.com/unfoldingWord-dev/discourse-mermaid.git "${PLUGINS_DIR}/discourse-mermaid" \
+    && git clone https://github.com/discourse/discourse-prometheus.git "${PLUGINS_DIR}/discourse-prometheus" \
     && chown -R "${CONTAINER_APP_USERNAME}:${CONTAINER_APP_GROUP}" "${PLUGINS_DIR}" \
 # Have to determine the gems needed and install them now, otherwise Discourse will
 # try to install them at runtime, which may not work due to network access issues.
     && su -s /bin/bash -c 'gem install bundler' "${CONTAINER_APP_USERNAME}" \
     && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install --gemfile=${PLUGINS_DIR}/discourse-saml/Gemfile --path=${PLUGINS_DIR}/discourse-saml/gems' "${CONTAINER_APP_USERNAME}" \
     && ln -s "${PLUGINS_DIR}/discourse-saml/gems/ruby/"* "${PLUGINS_DIR}/discourse-saml/gems/" \
-    && echo "gem 'prometheus_exporter', require: false" >> "${CONTAINER_APP_ROOT}/app/Gemfile" \
     && sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' "${CONTAINER_APP_ROOT}/app/Gemfile.lock" \
     && echo "gem 'rexml', '3.2.6'" >> "${CONTAINER_APP_ROOT}/app/Gemfile" \
     && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install' "${CONTAINER_APP_USERNAME}"
