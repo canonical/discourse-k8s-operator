@@ -89,10 +89,6 @@ COPY --chown="${CONTAINER_APP_UID}:${CONTAINER_APP_GID}" image/scripts /srv/scri
 
 ENV PLUGINS_DIR="${CONTAINER_APP_ROOT}/app/plugins"
 RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/discourse-saml" \
-    && mkdir -p "${PLUGINS_DIR}/discourse-saml/gems" \
-# Have to determine the gems needed and install them now, otherwise Discourse will
-# try to install them at runtime, which may not work due to network access issues.
-    && grep -e ^gem "${PLUGINS_DIR}/discourse-saml/plugin.rb" >> "${PLUGINS_DIR}/discourse-saml/Gemfile" \
     && git clone https://github.com/discourse/discourse-solved.git "${PLUGINS_DIR}/discourse-solved" \
 # Checkout commit prior to migration error introduced by renaming a variable in 882dd61e11f9bab8e99510296938b0cdbc3269c4
     && git -C "${PLUGINS_DIR}/discourse-solved" reset --hard d6c8089ca38611b09a8edb29d64f359bcef11f11 \
@@ -103,8 +99,12 @@ RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/di
 # Have to determine the gems needed and install them now, otherwise Discourse will
 # try to install them at runtime, which may not work due to network access issues.
     && su -s /bin/bash -c 'gem install bundler' "${CONTAINER_APP_USERNAME}" \
+    && mkdir -p "${PLUGINS_DIR}/discourse-saml/gems" \
+    && grep -e ^gem "${PLUGINS_DIR}/discourse-saml/plugin.rb" >> "${PLUGINS_DIR}/discourse-saml/Gemfile" \
     && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install --gemfile=${PLUGINS_DIR}/discourse-saml/Gemfile --path=${PLUGINS_DIR}/discourse-saml/gems' "${CONTAINER_APP_USERNAME}" \
     && ln -s "${PLUGINS_DIR}/discourse-saml/gems/ruby/"* "${PLUGINS_DIR}/discourse-saml/gems/" \
+    && mkdir -p "${PLUGINS_DIR}/discourse-prometheus/gems" \
+    && grep -e ^gem "${PLUGINS_DIR}/discourse-prometheus/plugin.rb" >> "${PLUGINS_DIR}/discourse-prometheus/Gemfile" \
     && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install --gemfile=${PLUGINS_DIR}/discourse-prometheus/Gemfile --path=${PLUGINS_DIR}/discourse-prometheus/gems' "${CONTAINER_APP_USERNAME}" \
     && ln -s "${PLUGINS_DIR}/discourse-prometheus/gems/ruby/"* "${PLUGINS_DIR}/discourse-prometheus/gems/" \
     && sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' "${CONTAINER_APP_ROOT}/app/Gemfile.lock" \
