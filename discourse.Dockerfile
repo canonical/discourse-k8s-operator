@@ -105,6 +105,8 @@ RUN git clone https://github.com/discourse/discourse-saml.git "${PLUGINS_DIR}/di
     && su -s /bin/bash -c 'gem install bundler' "${CONTAINER_APP_USERNAME}" \
     && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install --gemfile=${PLUGINS_DIR}/discourse-saml/Gemfile --path=${PLUGINS_DIR}/discourse-saml/gems' "${CONTAINER_APP_USERNAME}" \
     && ln -s "${PLUGINS_DIR}/discourse-saml/gems/ruby/"* "${PLUGINS_DIR}/discourse-saml/gems/" \
+    && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install --gemfile=${PLUGINS_DIR}/discourse-prometheus/Gemfile --path=${PLUGINS_DIR}/discourse-prometheus/gems' "${CONTAINER_APP_USERNAME}" \
+    && ln -s "${PLUGINS_DIR}/discourse-prometheus/gems/ruby/"* "${PLUGINS_DIR}/discourse-prometheus/gems/" \
     && sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' "${CONTAINER_APP_ROOT}/app/Gemfile.lock" \
     && echo "gem 'rexml', '3.2.6'" >> "${CONTAINER_APP_ROOT}/app/Gemfile" \
     && su -s /bin/bash -c '${CONTAINER_APP_ROOT}/app/bin/bundle install' "${CONTAINER_APP_USERNAME}"
