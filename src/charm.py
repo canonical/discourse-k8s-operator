@@ -59,7 +59,7 @@ LOG_PATHS = [
     f"{DISCOURSE_PATH}/log/unicorn.stderr.log",
     f"{DISCOURSE_PATH}/log/unicorn.stdout.log",
 ]
-PROMETHEUS_PORT = 9394
+PROMETHEUS_PORT = 3000
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
