@@ -5,6 +5,7 @@ name: discourse
 summary: Discourse rock
 description: Discourse OCI image for the Discourse charm
 base: ubuntu:20.04
+run-user: _daemon_
 license: Apache-2.0
 version: "1.0"
 platforms:
@@ -178,3 +179,15 @@ parts:
     source: scripts
     organize:
       "*": srv/scripts/
+  adjust-ownership:
+    plugin: nil
+    after:
+      - get-markdown-note-plugin-source
+      - get-mermaid-plugin-source
+      - get-scripts
+      - get-solved-plugin-source
+      - install-gems
+      - install-terser
+    override-prime: |
+      craftctl default
+      chown 584792 -R srv/discourse

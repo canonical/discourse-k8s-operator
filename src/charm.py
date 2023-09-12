@@ -329,7 +329,7 @@ class DiscourseCharm(CharmBase):
             # I need to take the required envVars for the application to work properly
             "CONTAINER_APP_NAME": "discourse",
             "CONTAINER_APP_ROOT": "/srv/discourse",
-            "CONTAINER_APP_USERNAME": "root",
+            "CONTAINER_APP_USERNAME": "_daemon_",
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
             "DISCOURSE_DB_HOST": database_relation_data["POSTGRES_HOST"],
             "DISCOURSE_DB_NAME": database_relation_data["POSTGRES_DB"],
@@ -461,6 +461,7 @@ class DiscourseCharm(CharmBase):
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
+                    user="_daemon_",
                 )
                 migration_process.wait_output()
             self.model.unit.status = MaintenanceStatus("Compiling assets")
@@ -468,6 +469,7 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
+                user="_daemon_",
             )
             precompile_process.wait_output()
             self._set_setup_completed()
@@ -475,6 +477,7 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
+                user="_daemon_",
             )
             version, _ = get_version_process.wait_output()
             self.unit.set_workload_version(version)
@@ -520,6 +523,7 @@ class DiscourseCharm(CharmBase):
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
+                    user="_daemon_",
                 )
                 process.wait_output()
         except ExecError as cmd_err:
@@ -565,6 +569,7 @@ class DiscourseCharm(CharmBase):
                 ],
                 stdin=f"{email}\n{password}\n{password}\nY\n",
                 working_dir=DISCOURSE_PATH,
+                user="_daemon_",
                 environment=self._create_discourse_environment_settings(),
                 timeout=60,
             )
@@ -590,6 +595,7 @@ class DiscourseCharm(CharmBase):
                 f"SiteSetting.force_https={force_bool}",
             ],
             working_dir=DISCOURSE_PATH,
+            user="_daemon_",
             environment=self._create_discourse_environment_settings(),
         )
         process.wait_output()
@@ -610,6 +616,7 @@ class DiscourseCharm(CharmBase):
                     f"./bin/bundle exec rake users:anonymize[{username}]",
                 ],
                 working_dir=DISCOURSE_PATH,
+                user="_daemon_",
                 environment=self._create_discourse_environment_settings(),
             )
             try:
