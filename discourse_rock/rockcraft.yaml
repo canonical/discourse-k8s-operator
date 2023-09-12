@@ -127,6 +127,17 @@ parts:
       grep -e ^gem plugin.rb >> Gemfile
     organize:
       "*": srv/discourse/app/plugins/discourse-saml/
+  get-prometheus-plugin-source:
+    plugin: dump
+    after:
+      - get-discourse
+    source: https://github.com/discourse/discourse-prometheus.git
+    source-depth: 1
+    override-build: |
+      craftctl default
+      grep -e ^gem plugin.rb >> Gemfile
+    organize:
+      "*": srv/discourse/app/plugins/discourse-prometheus/
   get-patches:
     plugin: dump
     source: patches
@@ -151,6 +162,7 @@ parts:
     after:
       - get-discourse
       - get-saml-plugin-source
+      - get-prometheus-plugin-source
       - apply-patches
     build-packages:
       - libpq-dev
@@ -163,13 +175,12 @@ parts:
       gem install -n "bin" bundler
       # rexml version is forced to avoid conflicting transient dependency issue
       sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' Gemfile.lock
-      echo "gem 'prometheus_exporter'" >> Gemfile
       # rexml version is forced to avoid conflicting transient dependency issue
       echo "gem 'rexml', '3.2.6'" >> Gemfile
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
     organize:
-      '/usr/local/bin/prometheus_exporter': usr/local/bin/
       '/var/lib/gems': var/lib/gems
       'srv/discourse/app/bin/*': srv/discourse/app/bin/
       'srv/discourse/app/Rakefile': srv/discourse/app/
