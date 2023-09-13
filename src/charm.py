@@ -60,7 +60,7 @@ LOG_PATHS = [
     f"{DISCOURSE_PATH}/log/unicorn.stderr.log",
     f"{DISCOURSE_PATH}/log/unicorn.stdout.log",
 ]
-PROMETHEUS_PORT = 9394
+PROMETHEUS_PORT = 3000
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
@@ -283,6 +283,10 @@ class DiscourseCharm(CharmBase):
             s3_env["DISCOURSE_S3_BACKUP_BUCKET"] = self.config["s3_backup_bucket"]
         if self.config.get("s3_cdn_url"):
             s3_env["DISCOURSE_S3_CDN_URL"] = self.config["s3_cdn_url"]
+        if self.config.get("s3_enabled"):
+            # We force assets to be uploaded to S3
+            # This should be considered as a workaround and revisited later
+            s3_env["FORCE_S3_UPLOADS"] = "true"
 
         return s3_env
 
