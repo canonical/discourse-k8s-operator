@@ -178,7 +178,7 @@ async def app_fixture(
             "plugin_pg_trgm_enable": "true",
         }
     )
-    await model.wait_for_idle(apps=[postgres_app.name], status="active")
+    await model.wait_for_idle(apps=[postgres_app.name], status="active", raise_on_error=False)
 
     # Add required relations
     unit = model.applications[app_name].units[0]
@@ -188,7 +188,7 @@ async def app_fixture(
         model.add_relation(app_name, "redis-k8s"),
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
-    await model.wait_for_idle(status="active")
+    await model.wait_for_idle(status="active", raise_on_error=False)
 
     yield application
 

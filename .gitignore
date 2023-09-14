@@ -10,3 +10,4 @@ venv
 env
 .pytest_cache
 .mypy_cache
+*.rock
