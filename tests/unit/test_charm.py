@@ -35,71 +35,75 @@ DATABASE_NAME = "discourse"
         (True, True, True, ActiveStatus("")),
     ],
 )
-def test_relations(start_harness, with_postgres, with_redis, with_ingress, status):
+def test_relations(with_postgres, with_redis, with_ingress, status):
     """
     arrange: given a deployed discourse charm
     act: when pebble ready event is triggered
     assert: it will have the correct status depending on the relations
     """
-    harness = start_harness(
+    harness = helpers.start_harness(
         with_postgres=with_postgres, with_redis=with_redis, with_ingress=with_ingress
     )
     assert harness.model.unit.status == status
 
 
-def test_ingress_relation_not_ready(start_harness):
+def test_ingress_relation_not_ready():
     """
     arrange: given a deployed discourse charm with the ingress established
     act: when pebble ready event is triggered
     assert: it will wait for the ingress relation.
     """
-    harness = start_harness(with_postgres=False, with_redis=False, with_ingress=True)
+    harness = helpers.start_harness(with_postgres=False, with_redis=False, with_ingress=True)
     assert harness.model.unit.status == WaitingStatus("Waiting for database relation")
 
 
-def test_config_changed_when_no_saml_target(start_harness):
+def test_config_changed_when_no_saml_target():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when force_saml_login configuration is True and there's no saml_target_url
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = start_harness(with_config={"force_saml_login": True, "saml_target_url": ""})
+    harness = helpers.start_harness(with_config={"force_saml_login": True, "saml_target_url": ""})
     assert harness.model.unit.status == BlockedStatus(
         "force_saml_login can not be true without a saml_target_url"
     )
 
 
-def test_config_changed_when_saml_sync_groups_and_no_url_invalid(start_harness):
+def test_config_changed_when_saml_sync_groups_and_no_url_invalid():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when saml_sync_groups configuration is provided and there's no saml_target_url
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = start_harness(with_config={"saml_sync_groups": "group1", "saml_target_url": ""})
+    harness = helpers.start_harness(
+        with_config={"saml_sync_groups": "group1", "saml_target_url": ""}
+    )
     assert harness.model.unit.status == BlockedStatus(
         "'saml_sync_groups' cannot be specified without a 'saml_target_url'"
     )
 
 
-def test_config_changed_when_saml_target_url_and_force_https_disabled(start_harness):
+def test_config_changed_when_saml_target_url_and_force_https_disabled():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when saml_target_url configuration is provided and force_https is False
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = start_harness(with_config={"saml_target_url": "group1", "force_https": False})
+    harness = helpers.start_harness(
+        with_config={"saml_target_url": "group1", "force_https": False}
+    )
     assert harness.model.unit.status == BlockedStatus(
         "'saml_target_url' cannot be specified without 'force_https' being true"
     )
 
 
-def test_config_changed_when_no_cors(start_harness):
+def test_config_changed_when_no_cors():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when cors_origin configuration is empty
     assert: it will get to blocked status waiting for it.
     """
-    harness = start_harness(with_config={"cors_origin": ""})
+    harness = helpers.start_harness(with_config={"cors_origin": ""})
     assert (
         harness.charm._database.get_relation_data() is not None
     ), "database name should be set after relation joined"
@@ -108,24 +112,24 @@ def test_config_changed_when_no_cors(start_harness):
     ), "database name should be set after relation joined"
 
 
-def test_config_changed_when_throttle_mode_invalid(start_harness):
+def test_config_changed_when_throttle_mode_invalid():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when throttle_level configuration is invalid
     assert: it will get to blocked status waiting for a valid value to be provided.
     """
-    harness = start_harness(with_config={"throttle_level": "Scream"})
+    harness = helpers.start_harness(with_config={"throttle_level": "Scream"})
     assert harness.model.unit.status.name == BLOCKED_STATUS
     assert "none permissive strict" in harness.model.unit.status.message
 
 
-def test_config_changed_when_s3_and_no_bucket_invalid(start_harness):
+def test_config_changed_when_s3_and_no_bucket_invalid():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when s3_enabled configuration is True and there's no s3_bucket
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = start_harness(
+    harness = helpers.start_harness(
         with_config={
             "s3_access_key_id": "3|33+",
             "s3_enabled": True,
@@ -137,14 +141,14 @@ def test_config_changed_when_s3_and_no_bucket_invalid(start_harness):
     assert harness.model.unit.status == BlockedStatus("'s3_enabled' requires 's3_bucket'")
 
 
-def test_config_changed_when_valid_no_s3_backup_nor_cdn(start_harness):
+def test_config_changed_when_valid_no_s3_backup_nor_cdn():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when a valid configuration is provided
     assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
     """
-    harness = start_harness()
+    harness = helpers.start_harness()
     with helpers.patch_exec() as mock_exec:
         harness.set_leader(True)
         harness.update_config(
@@ -191,7 +195,7 @@ def test_config_changed_when_valid_no_s3_backup_nor_cdn(start_harness):
     assert harness.model.unit.status == ActiveStatus()
 
 
-def test_config_changed_when_valid_no_fingerprint(start_harness):
+def test_config_changed_when_valid_no_fingerprint():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when a valid configuration is provided
@@ -199,7 +203,7 @@ def test_config_changed_when_valid_no_fingerprint(start_harness):
         reaches Active status.
     """
     with helpers.patch_exec():
-        harness = start_harness(
+        harness = helpers.start_harness(
             with_config={
                 "force_saml_login": True,
                 "saml_target_url": "https://login.sample.com/+saml",
@@ -233,7 +237,7 @@ def test_config_changed_when_valid_no_fingerprint(start_harness):
         assert harness.model.unit.status == ActiveStatus()
 
 
-def test_config_changed_when_valid(start_harness):
+def test_config_changed_when_valid():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when a valid configuration is provided
@@ -241,7 +245,7 @@ def test_config_changed_when_valid(start_harness):
         reaches Active status.
     """
     with helpers.patch_exec():
-        harness = start_harness(
+        harness = helpers.start_harness(
             with_config={
                 "developer_emails": "user@foo.internal",
                 "enable_cors": True,
@@ -303,17 +307,18 @@ def test_config_changed_when_valid(start_harness):
         assert harness.model.unit.status == ActiveStatus()
 
 
-def test_db_relation(start_harness):
+def test_db_relation():
     """
     arrange: given a deployed discourse charm
     act: when the database relation is added
     assert: the appropriate database name is set.
     """
-    harness = start_harness()
+    harness = helpers.start_harness()
     harness.set_leader(True)
 
     db_relation_data = harness.get_relation_data(
-        harness.db_relation_id,
+        # This attribute was defined in the helpers
+        harness.db_relation_id,  # pylint: disable=no-member
         "postgresql",
     )
 
@@ -325,7 +330,7 @@ def test_db_relation(start_harness):
     ), "database name should be set after relation joined"
 
 
-def test_add_admin_user(start_harness):
+def test_add_admin_user():
     """
     arrange: an email and a password
     act: when the _on_add_admin_user_action mtehod is executed
@@ -333,7 +338,7 @@ def test_add_admin_user(start_harness):
         with the appropriate parameters.
     """
     with patch.object(Container, "exec") as mock_exec:
-        harness = start_harness()
+        harness = helpers.start_harness()
         charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
 
         email = "sample@email.com"
@@ -360,7 +365,7 @@ def test_add_admin_user(start_harness):
         )
 
 
-def test_anonymize_user(start_harness):
+def test_anonymize_user():
     """
     arrange: set up discourse
     act: execute the _on_anonymize_user_action method
@@ -368,7 +373,7 @@ def test_anonymize_user(start_harness):
         with the appropriate parameters.
     """
     with patch.object(Container, "exec") as mock_exec:
-        harness = start_harness()
+        harness = helpers.start_harness()
         charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
         username = "someusername"
         event = MagicMock(spec=ActionEvent)
@@ -387,13 +392,13 @@ def test_anonymize_user(start_harness):
         )
 
 
-def test_install_when_leader(start_harness):
+def test_install_when_leader():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: trigger the install event on a leader unit
     assert: migrations are executed and assets are precompiled.
     """
-    harness = start_harness()
+    harness = helpers.start_harness()
     harness.set_leader(True)
     with helpers.patch_exec() as mock_exec:
         harness.container_pebble_ready("discourse")
@@ -422,13 +427,13 @@ def test_install_when_leader(start_harness):
         )
 
 
-def test_install_when_not_leader(start_harness):
+def test_install_when_not_leader():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: trigger the install event on a leader unit
     assert: migrations are executed and assets are precompiled.
     """
-    harness = start_harness()
+    harness = helpers.start_harness()
     harness.set_leader(False)
     with helpers.patch_exec() as mock_exec:
         harness.container_pebble_ready("discourse")
@@ -483,13 +488,13 @@ def test_install_when_not_leader(start_harness):
         ),
     ],
 )
-def test_postgres_relation_data(start_harness, relation_data, should_be_ready):
+def test_postgres_relation_data(relation_data, should_be_ready):
     """
     arrange: given a deployed discourse charm and some relation data
     act: add the postgresql relation to the charm
     assert: the charm should wait for some correct relation data
     """
-    harness = start_harness(with_postgres=False, with_redis=False)
+    harness = helpers.start_harness(with_postgres=False, with_redis=False)
     db_relation_id = harness.add_relation("database", "postgresql")
     harness.add_relation_unit(db_relation_id, "postgresql/0")
     harness.update_relation_data(
@@ -540,13 +545,13 @@ def test_postgres_relation_data(start_harness, relation_data, should_be_ready):
         ),
     ],
 )
-def test_redis_relation_data(start_harness, relation_data, should_be_ready):
+def test_redis_relation_data(relation_data, should_be_ready):
     """
     arrange: given a deployed discourse charm and some relation data
     act: add the redis relation to the charm
     assert: the charm should wait for some correct relation data
     """
-    harness = start_harness(with_postgres=True, with_redis=False)
+    harness = helpers.start_harness(with_postgres=True, with_redis=False)
     redis_relation_id = harness.add_relation("redis", "redis")
     harness.add_relation_unit(redis_relation_id, "redis/0")
     harness.charm._stored.redis_relation = {redis_relation_id: relation_data}
