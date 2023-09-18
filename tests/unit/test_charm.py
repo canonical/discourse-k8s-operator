@@ -32,6 +32,16 @@ DATABASE_NAME = "discourse"
         (True, False, True, WaitingStatus("Waiting for redis relation")),
         (True, True, True, ActiveStatus("")),
     ],
+    ids=[
+        "No relation",
+        "Only redis",
+        "Only postgres",
+        "Postgres+redis",
+        "Only ingress",
+        "Redis+ingress",
+        "Postgres+ingress",
+        "All relations"
+    ]
 )
 def test_relations(with_postgres, with_redis, with_ingress, status):
     """
