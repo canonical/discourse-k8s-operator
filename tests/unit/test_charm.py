@@ -12,10 +12,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from ops.charm import ActionEvent
-from ops.model import ActiveStatus, Container, WaitingStatus, BlockedStatus
+from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 
 from tests.unit import helpers
-from tests.unit._patched_charm import DISCOURSE_PATH, DiscourseCharm
+from charm import DISCOURSE_PATH, DiscourseCharm
 
 DATABASE_NAME = "discourse"
 
@@ -40,8 +40,8 @@ DATABASE_NAME = "discourse"
         "Only ingress",
         "Redis+ingress",
         "Postgres+ingress",
-        "All relations"
-    ]
+        "All relations",
+    ],
 )
 def test_relations(with_postgres, with_redis, with_ingress, status):
     """
@@ -53,7 +53,6 @@ def test_relations(with_postgres, with_redis, with_ingress, status):
         with_postgres=with_postgres, with_redis=with_redis, with_ingress=with_ingress
     )
     assert harness.model.unit.status == status
-
 
 
 def test_ingress_relation_not_ready():

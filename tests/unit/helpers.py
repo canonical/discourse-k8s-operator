@@ -11,7 +11,7 @@ import ops
 from ops.model import Container
 from ops.testing import Harness
 
-from tests.unit._patched_charm import DiscourseCharm, pgsql_patch
+from charm import DiscourseCharm
 
 DATABASE_NAME = "discourse"
 
@@ -70,13 +70,6 @@ def start_harness(
 
     if with_ingress:
         _add_ingress_relation(harness)
-
-    with patch_exec(), _patch_setup_completed():
-        charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
-        # pylint: disable=protected-access
-        charm._set_setup_completed()
-
-    pgsql_patch.start()
 
     if with_config is not None:
         harness.update_config(with_config)
