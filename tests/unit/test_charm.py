@@ -12,12 +12,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from ops.charm import ActionEvent
-from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
+from ops.model import ActiveStatus, Container, WaitingStatus, BlockedStatus
 
 from tests.unit import helpers
 from tests.unit._patched_charm import DISCOURSE_PATH, DiscourseCharm
-
-BLOCKED_STATUS = BlockedStatus.name  # type: ignore
 
 DATABASE_NAME = "discourse"
 
@@ -45,6 +43,7 @@ def test_relations(with_postgres, with_redis, with_ingress, status):
         with_postgres=with_postgres, with_redis=with_redis, with_ingress=with_ingress
     )
     assert harness.model.unit.status == status
+
 
 
 def test_ingress_relation_not_ready():
@@ -119,7 +118,7 @@ def test_config_changed_when_throttle_mode_invalid():
     assert: it will get to blocked status waiting for a valid value to be provided.
     """
     harness = helpers.start_harness(with_config={"throttle_level": "Scream"})
-    assert harness.model.unit.status.name == BLOCKED_STATUS
+    assert isinstance(harness.model.unit.status, BlockedStatus)
     assert "none permissive strict" in harness.model.unit.status.message
 
 
@@ -192,7 +191,7 @@ def test_config_changed_when_valid_no_s3_backup_nor_cdn():
     assert "the-infinite-and-beyond" == updated_plan_env["DISCOURSE_S3_REGION"]
     assert "s|kI0ure_k3Y" == updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"]
     assert updated_plan_env["DISCOURSE_USE_S3"]
-    assert harness.model.unit.status == ActiveStatus()
+    assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
 def test_config_changed_when_valid_no_fingerprint():
@@ -234,7 +233,7 @@ def test_config_changed_when_valid_no_fingerprint():
         assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
         assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
         assert "DISCOURSE_USE_S3" not in updated_plan_env
-        assert harness.model.unit.status == ActiveStatus()
+        assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
 def test_config_changed_when_valid():
@@ -304,7 +303,7 @@ def test_config_changed_when_valid():
         assert "587" == updated_plan_env["DISCOURSE_SMTP_PORT"]
         assert "apikey" == updated_plan_env["DISCOURSE_SMTP_USER_NAME"]
         assert updated_plan_env["DISCOURSE_USE_S3"]
-        assert harness.model.unit.status == ActiveStatus()
+        assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
 def test_db_relation():
