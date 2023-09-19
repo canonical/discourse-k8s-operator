@@ -8,7 +8,7 @@ import os.path
 import typing
 from collections import defaultdict, namedtuple
 
-import ops.lib
+import ops
 from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseCreatedEvent,
     DatabaseEndpointsChangedEvent,
@@ -27,7 +27,6 @@ from ops.pebble import ExecError, ExecProcess, Plan
 from database import DatabaseHandler
 
 logger = logging.getLogger(__name__)
-pgsql = ops.lib.use("pgsql", 1, "postgresql-charmers@lists.launchpad.net")
 
 S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 

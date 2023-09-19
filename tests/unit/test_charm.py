@@ -14,8 +14,8 @@ import pytest
 from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
 
-from tests.unit import helpers
 from charm import DISCOURSE_PATH, DiscourseCharm
+from tests.unit import helpers
 
 DATABASE_NAME = "discourse"
 
