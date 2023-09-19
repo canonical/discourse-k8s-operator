@@ -60,6 +60,9 @@ def start_harness(
     harness = Harness(DiscourseCharm)
     harness.begin_with_initial_hooks()
 
+    # We catch all exec calls to the container by default
+    harness.handle_exec("discourse", [], result=0)
+
     if with_postgres:
         _add_postgres_relation(harness)
 

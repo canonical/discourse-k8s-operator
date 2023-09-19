@@ -8,11 +8,12 @@
 
 import secrets
 import typing
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
+import ops
 import pytest
 from ops.charm import ActionEvent
-from ops.model import ActiveStatus, BlockedStatus, Container, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
 from charm import DISCOURSE_PATH, DiscourseCharm
 from tests.unit import helpers
@@ -157,28 +158,44 @@ def test_config_changed_when_valid_no_s3_backup_nor_cdn():
         reaches Active status.
     """
     harness = helpers.start_harness()
-    with helpers.patch_exec() as mock_exec:
-        harness.set_leader(True)
-        harness.update_config(
-            {
-                "s3_access_key_id": "3|33+",
-                "s3_bucket": "who-s-a-good-bucket?",
-                "s3_enabled": True,
-                "s3_endpoint": "s3.endpoint",
-                "s3_region": "the-infinite-and-beyond",
-                "s3_secret_access_key": "s|kI0ure_k3Y",
-            }
-        )
-        harness.container_pebble_ready("discourse")
-        harness.framework.reemit()
+
+    # We catch the exec call that we expect to register it and make sure that the
+    # args passed to it are correct.
+    expected_exec_call_was_made = False
+
+    def bundle_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+        expected_exec_call_was_made = True
+        if (
+            args.environment != harness._charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+        ):
+            raise ValueError("Exec rake s3:upload_assets wasn't made with the correct args.")
+
+    harness.handle_exec(
+        "discourse",
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+        handler=bundle_handler,
+    )
+
+    harness.set_leader(True)
+    harness.update_config(
+        {
+            "s3_access_key_id": "3|33+",
+            "s3_bucket": "who-s-a-good-bucket?",
+            "s3_enabled": True,
+            "s3_endpoint": "s3.endpoint",
+            "s3_region": "the-infinite-and-beyond",
+            "s3_secret_access_key": "s|kI0ure_k3Y",
+        }
+    )
+    harness.container_pebble_ready("discourse")
+    harness.framework.reemit()
 
     assert harness._charm
-    mock_exec.assert_any_call(
-        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
-        environment=harness._charm._create_discourse_environment_settings(),
-        working_dir=DISCOURSE_PATH,
-        user="_daemon_",
-    )
+    assert expected_exec_call_was_made
+
     updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
     updated_plan_env = updated_plan["services"]["discourse"]["environment"]
     assert "DISCOURSE_BACKUP_LOCATION" not in updated_plan_env
@@ -345,32 +362,40 @@ def test_add_admin_user():
     assert: the underlying rake command to add the user is executed
         with the appropriate parameters.
     """
-    with patch.object(Container, "exec") as mock_exec:
-        harness = helpers.start_harness()
-        charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
+    harness = helpers.start_harness()
 
-        email = "sample@email.com"
-        password = "somepassword"  # nosec
-        event = MagicMock(spec=ActionEvent)
-        event.params = {
-            "email": email,
-            "password": password,
-        }
-        charm._on_add_admin_user_action(event)
+    # We catch the exec call that we expect to register it and make sure that the
+    # args passed to it are correct.
+    expected_exec_call_was_made = False
 
-        mock_exec.assert_any_call(
-            [
-                f"{DISCOURSE_PATH}/bin/bundle",
-                "exec",
-                "rake",
-                "admin:create",
-            ],
-            working_dir=DISCOURSE_PATH,
-            user="_daemon_",
-            environment=charm._create_discourse_environment_settings(),
-            stdin=f"{email}\n{password}\n{password}\nY\n",
-            timeout=60,
-        )
+    def bundle_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+        expected_exec_call_was_made = True
+        if (
+            args.environment != harness._charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+            or args.stdin != f"{email}\n{password}\n{password}\nY\n"
+            or args.timeout != 60
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    harness.handle_exec(
+        "discourse",
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
+        handler=bundle_handler,
+    )
+
+    charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
+
+    email = "sample@email.com"
+    password = "somepassword"  # nosec
+    event = MagicMock(spec=ActionEvent)
+    event.params = {
+        "email": email,
+        "password": password,
+    }
+    charm._on_add_admin_user_action(event)
 
 
 def test_anonymize_user():
@@ -380,24 +405,32 @@ def test_anonymize_user():
     assert: the underlying rake command to anonymize the user is executed
         with the appropriate parameters.
     """
-    with patch.object(Container, "exec") as mock_exec:
-        harness = helpers.start_harness()
-        charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
-        username = "someusername"
-        event = MagicMock(spec=ActionEvent)
-        event.params = {"username": username}
-        charm._on_anonymize_user_action(event)
+    harness = helpers.start_harness()
+    username = "someusername"
 
-        mock_exec.assert_any_call(
-            [
-                "bash",
-                "-c",
-                f"./bin/bundle exec rake users:anonymize[{username}]",
-            ],
-            working_dir=DISCOURSE_PATH,
-            user="_daemon_",
-            environment=charm._create_discourse_environment_settings(),
-        )
+    # We catch the exec call that we expect to register it and make sure that the
+    # args passed to it are correct.
+    expected_exec_call_was_made = False
+
+    def bundle_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+        expected_exec_call_was_made = True
+        if (
+            args.environment != harness._charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    harness.handle_exec(
+        "discourse",
+        ["bash", "-c", f"./bin/bundle exec rake users:anonymize[{username}]"],
+        handler=bundle_handler,
+    )
+    charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
+    event = MagicMock(spec=ActionEvent)
+    event.params = {"username": username}
+    charm._on_anonymize_user_action(event)
 
 
 def test_install_when_leader():
@@ -407,32 +440,41 @@ def test_install_when_leader():
     assert: migrations are executed and assets are precompiled.
     """
     harness = helpers.start_harness()
-    harness.set_leader(True)
-    with helpers.patch_exec() as mock_exec:
-        harness.container_pebble_ready("discourse")
-        harness.charm.on.install.emit()
-        harness.framework.reemit()
 
-        updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
-        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="_daemon_",
-        )
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="_daemon_",
-        )
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="_daemon_",
-        )
+    # exec calls that we want to monitor
+    exec_calls = [
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+        [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
+    ]
+
+    # construct the dict to store if those calls were executed
+    expected_exec_call_was_made = {" ".join(call): False for call in exec_calls}
+
+    # We catch the exec calls that we expect to register
+    # it and make sure that the args passed to it are correct.
+    def exec_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+
+        # set the call as executed
+        expected_exec_call_was_made[" ".join(args.command)] = True
+
+        if (
+            args.environment != harness._charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    for call in exec_calls:
+        harness.handle_exec("discourse", call, handler=exec_handler)
+
+    harness.set_leader(True)
+    harness.container_pebble_ready("discourse")
+    harness.charm.on.install.emit()
+    harness.framework.reemit()
+
+    assert all(expected_exec_call_was_made.values())
 
 
 def test_install_when_not_leader():
@@ -442,26 +484,38 @@ def test_install_when_not_leader():
     assert: migrations are executed and assets are precompiled.
     """
     harness = helpers.start_harness()
-    harness.set_leader(False)
-    with helpers.patch_exec() as mock_exec:
-        harness.container_pebble_ready("discourse")
-        harness.charm.on.install.emit()
-        harness.framework.reemit()
 
-        updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
-        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="_daemon_",
-        )
-        mock_exec.assert_any_call(
-            [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
-            environment=updated_plan_env,
-            working_dir=DISCOURSE_PATH,
-            user="_daemon_",
-        )
+    # exec calls that we want to monitor
+    exec_calls = [
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
+        [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
+    ]
+
+    # construct the dict to store if those calls were executed
+    expected_exec_call_was_made = {" ".join(call): False for call in exec_calls}
+
+    # We catch the exec calls that we expect to register
+    # it and make sure that the args passed to it are correct.
+    def exec_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+
+        # set the call as executed
+        expected_exec_call_was_made[" ".join(args.command)] = True
+
+        if (
+            args.environment != harness._charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    for call in exec_calls:
+        harness.handle_exec("discourse", call, handler=exec_handler)
+
+    harness.set_leader(False)
+    harness.container_pebble_ready("discourse")
+    harness.charm.on.install.emit()
+    harness.framework.reemit()
 
 
 @pytest.mark.parametrize(
