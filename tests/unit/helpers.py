@@ -16,26 +16,6 @@ from charm import DiscourseCharm
 DATABASE_NAME = "discourse"
 
 
-@contextlib.contextmanager
-def patch_exec(fail: bool = False) -> typing.Generator[unittest.mock.Mock, None, None]:
-    """Patch the ops.model.Container.exec method.
-
-    When fail argument is true, the execution will fail.
-
-    Yields:
-        Mock for the exec method.
-    """
-    exec_process_mock = unittest.mock.MagicMock()
-    if not fail:
-        exec_process_mock.wait_output = unittest.mock.MagicMock(return_value=("", ""))
-    else:
-        exec_process_mock.wait_output = unittest.mock.Mock()
-        exec_process_mock.wait_output.side_effect = ops.pebble.ExecError([], 1, "", "")
-    exec_function_mock = unittest.mock.MagicMock(return_value=exec_process_mock)
-    with unittest.mock.patch.multiple(ops.model.Container, exec=exec_function_mock):
-        yield exec_function_mock
-
-
 def start_harness(
     *,
     with_postgres: bool = True,
@@ -68,16 +48,14 @@ def start_harness(
 
     if with_redis:
         _add_redis_relation(harness)
-        with patch_exec():
-            harness.framework.reemit()
+        harness.framework.reemit()
 
     if with_ingress:
         _add_ingress_relation(harness)
 
     if with_config is not None:
         harness.update_config(with_config)
-        with patch_exec():
-            harness.container_pebble_ready("discourse")
+        harness.container_pebble_ready("discourse")
 
     return harness
 

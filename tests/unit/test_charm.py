@@ -227,39 +227,38 @@ def test_config_changed_when_valid_no_fingerprint():
     assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
     """
-    with helpers.patch_exec():
-        harness = helpers.start_harness(
-            with_config={
-                "force_saml_login": True,
-                "saml_target_url": "https://login.sample.com/+saml",
-                "saml_sync_groups": "group1",
-                "s3_enabled": False,
-                "force_https": True,
-            }
-        )
+    harness = helpers.start_harness(
+        with_config={
+            "force_saml_login": True,
+            "saml_target_url": "https://login.sample.com/+saml",
+            "saml_sync_groups": "group1",
+            "s3_enabled": False,
+            "force_https": True,
+        }
+    )
 
-        updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
-        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
-        assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
-        assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
-        assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
-        assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
-        assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
-        assert "discourse-k8s" == updated_plan_env["DISCOURSE_HOSTNAME"]
-        assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
-        assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
-        assert "DISCOURSE_SAML_CERT_FINGERPRINT" not in updated_plan_env
-        assert "true" == updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"]
-        assert "https://login.sample.com/+saml" == updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
-        assert "false" == updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"]
-        assert "true" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"]
-        assert "group1" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"]
-        assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
-        assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
-        assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
-        assert "DISCOURSE_USE_S3" not in updated_plan_env
-        assert isinstance(harness.model.unit.status, ActiveStatus)
+    updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
+    updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+    assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
+    assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
+    assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
+    assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
+    assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
+    assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
+    assert "discourse-k8s" == updated_plan_env["DISCOURSE_HOSTNAME"]
+    assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
+    assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
+    assert "DISCOURSE_SAML_CERT_FINGERPRINT" not in updated_plan_env
+    assert "true" == updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"]
+    assert "https://login.sample.com/+saml" == updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
+    assert "false" == updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"]
+    assert "true" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"]
+    assert "group1" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"]
+    assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
+    assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
+    assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
+    assert "DISCOURSE_USE_S3" not in updated_plan_env
+    assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
 def test_config_changed_when_valid():
@@ -269,67 +268,66 @@ def test_config_changed_when_valid():
     assert: the appropriate configuration values are passed to the pod and the unit
         reaches Active status.
     """
-    with helpers.patch_exec():
-        harness = helpers.start_harness(
-            with_config={
-                "developer_emails": "user@foo.internal",
-                "enable_cors": True,
-                "external_hostname": "discourse.local",
-                "force_saml_login": True,
-                "saml_target_url": "https://login.ubuntu.com/+saml",
-                "saml_sync_groups": "group1",
-                "smtp_address": "smtp.internal",
-                "smtp_domain": "foo.internal",
-                "smtp_password": "OBV10USLYF4K3",
-                "smtp_username": "apikey",
-                "s3_access_key_id": "3|33+",
-                "s3_backup_bucket": "back-bucket",
-                "s3_bucket": "who-s-a-good-bucket?",
-                "s3_cdn_url": "s3.cdn",
-                "s3_enabled": True,
-                "s3_endpoint": "s3.endpoint",
-                "s3_region": "the-infinite-and-beyond",
-                "s3_secret_access_key": "s|kI0ure_k3Y",
-                "force_https": True,
-            }
-        )
+    harness = helpers.start_harness(
+        with_config={
+            "developer_emails": "user@foo.internal",
+            "enable_cors": True,
+            "external_hostname": "discourse.local",
+            "force_saml_login": True,
+            "saml_target_url": "https://login.ubuntu.com/+saml",
+            "saml_sync_groups": "group1",
+            "smtp_address": "smtp.internal",
+            "smtp_domain": "foo.internal",
+            "smtp_password": "OBV10USLYF4K3",
+            "smtp_username": "apikey",
+            "s3_access_key_id": "3|33+",
+            "s3_backup_bucket": "back-bucket",
+            "s3_bucket": "who-s-a-good-bucket?",
+            "s3_cdn_url": "s3.cdn",
+            "s3_enabled": True,
+            "s3_endpoint": "s3.endpoint",
+            "s3_region": "the-infinite-and-beyond",
+            "s3_secret_access_key": "s|kI0ure_k3Y",
+            "force_https": True,
+        }
+    )
 
-        updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
-        updated_plan_env = updated_plan["services"]["discourse"]["environment"]
-        assert "s3" == updated_plan_env["DISCOURSE_BACKUP_LOCATION"]
-        assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
-        assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
-        assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
-        assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
-        assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
-        assert "user@foo.internal" == updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"]
-        assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
-        assert "discourse.local" == updated_plan_env["DISCOURSE_HOSTNAME"]
-        assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
-        assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
-        assert updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"] is not None
-        assert "true" == updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"]
-        assert "https://login.ubuntu.com/+saml" == updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
-        assert "false" == updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"]
-        assert "true" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"]
-        assert "group1" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"]
-        assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
-        assert "3|33+" == updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"]
-        assert "back-bucket" == updated_plan_env["DISCOURSE_S3_BACKUP_BUCKET"]
-        assert "s3.cdn" == updated_plan_env["DISCOURSE_S3_CDN_URL"]
-        assert "who-s-a-good-bucket?" == updated_plan_env["DISCOURSE_S3_BUCKET"]
-        assert "s3.endpoint" == updated_plan_env["DISCOURSE_S3_ENDPOINT"]
-        assert "the-infinite-and-beyond" == updated_plan_env["DISCOURSE_S3_REGION"]
-        assert "s|kI0ure_k3Y" == updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"]
-        assert "smtp.internal" == updated_plan_env["DISCOURSE_SMTP_ADDRESS"]
-        assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
-        assert "foo.internal" == updated_plan_env["DISCOURSE_SMTP_DOMAIN"]
-        assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
-        assert "OBV10USLYF4K3" == updated_plan_env["DISCOURSE_SMTP_PASSWORD"]
-        assert "587" == updated_plan_env["DISCOURSE_SMTP_PORT"]
-        assert "apikey" == updated_plan_env["DISCOURSE_SMTP_USER_NAME"]
-        assert updated_plan_env["DISCOURSE_USE_S3"]
-        assert isinstance(harness.model.unit.status, ActiveStatus)
+    updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
+    updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+    assert "s3" == updated_plan_env["DISCOURSE_BACKUP_LOCATION"]
+    assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
+    assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
+    assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
+    assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
+    assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
+    assert "user@foo.internal" == updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"]
+    assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
+    assert "discourse.local" == updated_plan_env["DISCOURSE_HOSTNAME"]
+    assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
+    assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
+    assert updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"] is not None
+    assert "true" == updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"]
+    assert "https://login.ubuntu.com/+saml" == updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
+    assert "false" == updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"]
+    assert "true" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"]
+    assert "group1" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"]
+    assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
+    assert "3|33+" == updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"]
+    assert "back-bucket" == updated_plan_env["DISCOURSE_S3_BACKUP_BUCKET"]
+    assert "s3.cdn" == updated_plan_env["DISCOURSE_S3_CDN_URL"]
+    assert "who-s-a-good-bucket?" == updated_plan_env["DISCOURSE_S3_BUCKET"]
+    assert "s3.endpoint" == updated_plan_env["DISCOURSE_S3_ENDPOINT"]
+    assert "the-infinite-and-beyond" == updated_plan_env["DISCOURSE_S3_REGION"]
+    assert "s|kI0ure_k3Y" == updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"]
+    assert "smtp.internal" == updated_plan_env["DISCOURSE_SMTP_ADDRESS"]
+    assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
+    assert "foo.internal" == updated_plan_env["DISCOURSE_SMTP_DOMAIN"]
+    assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
+    assert "OBV10USLYF4K3" == updated_plan_env["DISCOURSE_SMTP_PASSWORD"]
+    assert "587" == updated_plan_env["DISCOURSE_SMTP_PORT"]
+    assert "apikey" == updated_plan_env["DISCOURSE_SMTP_USER_NAME"]
+    assert updated_plan_env["DISCOURSE_USE_S3"]
+    assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
 def test_db_relation():
