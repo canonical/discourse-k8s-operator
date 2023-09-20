@@ -7,7 +7,6 @@ import contextlib
 import typing
 import unittest.mock
 
-import ops
 from ops.model import Container
 from ops.testing import Harness
 
