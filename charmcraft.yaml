@@ -10,3 +10,7 @@ bases:
     run-on:
     - name: "ubuntu"
       channel: "20.04"
+parts:
+  charm:
+    charm-python-packages: [setuptools, pip]  # https://discourse.charmhub.io/t/install-or-update-python-packages-before-packing-a-charm/5158
+    charm-binary-python-packages: [cosl]  # https://github.com/canonical/charmcraft/issues/1269
