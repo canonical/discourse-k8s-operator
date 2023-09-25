@@ -123,7 +123,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database created handler.
         """
-        if self._are_db_relations_ready():
+        if self._are_relations_ready():
             self._reload_configuration()
 
     def _on_database_endpoints_changed(self, _: DatabaseEndpointsChangedEvent) -> None:
@@ -132,7 +132,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the endpoints changed handler.
         """
-        if self._are_db_relations_ready():
+        if self._are_relations_ready():
             self._reload_configuration()
 
     def _on_database_relation_broken(self, _: RelationBrokenEvent) -> None:
@@ -141,7 +141,8 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the broken relation handler.
         """
-        self._reload_configuration()
+        self.model.unit.status = WaitingStatus("Waiting for database relation")
+        self._stop_service()
 
     def _require_nginx_route(self) -> None:
         """Create minimal ingress configuration."""
@@ -417,7 +418,7 @@ class DiscourseCharm(CharmBase):
         )
         return bool(result)
 
-    def _are_db_relations_ready(self) -> bool:
+    def _are_relations_ready(self) -> bool:
         """Check if the needed database relations are established.
 
         Returns:
@@ -425,10 +426,12 @@ class DiscourseCharm(CharmBase):
         """
         if not self._database.is_relation_ready():
             self.model.unit.status = WaitingStatus("Waiting for database relation")
+            self._stop_service()
             return False
         # mypy fails do detect this stored value can be False
         if not self._stored.redis_relation:  # type: ignore
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
+            self._stop_service()
             return False
         try:
             if (
@@ -449,7 +452,7 @@ class DiscourseCharm(CharmBase):
             event: Event triggering the handler.
         """
         container = self.unit.get_container(SERVICE_NAME)
-        if not self._are_db_relations_ready() or not container.can_connect():
+        if not self._are_relations_ready() or not container.can_connect():
             event.defer()
             return
         env_settings = self._create_discourse_environment_settings()
@@ -491,7 +494,7 @@ class DiscourseCharm(CharmBase):
             event: Event triggering the handler.
         """
         container = self.unit.get_container(SERVICE_NAME)
-        if not self._are_db_relations_ready() or not container.can_connect():
+        if not self._are_relations_ready() or not container.can_connect():
             event.defer()
             return
         if not self._is_config_valid():
@@ -544,9 +547,10 @@ class DiscourseCharm(CharmBase):
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
             container.pebble.replan_services()
+            self.model.unit.status = ActiveStatus()
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
-        if self._are_db_relations_ready():
+        if self._are_relations_ready():
             self._reload_configuration()
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
@@ -557,7 +561,7 @@ class DiscourseCharm(CharmBase):
         """
         email = event.params["email"]
         password = event.params["password"]
-        container = self.unit.get_container("discourse")
+        container = self.unit.get_container(SERVICE_NAME)
         if container.can_connect():
             process = container.exec(
                 [
@@ -627,6 +631,17 @@ class DiscourseCharm(CharmBase):
                     # Ignore mypy warning when formatting stdout
                     f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
                 )
+
+    def _stop_service(self):
+        """Stop discourse, this operation is idempotent."""
+        logger.info("Stopping discourse")
+        container = self.unit.get_container(SERVICE_NAME)
+        if (
+            container.can_connect()
+            and SERVICE_NAME in container.get_plan().services
+            and container.get_service(SERVICE_NAME).is_running()
+        ):
+            container.stop(SERVICE_NAME)
 
 
 if __name__ == "__main__":  # pragma: no cover

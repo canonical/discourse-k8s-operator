@@ -346,3 +346,32 @@ async def test_serve_compiled_assets(
         r"(onpopstate-handler).+.js", not_found_page
     )  # a non-compiled asset will be named onpopstate-handler.js
     assert asset_matches, "Compiled asset not found."
+
+
+@pytest.mark.asyncio
+async def test_recreate_relations(
+    app: Application,
+    model: Model,
+):
+    """
+    arrange: Given discourse application
+    act: when removing some of its relations
+    assert: it should have the correct status
+    """
+    await model.applications[app.name].remove_relation("database", "postgresql-k8s:database")
+    await model.wait_for_idle(apps=[app.name], status="waiting")
+
+    await model.add_relation(app.name, "postgresql-k8s:database")
+    await model.wait_for_idle(status="active", raise_on_error=False)
+
+    await model.applications[app.name].remove_relation("redis", "redis-k8s")
+    await model.wait_for_idle(apps=[app.name], status="waiting")
+
+    await model.add_relation(app.name, "redis-k8s")
+    await model.wait_for_idle(status="active", raise_on_error=False)
+
+    await model.applications[app.name].remove_relation("nginx-route", "nginx-ingress-integrator")
+    await model.wait_for_idle(status="active", raise_on_error=False)
+
+    await model.add_relation(app.name, "nginx-ingress-integrator")
+    await model.wait_for_idle(status="active", raise_on_error=False)
