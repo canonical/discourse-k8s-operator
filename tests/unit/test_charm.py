@@ -615,4 +615,4 @@ def test_redis_relation_data(relation_data, should_be_ready):
     redis_relation_id = harness.add_relation("redis", "redis")
     harness.add_relation_unit(redis_relation_id, "redis/0")
     harness.charm._stored.redis_relation = {redis_relation_id: relation_data}
-    assert should_be_ready == harness.charm._are_db_relations_ready()
+    assert should_be_ready == harness.charm._are_relations_ready()
