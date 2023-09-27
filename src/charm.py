@@ -134,6 +134,8 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the endpoints changed handler.
         """
+        if self.unit.is_leader():
+            self._execute_migrations()
         if self._are_relations_ready():
             self._reload_configuration()
 
