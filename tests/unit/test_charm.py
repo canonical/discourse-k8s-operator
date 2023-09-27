@@ -15,10 +15,8 @@ import pytest
 from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
-from charm import DISCOURSE_PATH, DiscourseCharm
+from charm import DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
 from tests.unit import helpers
-
-DATABASE_NAME = "discourse"
 
 
 @pytest.mark.parametrize(
@@ -117,7 +115,7 @@ def test_config_changed_when_no_cors():
         harness.charm._database.get_relation_data() is not None
     ), "database name should be set after relation joined"
     assert (
-        harness.charm._database.get_relation_data().get("POSTGRES_DB") == "discourse"
+        harness.charm._database.get_relation_data().get("POSTGRES_DB") == DATABASE_NAME
     ), "database name should be set after relation joined"
 
 
@@ -174,7 +172,7 @@ def test_config_changed_when_valid_no_s3_backup_nor_cdn():
             raise ValueError("Exec rake s3:upload_assets wasn't made with the correct args.")
 
     harness.handle_exec(
-        "discourse",
+        SERVICE_NAME,
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
         handler=bundle_handler,
     )
@@ -190,14 +188,14 @@ def test_config_changed_when_valid_no_s3_backup_nor_cdn():
             "s3_secret_access_key": "s|kI0ure_k3Y",
         }
     )
-    harness.container_pebble_ready("discourse")
+    harness.container_pebble_ready(SERVICE_NAME)
     harness.framework.reemit()
 
     assert harness._charm
     assert expected_exec_call_was_made
 
-    updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
-    updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+    updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
+    updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert "DISCOURSE_BACKUP_LOCATION" not in updated_plan_env
     assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
     assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
@@ -237,8 +235,8 @@ def test_config_changed_when_valid_no_fingerprint():
         }
     )
 
-    updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
-    updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+    updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
+    updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
     assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
     assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
@@ -292,8 +290,8 @@ def test_config_changed_when_valid():
         }
     )
 
-    updated_plan = harness.get_container_pebble_plan("discourse").to_dict()
-    updated_plan_env = updated_plan["services"]["discourse"]["environment"]
+    updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
+    updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert "s3" == updated_plan_env["DISCOURSE_BACKUP_LOCATION"]
     assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
     assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
@@ -346,10 +344,10 @@ def test_db_relation():
     )
 
     assert (
-        db_relation_data.get("database") == "discourse"
+        db_relation_data.get("database") == DATABASE_NAME
     ), "database name should be set after relation joined"
     assert (
-        harness.charm._database.get_relation_data().get("POSTGRES_DB") == "discourse"
+        harness.charm._database.get_relation_data().get("POSTGRES_DB") == DATABASE_NAME
     ), "database name should be set after relation joined"
 
 
@@ -379,7 +377,7 @@ def test_add_admin_user():
             raise ValueError(f"{args.command} wasn't made with the correct args.")
 
     harness.handle_exec(
-        "discourse",
+        SERVICE_NAME,
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
         handler=bundle_handler,
     )
@@ -421,7 +419,7 @@ def test_anonymize_user():
             raise ValueError(f"{args.command} wasn't made with the correct args.")
 
     harness.handle_exec(
-        "discourse",
+        SERVICE_NAME,
         ["bash", "-c", f"./bin/bundle exec rake users:anonymize[{username}]"],
         handler=bundle_handler,
     )
@@ -465,10 +463,10 @@ def test_install_when_leader():
             raise ValueError(f"{args.command} wasn't made with the correct args.")
 
     for call in exec_calls:
-        harness.handle_exec("discourse", call, handler=exec_handler)
+        harness.handle_exec(SERVICE_NAME, call, handler=exec_handler)
 
     harness.set_leader(True)
-    harness.container_pebble_ready("discourse")
+    harness.container_pebble_ready(SERVICE_NAME)
     harness.charm.on.install.emit()
     harness.framework.reemit()
 
@@ -508,10 +506,10 @@ def test_install_when_not_leader():
             raise ValueError(f"{args.command} wasn't made with the correct args.")
 
     for call in exec_calls:
-        harness.handle_exec("discourse", call, handler=exec_handler)
+        harness.handle_exec(SERVICE_NAME, call, handler=exec_handler)
 
     harness.set_leader(False)
-    harness.container_pebble_ready("discourse")
+    harness.container_pebble_ready(SERVICE_NAME)
     harness.charm.on.install.emit()
     harness.framework.reemit()
 

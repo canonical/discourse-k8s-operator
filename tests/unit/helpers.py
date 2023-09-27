@@ -1,7 +1,7 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-"""helpers for the unit test."""
+"""helpers for the unit tests."""
 
 import contextlib
 import typing
