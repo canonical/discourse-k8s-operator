@@ -133,7 +133,11 @@ async def app_fixture(
     Builds the charm and deploys it and the relations it depends on.
     """
     postgres_app = await model.deploy(
-        "postgresql-k8s", channel="14/edge", series="jammy", trust=True
+        "postgresql-k8s",
+        channel="14/edge",
+        series="jammy",
+        trust=True,
+        config={"profile": "testing"},
     )
     await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
