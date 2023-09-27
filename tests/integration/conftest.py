@@ -1,4 +1,4 @@
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Discourse integration tests fixtures."""
 
@@ -132,28 +132,59 @@ async def app_fixture(
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
-    # Deploy relations to speed up overall execution
-    await asyncio.gather(
-        model.deploy("postgresql-k8s", series="focal"),
-        model.deploy("redis-k8s", series="focal"),
-        model.deploy("nginx-ingress-integrator", series="focal", trust=True),
+    postgres_app = await model.deploy(
+        "postgresql-k8s",
+        channel="14/edge",
+        series="jammy",
+        trust=True,
+        config={"profile": "testing"},
     )
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
-    charm = await ops_test.build_charm(".")
+    redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
+    await model.wait_for_idle(apps=[redis_app.name], status="active")
+
+    nii_app = await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
+    await model.wait_for_idle(apps=[nii_app.name], status="active")
+
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
     }
 
-    application = await model.deploy(
-        charm, resources=resources, application_name=app_name, config=app_config, series="focal"
+    if charm := pytestconfig.getoption("--charm-file"):
+        application = await model.deploy(
+            f"./{charm}",
+            resources=resources,
+            application_name=app_name,
+            config=app_config,
+            series="focal",
+        )
+    else:
+        charm = await ops_test.build_charm(".")
+        application = await model.deploy(
+            charm,
+            resources=resources,
+            application_name=app_name,
+            config=app_config,
+            series="focal",
+        )
+
+    await model.wait_for_idle(apps=[application.name], status="waiting")
+
+    # configure postgres
+    await postgres_app.set_config(
+        {
+            "plugin_hstore_enable": "true",
+            "plugin_pg_trgm_enable": "true",
+        }
     )
-    await model.wait_for_idle()
+    await model.wait_for_idle(apps=[postgres_app.name], status="active", raise_on_error=False)
 
     # Add required relations
     unit = model.applications[app_name].units[0]
     assert unit.workload_status == WaitingStatus.name  # type: ignore
     await asyncio.gather(
-        model.add_relation(app_name, "postgresql-k8s:db-admin"),
+        model.add_relation(app_name, "postgresql-k8s:database"),
         model.add_relation(app_name, "redis-k8s"),
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
@@ -190,9 +221,10 @@ async def admin_credentials_fixture(app: Application) -> types.Credentials:
         "add-admin-user", email=email, password=password
     )
     await action.wait()
-    return types.Credentials(
+    admin_credentials = types.Credentials(
         email=email, username=email.split("@", maxsplit=1)[0], password=password
     )
+    return admin_credentials
 
 
 @pytest_asyncio.fixture(scope="module", name="admin_api_key")
@@ -203,7 +235,11 @@ async def admin_api_key_fixture(
     with requests.session() as sess:
         # Get CSRF token
         res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
-        csrf = res.json()["csrf"]
+        # pylint doesn't see the "ok" member
+        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
+        data = res.json()
+        assert data["csrf"], data
+        csrf = data["csrf"]
         # Create session & login
         res = sess.post(
             f"{discourse_address}/session",
@@ -219,6 +255,8 @@ async def admin_api_key_fixture(
                 "timezone": "Asia/Hong_Kong",
             },
         )
+        # pylint doesn't see the "ok" member
+        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
         # Create global key
         res = sess.post(
             f"{discourse_address}/admin/api/keys",
@@ -229,5 +267,9 @@ async def admin_api_key_fixture(
             },
             json={"key": {"description": "admin-api-key", "username": None}},
         )
+        # pylint doesn't see the "ok" member
+        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
 
-    return res.json()["key"]["key"]
+    data = res.json()
+    assert data["key"]["key"], data
+    return data["key"]["key"]

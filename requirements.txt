@@ -1,2 +1,1 @@
-ops
 ops-lib-pgsql

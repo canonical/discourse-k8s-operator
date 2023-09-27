@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2022 Canonical Ltd.
+# Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Discourse integration tests."""
 
@@ -63,14 +63,14 @@ async def test_prom_exporter_is_up(app: Application):
     assert: the response is 200 (HTTP OK)
     """
     # Application actually does have units
-    indico_unit = app.units[0]  # type: ignore
-    cmd = f"curl http://localhost:{PROMETHEUS_PORT}/metrics"
-    action = await indico_unit.run(cmd)
-    result = await action.wait()
-    code = result.results.get("return-code")
-    stdout = result.results.get("stdout")
-    stderr = result.results.get("stderr")
-    assert code == 0, f"{cmd} failed ({code}): {stderr or stdout}"
+    discourse_unit = app.units[0]  # type: ignore
+    assert discourse_unit
+    cmd = f"/usr/bin/curl -m 30 http://localhost:{PROMETHEUS_PORT}/metrics"
+    action = await discourse_unit.run(cmd, timeout=60)
+    code = action.results.get("Code")
+    stdout = action.results.get("Stdout")
+    stderr = action.results.get("Stderr")
+    assert code == "0", f"{cmd} failed ({code}): {stderr or stdout}"
 
 
 @pytest.mark.asyncio
@@ -115,8 +115,7 @@ async def test_s3_conf(app: Application, localstack_address: str, model: Model):
     action = await app.units[0].run(  # type: ignore
         f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.s3.{s3_conf["domain"]}" >> /etc/hosts'
     )
-    result = await action.wait()
-    assert result.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
+    assert action.results.get("Code") == "0", "Can't inject S3 IP in Discourse hosts"
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
     # Application does actually have attribute set_config
@@ -252,9 +251,11 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             data={"authenticity_token": csrf_token},
             timeout=requests_timeout,
         )
-        csrf_token = re.findall(
+        csrf_tokens = re.findall(
             "<input type='hidden' name='csrfmiddlewaretoken' value='([^']+)' />", login_page.text
-        )[0]
+        )
+        assert len(csrf_tokens), login_page.text
+        csrf_token = csrf_tokens[0]
         saml_callback = session.post(
             "https://login.staging.ubuntu.com/+login",
             data={
@@ -269,9 +270,11 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             headers={"Referer": login_page.url},
             timeout=requests_timeout,
         )
-        saml_response = re.findall(
+        saml_responses = re.findall(
             '<input type="hidden" name="SAMLResponse" value="([^"]+)" />', saml_callback.text
-        )[0]
+        )
+        assert len(saml_responses), saml_callback.text
+        saml_response = saml_responses[0]
         session.post(
             f"https://{host}/auth/saml/callback",
             data={
@@ -343,3 +346,32 @@ async def test_serve_compiled_assets(
         r"(onpopstate-handler).+.js", not_found_page
     )  # a non-compiled asset will be named onpopstate-handler.js
     assert asset_matches, "Compiled asset not found."
+
+
+@pytest.mark.asyncio
+async def test_recreate_relations(
+    app: Application,
+    model: Model,
+):
+    """
+    arrange: Given discourse application
+    act: when removing some of its relations
+    assert: it should have the correct status
+    """
+    await model.applications[app.name].remove_relation("database", "postgresql-k8s:database")
+    await model.wait_for_idle(apps=[app.name], status="waiting")
+
+    await model.add_relation(app.name, "postgresql-k8s:database")
+    await model.wait_for_idle(status="active", raise_on_error=False)
+
+    await model.applications[app.name].remove_relation("redis", "redis-k8s")
+    await model.wait_for_idle(apps=[app.name], status="waiting")
+
+    await model.add_relation(app.name, "redis-k8s")
+    await model.wait_for_idle(status="active", raise_on_error=False)
+
+    await model.applications[app.name].remove_relation("nginx-route", "nginx-ingress-integrator")
+    await model.wait_for_idle(status="active", raise_on_error=False)
+
+    await model.add_relation(app.name, "nginx-ingress-integrator")
+    await model.wait_for_idle(status="active", raise_on_error=False)

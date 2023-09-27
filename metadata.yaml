@@ -1,3 +1,5 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
 name: discourse-k8s
 display-name: Discourse
 summary: Discourse is the modern forum for your community.
@@ -24,7 +26,7 @@ description: |
   enterprise deployments.
 docs: https://discourse.charmhub.io/t/discourse-documentation-overview/3773
 maintainers:
-  - launchpad.net/~canonical-is-devops
+  - https://launchpad.net/~canonical-is-devops
 issues: https://github.com/canonical/discourse-k8s-operator/issues
 source: https://github.com/canonical/discourse-k8s-operator
 tags:
@@ -41,11 +43,11 @@ requires:
   redis:
     interface: redis
     limit: 1
-  db:
-    interface: pgsql
+  database:
+    interface: postgresql_client
     limit: 1
-  ingress:
-    interface: ingress
+  nginx-route:
+    interface: nginx-route
     limit: 1
   logging:
     interface: loki_push_api

@@ -1,4 +1,4 @@
-# Charm Architecture
+# Charm architecture
 
 At its core, [Discourse](https://www.discourse.org/) is a [Ruby on Rails](https://rubyonrails.org/) application that integrates with [PostgreSQL](https://www.postgresql.org/) and [Redis](https://redis.io/).
 
@@ -33,7 +33,7 @@ The server is started in HTTP mode (port `3000`) serving all the content. Alongs
 
 The workload that this container is running is defined in the [Discourse dockerfile in the charm repository](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse.Dockerfile).
 
-## Docker Images
+## Docker images
 
 The image defined in the [Discourse dockerfile](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse.Dockerfile) in the charm repository is published to [Charmhub](https://charmhub.io/), the official repository of charms.
 
@@ -64,7 +64,7 @@ Loki is an open-source fully-featured logging system. This charms is shipped wit
 ### Prometheus
 Prometheus is an open-source systems monitoring and alerting toolkit with a dimensional data model, flexible query language, efficient time series database and modern alerting approach. This charm is shipped with a Prometheus exporter, alerts and support for integrating with the [Prometheus Operator](https://charmhub.io/prometheus-k8s) to automatically scrape the targets.
 
-## Juju Events
+## Juju events
 
 Accordingly to the [Juju SDK](https://juju.is/docs/sdk/event): "an event is a data structure that encapsulates part of the execution context of a charm".
 
@@ -77,7 +77,7 @@ For this charm, the following events are observed:
 5. [master_changed](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation change. Action: update the database connection string configuration and emit config_changed event.
 5. [redis_relation_updated](https://github.com/canonical/redis-k8s-operator): Redis Operator custom event for when the relation details have been updated. Action: wait for the integrations and restart the containers.
 
-## Charm Code Overview
+## Charm code overview
 
 The `src/charm.py` is the default entry point for a charm and has the DiscourseCharm Python class which inherits from CharmBase.
 
