@@ -123,6 +123,8 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database created handler.
         """
+        if self.unit.is_leader():
+            self._execute_migrations()
         if self._are_relations_ready():
             self._reload_configuration()
 
@@ -445,15 +447,9 @@ class DiscourseCharm(CharmBase):
             return False
         return True
 
-    def _set_up_discourse(self, event: HookEvent) -> None:
-        """Run Discourse migrations and recompile assets.
-
-        Args:
-            event: Event triggering the handler.
-        """
+    def _execute_migrations(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            event.defer()
             return
         env_settings = self._create_discourse_environment_settings()
         try:
@@ -466,6 +462,16 @@ class DiscourseCharm(CharmBase):
                     user="_daemon_",
                 )
                 migration_process.wait_output()
+        except ExecError as cmd_err:
+            logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
+            raise
+
+    def _compile_assets(self) -> None:
+        container = self.unit.get_container(SERVICE_NAME)
+        if not self._are_relations_ready() or not container.can_connect():
+            return
+        env_settings = self._create_discourse_environment_settings()
+        try:
             self.model.unit.status = MaintenanceStatus("Compiling assets")
             precompile_process: ExecProcess = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
@@ -474,7 +480,16 @@ class DiscourseCharm(CharmBase):
                 user="_daemon_",
             )
             precompile_process.wait_output()
-            self._set_setup_completed()
+        except ExecError as cmd_err:
+            logger.exception("Compiling assets failed with code %d.", cmd_err.exit_code)
+            raise
+
+    def _set_workload_version(self) -> None:
+        container = self.unit.get_container(SERVICE_NAME)
+        if not self._are_relations_ready() or not container.can_connect():
+            return
+        env_settings = self._create_discourse_environment_settings()
+        try:
             get_version_process = container.exec(
                 [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=env_settings,
@@ -483,6 +498,43 @@ class DiscourseCharm(CharmBase):
             )
             version, _ = get_version_process.wait_output()
             self.unit.set_workload_version(version)
+        except ExecError as cmd_err:
+            logger.exception("Setting workload version failed with code %d.", cmd_err.exit_code)
+            raise
+
+    def _run_s3_migration(self) -> None:
+        container = self.unit.get_container(SERVICE_NAME)
+        if not self._are_relations_ready() or not container.can_connect():
+            return
+        env_settings = self._create_discourse_environment_settings()
+        try:
+            self.model.unit.status = MaintenanceStatus("Running S3 migration")
+            process = container.exec(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user="_daemon_",
+            )
+            process.wait_output()
+        except ExecError as cmd_err:
+            logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
+            raise
+
+    def _set_up_discourse(self, event: HookEvent) -> None:
+        """Run Discourse migrations and recompile assets.
+
+        Args:
+            event: Event triggering the handler.
+        """
+        container = self.unit.get_container(SERVICE_NAME)
+        if not self._are_relations_ready() or not container.can_connect():
+            event.defer()
+            return
+        try:
+            self._execute_migrations()
+            self._compile_assets()
+            self._set_setup_completed()
+            self._set_workload_version()
         except ExecError as cmd_err:
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
@@ -505,8 +557,12 @@ class DiscourseCharm(CharmBase):
 
         # Covers when there are no plan
         previous_s3_info = None
-        if current_plan.services and current_plan.services["discourse"]:
-            current_env = current_plan.services["discourse"].environment
+        if (
+            current_plan.services
+            and SERVICE_NAME in current_plan.services
+            and current_plan.services[SERVICE_NAME]
+        ):
+            current_env = current_plan.services[SERVICE_NAME].environment
             previous_s3_info = S3Info(
                 current_env["DISCOURSE_USE_S3"] if "DISCOURSE_USE_S3" in current_env else "",
                 current_env["DISCOURSE_S3_REGION"] if "DISCOURSE_S3_REGION" in current_env else "",
@@ -515,22 +571,10 @@ class DiscourseCharm(CharmBase):
                 if "DISCOURSE_S3_ENDPOINT" in current_env
                 else "",
             )
-        env_settings = self._create_discourse_environment_settings()
-        try:
-            if self.model.unit.is_leader() and self._should_run_s3_migration(
-                current_plan, previous_s3_info
-            ):
-                self.model.unit.status = MaintenanceStatus("Running S3 migration")
-                process = container.exec(
-                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
-                    environment=env_settings,
-                    working_dir=DISCOURSE_PATH,
-                    user="_daemon_",
-                )
-                process.wait_output()
-        except ExecError as cmd_err:
-            logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
-            raise
+        if self.model.unit.is_leader() and self._should_run_s3_migration(
+            current_plan, previous_s3_info
+        ):
+            self._run_s3_migration()
 
         self._reload_configuration()
         if container.can_connect():
@@ -544,9 +588,7 @@ class DiscourseCharm(CharmBase):
             return
         container = self.unit.get_container(SERVICE_NAME)
         if self._is_config_valid() and container.can_connect():
-            layer_config = self._create_layer_config()
-            container.add_layer(SERVICE_NAME, layer_config, combine=True)
-            container.pebble.replan_services()
+            self._start_service()
             self.model.unit.status = ActiveStatus()
 
     def _redis_relation_changed(self, _: HookEvent) -> None:
@@ -631,6 +673,15 @@ class DiscourseCharm(CharmBase):
                     # Ignore mypy warning when formatting stdout
                     f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
                 )
+
+    def _start_service(self):
+        """Start discourse."""
+        logger.info("Starting discourse")
+        container = self.unit.get_container(SERVICE_NAME)
+        if self._is_config_valid() and container.can_connect():
+            layer_config = self._create_layer_config()
+            container.add_layer(SERVICE_NAME, layer_config, combine=True)
+            container.pebble.replan_services()
 
     def _stop_service(self):
         """Stop discourse, this operation is idempotent."""
