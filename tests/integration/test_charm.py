@@ -16,7 +16,6 @@ from boto3 import client
 from botocore.config import Config
 from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import Model
-from requests.adapters import HTTPAdapter, Retry
 
 from charm import PROMETHEUS_PORT
 
@@ -34,24 +33,6 @@ async def test_active(app: Application):
     # Application actually does have units
     # Mypy has difficulty with ActiveStatus
     assert app.units[0].workload_status == ActiveStatus.name  # type: ignore
-
-
-@pytest.mark.asyncio
-@pytest.mark.abort_on_fail
-async def test_discourse_up(requests_timeout: float, discourse_address: str):
-    """Check that the bootstrap page is reachable.
-    Assume that the charm has already been built and is running.
-    """
-    # Send request to bootstrap page and set Host header to app_name (which the application
-    # expects)
-    session = requests.Session()
-    retries = Retry(total=5, backoff_factor=1)
-    session.mount("http://", HTTPAdapter(max_retries=retries))
-    response = session.get(
-        f"{discourse_address}/finish-installation/register",
-        timeout=requests_timeout,
-    )
-    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -349,29 +330,51 @@ async def test_serve_compiled_assets(
 
 
 @pytest.mark.asyncio
-async def test_recreate_relations(
+async def test_relations(
     app: Application,
+    discourse_address: str,
     model: Model,
+    requests_timeout: int,
 ):
     """
     arrange: Given discourse application
     act: when removing some of its relations
     assert: it should have the correct status
     """
+
+    def test_discourse_srv_status_ok():
+        response = requests.get(f"{discourse_address}/srv/status", timeout=requests_timeout)
+        assert response.status_code == 200
+
+    # The charm should be active when starting this test
+    await model.wait_for_idle(status="active")
+    test_discourse_srv_status_ok()
+
+    # Removing the relation to postgresql should disable the charm
     await model.applications[app.name].remove_relation("database", "postgresql-k8s:database")
     await model.wait_for_idle(apps=[app.name], status="waiting")
+    with pytest.raises(requests.ConnectionError):
+        test_discourse_srv_status_ok()
 
     await model.add_relation(app.name, "postgresql-k8s:database")
-    await model.wait_for_idle(status="active", raise_on_error=False)
+    await model.wait_for_idle(status="active")
+    test_discourse_srv_status_ok()
 
+    # Removing the relation to redis should disable the charm
     await model.applications[app.name].remove_relation("redis", "redis-k8s")
     await model.wait_for_idle(apps=[app.name], status="waiting")
+    with pytest.raises(requests.ConnectionError):
+        test_discourse_srv_status_ok()
 
     await model.add_relation(app.name, "redis-k8s")
-    await model.wait_for_idle(status="active", raise_on_error=False)
+    await model.wait_for_idle(status="active")
+    test_discourse_srv_status_ok()
 
+    # Removing the relation to ingress should keep the charm active
     await model.applications[app.name].remove_relation("nginx-route", "nginx-ingress-integrator")
-    await model.wait_for_idle(status="active", raise_on_error=False)
+    await model.wait_for_idle(status="active")
+    test_discourse_srv_status_ok()
 
     await model.add_relation(app.name, "nginx-ingress-integrator")
-    await model.wait_for_idle(status="active", raise_on_error=False)
+    await model.wait_for_idle(status="active")
+    test_discourse_srv_status_ok()
