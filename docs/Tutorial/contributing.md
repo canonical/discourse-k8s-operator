@@ -1,4 +1,4 @@
-# How to contribute
+# Contributing
 
 This document explains the processes and practices recommended for contributing enhancements to the Discourse operator.
 
@@ -30,6 +30,6 @@ charmcraft pack
 # Ensure you're connected to a juju k8s model, assuming you're on amd64
 juju deploy ./discourse-k8s_ubuntu-20.04-amd64.charm
 ```
-## Canonical contributor agreement
+## Canonical Contributor Agreement
 
 Canonical welcomes contributions to the Discourse Operator. Please check out our [contributor agreement](https://ubuntu.com/legal/contributors) if you’re interested in contributing to the solution.
