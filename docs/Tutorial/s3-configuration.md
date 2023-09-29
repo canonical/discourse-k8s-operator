@@ -1,12 +1,5 @@
-<<<<<<<< HEAD:docs/Tutorial/s3-configuration.md
-# S3 configuration
-
-|||||||| parent of df85cc0 (Various improvements to the docs):docs/how-to-guides/s3-configuration.md
-# How to configure S3
-========
 # How to configure S3
 
->>>>>>>> df85cc0 (Various improvements to the docs):docs/how-to/configure-s3.md
 An S3 bucket can be leveraged to serve the static resources packaged by Discourse, potentically improving performance. Moreover, it is required when scaling the charm to serve the uploaded files. To configure it to set the following configuration options with the appropriate values for your existing bucket `juju config [charm_name] [configuration]=[value]`:
 
 ```
