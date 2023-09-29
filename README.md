@@ -35,6 +35,7 @@ fixes and constructive feedback.
 * [Join our online chat](https://chat.charmhub.io/charmhub/channels/charm-dev)
 * [Contribute](https://charmhub.io/discourse-k8s/docs/contributing)
 * [Get started](https://charmhub.io/discourse-k8s/docs/getting-started)
+
 Thinking about using the Discourse Operator for your next project? [Get in touch](https://chat.charmhub.io/charmhub/channels/charm-dev)!
 
 ---
