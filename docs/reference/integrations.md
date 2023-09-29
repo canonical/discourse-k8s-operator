@@ -6,7 +6,7 @@ _Interface_: pgsql
 _Supported charms_: [postgresql-k8s](https://charmhub.io/postgresql-k8s),
 [postgresql](https://charmhub.io/postgresql)
 
-Database integration is a required relation for the Synapse charm to supply
+Database integration is a required relation for the Discourse charm to supply
 structured data storage for Discourse.
 
 Database integrate command: `juju integrate discourse-k8s postgresql-k8s:db`
