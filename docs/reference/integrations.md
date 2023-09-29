@@ -18,9 +18,8 @@ _Supported charms_: [grafana-k8s](https://charmhub.io/grafana-k8s)
 
 Grafana-dashboard relation enables quick dashboard access already tailored to
 fit the needs of operators to monitor the charm. The template for the Grafana
-dashboard for Discourse charm can be found at `/src/grafana_dashboards/discourse.json`. It was extracted from
-[matrix/synapse repository](https://github.com/matrix-org/synapse/blob/master/contrib/grafana/synapse.json). In Grafana UI, it can be
-found as “Discourse Operator” under the General section of the dashboard browser
+dashboard for Discourse charm can be found at `/src/grafana_dashboards/discourse.json`.
+In Grafana UI, it can be found as “Discourse Operator” under the General section of the dashboard browser
 (`/dashboards`). Modifications to the dashboard can be made but will not be
 persisted upon restart/redeployment of the charm.
 

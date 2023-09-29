@@ -71,8 +71,8 @@ Build the charm in this git repository using:
 ```shell
 charmcraft pack
 ```
-For the integration tests (and also to deploy the charm locally), the synapse
-and synapse-nginx images are required in the microk8s registry. To enable it:
+For the integration tests (and also to deploy the charm locally), the discourse 
+image is required in the microk8s registry. To enable it:
 
 ```shell
     microk8s enable registry
@@ -82,7 +82,7 @@ The following commands import the images in the Docker daemon and push them into
 the registry:
 
 ```shell
-    cd [project_dir]/synapse_rock && rockcraft pack rockcraft.yaml
+    cd [project_dir]/discourse_rock && rockcraft pack rockcraft.yaml
     skopeo --insecure-policy copy oci-archive:discourse_1.0_amd64.rock docker-daemon:localhost:32000/discourse:latest
     docker push localhost:32000/discourse:latest
 ```

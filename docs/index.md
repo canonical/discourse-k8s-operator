@@ -1,4 +1,4 @@
-# Charmed Discourse K8s Documentation
+# Charmed Discourse k8s documentation
 
 This charm simplifies initial deployment and "day N" operations of Discourse
 on Kubernetes, such as scaling the number of instances, integration with SSO,
