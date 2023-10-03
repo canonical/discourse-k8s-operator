@@ -1,9 +1,8 @@
-# How to upgrade
+# Upgrades
 
 Upgrades are done just by running the `juju refresh` subcommand. Juju, Kubernetes, and Discourse then work together to ensure that one pod is upgraded to the new version and makes any database schema changes before the rest of the pods are upgraded in their turn.
 
 ## Upgrading from pod-spec to sidecar
-
 It is recommended to take a database backup before starting an upgrade from pod-spec to the sidecar version of the discourse-k8s charm.
 
 When upgrading from the pod-spec charm some downtime is to be expected. The existing Deployment will be deleted and a new StatefulSet will be created from scratch. Hence, the charm will be unresponsive while the discourse image resource is downloaded from the Charmhub registry and the first unit is spun up.

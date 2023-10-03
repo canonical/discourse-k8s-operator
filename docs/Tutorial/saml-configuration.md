@@ -1,4 +1,4 @@
-# How to configure SAML
+# SAML configuration
 
 To configure Discourse's SAML integration you'll have to set the following configuration options with the appropriate values for your SAML server by running `juju config [charm_name] [configuration]=[value]`.
 
