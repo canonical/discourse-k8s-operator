@@ -94,8 +94,8 @@ parts:
   get-solved-plugin-source:
     plugin: dump
     source: https://github.com/discourse/discourse-solved.git
-    source-depth: 1
     source-commit: d6c8089ca38611b09a8edb29d64f359bcef11f11
+    source-depth: 1
     after:
       - get-discourse
     organize:
@@ -105,6 +105,7 @@ parts:
     after:
       - get-discourse
     source: https://github.com/canonical-web-and-design/discourse-markdown-note.git
+    source-commit: f4426d5929de067f123659dc690e9438a324817a
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-markdown-note/
@@ -113,6 +114,7 @@ parts:
     after:
       - get-discourse
     source: https://github.com/unfoldingWord-dev/discourse-mermaid.git
+    source-commit: 341e1b08608ed0262bae6dffded2eddfae91f67a
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-mermaid/
@@ -121,6 +123,7 @@ parts:
     after:
       - get-discourse
     source: https://github.com/discourse/discourse-saml.git
+    source-commit: 8f18a7816e285587868466ee1bf8ae23b800ba50
     source-depth: 1
     override-build: |
       craftctl default
@@ -132,6 +135,7 @@ parts:
     after:
       - get-discourse
     source: https://github.com/discourse/discourse-prometheus.git
+    source-commit: b115ba7664d001a773061aa27b00f73ca157682f
     source-depth: 1
     override-build: |
       craftctl default
@@ -173,10 +177,6 @@ parts:
     override-build: |
       cd $CRAFT_STAGE/srv/discourse/app
       gem install -n "bin" bundler
-      # rexml version is forced to avoid conflicting transient dependency issue
-      sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' Gemfile.lock
-      # rexml version is forced to avoid conflicting transient dependency issue
-      echo "gem 'rexml', '3.2.6'" >> Gemfile
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
