@@ -1,5 +1,3 @@
-# Charmed Discourse k8s documentation
-
 This charm simplifies initial deployment and "day N" operations of Discourse
 on Kubernetes, such as scaling the number of instances, integration with SSO,
 access to S3 for redundant file storage and more. It allows for deployment on
@@ -8,6 +6,13 @@ many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) or
 offerings.
 
 Discourse is an open-source software application used to create customer-friendly and community-friendly discussion platforms, forums, and mailing lists. It's designed to work as a discussion platform for various topics and is widely used by numerous organizations and individuals to build communities, provide customer support, and facilitate conversations. The platform is built with a focus on simplicity, user-friendliness, and responsiveness, making it accessible from both desktops and mobile devices. Discourse provides various moderation and administration tools, enabling community managers to maintain a healthy and constructive environment.
+
+## In this documentation
+
+| | |
+|--|--|
+|  [Tutorials](/t/discourse-k8s-docs-getting-started/12157)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](/t/discourse-k8s-docs-how-to-configure-the-container/12141) </br> Step-by-step guides covering key operations and common tasks |
+| [Reference](/t/discourse-k8s-docs-integrations/12155) </br> Technical information - specifications, APIs, architecture | [Explanation](/t/discourse-k8s-docs-charm-architecture/12139) </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation
 
@@ -25,10 +30,3 @@ fixes and constructive feedback.
 - [Get support](https://discourse.charmhub.io/)
 - [Join our online chat](https://chat.charmhub.io/charmhub/channels/charm-dev)
 - [Contribute](https://charmhub.io/discourse-k8s/docs/how-to-contribute)
-
-## In this documentation
-
-| | |
-|--|--|
-|  [Tutorials](https://charmhub.io/discourse-k8s/docs/getting-started)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](https://charmhub.io/discourse-k8s/docs/container-configuration) </br> Step-by-step guides covering key operations and common tasks |
-| [Reference](https://charmhub.io/discourse-k8s/actions) </br> Technical information - specifications, APIs, architecture | [Explanation](https://charmhub.io/discourse-k8s/docs/explanation-charm-architecture) </br> Concepts - discussion and clarification of key topics  |
