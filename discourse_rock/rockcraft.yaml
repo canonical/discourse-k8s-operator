@@ -182,6 +182,11 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
     organize:
       '/var/lib/gems': var/lib/gems
+      'srv/discourse/plugins/discourse-saml/Gemfile.lock': srv/discourse/app/plugins/discourse-saml/
+      'srv/discourse/plugins/discourse-prometheus/Gemfile.lock': srv/discourse/app/plugins/discourse-prometheus/
+      'srv/discourse/plugins/discourse-mermaid/Gemfile.lock': srv/discourse/app/plugins/discourse-mermaid/
+      'srv/discourse/plugins/discourse-markdown-note/Gemfile.lock': srv/discourse/app/plugins/discourse-markdown-note/
+      'srv/discourse/plugins/discourse-solved/Gemfile.lock': srv/discourse/app/plugins/discourse-solved/
       'srv/discourse/app/bin/*': srv/discourse/app/bin/
       'srv/discourse/app/Rakefile': srv/discourse/app/
       'srv/discourse/app/bundle': srv/discourse/app/
