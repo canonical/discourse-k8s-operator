@@ -492,6 +492,7 @@ class DiscourseCharm(CharmBase):
             return
         env_settings = self._create_discourse_environment_settings()
         try:
+            logger.info("Setting workload version")
             get_version_process = container.exec(
                 [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=env_settings,
@@ -511,6 +512,7 @@ class DiscourseCharm(CharmBase):
         env_settings = self._create_discourse_environment_settings()
         try:
             self.model.unit.status = MaintenanceStatus("Running S3 migration")
+            logger.info("Running S3 migration")
             process = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
                 environment=env_settings,

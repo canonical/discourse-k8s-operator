@@ -10,3 +10,9 @@ def pytest_addoption(parser):
     parser.addoption("--saml-email", action="store")
     parser.addoption("--saml-password", action="store")
     parser.addoption("--charm-file", action="store", default=None)
+    parser.addoption(
+        "--use-existing",
+        action="store_true",
+        default=False,
+        help="This will skip deployment of the charms. Useful for local testing.",
+    )
