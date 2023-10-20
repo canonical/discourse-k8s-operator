@@ -179,6 +179,7 @@ class DiscourseCharm(CharmBase):
 
     def _set_setup_completed(self) -> None:
         """Mark the _set_up_discourse process as completed."""
+        logger.info("Mark setup as completed.")
         container = self.unit.get_container(SERVICE_NAME)
         container.push(SETUP_COMPLETED_FLAG_FILE, "", make_dirs=True)
 
@@ -452,6 +453,7 @@ class DiscourseCharm(CharmBase):
     def _execute_migrations(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to execute migrations.")
             return
         env_settings = self._create_discourse_environment_settings()
         try:
@@ -471,6 +473,7 @@ class DiscourseCharm(CharmBase):
     def _compile_assets(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to compile assets")
             return
         env_settings = self._create_discourse_environment_settings()
         try:
@@ -489,6 +492,7 @@ class DiscourseCharm(CharmBase):
     def _set_workload_version(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to set workload version.")
             return
         env_settings = self._create_discourse_environment_settings()
         try:
@@ -507,6 +511,7 @@ class DiscourseCharm(CharmBase):
     def _run_s3_migration(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to run S3 migration.")
             return
         env_settings = self._create_discourse_environment_settings()
         try:
@@ -530,6 +535,7 @@ class DiscourseCharm(CharmBase):
         """
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Defer discourse setup.")
             event.defer()
             return
         try:
@@ -549,6 +555,7 @@ class DiscourseCharm(CharmBase):
         """
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Defer config changed action.")
             event.defer()
             return
         if not self._is_config_valid():
@@ -586,7 +593,7 @@ class DiscourseCharm(CharmBase):
     def _reload_configuration(self) -> None:
         # mypy has some trouble with dynamic attributes
         if not self._is_setup_completed():
-            logger.info("Defer starting the discourse server until discourse setup completed")
+            logger.info("Setup is not completed: cancelling configuration reload.")
             return
         container = self.unit.get_container(SERVICE_NAME)
         if self._is_config_valid() and container.can_connect():
@@ -678,7 +685,7 @@ class DiscourseCharm(CharmBase):
 
     def _start_service(self):
         """Start discourse."""
-        logger.info("Starting discourse")
+        logger.info("Starting discourse.")
         container = self.unit.get_container(SERVICE_NAME)
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
@@ -687,7 +694,7 @@ class DiscourseCharm(CharmBase):
 
     def _stop_service(self):
         """Stop discourse, this operation is idempotent."""
-        logger.info("Stopping discourse")
+        logger.info("Stopping discourse.")
         container = self.unit.get_container(SERVICE_NAME)
         if (
             container.can_connect()
