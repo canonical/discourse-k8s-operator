@@ -132,6 +132,11 @@ async def app_fixture(
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
+    use_existing = pytestconfig.getoption("--use-existing", default=False)
+    if use_existing:
+        yield model.applications[app_name]
+        return
+
     postgres_app = await model.deploy(
         "postgresql-k8s",
         channel="14/edge",
