@@ -539,7 +539,9 @@ class DiscourseCharm(CharmBase):
             logger.info("Defer discourse setup.")
             event.defer()
             return
-        logger.info("Relations are ready and can connect to container, attempting to set up discourse.")
+        logger.info(
+            "Relations are ready and can connect to container, attempting to set up discourse."
+        )
         try:
             logger.info("Discourse setup: about to execute migrations.")
             self._execute_migrations()
