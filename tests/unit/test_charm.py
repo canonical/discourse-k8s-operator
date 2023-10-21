@@ -429,10 +429,10 @@ def test_anonymize_user():
     charm._on_anonymize_user_action(event)
 
 
-def test_install_when_leader():
+def test_start_when_leader():
     """
     arrange: given a deployed discourse charm with all the required relations
-    act: trigger the install event on a leader unit
+    act: trigger the start event on a leader unit
     assert: migrations are executed and assets are precompiled.
     """
     harness = helpers.start_harness()
@@ -467,16 +467,16 @@ def test_install_when_leader():
 
     harness.set_leader(True)
     harness.container_pebble_ready(SERVICE_NAME)
-    harness.charm.on.install.emit()
+    harness.charm.on.start.emit()
     harness.framework.reemit()
 
     assert all(expected_exec_call_was_made.values())
 
 
-def test_install_when_not_leader():
+def test_start_when_not_leader():
     """
     arrange: given a deployed discourse charm with all the required relations
-    act: trigger the install event on a leader unit
+    act: trigger the start event on a leader unit
     assert: migrations are executed and assets are precompiled.
     """
     harness = helpers.start_harness()
@@ -510,7 +510,7 @@ def test_install_when_not_leader():
 
     harness.set_leader(False)
     harness.container_pebble_ready(SERVICE_NAME)
-    harness.charm.on.install.emit()
+    harness.charm.on.start.emit()
     harness.framework.reemit()
 
 
