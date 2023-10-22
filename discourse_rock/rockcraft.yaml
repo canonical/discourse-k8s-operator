@@ -94,7 +94,7 @@ parts:
   get-solved-plugin-source:
     plugin: dump
     source: https://github.com/discourse/discourse-solved.git
-    source-commit: d6c8089ca38611b09a8edb29d64f359bcef11f11
+    source-commit: 62fe282c756ac7de43a22a09b0d675882a507743
     source-depth: 1
     after:
       - get-discourse
@@ -123,7 +123,7 @@ parts:
     after:
       - get-discourse
     source: https://github.com/discourse/discourse-saml.git
-    source-commit: 8f18a7816e285587868466ee1bf8ae23b800ba50
+    source-commit: 15a8274bbec438768fb020d4f20462db476b0f29
     source-depth: 1
     override-build: |
       craftctl default
@@ -135,13 +135,22 @@ parts:
     after:
       - get-discourse
     source: https://github.com/discourse/discourse-prometheus.git
-    source-commit: b115ba7664d001a773061aa27b00f73ca157682f
+    source-commit: 8a7a46a80cc65aa0839bc5e3c3b6f8ef6544089f
     source-depth: 1
     override-build: |
       craftctl default
       grep -e ^gem plugin.rb >> Gemfile
     organize:
       "*": srv/discourse/app/plugins/discourse-prometheus/
+  get-data-explorer:
+    plugin: dump
+    after:
+      - get-discourse
+    source: https://github.com/discourse/discourse-data-explorer.git
+    source-commit: 0f6b30c2d84d44978be1c845267609446ca9dbf2
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-data-explorer/
   get-patches:
     plugin: dump
     source: patches
@@ -167,6 +176,7 @@ parts:
       - get-discourse
       - get-saml-plugin-source
       - get-prometheus-plugin-source
+      - get-data-explorer
       - apply-patches
     build-packages:
       - libpq-dev
@@ -177,11 +187,10 @@ parts:
     override-build: |
       cd $CRAFT_STAGE/srv/discourse/app
       gem install -n "bin" bundler
-      GEM_HOME=/usr/lib/ruby/gems/2.7.0 bin/bundle install
-      GEM_HOME=/usr/lib/ruby/gems/2.7.0 bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
-      GEM_HOME=/usr/lib/ruby/gems/2.7.0 bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
+      cat Gemfile plugins/discourse-prometheus/Gemfile plugins/discourse-saml/Gemfile > Gemfile
+      bin/bundle install
     organize:
-      '/usr/lib/ruby/gems/2.7.0': usr/lib/ruby/gems/2.7.0
+      '/var/lib/gems': var/lib/gems
       'srv/discourse/app/bin/*': srv/discourse/app/bin/
       'srv/discourse/app/Rakefile': srv/discourse/app/
       'srv/discourse/app/bundle': srv/discourse/app/
