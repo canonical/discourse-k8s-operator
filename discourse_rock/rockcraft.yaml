@@ -147,7 +147,7 @@ parts:
     after:
       - get-discourse
     source: https://github.com/discourse/discourse-data-explorer.git
-    source-commit: 0f6b30c2d84d44978be1c845267609446ca9dbf2
+    source-commit: e7c19ac107dcd37618c7ac7b98530e99c7fe31db
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-data-explorer/
@@ -187,7 +187,7 @@ parts:
     override-build: |
       cd $CRAFT_STAGE/srv/discourse/app
       gem install -n "bin" bundler
-      cat Gemfile plugins/discourse-prometheus/Gemfile plugins/discourse-saml/Gemfile > Gemfile
+      cat plugins/discourse-prometheus/Gemfile plugins/discourse-saml/Gemfile >> Gemfile
       bin/bundle install
     organize:
       '/var/lib/gems': var/lib/gems
