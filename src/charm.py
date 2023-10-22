@@ -396,7 +396,7 @@ class DiscourseCharm(CharmBase):
                 "discourse-alive": {
                     "override": "replace",
                     "level": "alive",
-                    "tcp": {"port": SERVICE_PORT, "host": "localhost"}
+                    "tcp": {"port": SERVICE_PORT, "host": "localhost"},
                 },
                 "discourse-setup-completed": {
                     "override": "replace",
