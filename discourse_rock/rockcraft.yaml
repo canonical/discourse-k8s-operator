@@ -94,7 +94,7 @@ parts:
   get-solved-plugin-source:
     plugin: dump
     source: https://github.com/discourse/discourse-solved.git
-    source-commit: 62fe282c756ac7de43a22a09b0d675882a507743
+    source-commit: e6cce5486df906ede74aa1b17ab308a145a99b88
     source-depth: 1
     after:
       - get-discourse
@@ -135,7 +135,7 @@ parts:
     after:
       - get-discourse
     source: https://github.com/discourse/discourse-prometheus.git
-    source-commit: 8a7a46a80cc65aa0839bc5e3c3b6f8ef6544089f
+    source-commit: 72fff206ba18ad5ca3112fed2f5f0ce6a17ca6f8
     source-depth: 1
     override-build: |
       craftctl default
@@ -170,6 +170,11 @@ parts:
       # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
       sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
+  get-bundler-config:
+    plugin: dump
+    source: bundler
+    organize:
+      "*": srv/discourse/app/.bundle/
   install-gems:
     plugin: nil
     after:
@@ -178,6 +183,7 @@ parts:
       - get-prometheus-plugin-source
       - get-data-explorer
       - apply-patches
+      - get-bundler-config
     build-packages:
       - libpq-dev
       - ruby2.7
@@ -187,8 +193,13 @@ parts:
     override-build: |
       cd $CRAFT_STAGE/srv/discourse/app
       gem install -n "bin" bundler
-      cat plugins/discourse-prometheus/Gemfile plugins/discourse-saml/Gemfile >> Gemfile
+      # rexml version is forced to avoid conflicting transient dependency issue
+      sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' plugins/discourse-prometheus/Gemfile.lock
+      # The following is a fix for https://github.com/discourse/discourse-prometheus/blob/72fff206ba18ad5ca3112fed2f5f0ce6a17ca6f8/plugin.rb#L13C1-L13C105
+      sed -i "s/gem 'prometheus_exporter', .*/gem 'prometheus_exporter', '0.5.0'/g" Gemfile
       bin/bundle install
+      bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
     organize:
       '/var/lib/gems': var/lib/gems
       'srv/discourse/app/bin/*': srv/discourse/app/bin/
