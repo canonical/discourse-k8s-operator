@@ -32,6 +32,7 @@ header:
     - 'LICENSE'
     - 'trivy.yaml'
     - 'zap_rules.tsv'
+    - 'discourse_rock/bundler/config'
     - 'discourse_rock/patches/**'
     - 'lib/**'
   comment: on-failure
