@@ -138,6 +138,15 @@ parts:
       grep -e ^gem plugin.rb >> Gemfile
     organize:
       "*": srv/discourse/app/plugins/discourse-prometheus/
+  get-data-explorer:
+    plugin: dump
+    after:
+      - get-discourse
+   source: https://github.com/discourse/discourse-data-explorer.git
+   source-commit: e7c19ac107dcd37618c7ac7b98530e99c7fe31db
+   source-depth: 1
+   organize:
+     "*": srv/discourse/app/plugins/discourse-data-explorer/
   get-patches:
     plugin: dump
     source: patches
@@ -163,6 +172,7 @@ parts:
       - get-discourse
       - get-saml-plugin-source
       - get-prometheus-plugin-source
+      - get-data-explorer
       - apply-patches
     build-packages:
       - libpq-dev
