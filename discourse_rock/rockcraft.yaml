@@ -17,7 +17,7 @@ parts:
     plugin: nil
     source: .
     build-environment:
-      - NODE_VERSION: "18.17.1"
+      - NODE_VERSION: "18.18.2"
       - ARCH: "x64"
     overlay-script: |
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
