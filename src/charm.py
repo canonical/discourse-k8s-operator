@@ -98,7 +98,7 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self._require_nginx_route()
-        self.framework.observe(self.on.install, self._set_up_discourse)
+        self.framework.observe(self.on.start, self._set_up_discourse)
         self.framework.observe(self.on.upgrade_charm, self._set_up_discourse)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
         self.framework.observe(self.on.config_changed, self._config_changed)
@@ -453,11 +453,12 @@ class DiscourseCharm(CharmBase):
     def _execute_migrations(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to execute migrations.")
             return
-        env_settings = self._create_discourse_environment_settings()
-        try:
-            if self.model.unit.is_leader():
-                self.model.unit.status = MaintenanceStatus("Executing migrations")
+        if self.model.unit.is_leader():
+            env_settings = self._create_discourse_environment_settings()
+            self.model.unit.status = MaintenanceStatus("Executing migrations")
+            try:
                 migration_process: ExecProcess = container.exec(
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
                     environment=env_settings,
@@ -465,17 +466,18 @@ class DiscourseCharm(CharmBase):
                     user="_daemon_",
                 )
                 migration_process.wait_output()
-        except ExecError as cmd_err:
-            logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
-            raise
+            except ExecError as cmd_err:
+                logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
+                raise
 
     def _compile_assets(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to compile assets")
             return
         env_settings = self._create_discourse_environment_settings()
+        self.model.unit.status = MaintenanceStatus("Compiling assets")
         try:
-            self.model.unit.status = MaintenanceStatus("Compiling assets")
             precompile_process: ExecProcess = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
                 environment=env_settings,
@@ -490,6 +492,7 @@ class DiscourseCharm(CharmBase):
     def _set_workload_version(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to set workload version.")
             return
         env_settings = self._create_discourse_environment_settings()
         try:
@@ -509,11 +512,12 @@ class DiscourseCharm(CharmBase):
     def _run_s3_migration(self) -> None:
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to run S3 migration.")
             return
         env_settings = self._create_discourse_environment_settings()
+        self.model.unit.status = MaintenanceStatus("Running S3 migration")
+        logger.info("Running S3 migration.")
         try:
-            self.model.unit.status = MaintenanceStatus("Running S3 migration")
-            logger.info("Running S3 migration")
             process = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
                 environment=env_settings,
@@ -533,18 +537,27 @@ class DiscourseCharm(CharmBase):
         """
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Defer discourse setup.")
             event.defer()
             return
+        logger.info(
+            "Relations are ready and can connect to container, attempting to set up discourse."
+        )
         try:
+            logger.info("Discourse setup: about to execute migrations.")
             self._execute_migrations()
+            logger.info("Discourse setup: about to compile assets.")
             self._compile_assets()
+            logger.info("Discourse setup: about to mark the discourse setup process as complete.")
             self._set_setup_completed()
+            logger.info("Discourse setup complete, now setting workload version.")
             self._set_workload_version()
+            logger.info("Workload version set.")
         except ExecError as cmd_err:
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _config_changed(self, event: HookEvent) -> None:
+    def _config_changed(self, _: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
@@ -552,7 +565,7 @@ class DiscourseCharm(CharmBase):
         """
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            event.defer()
+            logger.info("Not ready to do config changed action.")
             return
         if not self._is_config_valid():
             return
@@ -589,7 +602,7 @@ class DiscourseCharm(CharmBase):
     def _reload_configuration(self) -> None:
         # mypy has some trouble with dynamic attributes
         if not self._is_setup_completed():
-            logger.info("Defer starting the discourse server until discourse setup completed")
+            logger.info("Setup is not completed: cancelling configuration reload.")
             return
         container = self.unit.get_container(SERVICE_NAME)
         if self._is_config_valid() and container.can_connect():
@@ -681,7 +694,7 @@ class DiscourseCharm(CharmBase):
 
     def _start_service(self):
         """Start discourse."""
-        logger.info("Starting discourse")
+        logger.info("Starting discourse.")
         container = self.unit.get_container(SERVICE_NAME)
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
@@ -690,7 +703,7 @@ class DiscourseCharm(CharmBase):
 
     def _stop_service(self):
         """Stop discourse, this operation is idempotent."""
-        logger.info("Stopping discourse")
+        logger.info("Stopping discourse.")
         container = self.unit.get_container(SERVICE_NAME)
         if (
             container.can_connect()
