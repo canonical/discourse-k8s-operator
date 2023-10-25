@@ -557,7 +557,7 @@ class DiscourseCharm(CharmBase):
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _config_changed(self, event: HookEvent) -> None:
+    def _config_changed(self, _: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
@@ -565,8 +565,7 @@ class DiscourseCharm(CharmBase):
         """
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Defer config changed action.")
-            event.defer()
+            logger.info("Not ready to do config changed action.")
             return
         if not self._is_config_valid():
             return
