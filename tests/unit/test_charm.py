@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 import ops
 import pytest
 from ops.charm import ActionEvent
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 
 from charm import DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
 from tests.unit import helpers
@@ -25,11 +25,11 @@ from tests.unit import helpers
         (False, False, False, WaitingStatus("Waiting for database relation")),
         (False, True, False, WaitingStatus("Waiting for database relation")),
         (True, False, False, WaitingStatus("Waiting for redis relation")),
-        (True, True, False, ActiveStatus("")),
+        (True, True, False, MaintenanceStatus("Compiling assets")),
         (False, False, True, WaitingStatus("Waiting for database relation")),
         (False, True, True, WaitingStatus("Waiting for database relation")),
         (True, False, True, WaitingStatus("Waiting for redis relation")),
-        (True, True, True, ActiveStatus("")),
+        (True, True, True, MaintenanceStatus("Compiling assets")),
     ],
     ids=[
         "No relation",
