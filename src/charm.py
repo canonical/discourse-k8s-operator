@@ -394,11 +394,6 @@ class DiscourseCharm(CharmBase):
                     "level": "ready",
                     "http": {"url": f"http://localhost:{SERVICE_PORT}/srv/status"},
                 },
-                "discourse-alive": {
-                    "override": "replace",
-                    "level": "alive",
-                    "tcp": {"port": SERVICE_PORT, "host": "localhost"},
-                },
                 "discourse-setup-completed": {
                     "override": "replace",
                     "level": "ready",
