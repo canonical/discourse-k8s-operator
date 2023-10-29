@@ -41,9 +41,11 @@ THROTTLE_LEVELS["permissive"] = {
     "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
     "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "1000",
     "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "100",
-    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "400",
+    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "3000",
     "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "400",
     "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
+    "DISCOURSE_MAX_USER_API_REQS_PER_DAY": "30000",
+    "DISCOURSE_MAX_ADMIN_API_REQS_PER_KEY_PER_MINUTE": "3000",
 }
 THROTTLE_LEVELS["strict"] = {
     "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
@@ -389,9 +391,17 @@ class DiscourseCharm(CharmBase):
                 }
             },
             "checks": {
-                "discourse-check": {
+                "discourse-ready": {
                     "override": "replace",
-                    "http": {"url": f"http://localhost:{SERVICE_PORT}"},
+                    "level": "ready",
+                    "http": {"url": f"http://localhost:{SERVICE_PORT}/srv/status"},
+                },
+                "discourse-setup-completed": {
+                    "override": "replace",
+                    "level": "ready",
+                    "exec": {
+                        "command": f"ls {SETUP_COMPLETED_FLAG_FILE}",
+                    },
                 },
             },
         }
