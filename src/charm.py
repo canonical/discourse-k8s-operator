@@ -391,9 +391,17 @@ class DiscourseCharm(CharmBase):
                 }
             },
             "checks": {
-                "discourse-check": {
+                "discourse-ready": {
                     "override": "replace",
-                    "http": {"url": f"http://localhost:{SERVICE_PORT}"},
+                    "level": "ready",
+                    "http": {"url": f"http://localhost:{SERVICE_PORT}/srv/status"},
+                },
+                "discourse-setup-completed": {
+                    "override": "replace",
+                    "level": "ready",
+                    "exec": {
+                        "command": f"ls {SETUP_COMPLETED_FLAG_FILE}",
+                    },
                 },
             },
         }
