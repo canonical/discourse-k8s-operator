@@ -67,6 +67,7 @@ parts:
       - ruby2.7-dev
       - tzdata
       - ubuntu-dev-tools
+      - build-essential
       - zlib1g-dev
   get-discourse:
     plugin: dump

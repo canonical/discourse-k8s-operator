@@ -57,8 +57,16 @@ assumes:
 containers:
   discourse:
     resource: discourse-image
+    mounts:
+      - storage: gems
+        location: /var/lib/gems
 
 resources:
   discourse-image:
     type: oci-image
     description: OCI image for discourse
+
+storage:
+  gems:
+    type: filesystem
+    location: /var/lib/gems

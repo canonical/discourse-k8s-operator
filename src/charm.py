@@ -100,6 +100,8 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self._require_nginx_route()
+        self._gems_installed = False
+        self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.start, self._set_up_discourse)
         self.framework.observe(self.on.upgrade_charm, self._set_up_discourse)
         self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
@@ -118,6 +120,64 @@ class DiscourseCharm(CharmBase):
             self, relation_name="logging", log_files=LOG_PATHS, container_name="discourse"
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
+
+    def _on_install(self, _: HookEvent) -> None:
+        if self._gems_installed:
+            logger.debug("Gems are already installed")
+            return
+        container = self.unit.get_container(SERVICE_NAME)
+        if not container.can_connect():
+            logger.info("Not ready to install")
+            return
+        if self.model.unit.is_leader():
+            self.model.unit.status = MaintenanceStatus("Installing discourse")
+            try:
+                commands = [
+                    (False, ["rm", "-rf", "/var/lib/gems/*"]),
+                    (False, ["gem", "install", "-n", "bin", "bundler"]),
+                    (False, ["chown", "-R", "_daemon_:_daemon_", "/srv/discourse"]),
+                    (True, ["sed", "-i", "s/rexml (3.2.5)/rexml (3.2.6)/", "Gemfile.lock"]),
+                    (
+                        True,
+                        [
+                            "sed",
+                            "-i",
+                            "s/gem 'prometheus_exporter', .*/gem 'prometheus_exporter', '0.5.0'/g",
+                            "Gemfile",
+                        ],
+                    ),
+                    (False, [f"{DISCOURSE_PATH}/bin/bundle", "install"]),
+                    (
+                        False,
+                        [
+                            f"{DISCOURSE_PATH}/bin/bundle",
+                            "install",
+                            "--gemfile=plugins/discourse-prometheus/Gemfile",
+                        ],
+                    ),
+                    (
+                        False,
+                        [f"{DISCOURSE_PATH}/bin/bundle", "install", "--gemfile=plugins/discourse-saml/Gemfile"],
+                    ),
+                    (False, ["chown", "-R", "_daemon_:_daemon_", "/srv/discourse"]),
+                    (False, ["rm", "-rf", "/var/lib/gems/bundle/ruby/2.5.0/cache/*.gem"]),
+                ]
+                logger.debug("Installation: Start")
+                for as_daemon, command in commands:
+                    logger.debug("Installation: running command %s", " ".join(command))
+                    user = None
+                    if as_daemon:
+                        user = "_daemon_"
+                    install_process = container.exec(
+                        command, working_dir=DISCOURSE_PATH, user=user, timeout=300
+                    )
+                    stdout, stderr = install_process.wait_output()
+                    logger.debug("stdout %s stderr %s", stdout, stderr)
+            except ExecError as cmd_err:
+                logger.exception("Executing installation failed with code %d.", cmd_err.exit_code)
+                raise
+            logger.debug("Installation: End")
+            self._gems_installed = True
 
     def _on_database_created(self, _: DatabaseCreatedEvent) -> None:
         """Handle database created.
@@ -567,19 +627,21 @@ class DiscourseCharm(CharmBase):
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _config_changed(self, _: HookEvent) -> None:
+    def _config_changed(self, event: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
             event: Event triggering the handler.
         """
+        if not self._gems_installed:
+            logger.debug("Gems are not installed. Calling on_install")
+            self._on_install(event)
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
             logger.info("Not ready to do config changed action.")
             return
         if not self._is_config_valid():
             return
-
         # Get previous plan and extract env vars values to check is some S3 params has changed
         current_plan = container.get_plan()
 
