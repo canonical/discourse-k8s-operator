@@ -91,6 +91,15 @@ parts:
       "*.*": srv/discourse/app/
       "*": srv/discourse/app/
       ".*": srv/discourse/app/
+  get-rad-plugin-source:
+    plugin: dump
+    source: https://github.com/canonical/discourse-rad-plugin.git
+    source-commit: 8612594e1bbbfbba7b9166d09c03b4a7fb4afbe9
+    source-depth: 1
+    after:
+      - get-discourse
+    organize:
+      "*": srv/discourse/app/plugins/discourse-rad-plugin/
   get-solved-plugin-source:
     plugin: dump
     source: https://github.com/discourse/discourse-solved.git
@@ -216,6 +225,7 @@ parts:
       - get-markdown-note-plugin-source
       - get-mermaid-plugin-source
       - get-scripts
+      - get-rad-plugin-source
       - get-solved-plugin-source
       - install-gems
       - install-terser
