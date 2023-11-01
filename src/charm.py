@@ -157,7 +157,11 @@ class DiscourseCharm(CharmBase):
                     ),
                     (
                         False,
-                        [f"{DISCOURSE_PATH}/bin/bundle", "install", "--gemfile=plugins/discourse-saml/Gemfile"],
+                        [
+                            f"{DISCOURSE_PATH}/bin/bundle",
+                            "install",
+                            "--gemfile=plugins/discourse-saml/Gemfile",
+                        ],
                     ),
                     (False, ["chown", "-R", "_daemon_:_daemon_", "/srv/discourse"]),
                     (False, ["rm", "-rf", "/var/lib/gems/bundle/ruby/2.5.0/cache/*.gem"]),
