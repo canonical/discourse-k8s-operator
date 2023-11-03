@@ -442,6 +442,7 @@ def test_start_when_leader():
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
         [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
+        ["ls", "-A", "/var/lib/gems"],
     ]
 
     # construct the dict to store if those calls were executed
@@ -455,6 +456,9 @@ def test_start_when_leader():
         # set the call as executed
         expected_exec_call_was_made[" ".join(args.command)] = True
 
+        if "ls" in args.command:
+            # ls command to check gems is not executed with the following args
+            return
         if (
             args.environment != harness._charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH

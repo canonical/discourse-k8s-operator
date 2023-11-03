@@ -100,7 +100,6 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self._require_nginx_route()
-        self._gems_installed = False
         self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.start, self._set_up_discourse)
         self.framework.observe(self.on.upgrade_charm, self._set_up_discourse)
@@ -121,10 +120,8 @@ class DiscourseCharm(CharmBase):
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
-    def _on_install(self, _: HookEvent) -> None:
-        if self._gems_installed:
-            logger.debug("Gems are already installed")
-            return
+    def _install_gems(self) -> None:
+        """Trigger Discourse installation process."""
         container = self.unit.get_container(SERVICE_NAME)
         if not container.can_connect():
             logger.info("Not ready to install")
@@ -164,7 +161,6 @@ class DiscourseCharm(CharmBase):
                         ],
                     ),
                     (False, ["chown", "-R", "_daemon_:_daemon_", "/srv/discourse"]),
-                    (False, ["rm", "-rf", "/var/lib/gems/bundle/ruby/2.5.0/cache/*.gem"]),
                 ]
                 logger.debug("Installation: Start")
                 for as_daemon, command in commands:
@@ -181,7 +177,47 @@ class DiscourseCharm(CharmBase):
                 logger.exception("Executing installation failed with code %d.", cmd_err.exit_code)
                 raise
             logger.debug("Installation: End")
-            self._gems_installed = True
+
+    def _gems_installed(self) -> bool:
+        """Verify if gems are installed.
+
+        Returns:
+            if there are gems or not.
+        """
+        container = self.unit.get_container(SERVICE_NAME)
+        if not container.can_connect():
+            logger.info("Not ready to check for gems")
+            return False
+        try:
+            command = ["ls", "-A", "/var/lib/gems"]
+            install_process = container.exec(
+                command, working_dir=DISCOURSE_PATH, user="_daemon_", timeout=300
+            )
+            stdout, _ = install_process.wait_output()
+            if stdout:
+                logger.debug("Gems installed output: %s", stdout)
+                return True
+            return False
+        except ExecError as cmd_err:
+            logger.exception(
+                "Checking if gems are installed failed with code %d.", cmd_err.exit_code
+            )
+            raise
+
+    def _on_install(self, _: HookEvent) -> None:
+        """Handle on install event.
+
+        Args:
+            event: Event triggering the on install handler.
+        """
+        if not self.unit.is_leader():
+            logger.info("on_install: Unit not leader, no action.")
+        # Considering remove the following check assuming that for every install
+        # gems should be installed/reinstalled.
+        if self._gems_installed():
+            logger.debug("on_install: Gems are already installed, no action.")
+            return
+        self._install_gems()
 
     def _on_database_created(self, _: DatabaseCreatedEvent) -> None:
         """Handle database created.
@@ -631,15 +667,15 @@ class DiscourseCharm(CharmBase):
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _config_changed(self, event: HookEvent) -> None:
+    def _config_changed(self, _: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
             event: Event triggering the handler.
         """
-        if not self._gems_installed:
-            logger.debug("Gems are not installed. Calling on_install")
-            self._on_install(event)
+        if self.unit.is_leader() and not self._gems_installed():
+            logger.debug("Gems are not installed.")
+            self._install_gems()
         container = self.unit.get_container(SERVICE_NAME)
         if not self._are_relations_ready() or not container.can_connect():
             logger.info("Not ready to do config changed action.")
