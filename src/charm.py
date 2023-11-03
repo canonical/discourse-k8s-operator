@@ -32,6 +32,7 @@ S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
 DATABASE_NAME = "discourse"
 DISCOURSE_PATH = "/srv/discourse/app"
+DISCOURSE_USER = "_daemon_"
 THROTTLE_LEVELS: typing.Dict = defaultdict(dict)
 THROTTLE_LEVELS["none"] = {
     "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
@@ -132,7 +133,10 @@ class DiscourseCharm(CharmBase):
                 commands = [
                     (False, ["rm", "-rf", "/var/lib/gems/*"]),
                     (False, ["gem", "install", "-n", "bin", "bundler"]),
-                    (False, ["chown", "-R", "_daemon_:_daemon_", "/srv/discourse"]),
+                    (
+                        False,
+                        ["chown", "-R", f"{DISCOURSE_USER}:{DISCOURSE_USER}", "/srv/discourse"],
+                    ),
                     (True, ["sed", "-i", "s/rexml (3.2.5)/rexml (3.2.6)/", "Gemfile.lock"]),
                     (
                         True,
@@ -160,14 +164,17 @@ class DiscourseCharm(CharmBase):
                             "--gemfile=plugins/discourse-saml/Gemfile",
                         ],
                     ),
-                    (False, ["chown", "-R", "_daemon_:_daemon_", "/srv/discourse"]),
+                    (
+                        False,
+                        ["chown", "-R", f"{DISCOURSE_USER}:{DISCOURSE_USER}", "/srv/discourse"],
+                    ),
                 ]
                 logger.debug("Installation: Start")
                 for as_daemon, command in commands:
                     logger.debug("Installation: running command %s", " ".join(command))
                     user = None
                     if as_daemon:
-                        user = "_daemon_"
+                        user = DISCOURSE_USER
                     install_process = container.exec(
                         command, working_dir=DISCOURSE_PATH, user=user, timeout=300
                     )
@@ -191,7 +198,7 @@ class DiscourseCharm(CharmBase):
         try:
             command = ["ls", "-A", "/var/lib/gems"]
             install_process = container.exec(
-                command, working_dir=DISCOURSE_PATH, user="_daemon_", timeout=300
+                command, working_dir=DISCOURSE_PATH, user=DISCOURSE_USER, timeout=300
             )
             stdout, _ = install_process.wait_output()
             if stdout:
@@ -435,7 +442,7 @@ class DiscourseCharm(CharmBase):
             # I need to take the required envVars for the application to work properly
             "CONTAINER_APP_NAME": "discourse",
             "CONTAINER_APP_ROOT": "/srv/discourse",
-            "CONTAINER_APP_USERNAME": "_daemon_",
+            "CONTAINER_APP_USERNAME": DISCOURSE_USER,
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
             "DISCOURSE_DB_HOST": database_relation_data["POSTGRES_HOST"],
             "DISCOURSE_DB_NAME": database_relation_data["POSTGRES_DB"],
@@ -573,7 +580,7 @@ class DiscourseCharm(CharmBase):
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
-                    user="_daemon_",
+                    user=DISCOURSE_USER,
                 )
                 migration_process.wait_output()
             except ExecError as cmd_err:
@@ -592,7 +599,7 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=DISCOURSE_USER,
             )
             precompile_process.wait_output()
         except ExecError as cmd_err:
@@ -611,7 +618,7 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=DISCOURSE_USER,
             )
             version, _ = get_version_process.wait_output()
             self.unit.set_workload_version(version)
@@ -632,7 +639,7 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=DISCOURSE_USER,
             )
             process.wait_output()
         except ExecError as cmd_err:
@@ -744,7 +751,7 @@ class DiscourseCharm(CharmBase):
                 ],
                 stdin=f"{email}\n{password}\n{password}\nY\n",
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=DISCOURSE_USER,
                 environment=self._create_discourse_environment_settings(),
                 timeout=60,
             )
@@ -770,7 +777,7 @@ class DiscourseCharm(CharmBase):
                 f"SiteSetting.force_https={force_bool}",
             ],
             working_dir=DISCOURSE_PATH,
-            user="_daemon_",
+            user=DISCOURSE_USER,
             environment=self._create_discourse_environment_settings(),
         )
         process.wait_output()
@@ -791,7 +798,7 @@ class DiscourseCharm(CharmBase):
                     f"./bin/bundle exec rake users:anonymize[{username}]",
                 ],
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=DISCOURSE_USER,
                 environment=self._create_discourse_environment_settings(),
             )
             try:
