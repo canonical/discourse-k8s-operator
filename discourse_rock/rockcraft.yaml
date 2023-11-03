@@ -190,7 +190,7 @@ parts:
     source: scripts
     organize:
       "*": srv/scripts/
-  adjust-ownership-clean-unused:
+  adjust-ownership:
     plugin: nil
     after:
       - get-markdown-note-plugin-source
@@ -202,4 +202,3 @@ parts:
     override-prime: |
       craftctl default
       chown 584792 -R srv/discourse
-
