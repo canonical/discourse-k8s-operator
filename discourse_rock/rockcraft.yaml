@@ -229,4 +229,4 @@ parts:
       - install-terser
     override-prime: |
       craftctl default
-      chown 584792 -R srv/discourse /var/lib/gems
+      chown 584792 -R srv/discourse var/lib/gems
