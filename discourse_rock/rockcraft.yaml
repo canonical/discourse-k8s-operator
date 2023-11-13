@@ -63,16 +63,29 @@ parts:
       - optipng
       - pngquant
       - redis-tools
-      - ruby2.7
-      - ruby2.7-dev
+      - rbenv
+      - ruby-build
       - tzdata
       - ubuntu-dev-tools
       - zlib1g-dev
+  install-ruby:
+    # We need ruby ~> 3.2 for Discourse v3.1.3
+    plugin: nil
+    after:
+      - install-runtime-packages
+    source: .
+    build-environment:
+      - RUBY_VERSION: "3.2.1"
+    overlay-script: |
+      rbenv install "$RUBY_VERSION"
+      rbenv global $RUBY_VERSION
+      rbenv rehash
   get-discourse:
     plugin: dump
     after:
       - install-yarn
       - install-runtime-packages
+      - install-ruby
     source: https://github.com/discourse/discourse.git
     source-depth: 1
     source-tag: v3.1.3
