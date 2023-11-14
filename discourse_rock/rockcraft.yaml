@@ -59,12 +59,12 @@ parts:
       - libssl-dev
       - libxml2-dev
       - libxslt1-dev
+      - libyaml-dev
       - libz-dev
       - optipng
       - pngquant
       - redis-tools
       - rbenv
-      - ruby-build
       - tzdata
       - ubuntu-dev-tools
       - zlib1g-dev
@@ -77,6 +77,8 @@ parts:
     build-environment:
       - RUBY_VERSION: "3.2.1"
     overlay-script: |
+      eval "$(rbenv init -)"
+      git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
       rbenv install "$RUBY_VERSION"
       rbenv global $RUBY_VERSION
       rbenv rehash
@@ -92,6 +94,7 @@ parts:
     source-type: git
     override-build: |
       craftctl default
+      eval "$(rbenv init -)"
       mkdir -p tmp/backups/default
       mkdir -p public/backups/default
       mkdir -p public/uploads/default
@@ -208,11 +211,18 @@ parts:
       - get-bundler-config
     build-packages:
       - libpq-dev
-      - ruby2.7
-      - ruby2.7-dev
+      - rbenv
+      - ruby-build
       - git
       - libssl-dev
+      - libyaml-dev
+    build-environment:
+      - RUBY_VERSION: "3.2.1"
     override-build: |
+      eval "$(rbenv init -)"
+      rbenv install "$RUBY_VERSION"
+      rbenv global $RUBY_VERSION
+      rbenv rehash
       cd $CRAFT_STAGE/srv/discourse/app
       gem install -n "bin" bundler
       # rexml version is forced to avoid conflicting transient dependency issue
