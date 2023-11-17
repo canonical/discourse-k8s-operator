@@ -11,39 +11,17 @@ version: "1.0"
 platforms:
   amd64:
 parts:
-  install-node:
-    # We need nodejs so that yarn works correctly
-    # This allows us to control the version of node
+  install-node-tools:
+    # Install svgo, yarn and terser via npm by installing nodejs
+    # Installing per https://github.com/discourse/install-rails/blob/main/linux
     plugin: nil
     source: .
-    build-environment:
-      - NODE_VERSION: "18.18.2"
-      - ARCH: "x64"
     overlay-script: |
-      node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
-      curl -Ls $node_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
-  install-yarn:
-    # We need yarn to compile discourse's assets
-    plugin: nil
-    after:
-      - install-node
-    source: .
-    build-environment:
-      - YARN_VERSION: "1.22.19"
-      - ARCH: "x64"
-    overlay-script: |
-      yarn_uri="https://github.com/yarnpkg/yarn/releases/download/v${YARN_VERSION}/yarn-v${YARN_VERSION}.tar.gz"
-      curl -Ls $yarn_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
-  install-terser:
-    # Terser is needed to compile discourse's assets
-    # We don't use the system package to avoid pulling ubuntu's nodejs package
-    # Related to: https://git.launchpad.net/~weii-wang/charm-k8s-discourse/commit/?h=fix-terser-precompile&id=ada4ba97b28ab53dd0a619b3a9325b7a981afac1
-    plugin: nil
-    source: .
-    after:
-      - install-node
-    overlay-script: |
-      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm --prefix $CRAFT_OVERLAY/usr/local/ i -g terser
+      curl -sL https://deb.nodesource.com/setup_18.x | bash -
+      apt-get -y install nodejs
+      npm install -g svgo
+      npm install -g yarn
+      npm install -g terser
   install-runtime-packages:
     plugin: nil
     overlay-packages:
@@ -79,13 +57,13 @@ parts:
     overlay-script: |
       eval "$(rbenv init -)"
       git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
-      rbenv install "$RUBY_VERSION"
+      rbenv install --skip-existing "$RUBY_VERSION"
       rbenv global $RUBY_VERSION
       rbenv rehash
   get-discourse:
     plugin: dump
     after:
-      - install-yarn
+      - install-node-tools
       - install-runtime-packages
       - install-ruby
     source: https://github.com/discourse/discourse.git
@@ -95,6 +73,7 @@ parts:
     override-build: |
       craftctl default
       eval "$(rbenv init -)"
+      rbenv rehash
       mkdir -p tmp/backups/default
       mkdir -p public/backups/default
       mkdir -p public/uploads/default
@@ -102,7 +81,7 @@ parts:
       mkdir -p srv/discourse/app/bin
       touch log/production.log
       touch log/unicorn-stderr.log
-      yarn install --production --frozen-lockfile
+      yarn install --immutable
     organize:
       "*.*": srv/discourse/app/
       "*": srv/discourse/app/
@@ -220,7 +199,6 @@ parts:
       - RUBY_VERSION: "3.2.1"
     override-build: |
       eval "$(rbenv init -)"
-      rbenv install "$RUBY_VERSION"
       rbenv global $RUBY_VERSION
       rbenv rehash
       cd $CRAFT_STAGE/srv/discourse/app
@@ -251,7 +229,6 @@ parts:
       - get-rad-plugin-source
       - get-solved-plugin-source
       - install-gems
-      - install-terser
     override-prime: |
       craftctl default
       chown 584792 -R srv/discourse
