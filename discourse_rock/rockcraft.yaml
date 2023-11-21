@@ -42,7 +42,6 @@ parts:
       - optipng
       - pngquant
       - redis-tools
-      - rbenv
       - tzdata
       - ubuntu-dev-tools
       - zlib1g-dev
@@ -53,11 +52,18 @@ parts:
       - install-runtime-packages
     source: .
     build-environment:
+      - RBENV_ROOT: "/usr/local/rbenv"
       - RUBY_VERSION: "3.2.1"
     overlay-script: |
-      eval "$(rbenv init -)"
-      git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
-      rbenv install --skip-existing "$RUBY_VERSION"
+      git clone https://github.com/rbenv/rbenv.git $RBENV_ROOT
+      git clone https://github.com/rbenv/ruby-build.git $RBENV_ROOT/plugins/ruby-build
+      echo '# rbenv setup' > /etc/profile.d/rbenv.sh
+      echo 'export RBENV_ROOT=/usr/local/rbenv' >> /etc/profile.d/rbenv.sh
+      echo 'export PATH="$RBENV_ROOT/bin:$PATH"' >> /etc/profile.d/rbenv.sh
+      echo 'eval "$(rbenv init -)"' >> /etc/profile.d/rbenv.sh
+      chmod +x /etc/profile.d/rbenv.sh
+      source /etc/profile.d/rbenv.sh
+      rbenv install "$RUBY_VERSION"
       rbenv global $RUBY_VERSION
       rbenv rehash
   get-discourse:
@@ -72,8 +78,6 @@ parts:
     source-type: git
     override-build: |
       craftctl default
-      eval "$(rbenv init -)"
-      rbenv rehash
       mkdir -p tmp/backups/default
       mkdir -p public/backups/default
       mkdir -p public/uploads/default
@@ -190,18 +194,12 @@ parts:
       - get-bundler-config
     build-packages:
       - libpq-dev
-      - rbenv
-      - ruby-build
       - git
       - libssl-dev
       - libyaml-dev
-    build-environment:
-      - RUBY_VERSION: "3.2.1"
     override-build: |
-      eval "$(rbenv init -)"
-      rbenv global $RUBY_VERSION
-      rbenv rehash
       cd $CRAFT_STAGE/srv/discourse/app
+      source /etc/profile.d/rbenv.sh
       gem install -n "bin" bundler
       # rexml version is forced to avoid conflicting transient dependency issue
       sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' Gemfile.lock
@@ -211,6 +209,9 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
     organize:
+      '/etc/profile.d/rbenv.sh': etc/profile.d/rbenv.sh
+      '/usr/local/rbenv': usr/local/rbenv
+      '/usr/local/rbenv/plugins/ruby-build': usr/local/rbenv/plugins/ruby-build
       '/var/lib/gems': var/lib/gems
       'srv/discourse/app/bin/*': srv/discourse/app/bin/
       'srv/discourse/app/Rakefile': srv/discourse/app/
@@ -232,3 +233,4 @@ parts:
     override-prime: |
       craftctl default
       chown 584792 -R srv/discourse
+      chown 584792 -R usr/local/rbenv
