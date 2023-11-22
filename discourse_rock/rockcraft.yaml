@@ -190,6 +190,24 @@ parts:
     source: scripts
     organize:
       "*": srv/scripts/
+  install-bundler:
+    plugin: nil
+    after:
+      - get-discourse
+      - get-saml-plugin-source
+      - get-prometheus-plugin-source
+      - get-data-explorer
+      - apply-patches
+      - get-bundler-config
+    build-packages:
+      - libpq-dev
+      - ruby2.7
+      - ruby2.7-dev
+      - git
+      - libssl-dev
+    override-build: |
+      cd $CRAFT_STAGE/srv/discourse/app
+      gem install -N --no-prerelease -n "bin" bundler
   adjust-ownership:
     plugin: nil
     after:
