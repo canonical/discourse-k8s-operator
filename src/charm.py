@@ -102,7 +102,7 @@ class DiscourseCharm(CharmBase):
         )
         self._require_nginx_route()
 
-        self.framework.observe(self.on.install, self._on_start)
+        self.framework.observe(self.on.start, self._on_start)
         self.framework.observe(self.on.upgrade_charm, self._on_upgrade_charm)
         self.framework.observe(self.on.discourse_pebble_ready, self._on_discourse_pebble_ready)
         self.framework.observe(self.on.config_changed, self._config_changed)
@@ -127,7 +127,10 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the start event handler.
         """
+        logger.debug("Got start event")
         self._set_up_discourse(evt)
+        if self._are_relations_ready():
+            self._activate_charm()
 
     def _on_upgrade_charm(self, evt: ops.UpgradeCharmEvent) -> None:
         """Handle upgrade charm event.
@@ -135,7 +138,10 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the upgrade charm event handler.
         """
+        logger.debug("Got upgrade charm event")
         self._set_up_discourse(evt)
+        if self._are_relations_ready():
+            self._activate_charm()
 
     def _on_discourse_pebble_ready(self, evt: ops.PebbleReadyEvent) -> None:
         """Handle discourse pebble ready event.
@@ -143,7 +149,11 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the discourse pebble ready event handler.
         """
+        logger.debug("Got discourse pebble ready event")
+        self._set_up_discourse(evt)
         self._config_changed(evt)
+        if self._are_relations_ready():
+            self._activate_charm()
 
     def _on_database_created(self, _: DatabaseCreatedEvent) -> None:
         """Handle database created.
@@ -151,6 +161,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database created handler.
         """
+        logger.debug("Got database created event")
         if self.unit.is_leader():
             self._execute_migrations()
         if self._are_relations_ready():
@@ -162,6 +173,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the endpoints changed handler.
         """
+        logger.debug("Got database endpoints changed event")
         if self.unit.is_leader():
             self._execute_migrations()
         if self._are_relations_ready():
@@ -173,6 +185,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the broken relation handler.
         """
+        logger.debug("Got database relation broken event")
         self.model.unit.status = WaitingStatus("Waiting for database relation")
         self._stop_service()
 
@@ -391,7 +404,7 @@ class DiscourseCharm(CharmBase):
             pod_config.update(self._get_s3_env())
 
         # We only get valid throttle levels here, otherwise it would be caught
-        # by `check_for_config_problems`.
+        # by `_is_config_valid()`.
         # self.config return an Any type
         pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
 
@@ -573,8 +586,7 @@ class DiscourseCharm(CharmBase):
         """
         container = self.unit.get_container(CONTAINER_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Defer discourse setup")
-            event.defer()
+            logger.info("Pebble or relations not ready, not attempting to setup discourse")
             return
         logger.info(
             "Relations are ready and can connect to container, attempting to set up discourse."
@@ -586,9 +598,9 @@ class DiscourseCharm(CharmBase):
             self._compile_assets()
             logger.info("Discourse setup: about to mark the discourse setup process as complete")
             self._set_setup_completed()
-            logger.info("Discourse setup complete, now setting workload version")
+            logger.info("Discourse setup: about to set workload version")
             self._set_workload_version()
-            logger.info("Workload version set")
+            logger.info("Discourse setup: completed")
         except ExecError as cmd_err:
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise

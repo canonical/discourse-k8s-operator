@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 import ops
 import pytest
 from ops.charm import ActionEvent
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
 from charm import DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
 from tests.unit import helpers
@@ -25,11 +25,11 @@ from tests.unit import helpers
         (False, False, False, WaitingStatus("Waiting for database relation")),
         (False, True, False, WaitingStatus("Waiting for database relation")),
         (True, False, False, WaitingStatus("Waiting for redis relation")),
-        (True, True, False, MaintenanceStatus("Compiling assets")),
+        (True, True, False, ActiveStatus()),
         (False, False, True, WaitingStatus("Waiting for database relation")),
         (False, True, True, WaitingStatus("Waiting for database relation")),
         (True, False, True, WaitingStatus("Waiting for redis relation")),
-        (True, True, True, MaintenanceStatus("Compiling assets")),
+        (True, True, True, ActiveStatus()),
     ],
     ids=[
         "No relation",
@@ -51,6 +51,7 @@ def test_relations(with_postgres, with_redis, with_ingress, status):
     harness = helpers.start_harness(
         with_postgres=with_postgres, with_redis=with_redis, with_ingress=with_ingress
     )
+    harness.container_pebble_ready("discourse")
     assert harness.model.unit.status == status
 
 
@@ -234,6 +235,7 @@ def test_config_changed_when_valid_no_fingerprint():
             "force_https": True,
         }
     )
+    harness.container_pebble_ready("discourse")
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
@@ -289,6 +291,7 @@ def test_config_changed_when_valid():
             "force_https": True,
         }
     )
+    harness.container_pebble_ready("discourse")
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
@@ -325,6 +328,7 @@ def test_config_changed_when_valid():
     assert "587" == updated_plan_env["DISCOURSE_SMTP_PORT"]
     assert "apikey" == updated_plan_env["DISCOURSE_SMTP_USER_NAME"]
     assert updated_plan_env["DISCOURSE_USE_S3"]
+    assert updated_plan_env["FORCE_S3_UPLOADS"]
     assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
@@ -546,7 +550,7 @@ def test_start_when_not_leader():
         ),
     ],
 )
-def test_postgres_relation_data(relation_data, should_be_ready):
+def test_is_database_relation_ready(relation_data, should_be_ready):
     """
     arrange: given a deployed discourse charm and some relation data
     act: add the postgresql relation to the charm
@@ -603,7 +607,7 @@ def test_postgres_relation_data(relation_data, should_be_ready):
         ),
     ],
 )
-def test_redis_relation_data(relation_data, should_be_ready):
+def test_is_redis_relation_ready(relation_data, should_be_ready):
     """
     arrange: given a deployed discourse charm and some relation data
     act: add the redis relation to the charm
