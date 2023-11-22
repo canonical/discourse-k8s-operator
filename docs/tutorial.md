@@ -12,8 +12,7 @@ You will need:
 ## Deploy this charm
 
 Discourse requires connections to PostgreSQL and Redis, so those will be deployed too and related to the Discourse charm. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
-Note that Discourse requires PostgreSQL extensions to be available in the relation. Extensions are currently available
-in the `14/edge` and `14/candidate`.
+Note that Discourse requires PostgreSQL extensions to be available in the relation.
 
 All the above charms will the deployed in a new model named `discourse`:
 
@@ -23,7 +22,7 @@ juju add-model discourse
 
 # Deploy the charms
 juju deploy redis-k8s
-juju deploy postgresql-k8s --channel 14/edge
+juju deploy postgresql-k8s --channel 14/stable --trust
 juju deploy discourse-k8s
 
 # Enable required PostgreSQL extensions
@@ -43,7 +42,7 @@ discourse  microk8s-localhost  microk8s/localhost  2.9.37   unsupported  10:35:0
 
 App             Version                       Status  Scale  Charm           Channel  Rev  Address        Exposed  Message
 discourse-k8s                                 active      1  discourse-k8s   edge      13  10.152.183.34  no       
-postgresql-k8s  res:postgresql-image@8a72e11  active      1  postgresql-k8s  stable    20                 no       Pod configured
+postgresql-k8s      14.9                      active      1  postgresql-k8s  stable    158                 no       Pod configured
 redis-k8s       ubuntu/redis@691f315          active      1  redis-k8s       stable     7                 no       
 
 Unit               Workload  Agent  Address      Ports     Message
