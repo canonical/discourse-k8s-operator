@@ -15,7 +15,7 @@ import pytest
 from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
-from charm import DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
+from charm import DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, CONTAINER_NAME, DiscourseCharm
 from tests.unit import helpers
 
 
@@ -431,6 +431,26 @@ def test_anonymize_user():
     event = MagicMock(spec=ActionEvent)
     event.params = {"username": username}
     charm._on_anonymize_user_action(event)
+
+
+def test_handle_pebble_ready_event():
+    """
+    arrange: given a deployed discourse charm with all the required relations
+    act: trigger the pebble ready event on a leader unit
+    assert: the pebble plan gets updated
+    """
+    harness = helpers.start_harness()
+
+    # We want to make sure that pebble.replan_services() is called.
+    # This is because if the workload container gets restarted alone, 
+    # the pebble_ready event needs to replan to launch the service.
+    # replan_services_mock = MagicMock()
+    # monkeypatch.setattr(harness.charm.pebble_service, "replan_services", replan_services_mock)
+
+    plan = harness.get_container_pebble_plan(CONTAINER_NAME)
+    harness.container_pebble_ready(CONTAINER_NAME)
+    plan2 = harness.get_container_pebble_plan(CONTAINER_NAME)
+    assert plan.__dict__ != plan2.__dict__
 
 
 def test_start_when_leader():
