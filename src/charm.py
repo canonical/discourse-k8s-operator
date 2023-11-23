@@ -138,7 +138,6 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the upgrade charm event handler.
         """
-        logger.debug("Got upgrade charm event")
         self._set_up_discourse(evt)
         if self._are_relations_ready():
             self._activate_charm()
@@ -149,7 +148,6 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the discourse pebble ready event handler.
         """
-        logger.debug("Got discourse pebble ready event")
         self._set_up_discourse(evt)
         self._config_changed(evt)
         if self._are_relations_ready():
@@ -161,7 +159,6 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database created handler.
         """
-        logger.debug("Got database created event")
         if self.unit.is_leader():
             self._execute_migrations()
         if self._are_relations_ready():
@@ -173,7 +170,6 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the endpoints changed handler.
         """
-        logger.debug("Got database endpoints changed event")
         if self.unit.is_leader():
             self._execute_migrations()
         if self._are_relations_ready():
@@ -185,7 +181,6 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the broken relation handler.
         """
-        logger.debug("Got database relation broken event")
         self.model.unit.status = WaitingStatus("Waiting for database relation")
         self._stop_service()
 
