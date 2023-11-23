@@ -441,16 +441,10 @@ def test_handle_pebble_ready_event():
     """
     harness = helpers.start_harness()
 
-    # We want to make sure that pebble.replan_services() is called.
-    # This is because if the workload container gets restarted alone,
-    # the pebble_ready event needs to replan to launch the service.
-    # replan_services_mock = MagicMock()
-    # monkeypatch.setattr(harness.charm.pebble_service, "replan_services", replan_services_mock)
-
-    plan = harness.get_container_pebble_plan(CONTAINER_NAME)
+    plan_before_event = harness.get_container_pebble_plan(CONTAINER_NAME)
     harness.container_pebble_ready(CONTAINER_NAME)
-    plan2 = harness.get_container_pebble_plan(CONTAINER_NAME)
-    assert plan.__dict__ != plan2.__dict__
+    plan_after_event = harness.get_container_pebble_plan(CONTAINER_NAME)
+    assert plan_before_event.__dict__ != plan_after_event.__dict__
 
 
 def test_start_when_leader():
