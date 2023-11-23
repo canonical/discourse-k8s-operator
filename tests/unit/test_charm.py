@@ -15,7 +15,7 @@ import pytest
 from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
-from charm import DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, CONTAINER_NAME, DiscourseCharm
+from charm import CONTAINER_NAME, DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
 from tests.unit import helpers
 
 
@@ -442,7 +442,7 @@ def test_handle_pebble_ready_event():
     harness = helpers.start_harness()
 
     # We want to make sure that pebble.replan_services() is called.
-    # This is because if the workload container gets restarted alone, 
+    # This is because if the workload container gets restarted alone,
     # the pebble_ready event needs to replan to launch the service.
     # replan_services_mock = MagicMock()
     # monkeypatch.setattr(harness.charm.pebble_service, "replan_services", replan_services_mock)

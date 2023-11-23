@@ -120,25 +120,24 @@ class DiscourseCharm(CharmBase):
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
-
-    def _on_start(self, evt: ops.StartEvent) -> None:
+    def _on_start(self, _: ops.StartEvent) -> None:
         """Handle start event.
 
         Args:
             event: Event triggering the start event handler.
         """
         logger.debug("Got start event")
-        self._set_up_discourse(evt)
+        self._set_up_discourse()
         if self._are_relations_ready():
             self._activate_charm()
 
-    def _on_upgrade_charm(self, evt: ops.UpgradeCharmEvent) -> None:
+    def _on_upgrade_charm(self, _: ops.UpgradeCharmEvent) -> None:
         """Handle upgrade charm event.
 
         Args:
             event: Event triggering the upgrade charm event handler.
         """
-        self._set_up_discourse(evt)
+        self._set_up_discourse()
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -148,7 +147,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the discourse pebble ready event handler.
         """
-        self._set_up_discourse(evt)
+        self._set_up_discourse()
         self._config_changed(evt)
         if self._are_relations_ready():
             self._activate_charm()
@@ -573,7 +572,7 @@ class DiscourseCharm(CharmBase):
             logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _set_up_discourse(self, event: HookEvent) -> None:
+    def _set_up_discourse(self) -> None:
         """Run Discourse migrations and recompile assets.
 
         Args:
