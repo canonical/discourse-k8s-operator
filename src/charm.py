@@ -127,7 +127,8 @@ class DiscourseCharm(CharmBase):
             event: Event triggering the start event handler.
         """
         logger.debug("Got start event")
-        self._set_up_discourse()
+        if not self._is_setup_completed():
+            self._set_up_discourse()
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -137,7 +138,8 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the upgrade charm event handler.
         """
-        self._set_up_discourse()
+        if not self._is_setup_completed():
+            self._set_up_discourse()
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -147,7 +149,8 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the discourse pebble ready event handler.
         """
-        self._set_up_discourse()
+        if not self._is_setup_completed():
+            self._set_up_discourse()
         self._config_changed(evt)
         if self._are_relations_ready():
             self._activate_charm()
