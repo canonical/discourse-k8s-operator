@@ -52,20 +52,13 @@ parts:
       - install-runtime-packages
     source: .
     build-environment:
-      - RBENV_ROOT: "/usr/local/rbenv"
-      - RUBY_VERSION: "3.2.1"
+      - RUBY_VERSION: "3.2.2"
     overlay-script: |
-      git clone https://github.com/rbenv/rbenv.git $RBENV_ROOT
-      git clone https://github.com/rbenv/ruby-build.git $RBENV_ROOT/plugins/ruby-build
-      echo '# rbenv setup' > /etc/profile.d/rbenv.sh
-      echo 'export RBENV_ROOT=/usr/local/rbenv' >> /etc/profile.d/rbenv.sh
-      echo 'export PATH="$RBENV_ROOT/bin:$PATH"' >> /etc/profile.d/rbenv.sh
-      echo 'eval "$(rbenv init -)"' >> /etc/profile.d/rbenv.sh
-      chmod +x /etc/profile.d/rbenv.sh
-      source /etc/profile.d/rbenv.sh
-      rbenv install "$RUBY_VERSION"
-      rbenv global $RUBY_VERSION
-      rbenv rehash
+      curl -fLO https://github.com/postmodern/ruby-install/releases/download/v0.9.2/ruby-install-0.9.2.tar.gz
+      tar -xzvf ruby-install-0.9.2.tar.gz
+      cd ruby-install-0.9.2/
+      make install
+      ruby-install --system ruby $RUBY_VERSION
   get-discourse:
     plugin: dump
     after:
@@ -199,7 +192,6 @@ parts:
       - libyaml-dev
     override-build: |
       cd $CRAFT_STAGE/srv/discourse/app
-      source /etc/profile.d/rbenv.sh
       gem install -n "bin" bundler
       # rexml version is forced to avoid conflicting transient dependency issue
       sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' Gemfile.lock
@@ -209,9 +201,6 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
     organize:
-      '/etc/profile.d/rbenv.sh': etc/profile.d/rbenv.sh
-      '/usr/local/rbenv': usr/local/rbenv
-      '/usr/local/rbenv/plugins/ruby-build': usr/local/rbenv/plugins/ruby-build
       '/var/lib/gems': var/lib/gems
       'srv/discourse/app/bin/*': srv/discourse/app/bin/
       'srv/discourse/app/Rakefile': srv/discourse/app/
@@ -233,4 +222,3 @@ parts:
     override-prime: |
       craftctl default
       chown 584792 -R srv/discourse
-      chown 584792 -R usr/local/rbenv
