@@ -108,6 +108,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.config_changed, self._config_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
+        self.framework.observe(self.on.update_status, self._on_update_status)
 
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
@@ -126,7 +127,17 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the start event handler.
         """
-        logger.debug("Got start event")
+        if not self._is_setup_completed():
+            self._set_up_discourse()
+        if self._are_relations_ready():
+            self._activate_charm()
+
+    def _on_update_status(self, _: ops.StartEvent) -> None:
+        """Handle update_status event.
+
+        Args:
+            event: Event triggering the update_status event handler.
+        """
         if not self._is_setup_completed():
             self._set_up_discourse()
         if self._are_relations_ready():
