@@ -59,6 +59,7 @@ parts:
       cd ruby-install-0.9.2/
       make install
       ruby-install --system ruby $RUBY_VERSION
+      ruby-install --install-dir ${CRAFT_OVERLAY}/usr/local ruby $RUBY_VERSION
   get-discourse:
     plugin: dump
     after:
