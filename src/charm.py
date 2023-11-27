@@ -108,7 +108,6 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.config_changed, self._config_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
-        self.framework.observe(self.on.update_status, self._on_update_status)
 
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
@@ -126,17 +125,6 @@ class DiscourseCharm(CharmBase):
 
         Args:
             event: Event triggering the start event handler.
-        """
-        if not self._is_setup_completed():
-            self._set_up_discourse()
-        if self._are_relations_ready():
-            self._activate_charm()
-
-    def _on_update_status(self, _: ops.StartEvent) -> None:
-        """Handle update_status event.
-
-        Args:
-            event: Event triggering the update_status event handler.
         """
         if not self._is_setup_completed():
             self._set_up_discourse()
@@ -196,6 +184,12 @@ class DiscourseCharm(CharmBase):
         """
         self.model.unit.status = WaitingStatus("Waiting for database relation")
         self._stop_service()
+
+    def _redis_relation_changed(self, _: HookEvent) -> None:
+        if not self._is_setup_completed():
+            self._set_up_discourse()
+        if self._are_relations_ready():
+            self._activate_charm()
 
     def _require_nginx_route(self) -> None:
         """Create minimal ingress configuration."""
@@ -664,10 +658,6 @@ class DiscourseCharm(CharmBase):
         if self._is_config_valid() and container.can_connect():
             self._start_service()
             self.model.unit.status = ActiveStatus()
-
-    def _redis_relation_changed(self, _: HookEvent) -> None:
-        if self._are_relations_ready():
-            self._activate_charm()
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
         """Add a new admin user to Discourse.
