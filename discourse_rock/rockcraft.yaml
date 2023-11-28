@@ -190,7 +190,6 @@ parts:
       "/usr/local/lib/ruby": usr/local/lib/ruby
       "/usr/local/lib/pkgconfig": usr/local/lib/pkgconfig
       "/usr/local/bin/*": usr/local/bin/
-      '/var/lib/gems': var/lib/gems
       'srv/discourse/app/bin/*': srv/discourse/app/bin/
       'srv/discourse/app/Rakefile': srv/discourse/app/
       'srv/discourse/app/bundle': srv/discourse/app/
@@ -211,3 +210,4 @@ parts:
     override-prime: |
       craftctl default
       chown 584792 -R srv/discourse
+      chown 584792 -R usr/local/lib/ruby/gems
