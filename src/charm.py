@@ -184,7 +184,7 @@ class DiscourseCharm(CharmBase):
     def _setup_and_activate(self, evt: HookEvent) -> None:
         if not self._is_setup_completed():
             self._set_up_discourse()
-        self._on_config_changed(evt)
+        self._change_config(evt)
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -603,7 +603,7 @@ class DiscourseCharm(CharmBase):
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _on_config_changed(self, _: HookEvent) -> None:
+    def _change_config(self, _: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
