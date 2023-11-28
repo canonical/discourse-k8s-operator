@@ -120,37 +120,37 @@ class DiscourseCharm(CharmBase):
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
-    def _on_start(self, evt: ops.StartEvent) -> None:
+    def _on_start(self, _: ops.StartEvent) -> None:
         """Handle start event.
 
         Args:
             event: Event triggering the start event handler.
         """
-        self._setup_and_activate(evt)
+        self._setup_and_activate()
 
-    def _on_upgrade_charm(self, evt: ops.UpgradeCharmEvent) -> None:
+    def _on_upgrade_charm(self, _: ops.UpgradeCharmEvent) -> None:
         """Handle upgrade charm event.
 
         Args:
             event: Event triggering the upgrade charm event handler.
         """
-        self._setup_and_activate(evt)
+        self._setup_and_activate()
 
-    def _on_discourse_pebble_ready(self, evt: ops.PebbleReadyEvent) -> None:
+    def _on_discourse_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
         """Handle discourse pebble ready event.
 
         Args:
             event: Event triggering the discourse pebble ready event handler.
         """
-        self._setup_and_activate(evt)
+        self._setup_and_activate()
 
-    def _redis_relation_changed(self, evt: HookEvent) -> None:
+    def _redis_relation_changed(self, _: HookEvent) -> None:
         """Handle redis relation changed event.
 
         Args:
             event: Event triggering the redis relation changed event handler.
         """
-        self._setup_and_activate(evt)
+        self._setup_and_activate()
 
     def _on_database_created(self, _: DatabaseCreatedEvent) -> None:
         """Handle database created.
@@ -181,10 +181,18 @@ class DiscourseCharm(CharmBase):
         self.model.unit.status = WaitingStatus("Waiting for database relation")
         self._stop_service()
 
-    def _setup_and_activate(self, evt: HookEvent) -> None:
+    def _on_config_changed(self, _: HookEvent) -> None:
+        """Handle config change.
+
+        Args:
+            event: Event triggering the config change handler.
+        """
+        self._change_config()
+
+    def _setup_and_activate(self) -> None:
         if not self._is_setup_completed():
             self._set_up_discourse()
-        self._change_config(evt)
+        self._change_config()
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -603,7 +611,7 @@ class DiscourseCharm(CharmBase):
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _change_config(self, _: HookEvent) -> None:
+    def _change_config(self) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
