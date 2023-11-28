@@ -105,7 +105,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.start, self._on_start)
         self.framework.observe(self.on.upgrade_charm, self._on_upgrade_charm)
         self.framework.observe(self.on.discourse_pebble_ready, self._on_discourse_pebble_ready)
-        self.framework.observe(self.on.config_changed, self._config_changed)
+        self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
@@ -120,27 +120,21 @@ class DiscourseCharm(CharmBase):
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
-    def _on_start(self, _: ops.StartEvent) -> None:
+    def _on_start(self, evt: ops.StartEvent) -> None:
         """Handle start event.
 
         Args:
             event: Event triggering the start event handler.
         """
-        if not self._is_setup_completed():
-            self._set_up_discourse()
-        if self._are_relations_ready():
-            self._activate_charm()
+        self._setup_and_activate(evt)
 
-    def _on_upgrade_charm(self, _: ops.UpgradeCharmEvent) -> None:
+    def _on_upgrade_charm(self, evt: ops.UpgradeCharmEvent) -> None:
         """Handle upgrade charm event.
 
         Args:
             event: Event triggering the upgrade charm event handler.
         """
-        if not self._is_setup_completed():
-            self._set_up_discourse()
-        if self._are_relations_ready():
-            self._activate_charm()
+        self._setup_and_activate(evt)
 
     def _on_discourse_pebble_ready(self, evt: ops.PebbleReadyEvent) -> None:
         """Handle discourse pebble ready event.
@@ -148,11 +142,15 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the discourse pebble ready event handler.
         """
-        if not self._is_setup_completed():
-            self._set_up_discourse()
-        self._config_changed(evt)
-        if self._are_relations_ready():
-            self._activate_charm()
+        self._setup_and_activate(evt)
+
+    def _redis_relation_changed(self, evt: HookEvent) -> None:
+        """Handle redis relation changed event.
+
+        Args:
+            event: Event triggering the redis relation changed event handler.
+        """
+        self._setup_and_activate(evt)
 
     def _on_database_created(self, _: DatabaseCreatedEvent) -> None:
         """Handle database created.
@@ -160,8 +158,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database created handler.
         """
-        if self.unit.is_leader():
-            self._execute_migrations()
+        self._execute_migrations()
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -171,8 +168,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the endpoints changed handler.
         """
-        if self.unit.is_leader():
-            self._execute_migrations()
+        self._execute_migrations()
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -185,9 +181,10 @@ class DiscourseCharm(CharmBase):
         self.model.unit.status = WaitingStatus("Waiting for database relation")
         self._stop_service()
 
-    def _redis_relation_changed(self, _: HookEvent) -> None:
+    def _setup_and_activate(self, evt: HookEvent) -> None:
         if not self._is_setup_completed():
             self._set_up_discourse()
+        self._on_config_changed(evt)
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -506,20 +503,19 @@ class DiscourseCharm(CharmBase):
         if not self._are_relations_ready() or not container.can_connect():
             logger.info("Not ready to execute migrations")
             return
-        if self.model.unit.is_leader():
-            env_settings = self._create_discourse_environment_settings()
-            self.model.unit.status = MaintenanceStatus("Executing migrations")
-            try:
-                migration_process: ExecProcess = container.exec(
-                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-                    environment=env_settings,
-                    working_dir=DISCOURSE_PATH,
-                    user="_daemon_",
-                )
-                migration_process.wait_output()
-            except ExecError as cmd_err:
-                logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
-                raise
+        env_settings = self._create_discourse_environment_settings()
+        self.model.unit.status = MaintenanceStatus("Executing migrations")
+        try:
+            migration_process: ExecProcess = container.exec(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user="_daemon_",
+            )
+            migration_process.wait_output()
+        except ExecError as cmd_err:
+            logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
+            raise
 
     def _compile_assets(self) -> None:
         container = self.unit.get_container(CONTAINER_NAME)
@@ -607,7 +603,7 @@ class DiscourseCharm(CharmBase):
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _config_changed(self, _: HookEvent) -> None:
+    def _on_config_changed(self, _: HookEvent) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
