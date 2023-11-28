@@ -5,6 +5,9 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'src-docs/**'
+      - 'README.md'
+      - 'LICENSE'
+      - 'CODEOWNERS'
 
 jobs:
   integration-tests:
