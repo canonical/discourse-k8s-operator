@@ -40,5 +40,4 @@ Thinking about using the Discourse Operator for your next project? [Get in touch
 
 ---
 
-For further details,
-[see the charm's detailed documentation](https://charmhub.io/discourse-k8s/docs).
+For further details, [see the charm's detailed documentation](https://charmhub.io/discourse-k8s/docs).
