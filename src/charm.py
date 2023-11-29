@@ -512,19 +512,20 @@ class DiscourseCharm(CharmBase):
         if not self._are_relations_ready() or not container.can_connect():
             logger.info("Not ready to execute migrations")
             return
-        env_settings = self._create_discourse_environment_settings()
-        self.model.unit.status = MaintenanceStatus("Executing migrations")
-        try:
-            migration_process: ExecProcess = container.exec(
-                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-                environment=env_settings,
-                working_dir=DISCOURSE_PATH,
-                user="_daemon_",
-            )
-            migration_process.wait_output()
-        except ExecError as cmd_err:
-            logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
-            raise
+        if self.model.unit.is_leader():
+            env_settings = self._create_discourse_environment_settings()
+            self.model.unit.status = MaintenanceStatus("Executing migrations")
+            try:
+                migration_process: ExecProcess = container.exec(
+                    [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
+                    environment=env_settings,
+                    working_dir=DISCOURSE_PATH,
+                    user="_daemon_",
+                )
+                migration_process.wait_output()
+            except ExecError as cmd_err:
+                logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
+                raise
 
     def _compile_assets(self) -> None:
         container = self.unit.get_container(CONTAINER_NAME)
