@@ -187,12 +187,13 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the config change handler.
         """
-        self._change_config()
+        self._configure_pod()
 
     def _setup_and_activate(self) -> None:
+        """Set up discourse, configure the pod and eventually activate the charm."""
         if not self._is_setup_completed():
             self._set_up_discourse()
-        self._change_config()
+        self._configure_pod()
         if self._are_relations_ready():
             self._activate_charm()
 
@@ -611,7 +612,7 @@ class DiscourseCharm(CharmBase):
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _change_config(self) -> None:
+    def _configure_pod(self) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
