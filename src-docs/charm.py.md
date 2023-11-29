@@ -15,6 +15,7 @@ Charm for Discourse on kubernetes.
 - **REQUIRED_S3_SETTINGS**
 - **SCRIPT_PATH**
 - **SERVICE_NAME**
+- **CONTAINER_NAME**
 - **SERVICE_PORT**
 - **SETUP_COMPLETED_FLAG_FILE**
 - **DATABASE_RELATION_NAME**
@@ -25,7 +26,7 @@ Charm for Discourse on kubernetes.
 ## <kbd>class</kbd> `DiscourseCharm`
 Charm for Discourse on kubernetes. 
 
-<a href="../src/charm.py#L80"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L83"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 

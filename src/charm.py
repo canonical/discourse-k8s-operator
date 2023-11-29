@@ -64,6 +64,7 @@ PROMETHEUS_PORT = 3000
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
+CONTAINER_NAME = "discourse"
 SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 DATABASE_RELATION_NAME = "database"
@@ -100,11 +101,11 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self._require_nginx_route()
-        self.framework.observe(self.on.start, self._set_up_discourse)
-        self.framework.observe(self.on.upgrade_charm, self._set_up_discourse)
-        self.framework.observe(self.on.discourse_pebble_ready, self._config_changed)
-        self.framework.observe(self.on.config_changed, self._config_changed)
 
+        self.framework.observe(self.on.start, self._on_start)
+        self.framework.observe(self.on.upgrade_charm, self._on_upgrade_charm)
+        self.framework.observe(self.on.discourse_pebble_ready, self._on_discourse_pebble_ready)
+        self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
@@ -115,9 +116,41 @@ class DiscourseCharm(CharmBase):
             self, jobs=[{"static_configs": [{"targets": [f"*:{PROMETHEUS_PORT}"]}]}]
         )
         self._logging = LogProxyConsumer(
-            self, relation_name="logging", log_files=LOG_PATHS, container_name="discourse"
+            self, relation_name="logging", log_files=LOG_PATHS, container_name=CONTAINER_NAME
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
+
+    def _on_start(self, _: ops.StartEvent) -> None:
+        """Handle start event.
+
+        Args:
+            event: Event triggering the start event handler.
+        """
+        self._setup_and_activate()
+
+    def _on_upgrade_charm(self, _: ops.UpgradeCharmEvent) -> None:
+        """Handle upgrade charm event.
+
+        Args:
+            event: Event triggering the upgrade charm event handler.
+        """
+        self._setup_and_activate()
+
+    def _on_discourse_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
+        """Handle discourse pebble ready event.
+
+        Args:
+            event: Event triggering the discourse pebble ready event handler.
+        """
+        self._setup_and_activate()
+
+    def _redis_relation_changed(self, _: HookEvent) -> None:
+        """Handle redis relation changed event.
+
+        Args:
+            event: Event triggering the redis relation changed event handler.
+        """
+        self._setup_and_activate()
 
     def _on_database_created(self, _: DatabaseCreatedEvent) -> None:
         """Handle database created.
@@ -125,10 +158,9 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database created handler.
         """
-        if self.unit.is_leader():
-            self._execute_migrations()
+        self._execute_migrations()
         if self._are_relations_ready():
-            self._reload_configuration()
+            self._activate_charm()
 
     def _on_database_endpoints_changed(self, _: DatabaseEndpointsChangedEvent) -> None:
         """Handle endpoints change.
@@ -136,10 +168,9 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the endpoints changed handler.
         """
-        if self.unit.is_leader():
-            self._execute_migrations()
+        self._execute_migrations()
         if self._are_relations_ready():
-            self._reload_configuration()
+            self._activate_charm()
 
     def _on_database_relation_broken(self, _: RelationBrokenEvent) -> None:
         """Handle broken relation.
@@ -149,6 +180,22 @@ class DiscourseCharm(CharmBase):
         """
         self.model.unit.status = WaitingStatus("Waiting for database relation")
         self._stop_service()
+
+    def _on_config_changed(self, _: HookEvent) -> None:
+        """Handle config change.
+
+        Args:
+            event: Event triggering the config change handler.
+        """
+        self._configure_pod()
+
+    def _setup_and_activate(self) -> None:
+        """Set up discourse, configure the pod and eventually activate the charm."""
+        if not self._is_setup_completed():
+            self._set_up_discourse()
+        self._configure_pod()
+        if self._are_relations_ready():
+            self._activate_charm()
 
     def _require_nginx_route(self) -> None:
         """Create minimal ingress configuration."""
@@ -176,12 +223,12 @@ class DiscourseCharm(CharmBase):
         Returns:
             True if the _set_up_discourse process has finished.
         """
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         return container.can_connect() and container.exists(SETUP_COMPLETED_FLAG_FILE)
 
     def _set_setup_completed(self) -> None:
         """Mark the _set_up_discourse process as completed."""
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         container.push(SETUP_COMPLETED_FLAG_FILE, "", make_dirs=True)
 
     def _is_config_valid(self) -> bool:
@@ -333,7 +380,7 @@ class DiscourseCharm(CharmBase):
         pod_config = {
             # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
             # I need to take the required envVars for the application to work properly
-            "CONTAINER_APP_NAME": "discourse",
+            "CONTAINER_APP_NAME": CONTAINER_NAME,
             "CONTAINER_APP_ROOT": "/srv/discourse",
             "CONTAINER_APP_USERNAME": "_daemon_",
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
@@ -365,7 +412,7 @@ class DiscourseCharm(CharmBase):
             pod_config.update(self._get_s3_env())
 
         # We only get valid throttle levels here, otherwise it would be caught
-        # by `check_for_config_problems`.
+        # by `_is_config_valid()`.
         # self.config return an Any type
         pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
 
@@ -461,9 +508,9 @@ class DiscourseCharm(CharmBase):
         return True
 
     def _execute_migrations(self) -> None:
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Not ready to execute migrations.")
+            logger.info("Not ready to execute migrations")
             return
         if self.model.unit.is_leader():
             env_settings = self._create_discourse_environment_settings()
@@ -481,7 +528,7 @@ class DiscourseCharm(CharmBase):
                 raise
 
     def _compile_assets(self) -> None:
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         if not self._are_relations_ready() or not container.can_connect():
             logger.info("Not ready to compile assets")
             return
@@ -500,9 +547,9 @@ class DiscourseCharm(CharmBase):
             raise
 
     def _set_workload_version(self) -> None:
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Not ready to set workload version.")
+            logger.info("Not ready to set workload version")
             return
         env_settings = self._create_discourse_environment_settings()
         try:
@@ -520,13 +567,13 @@ class DiscourseCharm(CharmBase):
             raise
 
     def _run_s3_migration(self) -> None:
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Not ready to run S3 migration.")
+            logger.info("Not ready to run S3 migration")
             return
         env_settings = self._create_discourse_environment_settings()
         self.model.unit.status = MaintenanceStatus("Running S3 migration")
-        logger.info("Running S3 migration.")
+        logger.info("Running S3 migration")
         try:
             process = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
@@ -539,43 +586,42 @@ class DiscourseCharm(CharmBase):
             logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _set_up_discourse(self, event: HookEvent) -> None:
+    def _set_up_discourse(self) -> None:
         """Run Discourse migrations and recompile assets.
 
         Args:
             event: Event triggering the handler.
         """
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Defer discourse setup.")
-            event.defer()
+            logger.info("Pebble or relations not ready, not attempting to setup discourse")
             return
         logger.info(
             "Relations are ready and can connect to container, attempting to set up discourse."
         )
         try:
-            logger.info("Discourse setup: about to execute migrations.")
+            logger.info("Discourse setup: about to execute migrations")
             self._execute_migrations()
-            logger.info("Discourse setup: about to compile assets.")
+            logger.info("Discourse setup: about to compile assets")
             self._compile_assets()
-            logger.info("Discourse setup: about to mark the discourse setup process as complete.")
+            logger.info("Discourse setup: about to mark the discourse setup process as complete")
             self._set_setup_completed()
-            logger.info("Discourse setup complete, now setting workload version.")
+            logger.info("Discourse setup: about to set workload version")
             self._set_workload_version()
-            logger.info("Workload version set.")
+            logger.info("Discourse setup: completed")
         except ExecError as cmd_err:
             logger.exception("Setting up discourse failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _config_changed(self, _: HookEvent) -> None:
+    def _configure_pod(self) -> None:
         """Configure pod using pebble and layer generated from config.
 
         Args:
             event: Event triggering the handler.
         """
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Not ready to do config changed action.")
+            logger.info("Not ready to do config changed action")
             return
         if not self._is_config_valid():
             return
@@ -604,24 +650,20 @@ class DiscourseCharm(CharmBase):
         ):
             self._run_s3_migration()
 
-        self._reload_configuration()
+        self._activate_charm()
         if container.can_connect():
             self._config_force_https()
-            self.model.unit.status = ActiveStatus()
 
-    def _reload_configuration(self) -> None:
+    def _activate_charm(self) -> None:
+        """Start discourse and mark the charm as active if the setup is completed."""
         # mypy has some trouble with dynamic attributes
         if not self._is_setup_completed():
-            logger.info("Setup is not completed: cancelling configuration reload.")
+            logger.info("Not starting the discourse server until discourse setup completed")
             return
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         if self._is_config_valid() and container.can_connect():
             self._start_service()
             self.model.unit.status = ActiveStatus()
-
-    def _redis_relation_changed(self, _: HookEvent) -> None:
-        if self._are_relations_ready():
-            self._reload_configuration()
 
     def _on_add_admin_user_action(self, event: ActionEvent) -> None:
         """Add a new admin user to Discourse.
@@ -631,7 +673,7 @@ class DiscourseCharm(CharmBase):
         """
         email = event.params["email"]
         password = event.params["password"]
-        container = self.unit.get_container(SERVICE_NAME)
+        container = self.unit.get_container(CONTAINER_NAME)
         if container.can_connect():
             process = container.exec(
                 [
@@ -704,8 +746,8 @@ class DiscourseCharm(CharmBase):
 
     def _start_service(self):
         """Start discourse."""
-        logger.info("Starting discourse.")
-        container = self.unit.get_container(SERVICE_NAME)
+        logger.info("Starting discourse")
+        container = self.unit.get_container(CONTAINER_NAME)
         if self._is_config_valid() and container.can_connect():
             layer_config = self._create_layer_config()
             container.add_layer(SERVICE_NAME, layer_config, combine=True)
@@ -713,14 +755,14 @@ class DiscourseCharm(CharmBase):
 
     def _stop_service(self):
         """Stop discourse, this operation is idempotent."""
-        logger.info("Stopping discourse.")
-        container = self.unit.get_container(SERVICE_NAME)
+        logger.info("Stopping discourse")
+        container = self.unit.get_container(CONTAINER_NAME)
         if (
             container.can_connect()
             and SERVICE_NAME in container.get_plan().services
             and container.get_service(SERVICE_NAME).is_running()
         ):
-            container.stop(SERVICE_NAME)
+            container.stop(CONTAINER_NAME)
 
 
 if __name__ == "__main__":  # pragma: no cover

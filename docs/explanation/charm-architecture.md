@@ -39,6 +39,8 @@ The OCI image is built using [Rockcraft](https://canonical-rockcraft.readthedocs
 
 This is done by publishing a resource to Charmhub as described in the [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 
+The OCI image is currently not made to work in an air-gapped environment. You should make sure that it has access to `https://rubygems.org/` (to install gems) and to `https://avatars.discourse.org/` (the official service to create letter avatars).
+
 ## Integrations
 
 ### Ingress

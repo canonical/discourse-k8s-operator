@@ -47,14 +47,12 @@ def start_harness(
 
     if with_redis:
         _add_redis_relation(harness)
-        harness.framework.reemit()
 
     if with_ingress:
         _add_ingress_relation(harness)
 
     if with_config is not None:
         harness.update_config(with_config)
-        harness.container_pebble_ready("discourse")
 
     return harness
 
