@@ -48,10 +48,11 @@ async def test_prom_exporter_is_up(app: Application):
     assert discourse_unit
     cmd = f"/usr/bin/curl -m 30 http://localhost:{PROMETHEUS_PORT}/metrics"
     action = await discourse_unit.run(cmd, timeout=60)
-    code = action.results.get("Code")
-    stdout = action.results.get("Stdout")
-    stderr = action.results.get("Stderr")
-    assert code == "0", f"{cmd} failed ({code}): {stderr or stdout}"
+    await action.wait()
+    code = action.results.get("return-code")
+    stdout = action.results.get("stdout")
+    stderr = action.results.get("stderr")
+    assert code == 0, f"{cmd} failed ({code}): {stderr or stdout}"
 
 
 @pytest.mark.asyncio
