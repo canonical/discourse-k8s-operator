@@ -98,7 +98,7 @@ async def test_s3_conf(app: Application, localstack_address: str, model: Model):
         f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.s3.{s3_conf["domain"]}" >> /etc/hosts'
     )
     await action.wait()
-    assert action.results.get("return-ode") == 0, "Can't inject S3 IP in Discourse hosts"
+    assert action.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
     # Application does actually have attribute set_config
