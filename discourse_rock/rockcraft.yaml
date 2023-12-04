@@ -1,12 +1,5 @@
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
-#
-# game plan
-# run as the _daemon_ user
-# get all the things into one place - can I get the perms right for daemon?
-# run all the shit in the prime
-# change perms there
-# fuck this
 
 name: discourse
 summary: Discourse rock
@@ -24,6 +17,7 @@ parts:
       - brotli
       - gettext-base
       - gcc
+      - g++
       - gifsicle
       - git
       - imagemagick
@@ -55,8 +49,9 @@ parts:
       curl -Ls $node_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
       yarn_uri="https://github.com/yarnpkg/yarn/releases/download/v${YARN_VERSION}/yarn-v${YARN_VERSION}.tar.gz"
       curl -Ls $yarn_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
-      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm --prefix $CRAFT_OVERLAY/usr/local/ i -g terser
-      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm --prefix $CRAFT_OVERLAY/usr/local/ i -g svgo
+      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global terser
+      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global svgo
+      #cp -pR /usr/lib/node_modules ${CRAFT_OVERLAY}/usr/lib/
       ruby_install_uri="https://github.com/postmodern/ruby-install/releases/download/v${RUBY_INSTALL_VERSION}/ruby-install-${RUBY_INSTALL_VERSION}.tar.gz"
       curl -fLO $ruby_install_uri
       tar -xzvf ruby-install-${RUBY_INSTALL_VERSION}.tar.gz
@@ -78,26 +73,18 @@ parts:
       mkdir -p public/uploads/default
       mkdir -p log/production.log
       mkdir -p srv/discourse/app/bin
+      mkdir -p srv/discourse/app/vendor/bundle
       touch log/production.log
       touch log/unicorn-stderr.log
       # rexml version is forced to avoid conflicting transient dependency issue
       sed -i 's/rexml (3.2.5)/rexml (3.2.6)/' Gemfile.lock
       # The following is a fix for https://github.com/discourse/discourse-prometheus/blob/72fff206ba18ad5ca3112fed2f5f0ce6a17ca6f8/plugin.rb#L13C1-L13C105
       sed -i "s/gem 'prometheus_exporter', .*/gem 'prometheus_exporter', '0.5.0'/g" Gemfile
+      yarn install --verbose --immutable
     build-packages:
       - git
       - libpq-dev
       - libssl-dev
-    override-stage: |
-      craftctl default
-      cd $CRAFT_STAGE/srv/discourse/app
-      yarn install --immutable
-      gem install -n "bin" bundler -v 2.4.13
-      bin/bundle config --local deployment true
-      bin/bundle config --local path ./vendor/bundle
-      bin/bundle config --local without test development
-      bin/bundle config --local jobs 4
-      bin/bundle install
     organize:
       "*.*": srv/discourse/app/
       "*": srv/discourse/app/
@@ -105,9 +92,18 @@ parts:
     permissions:
       - owner: 584792
         group: 584792
-  discourse-rad-plugin:
+  bundler-config:
     plugin: dump
     after: [discourse]
+    source: bundler
+    organize:
+      "*": srv/discourse/app/.bundle/
+    permissions:
+      - owner: 584792
+        group: 584792
+  discourse-rad-plugin:
+    plugin: dump
+    after: [discourse, bundler-config]
     source: https://github.com/canonical/discourse-rad-plugin.git
     source-commit: 8612594e1bbbfbba7b9166d09c03b4a7fb4afbe9
     source-depth: 1
@@ -118,18 +114,10 @@ parts:
         group: 584792
   discourse-solved:
     plugin: dump
-    after: [discourse]
+    after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-solved.git
     source-commit: e6cce5486df906ede74aa1b17ab308a145a99b88
     source-depth: 1
-    override-stage: |
-      craftctl default
-      cd $CRAFT_STAGE/srv/discourse/app
-      bin/bundle config --local deployment true
-      bin/bundle config --local path ./vendor/bundle
-      bin/bundle config --local without test development
-      bin/bundle config --local jobs 4
-      bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
     organize:
       "*": srv/discourse/app/plugins/discourse-solved/
     permissions:
@@ -137,7 +125,7 @@ parts:
         group: 584792
   discourse-markdown-note:
     plugin: dump
-    after: [discourse]
+    after: [discourse, bundler-config]
     source: https://github.com/canonical-web-and-design/discourse-markdown-note.git
     source-commit: f4426d5929de067f123659dc690e9438a324817a
     source-depth: 1
@@ -148,7 +136,7 @@ parts:
         group: 584792
   discourse-mermaid:
     plugin: dump
-    after: [discourse]
+    after: [discourse, bundler-config]
     source: https://github.com/unfoldingWord-dev/discourse-mermaid.git
     source-commit: 341e1b08608ed0262bae6dffded2eddfae91f67a
     source-depth: 1
@@ -159,18 +147,10 @@ parts:
         group: 584792
   discourse-saml:
     plugin: dump
-    after: [discourse]
+    after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-saml.git
     source-commit: 15a8274bbec438768fb020d4f20462db476b0f29
     source-depth: 1
-    override-stage: |
-      craftctl default
-      cd $CRAFT_STAGE/srv/discourse/app
-      bin/bundle config --local deployment true
-      bin/bundle config --local path ./vendor/bundle
-      bin/bundle config --local without test development
-      bin/bundle config --local jobs 4
-      bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
     override-build: |
       craftctl default
       grep -e ^gem plugin.rb >> Gemfile
@@ -181,18 +161,10 @@ parts:
         group: 584792
   discourse-prometheus:
     plugin: dump
-    after: [discourse]
+    after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-prometheus.git
     source-commit: 72fff206ba18ad5ca3112fed2f5f0ce6a17ca6f8
     source-depth: 1
-    override-stage: |
-      craftctl default
-      cd $CRAFT_STAGE/srv/discourse/app
-      bin/bundle config --local deployment true
-      bin/bundle config --local path ./vendor/bundle
-      bin/bundle config --local without test development
-      bin/bundle config --local jobs 4
-      bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
     override-build: |
       craftctl default
       grep -e ^gem plugin.rb >> Gemfile
@@ -203,18 +175,10 @@ parts:
         group: 584792
   discourse-data-explorer:
     plugin: dump
-    after: [discourse]
+    after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-data-explorer.git
     source-commit: e7c19ac107dcd37618c7ac7b98530e99c7fe31db
     source-depth: 1
-    override-stage: |
-      craftctl default
-      cd $CRAFT_STAGE/srv/discourse/app
-      bin/bundle config --local deployment true
-      bin/bundle config --local path ./vendor/bundle
-      bin/bundle config --local without test development
-      bin/bundle config --local jobs 4
-      bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
     organize:
       "*": srv/discourse/app/plugins/discourse-data-explorer/
     permissions:
@@ -244,15 +208,6 @@ parts:
       # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
       sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
-  bundler-config:
-    plugin: dump
-    after: [discourse]
-    source: bundler
-    organize:
-      "*": srv/discourse/app/.bundle/
-    permissions:
-      - owner: 584792
-        group: 584792
   scripts:
     plugin: dump
     source: scripts
@@ -261,57 +216,31 @@ parts:
     permissions:
       - owner: 584792
         group: 584792
-          #  runtime:
-          #    plugin: nil
-          #    after:
-          #      - discourse
-          #      - discourse-markdown-note
-          #      - discourse-data-explorer
-          #      - discourse-prometheus
-          #      - discourse-mermaid
-          #      - discourse-rad-plugin
-          #      - discourse-solved
-          #      - discourse-saml
-          #      - apply-patches
-          #      - bundler-config
-          #    build-packages:
-          #      - git
-          #      - libpq-dev
-          #      - libssl-dev
-          #    build-environment:
-          #      - RUBY_VERSION: "3.2.2"
-          #      - RAILS_ENV: "production"
-          #    stage-packages:
-          #      - brotli
-          #      - gettext-base
-          #      - gifsicle
-          #      - git
-          #      - imagemagick
-          #      - jhead
-          #      - jpegoptim
-          #      - libjpeg-turbo-progs
-          #      - libpq-dev
-          #      - libssl-dev
-          #      - libxml2-dev
-          #      - libxslt1-dev
-          #      - libyaml-dev
-          #      - libz-dev
-          #      - optipng
-          #      - pngquant
-          #      - redis-tools
-          #      - tzdata
-          #      - ubuntu-dev-tools
-          #      - zlib1g-dev
-          #    override-stage: |
-          #      craftctl default
-          #      yarn install --immutable
-          #      gem install -n "bin" bundler -v 2.4.13
-          #      bin/bundle config --local deployment true
-          #      bin/bundle config --local path ./vendor/bundle
-          #      bin/bundle config --local without test development
-          #      bin/bundle config --local jobs 4
-          #      bin/bundle install
-          #      bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
-          #      bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
-          #      bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
-          #      bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
+  setup:
+    plugin: nil
+    after: [tooling, discourse, discourse-rad-plugin, discourse-solved, discourse-markdown-note, discourse-mermaid, discourse-saml, discourse-prometheus, discourse-data-explorer, patches, apply-patches, scripts, bundler-config]
+    build-packages:
+      - git
+      - libpq-dev
+      - libssl-dev
+    override-build: |
+      craftctl default
+      cd $CRAFT_PRIME/srv/discourse/app
+      gem install -n "bin" bundler -v 2.4.13
+      bin/bundle install
+      bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
+    permissions:
+      - owner: 584792
+        group: 584792
+  perms:
+    plugin: nil
+    after: [tooling, discourse, setup]
+    override-prime: |
+      craftctl default
+      mkdir -p var/lib/pebble/default/.npm
+      mkdir -p var/lib/pebble/default/.cache
+      chown -R 584792:584792 var/lib/pebble/default/.npm
+      chown -R 584792:584792 var/lib/pebble/default/.cache
