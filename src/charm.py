@@ -158,9 +158,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database created handler.
         """
-        self._execute_migrations()
-        if self._are_relations_ready():
-            self._activate_charm()
+        self._setup_and_activate()
 
     def _on_database_endpoints_changed(self, _: DatabaseEndpointsChangedEvent) -> None:
         """Handle endpoints change.
