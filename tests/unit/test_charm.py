@@ -13,9 +13,9 @@ from unittest.mock import MagicMock
 import ops
 import pytest
 from ops.charm import ActionEvent
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
-from charm import DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
+from charm import CONTAINER_NAME, DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
 from tests.unit import helpers
 
 
@@ -25,11 +25,11 @@ from tests.unit import helpers
         (False, False, False, WaitingStatus("Waiting for database relation")),
         (False, True, False, WaitingStatus("Waiting for database relation")),
         (True, False, False, WaitingStatus("Waiting for redis relation")),
-        (True, True, False, MaintenanceStatus("Compiling assets")),
+        (True, True, False, ActiveStatus()),
         (False, False, True, WaitingStatus("Waiting for database relation")),
         (False, True, True, WaitingStatus("Waiting for database relation")),
         (True, False, True, WaitingStatus("Waiting for redis relation")),
-        (True, True, True, MaintenanceStatus("Compiling assets")),
+        (True, True, True, ActiveStatus()),
     ],
     ids=[
         "No relation",
@@ -51,6 +51,7 @@ def test_relations(with_postgres, with_redis, with_ingress, status):
     harness = helpers.start_harness(
         with_postgres=with_postgres, with_redis=with_redis, with_ingress=with_ingress
     )
+    harness.container_pebble_ready("discourse")
     assert harness.model.unit.status == status
 
 
@@ -64,7 +65,7 @@ def test_ingress_relation_not_ready():
     assert harness.model.unit.status == WaitingStatus("Waiting for database relation")
 
 
-def test_config_changed_when_no_saml_target():
+def test_on_config_changed_when_no_saml_target():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when force_saml_login configuration is True and there's no saml_target_url
@@ -76,7 +77,7 @@ def test_config_changed_when_no_saml_target():
     )
 
 
-def test_config_changed_when_saml_sync_groups_and_no_url_invalid():
+def test_on_config_changed_when_saml_sync_groups_and_no_url_invalid():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when saml_sync_groups configuration is provided and there's no saml_target_url
@@ -90,7 +91,7 @@ def test_config_changed_when_saml_sync_groups_and_no_url_invalid():
     )
 
 
-def test_config_changed_when_saml_target_url_and_force_https_disabled():
+def test_on_config_changed_when_saml_target_url_and_force_https_disabled():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when saml_target_url configuration is provided and force_https is False
@@ -104,7 +105,7 @@ def test_config_changed_when_saml_target_url_and_force_https_disabled():
     )
 
 
-def test_config_changed_when_no_cors():
+def test_on_config_changed_when_no_cors():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when cors_origin configuration is empty
@@ -119,7 +120,7 @@ def test_config_changed_when_no_cors():
     ), "database name should be set after relation joined"
 
 
-def test_config_changed_when_throttle_mode_invalid():
+def test_on_config_changed_when_throttle_mode_invalid():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when throttle_level configuration is invalid
@@ -130,7 +131,7 @@ def test_config_changed_when_throttle_mode_invalid():
     assert "none permissive strict" in harness.model.unit.status.message
 
 
-def test_config_changed_when_s3_and_no_bucket_invalid():
+def test_on_config_changed_when_s3_and_no_bucket_invalid():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when s3_enabled configuration is True and there's no s3_bucket
@@ -148,7 +149,7 @@ def test_config_changed_when_s3_and_no_bucket_invalid():
     assert harness.model.unit.status == BlockedStatus("'s3_enabled' requires 's3_bucket'")
 
 
-def test_config_changed_when_valid_no_s3_backup_nor_cdn():
+def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when a valid configuration is provided
@@ -218,7 +219,7 @@ def test_config_changed_when_valid_no_s3_backup_nor_cdn():
     assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
-def test_config_changed_when_valid_no_fingerprint():
+def test_on_config_changed_when_valid_no_fingerprint():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when a valid configuration is provided
@@ -234,6 +235,7 @@ def test_config_changed_when_valid_no_fingerprint():
             "force_https": True,
         }
     )
+    harness.container_pebble_ready("discourse")
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
@@ -259,7 +261,7 @@ def test_config_changed_when_valid_no_fingerprint():
     assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
-def test_config_changed_when_valid():
+def test_on_config_changed_when_valid():
     """
     arrange: given a deployed discourse charm with all the required relations
     act: when a valid configuration is provided
@@ -289,6 +291,7 @@ def test_config_changed_when_valid():
             "force_https": True,
         }
     )
+    harness.container_pebble_ready("discourse")
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
@@ -325,6 +328,7 @@ def test_config_changed_when_valid():
     assert "587" == updated_plan_env["DISCOURSE_SMTP_PORT"]
     assert "apikey" == updated_plan_env["DISCOURSE_SMTP_USER_NAME"]
     assert updated_plan_env["DISCOURSE_USE_S3"]
+    assert updated_plan_env["FORCE_S3_UPLOADS"]
     assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
@@ -427,6 +431,40 @@ def test_anonymize_user():
     event = MagicMock(spec=ActionEvent)
     event.params = {"username": username}
     charm._on_anonymize_user_action(event)
+
+
+def test_handle_pebble_ready_event():
+    """
+    arrange: given a deployed discourse charm with all the required relations
+    act: trigger the pebble ready event on a leader unit
+    assert: the pebble plan gets updated
+    """
+    harness = helpers.start_harness()
+
+    plan_before_event = harness.get_container_pebble_plan(CONTAINER_NAME)
+    harness.container_pebble_ready(CONTAINER_NAME)
+    plan_after_event = harness.get_container_pebble_plan(CONTAINER_NAME)
+    assert plan_before_event.__dict__ != plan_after_event.__dict__
+    assert "_services" in plan_after_event.__dict__
+    assert "discourse" in plan_after_event.__dict__["_services"]
+
+
+def test_handle_redis_relation_changed_event():
+    """
+    arrange: given a deployed discourse charm with all the required relations
+    act: trigger the pebble ready event on a leader unit
+    assert: the pebble plan gets updated
+    """
+    harness = helpers.start_harness(with_redis=False)
+
+    harness.container_pebble_ready(CONTAINER_NAME)
+    plan_before_event = harness.get_container_pebble_plan(CONTAINER_NAME)
+    helpers.add_redis_relation(harness)
+    harness.charm.on.redis_relation_updated.emit()
+    plan_after_event = harness.get_container_pebble_plan(CONTAINER_NAME)
+    assert plan_before_event.__dict__ != plan_after_event.__dict__
+    assert "_services" in plan_after_event.__dict__
+    assert "discourse" in plan_after_event.__dict__["_services"]
 
 
 def test_start_when_leader():
@@ -546,7 +584,7 @@ def test_start_when_not_leader():
         ),
     ],
 )
-def test_postgres_relation_data(relation_data, should_be_ready):
+def test_is_database_relation_ready(relation_data, should_be_ready):
     """
     arrange: given a deployed discourse charm and some relation data
     act: add the postgresql relation to the charm
@@ -603,14 +641,24 @@ def test_postgres_relation_data(relation_data, should_be_ready):
         ),
     ],
 )
-def test_redis_relation_data(relation_data, should_be_ready):
+def test_is_redis_relation_ready(relation_data, should_be_ready):
     """
     arrange: given a deployed discourse charm and some relation data
     act: add the redis relation to the charm
     assert: the charm should wait for some correct relation data
     """
     harness = helpers.start_harness(with_postgres=True, with_redis=False)
-    redis_relation_id = harness.add_relation("redis", "redis")
-    harness.add_relation_unit(redis_relation_id, "redis/0")
-    harness.charm._stored.redis_relation = {redis_relation_id: relation_data}
+    helpers.add_redis_relation(harness, relation_data)
     assert should_be_ready == harness.charm._are_relations_ready()
+
+
+def test_relate_database_at_the_end():
+    """
+    arrange: given a deployed discourse charm with redis related
+    act: relate the database after the pebble ready event
+    assert: it should activate the charm
+    """
+    harness = helpers.start_harness(with_postgres=False, with_redis=True)
+    harness.container_pebble_ready("discourse")
+    helpers.add_postgres_relation(harness)
+    assert harness.model.unit.status == ActiveStatus()

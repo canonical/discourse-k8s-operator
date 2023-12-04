@@ -43,18 +43,16 @@ def start_harness(
     harness.handle_exec("discourse", [], result=0)
 
     if with_postgres:
-        _add_postgres_relation(harness)
+        add_postgres_relation(harness)
 
     if with_redis:
-        _add_redis_relation(harness)
-        harness.framework.reemit()
+        add_redis_relation(harness)
 
     if with_ingress:
         _add_ingress_relation(harness)
 
     if with_config is not None:
         harness.update_config(with_config)
-        harness.container_pebble_ready("discourse")
 
     return harness
 
@@ -75,7 +73,7 @@ def _patch_setup_completed():
         yield
 
 
-def _add_postgres_relation(harness):
+def add_postgres_relation(harness):
     """Add postgresql relation and relation data to the charm.
 
     Args:
@@ -103,7 +101,7 @@ def _add_postgres_relation(harness):
     )
 
 
-def _add_redis_relation(harness):
+def add_redis_relation(harness, relation_data=None):
     """Add redis relation and relation data to the charm.
 
     Args:
@@ -117,6 +115,8 @@ def _add_redis_relation(harness):
     # pylint: disable=protected-access
     harness.charm._stored.redis_relation = {
         redis_relation_id: {"hostname": "redis-host", "port": 1010}
+        if relation_data is None
+        else relation_data
     }
 
 

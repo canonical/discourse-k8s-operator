@@ -16,3 +16,5 @@ jobs:
       extra-arguments: --localstack-address 172.17.0.1 -m "not (requires_secrets)"
       pre-run-script: localstack-installation.sh
       trivy-image-config: "trivy.yaml"
+      juju-channel: 3.1/stable
+      channel: 1.28-strict/stable
