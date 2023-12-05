@@ -237,7 +237,11 @@ parts:
       craftctl default
       mkdir -p var/lib/pebble/default/.npm
       mkdir -p var/lib/pebble/default/.cache
+      mkdir -p var/lib/pebble/default/.config
+      mkdir -p var/lib/pebble/default/.yarn
       touch var/lib/pebble/default/.yarnrc
       chown -R 584792:584792 var/lib/pebble/default/.npm
       chown -R 584792:584792 var/lib/pebble/default/.cache
+      chown -R 584792:584792 var/lib/pebble/default/.config
+      chown -R 584792:584792 var/lib/pebble/default/.yarn
       chown    584792:584792 var/lib/pebble/default/.yarnrc
