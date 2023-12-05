@@ -223,18 +223,16 @@ parts:
       - git
       - libpq-dev
       - libssl-dev
-    override-build: |
+    override-prime: |
       craftctl default
-      cd $CRAFT_PRIME/srv/discourse/app
+      cd srv/discourse/app
       gem install -n "bin" bundler -v 2.4.13
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
-    permissions:
-      - owner: 584792
-        group: 584792
+      chown -R 584792:584792 vendor/bundle
   perms:
     plugin: nil
     after: [tooling, discourse, setup]
