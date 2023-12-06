@@ -146,7 +146,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-data-explorer.git
-    source-commit: e7c19ac107dcd37618c7ac7b98530e99c7fe31db
+    source-commit: 840caa39877f0776cd37dc72687d81f5135caa6d
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-data-explorer/
