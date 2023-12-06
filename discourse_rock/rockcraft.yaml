@@ -124,7 +124,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-saml.git
-    source-commit: 15a8274bbec438768fb020d4f20462db476b0f29
+    source-commit: a23ebee62e11cda87dea81ef8959bc2efd3061a5
     source-depth: 1
     override-build: |
       craftctl default
