@@ -51,7 +51,6 @@ parts:
       curl -Ls $yarn_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global terser
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global svgo
-      #cp -pR /usr/lib/node_modules ${CRAFT_OVERLAY}/usr/lib/
       ruby_install_uri="https://github.com/postmodern/ruby-install/releases/download/v${RUBY_INSTALL_VERSION}/ruby-install-${RUBY_INSTALL_VERSION}.tar.gz"
       curl -fLO $ruby_install_uri
       tar -xzvf ruby-install-${RUBY_INSTALL_VERSION}.tar.gz
@@ -84,18 +83,12 @@ parts:
       "*.*": srv/discourse/app/
       "*": srv/discourse/app/
       ".*": srv/discourse/app/
-    permissions:
-      - owner: 584792
-        group: 584792
   bundler-config:
     plugin: dump
     after: [discourse]
     source: bundler
     organize:
       "*": srv/discourse/app/.bundle/
-    permissions:
-      - owner: 584792
-        group: 584792
   discourse-rad-plugin:
     plugin: dump
     after: [discourse, bundler-config]
@@ -104,9 +97,6 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-rad-plugin/
-    permissions:
-      - owner: 584792
-        group: 584792
   discourse-solved:
     plugin: dump
     after: [discourse, bundler-config]
@@ -115,9 +105,6 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-solved/
-    permissions:
-      - owner: 584792
-        group: 584792
   discourse-markdown-note:
     plugin: dump
     after: [discourse, bundler-config]
@@ -125,10 +112,7 @@ parts:
     source-commit: f4426d5929de067f123659dc690e9438a324817a
     source-depth: 1
     organize:
-      "*": srv/discourse/app/plugins/discourse-markdown-note/
-    permissions:
-      - owner: 584792
-        group: 584792
+      "*": srv/discourse/app/plugins/markdown-note/
   discourse-mermaid:
     plugin: dump
     after: [discourse, bundler-config]
@@ -137,9 +121,6 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-mermaid/
-    permissions:
-      - owner: 584792
-        group: 584792
   discourse-saml:
     plugin: dump
     after: [discourse, bundler-config]
@@ -151,9 +132,6 @@ parts:
       grep -e ^gem plugin.rb >> Gemfile
     organize:
       "*": srv/discourse/app/plugins/discourse-saml/
-    permissions:
-      - owner: 584792
-        group: 584792
   discourse-prometheus:
     plugin: dump
     after: [discourse, bundler-config]
@@ -165,9 +143,6 @@ parts:
       grep -e ^gem plugin.rb >> Gemfile
     organize:
       "*": srv/discourse/app/plugins/discourse-prometheus/
-    permissions:
-      - owner: 584792
-        group: 584792
   discourse-data-explorer:
     plugin: dump
     after: [discourse, bundler-config]
@@ -176,25 +151,17 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-data-explorer/
-    permissions:
-      - owner: 584792
-        group: 584792
   patches:
     plugin: dump
     after: [discourse]
     source: patches
     organize:
       "*": srv/discourse/app/patches/
-    permissions:
-      - owner: 584792
-        group: 584792
   apply-patches:
     plugin: nil
     build-packages:
       - git
-    after:
-      - discourse
-      - patches
+    after: [discourse, patches]
     override-stage: |
       craftctl default
       git -C srv/discourse/app apply patches/lp1903695.patch
@@ -208,9 +175,6 @@ parts:
     source: scripts
     organize:
       "*": srv/scripts/
-    permissions:
-      - owner: 584792
-        group: 584792
   setup:
     plugin: nil
     after: [tooling, discourse, discourse-rad-plugin, discourse-solved, discourse-markdown-note, discourse-mermaid, discourse-saml, discourse-prometheus, discourse-data-explorer, patches, apply-patches, scripts, bundler-config]
@@ -227,21 +191,22 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
-      chown -R 584792:584792 vendor/bundle
       yarn install --immutable
-      chown -R 584792:584792 app/assets/javascripts/node_modules
   perms:
     plugin: nil
     after: [tooling, discourse, setup]
     override-prime: |
       craftctl default
+      chown -R 584792:584792 srv/discourse
       mkdir -p var/lib/pebble/default/.npm
       mkdir -p var/lib/pebble/default/.cache
       mkdir -p var/lib/pebble/default/.config
+      mkdir -p var/lib/pebble/default/.local
       mkdir -p var/lib/pebble/default/.yarn
       touch var/lib/pebble/default/.yarnrc
       chown -R 584792:584792 var/lib/pebble/default/.npm
       chown -R 584792:584792 var/lib/pebble/default/.cache
       chown -R 584792:584792 var/lib/pebble/default/.config
+      chown -R 584792:584792 var/lib/pebble/default/.local
       chown -R 584792:584792 var/lib/pebble/default/.yarn
       chown    584792:584792 var/lib/pebble/default/.yarnrc
