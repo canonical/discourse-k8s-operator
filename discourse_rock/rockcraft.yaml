@@ -44,7 +44,6 @@ parts:
       - RUBY_INSTALL_VERSION: "0.9.2"
       - RAILS_ENV: "production"
     override-build: |
-      craftctl default
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
       curl -Ls $node_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
       yarn_uri="https://github.com/yarnpkg/yarn/releases/download/v${YARN_VERSION}/yarn-v${YARN_VERSION}.tar.gz"
@@ -163,7 +162,6 @@ parts:
       - git
     after: [discourse, patches]
     override-stage: |
-      craftctl default
       git -C srv/discourse/app apply patches/lp1903695.patch
       git -C srv/discourse/app apply patches/anonymize_user.patch
       # The following is a fix for UglifierJS assets compilation
@@ -196,7 +194,6 @@ parts:
       - libpq-dev
       - libssl-dev
     override-prime: |
-      craftctl default
       cd srv/discourse/app
       gem install -n "bin" bundler -v 2.4.13
       bin/bundle install
@@ -209,7 +206,6 @@ parts:
     plugin: nil
     after: [tooling, discourse, setup]
     override-prime: |
-      craftctl default
       chown -R 584792:584792 srv/discourse
       mkdir -p var/lib/pebble/default/.npm
       mkdir -p var/lib/pebble/default/.cache
