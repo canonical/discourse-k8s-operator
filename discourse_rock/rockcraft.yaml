@@ -135,7 +135,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-prometheus.git
-    source-commit: 72fff206ba18ad5ca3112fed2f5f0ce6a17ca6f8
+    source-commit: 639b8936ca20758802284a35e2b5e764e0a032f9
     source-depth: 1
     override-build: |
       craftctl default
