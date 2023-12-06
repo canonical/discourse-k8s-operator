@@ -6,8 +6,9 @@
 import logging
 import re
 import socket
+import time
 import unittest.mock
-from typing import Dict
+from typing import Any, Dict
 
 import pytest
 import requests
@@ -380,3 +381,32 @@ async def test_relations(
     await model.add_relation(app.name, "nginx-ingress-integrator")
     await model.wait_for_idle(status="active")
     test_discourse_srv_status_ok()
+
+
+@pytest.mark.asyncio
+async def test_upgrade(  # pylint: disable=too-many-arguments
+    app: Application,
+    discourse_address: str,
+    model: Model,
+    requests_timeout: int,
+    discourse_charm: str,
+    discourse_resources: Dict[str, Any],
+):
+    """
+    arrange: Given discourse application
+    act: when scaling it and refreshing it
+    assert: it should still respond to requests
+    """
+    # scale discourse to 2 and wait for idle
+    await model.applications[app.name].scale(scale=2)
+    await model.block_until(lambda: len(model.applications[app.name].units) == 2)
+    await model.wait_for_idle(status="active")
+
+    def test_discourse_srv_status_ok():
+        response = requests.get(f"{discourse_address}/srv/status", timeout=requests_timeout)
+        assert response.status_code == 200
+
+    await model.applications[app.name].refresh(path=discourse_charm, resources=discourse_resources)
+    for _ in range(60):
+        test_discourse_srv_status_ok()
+        time.sleep(10)

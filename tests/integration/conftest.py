@@ -121,13 +121,35 @@ async def discourse_address_fixture(model: Model, app: Application):
     return f"http://{unit_ip}:3000"
 
 
-@pytest_asyncio.fixture(scope="module", name="app")
-async def app_fixture(
+@pytest_asyncio.fixture(scope="module", name="charm")
+async def charm_fixture(
     ops_test: OpsTest,
+    pytestconfig: Config,
+) -> Path | None:
+    """Get discourse's charm file path."""
+    if charm := pytestconfig.getoption("--charm-file"):
+        return charm
+    return await ops_test.build_charm(".")
+
+
+@pytest_asyncio.fixture(scope="module", name="discourse_resources")
+async def discourse_resources_fixture(
+    pytestconfig: Config,
+) -> Dict[str, Any]:
+    """Get discourse's charm resources."""
+    return {
+        "discourse-image": pytestconfig.getoption("--discourse-image"),
+    }
+
+
+@pytest_asyncio.fixture(scope="module", name="app")
+async def app_fixture(  # pylint: disable=too-many-arguments
     app_name: str,
     app_config: Dict[str, str],
     pytestconfig: Config,
     model: Model,
+    discourse_charm: str,
+    discourse_resources: Dict[str, Any],
 ):
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
@@ -152,27 +174,13 @@ async def app_fixture(
     nii_app = await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
     await model.wait_for_idle(apps=[nii_app.name], status="active")
 
-    resources = {
-        "discourse-image": pytestconfig.getoption("--discourse-image"),
-    }
-
-    if charm := pytestconfig.getoption("--charm-file"):
-        application = await model.deploy(
-            f"./{charm}",
-            resources=resources,
-            application_name=app_name,
-            config=app_config,
-            series="focal",
-        )
-    else:
-        charm = await ops_test.build_charm(".")
-        application = await model.deploy(
-            charm,
-            resources=resources,
-            application_name=app_name,
-            config=app_config,
-            series="focal",
-        )
+    application = await model.deploy(
+        discourse_charm,
+        resources=discourse_resources,
+        application_name=app_name,
+        config=app_config,
+        series="focal",
+    )
 
     await model.wait_for_idle(apps=[application.name], status="waiting")
 
