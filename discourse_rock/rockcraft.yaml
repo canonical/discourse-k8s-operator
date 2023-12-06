@@ -100,7 +100,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-solved.git
-    source-commit: e6cce5486df906ede74aa1b17ab308a145a99b88
+    source-commit: ad1b7c9608bf32c3a991580347302a071d5902d9
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-solved/
