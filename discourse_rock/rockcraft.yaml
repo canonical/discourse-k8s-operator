@@ -15,9 +15,9 @@ parts:
     plugin: nil
     overlay-packages:
       - brotli
-      - gettext-base
-      - gcc
       - g++
+      - gcc
+      - gettext-base
       - gifsicle
       - git
       - imagemagick
@@ -177,7 +177,20 @@ parts:
       "*": srv/scripts/
   setup:
     plugin: nil
-    after: [tooling, discourse, discourse-rad-plugin, discourse-solved, discourse-markdown-note, discourse-mermaid, discourse-saml, discourse-prometheus, discourse-data-explorer, patches, apply-patches, scripts, bundler-config]
+    after:
+      - apply-patches
+      - bundler-config
+      - discourse
+      - discourse-data-explorer
+      - discourse-markdown-note
+      - discourse-mermaid
+      - discourse-prometheus
+      - discourse-rad-plugin
+      - discourse-saml
+      - discourse-solved
+      - patches
+      - scripts
+      - tooling
     build-packages:
       - git
       - libpq-dev
