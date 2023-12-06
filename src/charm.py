@@ -412,6 +412,17 @@ class DiscourseCharm(CharmBase):
         # self.config return an Any type
         pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
 
+        # Update environment with proxy settings
+        pod_config["HTTP_PROXY"] = pod_config["http_proxy"] = (
+            os.environ.get("JUJU_CHARM_HTTP_PROXY") or ""
+        )
+        pod_config["HTTPS_PROXY"] = pod_config["https_proxy"] = (
+            os.environ.get("JUJU_CHARM_HTTPS_PROXY") or ""
+        )
+        pod_config["NO_PROXY"] = pod_config["no_proxy"] = (
+            os.environ.get("JUJU_CHARM_NO_PROXY") or ""
+        )
+
         return pod_config
 
     def _create_layer_config(self) -> ops.pebble.LayerDict:
