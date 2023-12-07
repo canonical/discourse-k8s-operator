@@ -121,14 +121,14 @@ async def discourse_address_fixture(model: Model, app: Application):
     return f"http://{unit_ip}:3000"
 
 
-@pytest_asyncio.fixture(scope="module", name="charm")
+@pytest_asyncio.fixture(scope="module", name="discourse_charm")
 async def charm_fixture(
     ops_test: OpsTest,
     pytestconfig: Config,
-) -> Path | None:
+) -> Path | str | None:
     """Get discourse's charm file path."""
     if charm := pytestconfig.getoption("--charm-file"):
-        return charm
+        return f"./{charm}"
     return await ops_test.build_charm(".")
 
 
