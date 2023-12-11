@@ -400,8 +400,6 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
             "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
-            "GEM_HOME": "/var/lib/gems/2.7.0/",
-            "GEM_PATH": "/var/lib/gems/2.7.0/",
             "RAILS_ENV": "production",
         }
         pod_config.update(self._get_saml_config())
