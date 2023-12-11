@@ -33,7 +33,7 @@ fixes and constructive feedback.
 * [Code of conduct](https://ubuntu.com/community/code-of-conduct)
 * [Get support](https://discourse.charmhub.io/)
 * [Join our online chat](https://chat.charmhub.io/charmhub/channels/charm-dev)
-* [Contribute](https://charmhub.io/discourse-k8s/docs/contributing)
+* [Contribute](https://charmhub.io/discourse-k8s/docs/how-to-contribute)
 * [Get started](https://charmhub.io/discourse-k8s/docs/getting-started)
 
 Thinking about using the Discourse Operator for your next project? [Get in touch](https://chat.charmhub.io/charmhub/channels/charm-dev)!
