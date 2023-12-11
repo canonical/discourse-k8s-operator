@@ -1,5 +1,5 @@
 <!--
-Thank you for your interest in and contributing to Synapse Operator!
+Thank you for your interest in and contributing to Discourse Operator!
 Please, provide some information about your PR before proceeding.
 -->
 
