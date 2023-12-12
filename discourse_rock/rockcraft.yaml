@@ -150,6 +150,30 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-data-explorer/
+  discourse-templates:
+    plugin: dump
+    after: [discourse, bundler-config]
+    source: https://github.com/discourse/discourse-templates.git
+    source-commit: 8ed018fdff6bb2840552c1a1f7313173b7c4c2fc
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-templates/
+  discourse-calendar:
+    plugin: dump
+    after: [discourse, bundler-config]
+    source: https://github.com/discourse/discourse-calendar.git
+    source-commit: 7f603a44be44a4f7b237f3813be583958cbf4946
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-calendar/
+  discourse-gamification:
+    plugin: dump
+    after: [discourse, bundler-config]
+    source: https://github.com/discourse/discourse-gamification.git
+    source-commit: 60cc4d645b55d51ea496c5a247fd1f79d818ae6b
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-gamification/
   patches:
     plugin: dump
     after: [discourse]
@@ -201,6 +225,9 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-calendar/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-gamification/Gemfile"
       yarn install --immutable
   perms:
     plugin: nil
