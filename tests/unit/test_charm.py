@@ -459,7 +459,7 @@ def test_handle_redis_relation_changed_event():
 
     harness.container_pebble_ready(CONTAINER_NAME)
     plan_before_event = harness.get_container_pebble_plan(CONTAINER_NAME)
-    helpers._add_redis_relation(harness)
+    helpers.add_redis_relation(harness)
     harness.charm.on.redis_relation_updated.emit()
     plan_after_event = harness.get_container_pebble_plan(CONTAINER_NAME)
     assert plan_before_event.__dict__ != plan_after_event.__dict__
@@ -648,7 +648,46 @@ def test_is_redis_relation_ready(relation_data, should_be_ready):
     assert: the charm should wait for some correct relation data
     """
     harness = helpers.start_harness(with_postgres=True, with_redis=False)
-    redis_relation_id = harness.add_relation("redis", "redis")
-    harness.add_relation_unit(redis_relation_id, "redis/0")
-    harness.charm._stored.redis_relation = {redis_relation_id: relation_data}
+    helpers.add_redis_relation(harness, relation_data)
     assert should_be_ready == harness.charm._are_relations_ready()
+
+
+def test_relate_database_at_the_end():
+    """
+    arrange: given a deployed discourse charm with redis related
+    act: relate the database after the pebble ready event
+    assert: it should activate the charm
+    """
+    harness = helpers.start_harness(with_postgres=False, with_redis=True)
+    harness.container_pebble_ready("discourse")
+    helpers.add_postgres_relation(harness)
+    assert harness.model.unit.status == ActiveStatus()
+
+
+def test_http_proxy_env(monkeypatch):
+    """
+    arrange: given a deployed discourse charm with all the required relations
+    act: when a juju http_proxy variable is changed
+    assert: the appropriate configuration values should be present in the created env
+    """
+    harness = helpers.start_harness()
+
+    created_env = harness._charm._create_discourse_environment_settings()
+    assert created_env["HTTP_PROXY"] == ""
+    assert created_env["http_proxy"] == ""
+    assert created_env["HTTPS_PROXY"] == ""
+    assert created_env["https_proxy"] == ""
+    assert created_env["NO_PROXY"] == ""
+    assert created_env["no_proxy"] == ""
+
+    monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://proxy.test")
+    monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://httpsproxy.test")
+    monkeypatch.setenv("JUJU_CHARM_NO_PROXY", "noproxy.test")
+    created_env = harness._charm._create_discourse_environment_settings()
+
+    assert created_env["HTTP_PROXY"] == "http://proxy.test"
+    assert created_env["http_proxy"] == "http://proxy.test"
+    assert created_env["HTTPS_PROXY"] == "http://httpsproxy.test"
+    assert created_env["https_proxy"] == "http://httpsproxy.test"
+    assert created_env["NO_PROXY"] == "noproxy.test"
+    assert created_env["no_proxy"] == "noproxy.test"

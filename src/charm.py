@@ -158,9 +158,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the database created handler.
         """
-        self._execute_migrations()
-        if self._are_relations_ready():
-            self._activate_charm()
+        self._setup_and_activate()
 
     def _on_database_endpoints_changed(self, _: DatabaseEndpointsChangedEvent) -> None:
         """Handle endpoints change.
@@ -402,8 +400,6 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
             "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
-            "GEM_HOME": "/var/lib/gems/2.7.0/",
-            "GEM_PATH": "/var/lib/gems/2.7.0/",
             "RAILS_ENV": "production",
         }
         pod_config.update(self._get_saml_config())
@@ -415,6 +411,17 @@ class DiscourseCharm(CharmBase):
         # by `_is_config_valid()`.
         # self.config return an Any type
         pod_config.update(THROTTLE_LEVELS.get(self.config["throttle_level"]))  # type: ignore
+
+        # Update environment with proxy settings
+        pod_config["HTTP_PROXY"] = pod_config["http_proxy"] = (
+            os.environ.get("JUJU_CHARM_HTTP_PROXY") or ""
+        )
+        pod_config["HTTPS_PROXY"] = pod_config["https_proxy"] = (
+            os.environ.get("JUJU_CHARM_HTTPS_PROXY") or ""
+        )
+        pod_config["NO_PROXY"] = pod_config["no_proxy"] = (
+            os.environ.get("JUJU_CHARM_NO_PROXY") or ""
+        )
 
         return pod_config
 
