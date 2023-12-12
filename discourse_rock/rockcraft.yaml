@@ -92,7 +92,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/canonical/discourse-rad-plugin.git
-    source-commit: 8612594e1bbbfbba7b9166d09c03b4a7fb4afbe9
+    source-commit: 7fe719abd459ab2d2736d6ad2ca7810b045dd154
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-rad-plugin/
@@ -100,7 +100,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-solved.git
-    source-commit: e6cce5486df906ede74aa1b17ab308a145a99b88
+    source-commit: ad1b7c9608bf32c3a991580347302a071d5902d9
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-solved/
@@ -124,7 +124,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-saml.git
-    source-commit: 15a8274bbec438768fb020d4f20462db476b0f29
+    source-commit: a23ebee62e11cda87dea81ef8959bc2efd3061a5
     source-depth: 1
     override-build: |
       craftctl default
@@ -135,7 +135,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-prometheus.git
-    source-commit: 72fff206ba18ad5ca3112fed2f5f0ce6a17ca6f8
+    source-commit: 639b8936ca20758802284a35e2b5e764e0a032f9
     source-depth: 1
     override-build: |
       craftctl default
@@ -146,7 +146,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-data-explorer.git
-    source-commit: e7c19ac107dcd37618c7ac7b98530e99c7fe31db
+    source-commit: 840caa39877f0776cd37dc72687d81f5135caa6d
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-data-explorer/
