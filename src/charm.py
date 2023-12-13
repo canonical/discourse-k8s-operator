@@ -439,7 +439,7 @@ class DiscourseCharm(CharmBase):
                 SERVICE_NAME: {
                     "override": "replace",
                     "summary": "Discourse web application",
-                    "command": f"sh -c '{SCRIPT_PATH}/app_launch.sh'",
+                    "command": f"sh -u _daemon_ -c '{SCRIPT_PATH}/app_launch.sh'",
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
