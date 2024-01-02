@@ -150,7 +150,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-templates.git
-    source-commit: 8ed018fdff6bb2840552c1a1f7313173b7c4c2fc
+    source-commit: f5f4113876c5c7e6bdc291af266c6576659b2cab
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-templates/
@@ -218,7 +218,7 @@ parts:
       - libssl-dev
     override-prime: |
       cd srv/discourse/app
-      gem install -n "bin" bundler -v 2.4.13
+      gem install -n "bin" bundler -v 2.5.3
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-calendar/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
@@ -233,6 +233,7 @@ parts:
     after: [tooling, discourse, setup]
     override-prime: |
       chown -R 584792:584792 srv/discourse
+      chown -R 584792:584792 srv/scripts
       mkdir -p var/lib/pebble/default/.cache
       mkdir -p var/lib/pebble/default/.config
       mkdir -p var/lib/pebble/default/.local

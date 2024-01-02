@@ -65,6 +65,7 @@ REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret
 SCRIPT_PATH = "/srv/scripts"
 SERVICE_NAME = "discourse"
 CONTAINER_NAME = "discourse"
+CONTAINER_APP_USERNAME = "_daemon_"
 SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 DATABASE_RELATION_NAME = "database"
@@ -380,7 +381,7 @@ class DiscourseCharm(CharmBase):
             # I need to take the required envVars for the application to work properly
             "CONTAINER_APP_NAME": CONTAINER_NAME,
             "CONTAINER_APP_ROOT": "/srv/discourse",
-            "CONTAINER_APP_USERNAME": "_daemon_",
+            "CONTAINER_APP_USERNAME": CONTAINER_APP_USERNAME,
             "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
             "DISCOURSE_DB_HOST": database_relation_data["POSTGRES_HOST"],
             "DISCOURSE_DB_NAME": database_relation_data["POSTGRES_DB"],
@@ -440,7 +441,7 @@ class DiscourseCharm(CharmBase):
                     "override": "replace",
                     "summary": "Discourse web application",
                     "command": f"{SCRIPT_PATH}/app_launch.sh",
-                    "user": "_daemon_",
+                    "user": CONTAINER_APP_USERNAME,
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
                 }
@@ -528,7 +529,7 @@ class DiscourseCharm(CharmBase):
                     [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
                     environment=env_settings,
                     working_dir=DISCOURSE_PATH,
-                    user="_daemon_",
+                    user=CONTAINER_APP_USERNAME,
                 )
                 migration_process.wait_output()
             except ExecError as cmd_err:
@@ -547,7 +548,7 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=CONTAINER_APP_USERNAME,
             )
             precompile_process.wait_output()
         except ExecError as cmd_err:
@@ -566,7 +567,7 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=CONTAINER_APP_USERNAME,
             )
             version, _ = get_version_process.wait_output()
             self.unit.set_workload_version(version)
@@ -587,7 +588,7 @@ class DiscourseCharm(CharmBase):
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
                 environment=env_settings,
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=CONTAINER_APP_USERNAME,
             )
             process.wait_output()
         except ExecError as cmd_err:
@@ -692,7 +693,7 @@ class DiscourseCharm(CharmBase):
                 ],
                 stdin=f"{email}\n{password}\n{password}\nY\n",
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=CONTAINER_APP_USERNAME,
                 environment=self._create_discourse_environment_settings(),
                 timeout=60,
             )
@@ -718,7 +719,7 @@ class DiscourseCharm(CharmBase):
                 f"SiteSetting.force_https={force_bool}",
             ],
             working_dir=DISCOURSE_PATH,
-            user="_daemon_",
+            user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
         )
         process.wait_output()
@@ -739,7 +740,7 @@ class DiscourseCharm(CharmBase):
                     f"./bin/bundle exec rake users:anonymize[{username}]",
                 ],
                 working_dir=DISCOURSE_PATH,
-                user="_daemon_",
+                user=CONTAINER_APP_USERNAME,
                 environment=self._create_discourse_environment_settings(),
             )
             try:
