@@ -401,6 +401,12 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
             "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
+            "DISCOURSE_POP3_POLLING_HOST": self.config["pop3_polling_host"],
+            "DISCOURSE_POP3_POLLING_USERNAME": self.config["pop3_polling_username"],
+            "DISCOURSE_POP3_POLLING_PASSWORD": self.config["pop3_polling_password"],
+            "DISCOURSE_POP3_POLLING_ENABLED": str(self.config["pop3_polling_enabled"]).lower(),
+            "DISCOURSE_REPLY_BY_EMAIL_ADDRESS": self.config["reply_by_email_address"],
+            "DISCOURSE_REPLY_BY_EMAIL_ENABLED": str(self.config["reply_by_email_enabled"]).lower(),
             "RAILS_ENV": "production",
         }
         pod_config.update(self._get_saml_config())

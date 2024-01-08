@@ -134,3 +134,27 @@ options:
     type: boolean
     description: Configure Discourse to use https.
     default: false
+  reply_by_email_address:
+    type: string
+    description: Replies email in the form of replies+%{reply_key}@example.com.
+    default: ""
+  pop3_polling_username:
+    type: string
+    description: Username of the email account like replies@example.com.
+    default: ""
+  pop3_polling_password:
+    type: string
+    description: The password of that email account.
+    default: ""
+  pop3_polling_host:
+    type: string
+    description: Polling host such as pop.gmail.com.
+    default: ""
+  pop3_polling_enabled:
+    type: boolean
+    description: Whether pop3 polling is enabled.
+    default: false
+  reply_by_email_enabled:
+    type: boolean
+    description: Whether replying by email is enabled.
+    default: false
