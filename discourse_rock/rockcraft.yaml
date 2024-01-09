@@ -5,6 +5,7 @@ name: discourse
 summary: Discourse rock
 description: Discourse OCI image for the Discourse charm
 base: ubuntu@22.04
+# renovate: base: ubuntu:22.04@sha256:8eab65df33a6de2844c9aefd19efe8ddb87b7df5e9185a4ab73af936225685bb
 run-user: _daemon_  # UID/GID 584792
 license: Apache-2.0
 version: "1.0"
