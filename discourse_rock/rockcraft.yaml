@@ -32,6 +32,7 @@ parts:
       - libz-dev
       - optipng
       - pngquant
+      - postgresql-client
       - redis-tools
       - tzdata
       - ubuntu-dev-tools
