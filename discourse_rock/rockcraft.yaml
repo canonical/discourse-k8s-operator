@@ -5,6 +5,7 @@ name: discourse
 summary: Discourse rock
 description: Discourse OCI image for the Discourse charm
 base: ubuntu@22.04
+# renovate: base: ubuntu:22.04@sha256:6042500cf4b44023ea1894effe7890666b0c5c7871ed83a97c36c76ae560bb9b
 run-user: _daemon_  # UID/GID 584792
 license: Apache-2.0
 version: "1.0"
@@ -32,6 +33,8 @@ parts:
       - libz-dev
       - optipng
       - pngquant
+      - postgresql-client
+      - postgresql-client-common
       - redis-tools
       - tzdata
       - ubuntu-dev-tools
