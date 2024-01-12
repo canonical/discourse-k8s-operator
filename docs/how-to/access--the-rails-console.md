@@ -17,11 +17,7 @@ Then ssh into the Discourse unit:
 ```
 juju ssh --container discourse discourse-k8s/leader bash   
 ```
-Now populate the required environment variables:
-```
-xargs -0 -L1 -a "/proc/$(ps aux | awk '/[a]pp_launch/ {print $2;exit}')/environ" | awk '{FS="=";print "export " $1 "=\"" $2 "\""}' > /root/envi && . /root/envi && rm /root/envi
-```
-In newer versions of the charm (revision 70+), the command to execute is the following:
+Now populate the required environment variables, this requires charm revision 70 or greater:
 ```
 sudo -u _daemon_ xargs -0 -L1 -a "/proc/$(ps aux | awk '/[u]nicorn master/ {print $2;exit}')/environ" | awk '{FS="=";print "export " $1 "=\"" $2 "\""}' > /root/envi && . /root/envi && rm /root/envi
 ```
