@@ -25,7 +25,7 @@ In newer versions of the charm (revision 70+), the command to execute is the fol
 ```
 sudo -u _daemon_ xargs -0 -L1 -a "/proc/$(ps aux | awk '/[u]nicorn master/ {print $2;exit}')/environ" | awk '{FS="=";print "export " $1 "=\"" $2 "\""}' > /root/envi && . /root/envi && rm /root/envi
 ```
-Now change to the appropiate directory and execute the command to access the console:
+Now change to the appropriate directory and execute the command to access the console:
 ```
 cd /srv/discourse/app
 RAILS_ENV=production bin/bundle exec rails console
