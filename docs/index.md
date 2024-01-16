@@ -36,6 +36,7 @@ fixes and constructive feedback.
 1. [Explanation](explanation)
   1. [Charm architecture](explanation/charm-architecture.md)
 1. [How To](how-to)
+  1. [How to access the Rails console](how-to/access--the-rails-console.md)
   1. [How to configure the container](how-to/configure-container.md)
   1. [How to configure the hostname](how-to/configure-hostname.md)
   1. [How to configure S3](how-to/configure-s3.md)
