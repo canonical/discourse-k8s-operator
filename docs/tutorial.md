@@ -31,7 +31,7 @@ juju config postgresql-k8s plugin_pg_trgm_enable=True
 
 # Relate redis-k8s and postgresql-k8s to discourse-k8s
 juju relate redis-k8s discourse-k8s
-juju relate discourse-k8s postgresql-k8s
+juju relate discourse-k8s postgresql-k8s:db
 
 ```
 
