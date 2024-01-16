@@ -54,6 +54,10 @@ requires:
 assumes:
   - k8s-api
 
+peers:
+  restart:
+    interface: rolling_op
+
 containers:
   discourse:
     resource: discourse-image

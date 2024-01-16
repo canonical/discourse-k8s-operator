@@ -18,6 +18,7 @@ from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
 from charms.nginx_ingress_integrator.v0.nginx_route import require_nginx_route
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
+from charms.rolling_ops.v0.rollingops import RollingOpsManager
 from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent
 from ops.framework import StoredState
 from ops.main import main
@@ -121,6 +122,10 @@ class DiscourseCharm(CharmBase):
         )
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
+        self.restart_manager = RollingOpsManager(
+            charm=self, relation="restart", callback=self._setup_and_activate
+        )
+
     def _on_start(self, _: ops.StartEvent) -> None:
         """Handle start event.
 
@@ -135,7 +140,7 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the upgrade charm event handler.
         """
-        self._setup_and_activate()
+        self.on[self.restart_manager.name].acquire_lock.emit()
 
     def _on_discourse_pebble_ready(self, _: ops.PebbleReadyEvent) -> None:
         """Handle discourse pebble ready event.

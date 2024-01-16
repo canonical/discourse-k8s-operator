@@ -8,7 +8,7 @@
 
 import secrets
 import typing
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import ops
 import pytest
@@ -691,3 +691,37 @@ def test_http_proxy_env(monkeypatch):
     assert created_env["https_proxy"] == "http://httpsproxy.test"
     assert created_env["NO_PROXY"] == "noproxy.test"
     assert created_env["no_proxy"] == "noproxy.test"
+
+
+def test_acquire_lock_on_upgrade():
+    """
+    arrange: given a deployed discourse charm with postgresql/redis related
+    act: emit an upgrade event
+    assert: it should try to acquire_lock from the RollingOpsManager
+    """
+    harness = helpers.start_harness(with_postgres=True, with_redis=True)
+    harness.container_pebble_ready("discourse")
+    assert harness.model.unit.status == ActiveStatus()
+
+    with patch(
+        "charms.rolling_ops.v0.rollingops.RollingOpsManager._on_acquire_lock"
+    ) as acquire_lock:
+        harness.charm.on.upgrade_charm.emit()
+        acquire_lock.assert_called_once()
+
+
+def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: given a deployed discourse charm with postgresql/redis related
+    act: emit an upgrade event
+    assert: it should launch _setup_and_activate
+    """
+    harness = helpers.start_harness(with_postgres=True, with_redis=True)
+    harness.container_pebble_ready("discourse")
+    harness.set_leader(True)
+    assert harness.model.unit.status == ActiveStatus()
+
+    setup_and_activate = MagicMock()
+    monkeypatch.setattr(harness.charm, "_setup_and_activate", setup_and_activate)
+    harness.charm.on.upgrade_charm.emit()
+    setup_and_activate.assert_called_once()
