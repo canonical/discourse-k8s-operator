@@ -30,3 +30,23 @@ fixes and constructive feedback.
 - [Get support](https://discourse.charmhub.io/)
 - [Join our online chat](https://chat.charmhub.io/charmhub/channels/charm-dev)
 - [Contribute](https://charmhub.io/discourse-k8s/docs/how-to-contribute)
+
+# Contents
+
+1. [Explanation](explanation)
+  1. [Charm architecture](explanation/charm-architecture.md)
+1. [How To](how-to)
+  1. [How to access the Rails console](how-to/access--the-rails-console.md)
+  1. [How to configure the container](how-to/configure-container.md)
+  1. [How to configure the hostname](how-to/configure-hostname.md)
+  1. [How to configure S3](how-to/configure-s3.md)
+  1. [How to configure SAML](how-to/configure-saml.md)
+  1. [How to configure SMTP](how-to/configure-smtp.md)
+  1. [How to contribute](how-to/contribute.md)
+  1. [How to upgrade](how-to/upgrade.md)
+1. [Reference](reference)
+  1. [Actions](reference/actions.md)
+  1. [Configurations](reference/configurations.md)
+  1. [Integrations](reference/integrations.md)
+  1. [Plugins](reference/plugins.md)
+1. [Getting started](tutorial.md)
