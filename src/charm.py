@@ -193,7 +193,7 @@ class DiscourseCharm(CharmBase):
         """
         self._configure_pod()
 
-    def _setup_and_activate(self, _: HookEvent) -> None:
+    def _setup_and_activate(self, _: HookEvent | None = None) -> None:
         """Set up discourse, configure the pod and eventually activate the charm.
 
         Args:
