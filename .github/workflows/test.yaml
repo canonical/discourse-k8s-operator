@@ -6,6 +6,7 @@ on:
 jobs:
   draft-publish-docs:
     name: Draft publish docs
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.1.1
       - name: Publish documentation
