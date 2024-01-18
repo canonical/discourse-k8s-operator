@@ -123,7 +123,7 @@ class DiscourseCharm(CharmBase):
         self._grafana_dashboards = GrafanaDashboardProvider(self)
 
         self.restart_manager = RollingOpsManager(
-            charm=self, relation="restart", callback=self._setup_and_activate
+            charm=self, relation="restart", callback=self._on_rolling_restart
         )
 
     def _on_start(self, _: ops.StartEvent) -> None:
@@ -192,6 +192,14 @@ class DiscourseCharm(CharmBase):
             event: Event triggering the config change handler.
         """
         self._configure_pod()
+
+    def _on_rolling_restart(self, _: ops.EventBase) -> None:
+        """Handle rolling restart event.
+
+        Args:
+            event: Event triggering the discourse rolling restart event handler.
+        """
+        self._setup_and_activate()
 
     def _setup_and_activate(self) -> None:
         """Set up discourse, configure the pod and eventually activate the charm."""
