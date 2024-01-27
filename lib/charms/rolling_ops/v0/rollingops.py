@@ -88,7 +88,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 4
+LIBPATCH = 5
 
 
 class LockNoRelationError(Exception):
@@ -386,7 +386,8 @@ class RollingOpsManager(Object):
 
             # persist callback override for eventual run
             relation.data[self.charm.unit].update({"callback_override": event.callback_override})
-            self.charm.on[self.name].relation_changed.emit(relation)
+            self.charm.on[self.name].relation_changed.emit(relation, app=self.charm.app)
+
         except LockNoRelationError:
             logger.debug("No {} peer relation yet. Delaying rolling op.".format(self.name))
             event.defer()
