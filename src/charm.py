@@ -663,9 +663,11 @@ class DiscourseCharm(CharmBase):
                 current_env["DISCOURSE_USE_S3"] if "DISCOURSE_USE_S3" in current_env else "",
                 current_env["DISCOURSE_S3_REGION"] if "DISCOURSE_S3_REGION" in current_env else "",
                 current_env["DISCOURSE_S3_BUCKET"] if "DISCOURSE_S3_BUCKET" in current_env else "",
-                current_env["DISCOURSE_S3_ENDPOINT"]
-                if "DISCOURSE_S3_ENDPOINT" in current_env
-                else "",
+                (
+                    current_env["DISCOURSE_S3_ENDPOINT"]
+                    if "DISCOURSE_S3_ENDPOINT" in current_env
+                    else ""
+                ),
             )
         if self.model.unit.is_leader() and self._should_run_s3_migration(
             current_plan, previous_s3_info
