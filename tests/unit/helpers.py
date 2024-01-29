@@ -114,9 +114,9 @@ def add_redis_relation(harness, relation_data=None):
     # We need to bypass protected access to inject the relation data
     # pylint: disable=protected-access
     harness.charm._stored.redis_relation = {
-        redis_relation_id: {"hostname": "redis-host", "port": 1010}
-        if relation_data is None
-        else relation_data
+        redis_relation_id: (
+            {"hostname": "redis-host", "port": 1010} if relation_data is None else relation_data
+        )
     }
 
 
