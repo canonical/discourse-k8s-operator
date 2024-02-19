@@ -536,6 +536,11 @@ class DiscourseCharm(CharmBase):
             return
         env_settings = self._create_discourse_environment_settings()
         self.model.unit.status = MaintenanceStatus("Executing migrations")
+        # The rails migration task is idempotent and concurrent-safe, from
+        # https://stackoverflow.com/questions/17815769/are-rake-dbcreate-and-rake-dbmigrate-idempotent
+        # and https://github.com/rails/rails/pull/22122
+        # Thus it's safe to run this task on all units to
+        # avoid complications with how juju schedules charm upgrades
         try:
             migration_process: ExecProcess = container.exec(
                 [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
