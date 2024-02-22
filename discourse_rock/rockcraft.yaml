@@ -99,7 +99,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-solved.git
-    source-commit: b5d487d6a5bfe2571d936eec5911d02a5f3fcc32
+    source-commit: 526a44644a7b3f0c2a3ba4fc16e72f364e9fce6d
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-solved/
@@ -115,7 +115,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-mermaid-theme-component.git
-    source-commit: 7ea5abd0ba7bc19f61a9123302f7fc200ce93968
+    source-commit: 6fc85e72896b1933c8d2b12a0b34333db43c8cbe
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-mermaid-theme-component/
@@ -123,7 +123,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-saml.git
-    source-commit: 15a8274bbec438768fb020d4f20462db476b0f29
+    source-commit: 197b39978602e0ac6386c3e55ddc42f73efbfbce
     source-depth: 1
     override-build: |
       craftctl default
@@ -134,7 +134,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-prometheus.git
-    source-commit: 8a7a46a80cc65aa0839bc5e3c3b6f8ef6544089f
+    source-commit: 831dba15659055361966e0c42e6b517b3d7b133b
     source-depth: 1
     override-build: |
       craftctl default
@@ -145,7 +145,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-data-explorer.git
-    source-commit: e4f8d3924a18b303c2bb7da9472cf0c060060e4e
+    source-commit: ebe71a7a138c856d88737eb11b5096a42d4fbaf3
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-data-explorer/
@@ -153,7 +153,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-templates.git
-    source-commit: f5f4113876c5c7e6bdc291af266c6576659b2cab
+    source-commit: bb410b2a7d84f4503a9fa8a1fbbe017d627348d8
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-templates/
@@ -161,7 +161,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-calendar.git
-    source-commit: 6c659020ab5cca4af846b4b78e4ed0b4e06a2bca
+    source-commit: 84ef46a38cf02748ecacad16c5d9c6fec12dc8da
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-calendar/
@@ -169,7 +169,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-gamification.git
-    source-commit: 60cc4d645b55d51ea496c5a247fd1f79d818ae6b
+    source-commit: 5951fc573702090c0dc95b12d4aa3a053303bd63
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-gamification/
