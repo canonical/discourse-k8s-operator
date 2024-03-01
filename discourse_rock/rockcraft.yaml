@@ -161,7 +161,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-calendar.git
-    source-commit: 84ef46a38cf02748ecacad16c5d9c6fec12dc8da
+    source-commit: 58015fc753a3182ac082a5590037d399498e40fa
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-calendar/
