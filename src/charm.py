@@ -410,6 +410,8 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_ADDRESS": self.config["smtp_address"],
             "DISCOURSE_SMTP_AUTHENTICATION": self.config["smtp_authentication"],
             "DISCOURSE_SMTP_DOMAIN": self.config["smtp_domain"],
+            "DISCOURSE_SMTP_ENABLE_START_TLS": self.config["smtp_enable_start_tls"],
+            "DISCOURSE_SMTP_FORCE_TLS": self.config["smtp_force_tls"],
             "DISCOURSE_SMTP_OPENSSL_VERIFY_MODE": self.config["smtp_openssl_verify_mode"],
             "DISCOURSE_SMTP_PASSWORD": self.config["smtp_password"],
             "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
