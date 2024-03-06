@@ -37,6 +37,14 @@ options:
     type: string
     description: "Hostname that email sent by this discourse should appear to come from."
     default: ""
+  smtp_enable_start_tls:
+    type: string
+    description: "Enable TLS encryption for smtp connections."
+    default: "true"
+  smtp_force_tls:
+    type: string
+    description: "Force implicit TLS as per RFC 8314 3.3."
+    default: "false"
   smtp_openssl_verify_mode:
     type: string
     description: "Should discourse verify SSL certs."
