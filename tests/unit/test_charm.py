@@ -230,7 +230,7 @@ def test_on_config_changed_when_valid_no_fingerprint():
             "s3_enabled": False,
             "force_https": True,
         },
-        saml_fields=(True, "https://login.sample.com/+saml", ""),
+        saml_fields=(True, "https://login.sample.com", ""),
     )
 
     harness.container_pebble_ready(SERVICE_NAME)
@@ -287,7 +287,7 @@ def test_on_config_changed_when_valid():
             "s3_secret_access_key": "s|kI0ure_k3Y",
             "force_https": True,
         },
-        saml_fields=(True, "https://login.ubuntu.com/+saml", "fingerprint"),
+        saml_fields=(True, "https://login.ubuntu.com", "fingerprint"),
     )
     harness.container_pebble_ready(SERVICE_NAME)
 

@@ -149,7 +149,7 @@ async def app_fixture(
     redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
     await model.wait_for_idle(apps=[redis_app.name], status="active")
 
-    nii_app = await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
+    await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
 
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
@@ -203,9 +203,7 @@ async def setup_saml_config(app: Application, model: Model):
     discourse_app = model.applications[app.name]
     original_config: dict = await discourse_app.get_config()
     original_config = {k: v["value"] for k, v in original_config.items()}
-    await discourse_app.set_config(
-        {"force_https": "true"}
-    )
+    await discourse_app.set_config({"force_https": "true"})
     yield
     await discourse_app.set_config(
         {

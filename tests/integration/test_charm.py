@@ -16,6 +16,7 @@ from boto3 import client
 from botocore.config import Config
 from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import Model
+from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
 from charm import PROMETHEUS_PORT
 
@@ -196,18 +197,27 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     act: add an admin user and enable force-https mode.
     assert: user can login discourse using SAML Authentication.
     """
-    saml_app = await model.deploy("saml-integrator", channel="edge", series="jammy", trust=True, config={"entity_id": "https://login.staging.ubuntu.com", "metadata_url": "https://login.staging.ubuntu.com/saml/metadata"})
-    await model.add_relation(app.name, "saml-integrator"),
-    await model.wait_for_idle(apps=[saml_app.name], status="active")
+    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model)
+    saml_app = await model.deploy(
+        "saml-integrator",
+        channel="edge",
+        series="jammy",
+        trust=True,
+        config={
+            "entity_id": f"https://{saml_helper.SAML_HOST}/metadata",
+            "metadata_url": f"https://{saml_helper.SAML_HOST}/metadata",
+        },
+    )
+    await model.add_relation(app.name, "saml-integrator")
+    await model.wait_for_idle()
+    saml_helper.prepare_pod(model, f"{saml_app.name}-0")
+    saml_helper.prepare_pod(model, f"{app.name}-0")
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     action_result = await run_action(
         app.name, "add-admin-user", email=saml_email, password=saml_password
     )
     assert "user" in action_result
 
-    await model.wait_for_idle(status="active")
-
-    username = saml_email.split("@")[0]
     host = app.name
     original_getaddrinfo = socket.getaddrinfo
 
@@ -218,6 +228,14 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
 
     with unittest.mock.patch.multiple(socket, getaddrinfo=patched_getaddrinfo):
         session = requests.session()
+
+        response = session.get(
+            f"https://{host}/auth/saml/metadata",
+            timeout=10,
+        )
+        username = saml_email.split("@")[0]
+        saml_helper.register_service_provider(name=host, metadata=response.text)
+
         preference_page = session.get(
             f"https://{host}/u/{username}/preferences/account",
             verify=False,
@@ -232,51 +250,17 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             timeout=requests_timeout,
         )
         csrf_token = response.json()["csrf"]
-        login_page = session.post(
+        redirect_response = session.post(
             f"https://{host}/auth/saml",
             data={"authenticity_token": csrf_token},
             timeout=requests_timeout,
+            allow_redirects=False,
         )
-        csrf_tokens = re.findall(
-            "<input type='hidden' name='csrfmiddlewaretoken' value='([^']+)' />", login_page.text
-        )
-        assert len(csrf_tokens), login_page.text
-        csrf_token = csrf_tokens[0]
-        saml_callback = session.post(
-            "https://login.staging.ubuntu.com/+login",
-            data={
-                "csrfmiddlewaretoken": csrf_token,
-                "email": saml_email,
-                "user-intentions": "login",
-                "password": saml_password,
-                "next": "/saml/process",
-                "continue": "",
-                "openid.usernamesecret": "",
-            },
-            headers={"Referer": login_page.url},
-            timeout=requests_timeout,
-        )
-        saml_responses = re.findall(
-            '<input type="hidden" name="SAMLResponse" value="([^"]+)" />', saml_callback.text
-        )
-        assert len(saml_responses), saml_callback.text
-        saml_response = saml_responses[0]
-        session.post(
-            f"https://{host}/auth/saml/callback",
-            data={
-                "RelayState": "None",
-                "SAMLResponse": saml_response,
-                "openid.usernamesecret": "",
-            },
-            verify=False,
-            timeout=requests_timeout,
-        )
-        session.post(
-            f"https://{host}/auth/saml/callback",
-            data={"SAMLResponse": saml_response, "SameSite": "1"},
-            verify=False,
-            timeout=requests_timeout,
-        )
+        assert redirect_response.status_code == 302
+        redirect_url = redirect_response.headers["Location"]
+        saml_response = saml_helper.redirect_sso_login(redirect_url)
+        saml_response = saml_helper.redirect_sso_login(redirect_url)
+        assert f"https://{host}" in saml_response.url
 
         preference_page = session.get(
             f"https://{host}/u/{username}/preferences/account",
