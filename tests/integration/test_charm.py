@@ -196,6 +196,9 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     act: add an admin user and enable force-https mode.
     assert: user can login discourse using SAML Authentication.
     """
+    saml_app = await model.deploy("saml-integrator", channel="edge", series="jammy", trust=True, config={"entity_id": "https://login.staging.ubuntu.com", "metadata_url": "https://login.staging.ubuntu.com/saml/metadata"})
+    await model.add_relation(app.name, "saml-integrator"),
+    await model.wait_for_idle(apps=[saml_app.name], status="active")
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     action_result = await run_action(
         app.name, "add-admin-user", email=saml_email, password=saml_password

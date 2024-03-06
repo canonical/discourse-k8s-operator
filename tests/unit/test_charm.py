@@ -71,9 +71,9 @@ def test_on_config_changed_when_no_saml_target():
     act: when force_saml_login configuration is True and there's no saml_target_url
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = helpers.start_harness(with_config={"force_saml_login": True, "saml_target_url": ""})
+    harness = helpers.start_harness(with_config={"force_saml_login": True})
     assert harness.model.unit.status == BlockedStatus(
-        "force_saml_login can not be true without a saml_target_url"
+        "force_saml_login cannot be true without a saml relation"
     )
 
 
@@ -83,11 +83,9 @@ def test_on_config_changed_when_saml_sync_groups_and_no_url_invalid():
     act: when saml_sync_groups configuration is provided and there's no saml_target_url
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = helpers.start_harness(
-        with_config={"saml_sync_groups": "group1", "saml_target_url": ""}
-    )
+    harness = helpers.start_harness(with_config={"saml_sync_groups": "group1"})
     assert harness.model.unit.status == BlockedStatus(
-        "'saml_sync_groups' cannot be specified without a 'saml_target_url'"
+        "'saml_sync_groups' cannot be specified without a saml relation"
     )
 
 
@@ -97,11 +95,10 @@ def test_on_config_changed_when_saml_target_url_and_force_https_disabled():
     act: when saml_target_url configuration is provided and force_https is False
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = helpers.start_harness(
-        with_config={"saml_target_url": "group1", "force_https": False}
-    )
+    harness = helpers.start_harness(with_config={"force_https": False}, saml_fields=(True, "", ""))
+    harness.charm._is_config_valid()
     assert harness.model.unit.status == BlockedStatus(
-        "'saml_target_url' cannot be specified without 'force_https' being true"
+        "A saml relation cannot be specified without 'force_https' being true"
     )
 
 
@@ -229,13 +226,14 @@ def test_on_config_changed_when_valid_no_fingerprint():
     harness = helpers.start_harness(
         with_config={
             "force_saml_login": True,
-            "saml_target_url": "https://login.sample.com/+saml",
             "saml_sync_groups": "group1",
             "s3_enabled": False,
             "force_https": True,
-        }
+        },
+        saml_fields=(True, "https://login.sample.com/+saml", ""),
     )
-    harness.container_pebble_ready("discourse")
+
+    harness.container_pebble_ready(SERVICE_NAME)
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
@@ -274,7 +272,6 @@ def test_on_config_changed_when_valid():
             "enable_cors": True,
             "external_hostname": "discourse.local",
             "force_saml_login": True,
-            "saml_target_url": "https://login.ubuntu.com/+saml",
             "saml_sync_groups": "group1",
             "smtp_address": "smtp.internal",
             "smtp_domain": "foo.internal",
@@ -289,9 +286,10 @@ def test_on_config_changed_when_valid():
             "s3_region": "the-infinite-and-beyond",
             "s3_secret_access_key": "s|kI0ure_k3Y",
             "force_https": True,
-        }
+        },
+        saml_fields=(True, "https://login.ubuntu.com/+saml", "fingerprint"),
     )
-    harness.container_pebble_ready("discourse")
+    harness.container_pebble_ready(SERVICE_NAME)
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]

@@ -150,7 +150,6 @@ async def app_fixture(
     await model.wait_for_idle(apps=[redis_app.name], status="active")
 
     nii_app = await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
-    await model.wait_for_idle(apps=[nii_app.name], status="active")
 
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
@@ -162,7 +161,7 @@ async def app_fixture(
             resources=resources,
             application_name=app_name,
             config=app_config,
-            series="focal",
+            series="jammy",
         )
     else:
         charm = await ops_test.build_charm(".")
@@ -171,7 +170,7 @@ async def app_fixture(
             resources=resources,
             application_name=app_name,
             config=app_config,
-            series="focal",
+            series="jammy",
         )
 
     await model.wait_for_idle(apps=[application.name], status="waiting")
@@ -205,12 +204,11 @@ async def setup_saml_config(app: Application, model: Model):
     original_config: dict = await discourse_app.get_config()
     original_config = {k: v["value"] for k, v in original_config.items()}
     await discourse_app.set_config(
-        {"saml_target_url": "https://login.staging.ubuntu.com/+saml", "force_https": "true"}
+        {"force_https": "true"}
     )
     yield
     await discourse_app.set_config(
         {
-            "saml_target_url": original_config["saml_target_url"],
             "force_https": str(original_config["force_https"]).lower(),
         }
     )
