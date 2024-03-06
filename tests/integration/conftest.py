@@ -150,7 +150,7 @@ async def app_fixture(
     await model.wait_for_idle(apps=[redis_app.name], status="active")
 
     nii_app = await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
-    await model.wait_for_idle(apps=[nii_app.name], status="active")
+    await model.wait_for_idle(apps=[nii_app.name], status="waiting")
 
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
