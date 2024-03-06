@@ -43,11 +43,11 @@ options:
     default: ""
   smtp_enable_start_tls:
     type: string
-    description: "enable TLS encryption for smtp connections"
+    description: "Enable TLS encryption for smtp connections."
     default: "true"
   smtp_force_tls:
     type: string
-    description: "force implicit TLS as per RFC 8314 3.3"
+    description: "Force implicit TLS as per RFC 8314 3.3."
     default: "false"
   smtp_openssl_verify_mode:
     type: string
