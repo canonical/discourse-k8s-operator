@@ -197,7 +197,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     act: add an admin user and enable force-https mode.
     assert: user can login discourse using SAML Authentication.
     """
-    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model)
+    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
     saml_app = await model.deploy(
         "saml-integrator",
         channel="edge",
