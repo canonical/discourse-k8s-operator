@@ -206,6 +206,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     )
     saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
     saml_helper.prepare_pod(model.name, f"{app.name}-0")
+    await model.wait_for_idle()
     await saml_app.set_config(  # type: ignore[attr-defined]
         {
             "entity_id": f"https://{saml_helper.SAML_HOST}/metadata",
