@@ -198,17 +198,19 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     assert: user can login discourse using SAML Authentication.
     """
     saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
-    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
-    saml_helper.prepare_pod(model.name, f"{app.name}-0")
-    saml_app = await model.deploy(
+    saml_app: Application = await model.deploy(
         "saml-integrator",
-        channel="edge",
+        channel="latest/edge",
         series="jammy",
         trust=True,
-        config={
-            "entity_id": f"https://{saml_helper.SAML_HOST}",
+    )
+    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
+    saml_helper.prepare_pod(model.name, f"{app.name}-0")
+    await saml_app.set_config(  # type: ignore[attr-defined]
+        {
+            "entity_id": f"https://{saml_helper.SAML_HOST}/metadata",
             "metadata_url": f"https://{saml_helper.SAML_HOST}/metadata",
-        },
+        }
     )
     await model.add_relation(app.name, "saml-integrator")
     await model.wait_for_idle()
