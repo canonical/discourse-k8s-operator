@@ -198,6 +198,8 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     assert: user can login discourse using SAML Authentication.
     """
     saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
+    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
+    saml_helper.prepare_pod(model.name, f"{app.name}-0")
     saml_app = await model.deploy(
         "saml-integrator",
         channel="edge",
@@ -210,8 +212,6 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     )
     await model.add_relation(app.name, "saml-integrator")
     await model.wait_for_idle()
-    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
-    saml_helper.prepare_pod(model.name, f"{app.name}-0")
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     action_result = await run_action(
         app.name, "add-admin-user", email=saml_email, password=saml_password
@@ -258,7 +258,6 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
         )
         assert redirect_response.status_code == 302
         redirect_url = redirect_response.headers["Location"]
-        saml_response = saml_helper.redirect_sso_login(redirect_url)
         saml_response = saml_helper.redirect_sso_login(redirect_url)
         assert f"https://{host}" in saml_response.url
 
