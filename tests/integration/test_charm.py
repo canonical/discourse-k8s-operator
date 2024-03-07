@@ -235,6 +235,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
 
         response = session.get(
             f"https://{host}/auth/saml/metadata",
+            verify=False,
             timeout=10,
         )
         username = saml_email.split("@")[0]
