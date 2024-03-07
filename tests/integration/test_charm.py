@@ -204,7 +204,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
         series="jammy",
         trust=True,
         config={
-            "entity_id": f"https://{saml_helper.SAML_HOST}/metadata",
+            "entity_id": f"https://{saml_helper.SAML_HOST}",
             "metadata_url": f"https://{saml_helper.SAML_HOST}/metadata",
         },
     )
