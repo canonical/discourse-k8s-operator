@@ -210,8 +210,8 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     )
     await model.add_relation(app.name, "saml-integrator")
     await model.wait_for_idle()
-    saml_helper.prepare_pod(model, f"{saml_app.name}-0")
-    saml_helper.prepare_pod(model, f"{app.name}-0")
+    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
+    saml_helper.prepare_pod(model.name, f"{app.name}-0")
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     action_result = await run_action(
         app.name, "add-admin-user", email=saml_email, password=saml_password
