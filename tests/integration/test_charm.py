@@ -204,6 +204,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
         series="jammy",
         trust=True,
     )
+    await model.wait_for_idle()
     saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
     saml_helper.prepare_pod(model.name, f"{app.name}-0")
     await model.wait_for_idle()
