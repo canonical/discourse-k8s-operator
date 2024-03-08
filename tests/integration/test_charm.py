@@ -182,15 +182,12 @@ def generate_s3_config(localstack_address: str) -> Dict:
 
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-@pytest.mark.requires_secrets
 @pytest.mark.usefixtures("setup_saml_config")
 async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     app: Application,
     requests_timeout: int,
     run_action,
     model: Model,
-    saml_email: str,
-    saml_password: str,
 ):
     """
     arrange: after discourse charm has been deployed, with all required relation established.
@@ -210,16 +207,21 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     await model.wait_for_idle()
     await saml_app.set_config(  # type: ignore[attr-defined]
         {
-            "entity_id": f"https://{saml_helper.SAML_HOST}/metadata",
-            "metadata_url": f"https://{saml_helper.SAML_HOST}/metadata",
+            "entity_id": saml_helper.entity_id,
+            "metadata_url": saml_helper.metadata_url,
         }
     )
     await model.add_relation(app.name, "saml-integrator")
     await model.wait_for_idle()
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    action_result = await run_action(
-        app.name, "add-admin-user", email=saml_email, password=saml_password
-    )
+    # discourse need a long password and a valid email
+    # username can't be "discourse" or it will be renamed
+    username = "ubuntu"
+    email = "ubuntu@canonical.com"
+    password = "test-discourse-k8s-password"
+    saml_helper.register_user(username=username, email=email, password=password)
+
+    action_result = await run_action(app.name, "add-admin-user", email=email, password=password)
     assert "user" in action_result
 
     host = app.name
@@ -238,7 +240,6 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             verify=False,
             timeout=10,
         )
-        username = saml_email.split("@")[0]
         saml_helper.register_service_provider(name=host, metadata=response.text)
 
         preference_page = session.get(
@@ -263,8 +264,15 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
         )
         assert redirect_response.status_code == 302
         redirect_url = redirect_response.headers["Location"]
-        saml_response = saml_helper.redirect_sso_login(redirect_url)
+        saml_response = saml_helper.redirect_sso_login(
+            redirect_url, username=username, password=password
+        )
         assert f"https://{host}" in saml_response.url
+        session.post(
+            saml_response.url,
+            data={"SAMLResponse": saml_response.data["SAMLResponse"], "SameSite": "1"},
+        )
+        session.post(saml_response.url, data=saml_response.data)
 
         preference_page = session.get(
             f"https://{host}/u/{username}/preferences/account",
