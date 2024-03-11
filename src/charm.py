@@ -301,9 +301,15 @@ class DiscourseCharm(CharmBase):
         saml_config = {}
 
         relation = self.model.get_relation("saml")
-        if relation is not None:
-            saml_target_url = relation.data[self.app].get("entity_id")
-            saml_config["DISCOURSE_SAML_TARGET_URL"] = f"{saml_target_url}/+saml"
+        if (
+            relation is not None
+            and relation.data[self.app]
+            and relation.app
+            and relation.data[relation.app]
+        ):
+            saml_config["DISCOURSE_SAML_TARGET_URL"] = relation.data[relation.app][
+                "single_sign_on_service_redirect_url"
+            ]
             saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
                 "true" if self.config["force_saml_login"] else "false"
             )
