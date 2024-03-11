@@ -181,6 +181,36 @@ def generate_s3_config(localstack_address: str) -> Dict:
 
 
 @pytest.mark.asyncio
+async def test_create_category(
+    discourse_address: str,
+    admin_credentials: types.Credentials,
+    admin_api_key: str,
+):
+    """
+    arrange: Given discourse application and an admin user
+    act: if an admin user creates a category
+    assert: a category should be created normally.
+    """
+    category_info = {"name": "test", "color": "FFFFFF"}
+    res = requests.post(
+        f"{discourse_address}/categories.json",
+        headers={
+            "Api-Key": admin_api_key,
+            "Api-Username": admin_credentials.username,
+        },
+        json=category_info,
+        timeout=60,
+    )
+    category_id = res.json()["category"]["id"]
+    category = requests.get(f"{discourse_address}/c/{category_id}/show.json", timeout=60).json()[
+        "category"
+    ]
+
+    assert category["name"] == category_info["name"]
+    assert category["color"] == category_info["color"]
+
+
+@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
 @pytest.mark.usefixtures("setup_saml_config")
 async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
@@ -218,7 +248,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     # username can't be "discourse" or it will be renamed
     username = "ubuntu"
     email = "ubuntu@canonical.com"
-    password = "test-discourse-k8s-password"
+    password = "test-discourse-k8s-password"  # nosec
     saml_helper.register_user(username=username, email=email, password=password)
 
     action_result = await run_action(app.name, "add-admin-user", email=email, password=password)
@@ -280,36 +310,6 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             timeout=requests_timeout,
         )
         assert preference_page.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_create_category(
-    discourse_address: str,
-    admin_credentials: types.Credentials,
-    admin_api_key: str,
-):
-    """
-    arrange: Given discourse application and an admin user
-    act: if an admin user creates a category
-    assert: a category should be created normally.
-    """
-    category_info = {"name": "test", "color": "FFFFFF"}
-    res = requests.post(
-        f"{discourse_address}/categories.json",
-        headers={
-            "Api-Key": admin_api_key,
-            "Api-Username": admin_credentials.username,
-        },
-        json=category_info,
-        timeout=60,
-    )
-    category_id = res.json()["category"]["id"]
-    category = requests.get(f"{discourse_address}/c/{category_id}/show.json", timeout=60).json()[
-        "category"
-    ]
-
-    assert category["name"] == category_info["name"]
-    assert category["color"] == category_info["color"]
 
 
 @pytest.mark.asyncio

@@ -147,6 +147,15 @@ def _add_saml_relation(harness, saml_target, fingerprint):
     harness.set_leader(True)
     saml_relation_id = harness.add_relation("saml", "saml-integrator")
     harness.add_relation_unit(saml_relation_id, "saml-integrator/0")
+    harness.disable_hooks()
+    harness.update_relation_data(
+        relation_id=saml_relation_id,
+        app_or_unit="saml-integrator",
+        key_values={
+            "single_sign_on_service_redirect_url": f"{saml_target}/+saml",
+        },
+    )
+    harness.enable_hooks()
     harness.update_relation_data(
         relation_id=saml_relation_id,
         app_or_unit=harness.charm.app.name,
