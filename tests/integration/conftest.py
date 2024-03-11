@@ -170,7 +170,7 @@ async def app_fixture(
             resources=resources,
             application_name=app_name,
             config=app_config,
-            series="jammy",
+            series="focal",
         )
 
     await model.wait_for_idle(apps=[application.name], status="waiting")
