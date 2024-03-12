@@ -21,7 +21,11 @@ from charms.nginx_ingress_integrator.v0.nginx_route import require_nginx_route
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
-from charms.saml_integrator.v0.saml import SamlDataAvailableEvent, SamlRequires, DEFAULT_RELATION_NAME
+from charms.saml_integrator.v0.saml import (
+    DEFAULT_RELATION_NAME,
+    SamlDataAvailableEvent,
+    SamlRequires,
+)
 from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent
 from ops.framework import StoredState
 from ops.main import main
@@ -279,13 +283,22 @@ class DiscourseCharm(CharmBase):
         if self.config["throttle_level"] not in THROTTLE_LEVELS:
             errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
 
-        if self.config["force_saml_login"] and self.model.get_relation(DEFAULT_RELATION_NAME) is None:
+        if (
+            self.config["force_saml_login"]
+            and self.model.get_relation(DEFAULT_RELATION_NAME) is None
+        ):
             errors.append("force_saml_login cannot be true without a saml relation")
 
-        if self.config["saml_sync_groups"] and self.model.get_relation(DEFAULT_RELATION_NAME) is None:
+        if (
+            self.config["saml_sync_groups"]
+            and self.model.get_relation(DEFAULT_RELATION_NAME) is None
+        ):
             errors.append("'saml_sync_groups' cannot be specified without a saml relation")
 
-        if self.model.get_relation(DEFAULT_RELATION_NAME) is not None and not self.config["force_https"]:
+        if (
+            self.model.get_relation(DEFAULT_RELATION_NAME) is not None
+            and not self.config["force_https"]
+        ):
             errors.append("A saml relation cannot be specified without 'force_https' being true")
 
         if self.config.get("s3_enabled"):
