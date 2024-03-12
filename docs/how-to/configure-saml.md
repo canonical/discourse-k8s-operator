@@ -7,7 +7,7 @@ The groups to be synced from the provider can be defined in `saml_sync_groups` a
 In order to implement the relation discourse has to be related with the [saml-integrator](https://charmhub.io/saml-integrator):
 ```
 juju deploy saml-integrator --channel=edge
-#Set the SAML integrator configs
+# Set the SAML integrator configs
 juju config saml-integrator metadata_url=https://login.staging.ubuntu.com/saml/metadata
 juju config saml-integrator entity_id=https://login.staging.ubuntu.com
 juju integrate discourse-k8s saml-integrator
