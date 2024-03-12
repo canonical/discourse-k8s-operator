@@ -1,2 +1,2 @@
 ops-lib-pgsql
-pydantic
+pydantic==1.10.14
