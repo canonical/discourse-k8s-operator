@@ -140,7 +140,7 @@ async def app_fixture(
     postgres_app = await model.deploy(
         "postgresql-k8s",
         channel="14/edge",
-        series="jammy",
+        series="focal",
         trust=True,
         config={"profile": "testing"},
     )
@@ -161,7 +161,7 @@ async def app_fixture(
             resources=resources,
             application_name=app_name,
             config=app_config,
-            series="jammy",
+            series="focal",
         )
     else:
         charm = await ops_test.build_charm(".")
