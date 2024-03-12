@@ -200,12 +200,13 @@ class DiscourseCharm(CharmBase):
 
     def _on_saml_data_available(self, event: SamlDataAvailableEvent) -> None:
         """Handle SAML data available."""
-        fingerprint = hashlib.sha1(base64.b64decode(event.certificates[0])).hexdigest()  # nosec
-        relation = self.model.get_relation("saml")
-        # Will ignore union-attr since asserting the relation type will make bandit complain.
-        relation.data[self.app].update({"fingerprint": fingerprint})  # type: ignore[union-attr]
-        relation.data[self.app].update({"entity_id": event.entity_id})  # type: ignore[union-attr]
-        self._on_config_changed(event)
+        if self.unit.is_leader():
+            # Utilizing the SHA1 hash is safe in this case, so a nosec ignore will be put in place.
+            fingerprint = hashlib.sha1(base64.b64decode(event.certificates[0])).hexdigest()  # nosec
+            relation = self.model.get_relation("saml")
+            # Will ignore union-attr since asserting the relation type will make bandit complain.
+            relation.data[self.app].update({"fingerprint": fingerprint, })  # type: ignore[union-attr]
+            self._on_config_changed(event)
 
     def _on_rolling_restart(self, _: ops.EventBase) -> None:
         """Handle rolling restart event.
