@@ -202,10 +202,16 @@ class DiscourseCharm(CharmBase):
         """Handle SAML data available."""
         if self.unit.is_leader():
             # Utilizing the SHA1 hash is safe in this case, so a nosec ignore will be put in place.
-            fingerprint = hashlib.sha1(base64.b64decode(event.certificates[0])).hexdigest()  # nosec
+            fingerprint = hashlib.sha1(
+                base64.b64decode(event.certificates[0])
+            ).hexdigest()  # nosec
             relation = self.model.get_relation("saml")
             # Will ignore union-attr since asserting the relation type will make bandit complain.
-            relation.data[self.app].update({"fingerprint": fingerprint, })  # type: ignore[union-attr]
+            relation.data[self.app].update(  # type: ignore[union-attr]
+                {
+                    "fingerprint": fingerprint,
+                }
+            )
             self._on_config_changed(event)
 
     def _on_rolling_restart(self, _: ops.EventBase) -> None:
