@@ -56,6 +56,8 @@ class SamlRequirerCharm(ops.CharmBase):
 The SamlProvides object wraps the list of relations into a `relations` property
 and provides an `update_relation_data` method to update the relation data by passing
 a `SamlRelationData` data object.
+Additionally, SamlRelationData can be used to directly parse the relation data with the
+class method `from_relation_data`.
 """
 
 # The unique Charmhub library identifier, never change it
@@ -66,7 +68,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 5
+LIBPATCH = 6
 
 # pylint: disable=wrong-import-position
 import re
@@ -151,14 +153,14 @@ class SamlRelationData(BaseModel):
     Attrs:
         entity_id: SAML entity ID.
         metadata_url: URL to the metadata.
-        certificates: List of SAML certificates.
-        endpoints: List of SAML endpoints.
+        certificates: Tuple of SAML certificates.
+        endpoints: Tuple of SAML endpoints.
     """
 
     entity_id: str = Field(..., min_length=1)
     metadata_url: AnyHttpUrl
-    certificates: typing.List[str]
-    endpoints: typing.List[SamlEndpoint]
+    certificates: typing.Tuple[str, ...]
+    endpoints: typing.Tuple[SamlEndpoint, ...]
 
     def to_relation_data(self) -> typing.Dict[str, str]:
         """Convert an instance of SamlDataAvailableEvent to the relation representation.
@@ -175,44 +177,20 @@ class SamlRelationData(BaseModel):
             result.update(endpoint.to_relation_data())
         return result
 
+    @classmethod
+    def from_relation_data(cls, relation_data: typing.Dict[str, str]) -> "SamlRelationData":
+        """Get a SamlRelationData wrapping the relation data.
 
-class SamlDataAvailableEvent(ops.RelationEvent):
-    """Saml event emitted when relation data has changed.
+        Arguments:
+            relation_data: the relation data.
 
-    Attrs:
-        entity_id: SAML entity ID.
-        metadata_url: URL to the metadata.
-        certificates: Tuple containing the SAML certificates.
-        endpoints: Tuple containing the SAML endpoints.
-    """
-
-    @property
-    def entity_id(self) -> str:
-        """Fetch the SAML entity ID from the relation."""
-        assert self.relation.app
-        return self.relation.data[self.relation.app].get("entity_id")
-
-    @property
-    def metadata_url(self) -> str:
-        """Fetch the SAML metadata URL from the relation."""
-        assert self.relation.app
-        return parse_obj_as(AnyHttpUrl, self.relation.data[self.relation.app].get("metadata_url"))
-
-    @property
-    def certificates(self) -> typing.Tuple[str, ...]:
-        """Fetch the SAML certificates from the relation."""
-        assert self.relation.app
-        return tuple(self.relation.data[self.relation.app].get("x509certs").split(","))
-
-    @property
-    def endpoints(self) -> typing.Tuple[SamlEndpoint, ...]:
-        """Fetch the SAML endpoints from the relation."""
-        assert self.relation.app
-        relation_data = self.relation.data[self.relation.app]
+        Returns: a SamlRelationData instance with the relation data.
+        """
+        # mypy is not aware of the relation data being present
         endpoints = [
             SamlEndpoint.from_relation_data(
                 {
-                    key2: relation_data.get(key2)
+                    key2: relation_data.get(key2)  # type: ignore
                     for key2 in relation_data
                     if key2.startswith("_".join(key.split("_")[:-1]))
                 }
@@ -221,7 +199,52 @@ class SamlDataAvailableEvent(ops.RelationEvent):
             if key.endswith("_redirect_url") or key.endswith("_post_url")
         ]
         endpoints.sort(key=lambda ep: ep.name)
-        return tuple(endpoints)
+        return cls(
+            entity_id=relation_data.get("entity_id"),  # type: ignore
+            metadata_url=parse_obj_as(
+                AnyHttpUrl, relation_data.get("metadata_url")
+            ),  # type: ignore
+            certificates=tuple(relation_data.get("x509certs").split(",")),  # type: ignore
+            endpoints=tuple(endpoints),
+        )
+
+
+class SamlDataAvailableEvent(ops.RelationEvent):
+    """Saml event emitted when relation data has changed.
+
+    Attrs:
+        saml_relation_data: the SAML relation data
+        entity_id: SAML entity ID.
+        metadata_url: URL to the metadata.
+        certificates: Tuple containing the SAML certificates.
+        endpoints: Tuple containing the SAML endpoints.
+    """
+
+    @property
+    def saml_relation_data(self) -> SamlRelationData:
+        """Get a SamlRelationData for the relation data."""
+        assert self.relation.app
+        return SamlRelationData.from_relation_data(self.relation.data[self.relation.app])
+
+    @property
+    def entity_id(self) -> str:
+        """Fetch the SAML entity ID from the relation."""
+        return self.saml_relation_data.entity_id
+
+    @property
+    def metadata_url(self) -> str:
+        """Fetch the SAML metadata URL from the relation."""
+        return str(self.saml_relation_data.metadata_url)
+
+    @property
+    def certificates(self) -> typing.Tuple[str, ...]:
+        """Fetch the SAML certificates from the relation."""
+        return self.saml_relation_data.certificates
+
+    @property
+    def endpoints(self) -> typing.Tuple[SamlEndpoint, ...]:
+        """Fetch the SAML endpoints from the relation."""
+        return self.saml_relation_data.endpoints
 
 
 class SamlRequiresEvents(ops.CharmEvents):
