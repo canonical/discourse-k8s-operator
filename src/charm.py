@@ -319,7 +319,7 @@ class DiscourseCharm(CharmBase):
             and e.binding == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
         ][0]
 
-        saml_config["DISCOURSE_SAML_TARGET_URL"] = sso_redirect_endpoint.url
+        saml_config["DISCOURSE_SAML_TARGET_URL"] = str(sso_redirect_endpoint.url)
         certificate = relation_data.certificates[0]
         # discourse needs SHA1 fingerprint
         saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = (
