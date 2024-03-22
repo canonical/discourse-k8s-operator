@@ -216,49 +216,6 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
-def test_on_config_changed_when_valid_no_fingerprint():
-    """
-    arrange: given a deployed discourse charm with all the required relations
-    act: when a valid configuration is provided
-    assert: the appropriate configuration values are passed to the pod and the unit
-        reaches Active status.
-    """
-    harness = helpers.start_harness(
-        with_config={
-            "force_saml_login": True,
-            "saml_sync_groups": "group1",
-            "s3_enabled": False,
-            "force_https": True,
-        },
-        saml_fields=(True, "https://login.sample.com", ""),
-    )
-
-    harness.container_pebble_ready(SERVICE_NAME)
-
-    updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
-    updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
-    assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
-    assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
-    assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
-    assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
-    assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
-    assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
-    assert "discourse-k8s" == updated_plan_env["DISCOURSE_HOSTNAME"]
-    assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
-    assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
-    assert "DISCOURSE_SAML_CERT_FINGERPRINT" not in updated_plan_env
-    assert "true" == updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"]
-    assert "https://login.sample.com/+saml" == updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
-    assert "false" == updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"]
-    assert "true" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"]
-    assert "group1" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"]
-    assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
-    assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
-    assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
-    assert "DISCOURSE_USE_S3" not in updated_plan_env
-    assert isinstance(harness.model.unit.status, ActiveStatus)
-
-
 def test_on_config_changed_when_valid():
     """
     arrange: given a deployed discourse charm with all the required relations

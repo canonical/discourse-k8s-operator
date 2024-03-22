@@ -202,21 +202,9 @@ class DiscourseCharm(CharmBase):
         """
         self._configure_pod()
 
-    def _on_saml_data_available(self, event: SamlDataAvailableEvent) -> None:
+    def _on_saml_data_available(self, _: SamlDataAvailableEvent) -> None:
         """Handle SAML data available."""
-        if self.unit.is_leader():
-            # Utilizing the SHA1 hash is safe in this case, so a nosec ignore will be put in place.
-            fingerprint = hashlib.sha1(
-                base64.b64decode(event.certificates[0])
-            ).hexdigest()  # nosec
-            relation = self.model.get_relation(DEFAULT_RELATION_NAME)
-            # Will ignore union-attr since asserting the relation type will make bandit complain.
-            relation.data[self.app].update(  # type: ignore[union-attr]
-                {
-                    "fingerprint": fingerprint,
-                }
-            )
-            self._on_config_changed(event)
+        self._configure_pod()
 
     def _on_rolling_restart(self, _: ops.EventBase) -> None:
         """Handle rolling restart event.
@@ -316,27 +304,31 @@ class DiscourseCharm(CharmBase):
         """Get SAML configuration.
 
         Returns:
-            Dictionary with the SAML configuration settings..
+            Dictionary with the SAML configuration settings.
         """
+        relation_data = self.saml.get_relation_data()
+        if relation_data is None:
+            return {}
+
         saml_config = {}
 
-        relation = self.model.get_relation(DEFAULT_RELATION_NAME)
-        if (
-            relation is not None
-            and relation.data[self.app]
-            and relation.app
-            and relation.data[relation.app]
-        ):
-            saml_config["DISCOURSE_SAML_TARGET_URL"] = relation.data[relation.app][
-                "single_sign_on_service_redirect_url"
-            ]
-            saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
-                "true" if self.config["force_saml_login"] else "false"
-            )
-            fingerprint = relation.data[self.app].get("fingerprint")
-            if fingerprint:
-                saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = fingerprint
+        sso_redirect_endpoint = [
+            e
+            for e in relation_data.endpoints
+            if e.name == "SingleSignOnService"
+            and e.binding == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+        ][0]
 
+        saml_config["DISCOURSE_SAML_TARGET_URL"] = str(sso_redirect_endpoint.url)
+        certificate = relation_data.certificates[0]
+        # discourse needs SHA1 fingerprint
+        saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = (
+            hashlib.sha1(base64.b64decode(certificate)).digest().hex(":").upper()  # nosec
+        )
+
+        saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
+            "true" if self.config["force_saml_login"] else "false"
+        )
         saml_sync_groups = [
             x.strip() for x in self.config["saml_sync_groups"].split(",") if x.strip()
         ]
