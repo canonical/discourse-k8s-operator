@@ -163,7 +163,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -189,7 +189,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     harness.container_pebble_ready(SERVICE_NAME)
     harness.framework.reemit()
 
-    assert harness._charm
+    assert harness.charm
     assert expected_exec_call_was_made
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
@@ -327,7 +327,7 @@ def test_add_admin_user():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
             or args.stdin != f"{email}\n{password}\n{password}\nY\n"
@@ -371,7 +371,7 @@ def test_anonymize_user():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -449,7 +449,7 @@ def test_start_when_leader():
         expected_exec_call_was_made[" ".join(args.command)] = True
 
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -492,7 +492,7 @@ def test_start_when_not_leader():
         expected_exec_call_was_made[" ".join(args.command)] = True
 
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -627,7 +627,7 @@ def test_http_proxy_env(monkeypatch):
     """
     harness = helpers.start_harness()
 
-    created_env = harness._charm._create_discourse_environment_settings()
+    created_env = harness.charm._create_discourse_environment_settings()
     assert created_env["HTTP_PROXY"] == ""
     assert created_env["http_proxy"] == ""
     assert created_env["HTTPS_PROXY"] == ""
@@ -638,7 +638,7 @@ def test_http_proxy_env(monkeypatch):
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://proxy.test")
     monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://httpsproxy.test")
     monkeypatch.setenv("JUJU_CHARM_NO_PROXY", "noproxy.test")
-    created_env = harness._charm._create_discourse_environment_settings()
+    created_env = harness.charm._create_discourse_environment_settings()
 
     assert created_env["HTTP_PROXY"] == "http://proxy.test"
     assert created_env["http_proxy"] == "http://proxy.test"
