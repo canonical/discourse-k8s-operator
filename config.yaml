@@ -25,10 +25,6 @@ options:
     type: string
     description: "Comma-separated list of groups to sync from SAML provider."
     default: ""
-  saml_target_url:
-    type: string
-    description: "SAML authentication target url."
-    default: ""
   smtp_address:
     type: string
     description: "Hostname / IP that should be used to send SMTP mail."

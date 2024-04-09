@@ -16,6 +16,7 @@ from boto3 import client
 from botocore.config import Config
 from ops.model import ActiveStatus, Application
 from pytest_operator.plugin import Model
+from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
 from charm import PROMETHEUS_PORT
 
@@ -180,110 +181,6 @@ def generate_s3_config(localstack_address: str) -> Dict:
 
 
 @pytest.mark.asyncio
-@pytest.mark.abort_on_fail
-@pytest.mark.requires_secrets
-@pytest.mark.usefixtures("setup_saml_config")
-async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
-    app: Application,
-    requests_timeout: int,
-    run_action,
-    model: Model,
-    saml_email: str,
-    saml_password: str,
-):
-    """
-    arrange: after discourse charm has been deployed, with all required relation established.
-    act: add an admin user and enable force-https mode.
-    assert: user can login discourse using SAML Authentication.
-    """
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    action_result = await run_action(
-        app.name, "add-admin-user", email=saml_email, password=saml_password
-    )
-    assert "user" in action_result
-
-    await model.wait_for_idle(status="active")
-
-    username = saml_email.split("@")[0]
-    host = app.name
-    original_getaddrinfo = socket.getaddrinfo
-
-    def patched_getaddrinfo(*args):
-        if args[0] == host:
-            return original_getaddrinfo("127.0.0.1", *args[1:])
-        return original_getaddrinfo(*args)
-
-    with unittest.mock.patch.multiple(socket, getaddrinfo=patched_getaddrinfo):
-        session = requests.session()
-        preference_page = session.get(
-            f"https://{host}/u/{username}/preferences/account",
-            verify=False,
-            timeout=requests_timeout,
-        )
-        assert preference_page.status_code == 404
-
-        session.get(f"https://{host}", verify=False)
-        response = session.get(
-            f"https://{host}/session/csrf",
-            headers={"Accept": "application/json"},
-            timeout=requests_timeout,
-        )
-        csrf_token = response.json()["csrf"]
-        login_page = session.post(
-            f"https://{host}/auth/saml",
-            data={"authenticity_token": csrf_token},
-            timeout=requests_timeout,
-        )
-        csrf_tokens = re.findall(
-            "<input type='hidden' name='csrfmiddlewaretoken' value='([^']+)' />", login_page.text
-        )
-        assert len(csrf_tokens), login_page.text
-        csrf_token = csrf_tokens[0]
-        saml_callback = session.post(
-            "https://login.staging.ubuntu.com/+login",
-            data={
-                "csrfmiddlewaretoken": csrf_token,
-                "email": saml_email,
-                "user-intentions": "login",
-                "password": saml_password,
-                "next": "/saml/process",
-                "continue": "",
-                "openid.usernamesecret": "",
-            },
-            headers={"Referer": login_page.url},
-            timeout=requests_timeout,
-        )
-        saml_responses = re.findall(
-            '<input type="hidden" name="SAMLResponse" value="([^"]+)" />', saml_callback.text
-        )
-        assert len(saml_responses), saml_callback.text
-        saml_response = saml_responses[0]
-        session.post(
-            f"https://{host}/auth/saml/callback",
-            data={
-                "RelayState": "None",
-                "SAMLResponse": saml_response,
-                "openid.usernamesecret": "",
-            },
-            verify=False,
-            timeout=requests_timeout,
-        )
-        session.post(
-            f"https://{host}/auth/saml/callback",
-            data={"SAMLResponse": saml_response, "SameSite": "1"},
-            verify=False,
-            timeout=requests_timeout,
-        )
-
-        preference_page = session.get(
-            f"https://{host}/u/{username}/preferences/account",
-            verify=False,
-            timeout=requests_timeout,
-        )
-        assert preference_page.status_code == 200
-
-
-@pytest.mark.asyncio
 async def test_create_category(
     discourse_address: str,
     admin_credentials: types.Credentials,
@@ -311,6 +208,108 @@ async def test_create_category(
 
     assert category["name"] == category_info["name"]
     assert category["color"] == category_info["color"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+@pytest.mark.usefixtures("setup_saml_config")
+async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
+    app: Application,
+    requests_timeout: int,
+    run_action,
+    model: Model,
+):
+    """
+    arrange: after discourse charm has been deployed, with all required relation established.
+    act: add an admin user and enable force-https mode.
+    assert: user can login discourse using SAML Authentication.
+    """
+    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
+    saml_app: Application = await model.deploy(
+        "saml-integrator",
+        channel="latest/edge",
+        series="jammy",
+        trust=True,
+    )
+    await model.wait_for_idle()
+    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
+    saml_helper.prepare_pod(model.name, f"{app.name}-0")
+    await model.wait_for_idle()
+    await saml_app.set_config(  # type: ignore[attr-defined]
+        {
+            "entity_id": saml_helper.entity_id,
+            "metadata_url": saml_helper.metadata_url,
+        }
+    )
+    await model.add_relation(app.name, "saml-integrator")
+    await model.wait_for_idle()
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    # discourse need a long password and a valid email
+    # username can't be "discourse" or it will be renamed
+    username = "ubuntu"
+    email = "ubuntu@canonical.com"
+    password = "test-discourse-k8s-password"  # nosec
+    saml_helper.register_user(username=username, email=email, password=password)
+
+    action_result = await run_action(app.name, "add-admin-user", email=email, password=password)
+    assert "user" in action_result
+
+    host = app.name
+    original_getaddrinfo = socket.getaddrinfo
+
+    def patched_getaddrinfo(*args):
+        if args[0] == host:
+            return original_getaddrinfo("127.0.0.1", *args[1:])
+        return original_getaddrinfo(*args)
+
+    with unittest.mock.patch.multiple(socket, getaddrinfo=patched_getaddrinfo):
+        session = requests.session()
+
+        response = session.get(
+            f"https://{host}/auth/saml/metadata",
+            verify=False,
+            timeout=10,
+        )
+        saml_helper.register_service_provider(name=host, metadata=response.text)
+
+        preference_page = session.get(
+            f"https://{host}/u/{username}/preferences/account",
+            verify=False,
+            timeout=requests_timeout,
+        )
+        assert preference_page.status_code == 404
+
+        session.get(f"https://{host}", verify=False)
+        response = session.get(
+            f"https://{host}/session/csrf",
+            headers={"Accept": "application/json"},
+            timeout=requests_timeout,
+        )
+        csrf_token = response.json()["csrf"]
+        redirect_response = session.post(
+            f"https://{host}/auth/saml",
+            data={"authenticity_token": csrf_token},
+            timeout=requests_timeout,
+            allow_redirects=False,
+        )
+        assert redirect_response.status_code == 302
+        redirect_url = redirect_response.headers["Location"]
+        saml_response = saml_helper.redirect_sso_login(
+            redirect_url, username=username, password=password
+        )
+        assert f"https://{host}" in saml_response.url
+        session.post(
+            saml_response.url,
+            data={"SAMLResponse": saml_response.data["SAMLResponse"], "SameSite": "1"},
+        )
+        session.post(saml_response.url, data=saml_response.data)
+
+        preference_page = session.get(
+            f"https://{host}/u/{username}/preferences/account",
+            verify=False,
+            timeout=requests_timeout,
+        )
+        assert preference_page.status_code == 200
 
 
 @pytest.mark.asyncio

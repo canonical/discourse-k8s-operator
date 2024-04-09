@@ -71,9 +71,9 @@ def test_on_config_changed_when_no_saml_target():
     act: when force_saml_login configuration is True and there's no saml_target_url
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = helpers.start_harness(with_config={"force_saml_login": True, "saml_target_url": ""})
+    harness = helpers.start_harness(with_config={"force_saml_login": True})
     assert harness.model.unit.status == BlockedStatus(
-        "force_saml_login can not be true without a saml_target_url"
+        "force_saml_login cannot be true without a saml relation"
     )
 
 
@@ -83,11 +83,9 @@ def test_on_config_changed_when_saml_sync_groups_and_no_url_invalid():
     act: when saml_sync_groups configuration is provided and there's no saml_target_url
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = helpers.start_harness(
-        with_config={"saml_sync_groups": "group1", "saml_target_url": ""}
-    )
+    harness = helpers.start_harness(with_config={"saml_sync_groups": "group1"})
     assert harness.model.unit.status == BlockedStatus(
-        "'saml_sync_groups' cannot be specified without a 'saml_target_url'"
+        "'saml_sync_groups' cannot be specified without a saml relation"
     )
 
 
@@ -97,11 +95,10 @@ def test_on_config_changed_when_saml_target_url_and_force_https_disabled():
     act: when saml_target_url configuration is provided and force_https is False
     assert: it will get to blocked status waiting for the latter.
     """
-    harness = helpers.start_harness(
-        with_config={"saml_target_url": "group1", "force_https": False}
-    )
+    harness = helpers.start_harness(with_config={"force_https": False}, saml_fields=(True, "", ""))
+    harness.charm._is_config_valid()
     assert harness.model.unit.status == BlockedStatus(
-        "'saml_target_url' cannot be specified without 'force_https' being true"
+        "A saml relation cannot be specified without 'force_https' being true"
     )
 
 
@@ -166,7 +163,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -192,7 +189,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     harness.container_pebble_ready(SERVICE_NAME)
     harness.framework.reemit()
 
-    assert harness._charm
+    assert harness.charm
     assert expected_exec_call_was_made
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
@@ -219,48 +216,6 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
-def test_on_config_changed_when_valid_no_fingerprint():
-    """
-    arrange: given a deployed discourse charm with all the required relations
-    act: when a valid configuration is provided
-    assert: the appropriate configuration values are passed to the pod and the unit
-        reaches Active status.
-    """
-    harness = helpers.start_harness(
-        with_config={
-            "force_saml_login": True,
-            "saml_target_url": "https://login.sample.com/+saml",
-            "saml_sync_groups": "group1",
-            "s3_enabled": False,
-            "force_https": True,
-        }
-    )
-    harness.container_pebble_ready("discourse")
-
-    updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
-    updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
-    assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
-    assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
-    assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
-    assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
-    assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
-    assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
-    assert "discourse-k8s" == updated_plan_env["DISCOURSE_HOSTNAME"]
-    assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
-    assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
-    assert "DISCOURSE_SAML_CERT_FINGERPRINT" not in updated_plan_env
-    assert "true" == updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"]
-    assert "https://login.sample.com/+saml" == updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
-    assert "false" == updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"]
-    assert "true" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"]
-    assert "group1" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"]
-    assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
-    assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
-    assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
-    assert "DISCOURSE_USE_S3" not in updated_plan_env
-    assert isinstance(harness.model.unit.status, ActiveStatus)
-
-
 def test_on_config_changed_when_valid():
     """
     arrange: given a deployed discourse charm with all the required relations
@@ -274,7 +229,6 @@ def test_on_config_changed_when_valid():
             "enable_cors": True,
             "external_hostname": "discourse.local",
             "force_saml_login": True,
-            "saml_target_url": "https://login.ubuntu.com/+saml",
             "saml_sync_groups": "group1",
             "smtp_address": "smtp.internal",
             "smtp_domain": "foo.internal",
@@ -289,9 +243,10 @@ def test_on_config_changed_when_valid():
             "s3_region": "the-infinite-and-beyond",
             "s3_secret_access_key": "s|kI0ure_k3Y",
             "force_https": True,
-        }
+        },
+        saml_fields=(True, "https://login.ubuntu.com", "fingerprint"),
     )
-    harness.container_pebble_ready("discourse")
+    harness.container_pebble_ready(SERVICE_NAME)
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
@@ -372,7 +327,7 @@ def test_add_admin_user():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
             or args.stdin != f"{email}\n{password}\n{password}\nY\n"
@@ -416,7 +371,7 @@ def test_anonymize_user():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -494,7 +449,7 @@ def test_start_when_leader():
         expected_exec_call_was_made[" ".join(args.command)] = True
 
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -537,7 +492,7 @@ def test_start_when_not_leader():
         expected_exec_call_was_made[" ".join(args.command)] = True
 
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -672,7 +627,7 @@ def test_http_proxy_env(monkeypatch):
     """
     harness = helpers.start_harness()
 
-    created_env = harness._charm._create_discourse_environment_settings()
+    created_env = harness.charm._create_discourse_environment_settings()
     assert created_env["HTTP_PROXY"] == ""
     assert created_env["http_proxy"] == ""
     assert created_env["HTTPS_PROXY"] == ""
@@ -683,7 +638,7 @@ def test_http_proxy_env(monkeypatch):
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://proxy.test")
     monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://httpsproxy.test")
     monkeypatch.setenv("JUJU_CHARM_NO_PROXY", "noproxy.test")
-    created_env = harness._charm._create_discourse_environment_settings()
+    created_env = harness.charm._create_discourse_environment_settings()
 
     assert created_env["HTTP_PROXY"] == "http://proxy.test"
     assert created_env["http_proxy"] == "http://proxy.test"

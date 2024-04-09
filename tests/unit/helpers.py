@@ -17,6 +17,7 @@ DATABASE_NAME = "discourse"
 
 def start_harness(
     *,
+    saml_fields: tuple = (False, ""),
     with_postgres: bool = True,
     with_redis: bool = True,
     with_ingress: bool = False,
@@ -50,6 +51,9 @@ def start_harness(
 
     if with_ingress:
         _add_ingress_relation(harness)
+
+    if saml_fields[0]:
+        _add_saml_relation(harness, saml_fields[1])
 
     if with_config is not None:
         harness.update_config(with_config)
@@ -130,3 +134,30 @@ def _add_ingress_relation(harness):
     """
     nginx_route_relation_id = harness.add_relation("nginx-route", "ingress")
     harness.add_relation_unit(nginx_route_relation_id, "ingress/0")
+
+
+def _add_saml_relation(harness, saml_target):
+    """Add ingress relation and relation data to the charm.
+
+    Args:
+        - A harness instance
+
+    Returns: the same harness instance with an added relation
+    """
+    harness.set_leader(True)
+    saml_relation_id = harness.add_relation("saml", "saml-integrator")
+    harness.add_relation_unit(saml_relation_id, "saml-integrator/0")
+    harness.disable_hooks()
+    binding = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+    harness.update_relation_data(
+        relation_id=saml_relation_id,
+        app_or_unit="saml-integrator",
+        key_values={
+            "entity_id": saml_target,
+            "metadata_url": f"{saml_target}/saml/metadata",
+            "x509certs": "test",
+            "single_sign_on_service_redirect_url": f"{saml_target}/+saml",
+            "single_sign_on_service_redirect_binding": binding,
+        },
+    )
+    harness.enable_hooks()

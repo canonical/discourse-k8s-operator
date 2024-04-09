@@ -3,6 +3,8 @@
 # See LICENSE file for licensing details.
 
 """Charm for Discourse on kubernetes."""
+import base64
+import hashlib
 import logging
 import os.path
 import typing
@@ -19,6 +21,11 @@ from charms.nginx_ingress_integrator.v0.nginx_route import require_nginx_route
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
 from charms.redis_k8s.v0.redis import RedisRelationCharmEvents, RedisRequires
 from charms.rolling_ops.v0.rollingops import RollingOpsManager
+from charms.saml_integrator.v0.saml import (
+    DEFAULT_RELATION_NAME,
+    SamlDataAvailableEvent,
+    SamlRequires,
+)
 from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent
 from ops.framework import StoredState
 from ops.main import main
@@ -103,6 +110,8 @@ class DiscourseCharm(CharmBase):
             redis_relation={},
         )
         self._require_nginx_route()
+        self.saml = SamlRequires(self)
+        self.framework.observe(self.saml.on.saml_data_available, self._on_saml_data_available)
 
         self.framework.observe(self.on.start, self._on_start)
         self.framework.observe(self.on.upgrade_charm, self._on_upgrade_charm)
@@ -193,6 +202,10 @@ class DiscourseCharm(CharmBase):
         """
         self._configure_pod()
 
+    def _on_saml_data_available(self, _: SamlDataAvailableEvent) -> None:
+        """Handle SAML data available."""
+        self._configure_pod()
+
     def _on_rolling_restart(self, _: ops.EventBase) -> None:
         """Handle rolling restart event.
 
@@ -258,14 +271,23 @@ class DiscourseCharm(CharmBase):
         if self.config["throttle_level"] not in THROTTLE_LEVELS:
             errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
 
-        if self.config["force_saml_login"] and not self.config["saml_target_url"]:
-            errors.append("force_saml_login can not be true without a saml_target_url")
+        if (
+            self.config["force_saml_login"]
+            and self.model.get_relation(DEFAULT_RELATION_NAME) is None
+        ):
+            errors.append("force_saml_login cannot be true without a saml relation")
 
-        if self.config["saml_sync_groups"] and not self.config["saml_target_url"]:
-            errors.append("'saml_sync_groups' cannot be specified without a 'saml_target_url'")
+        if (
+            self.config["saml_sync_groups"]
+            and self.model.get_relation(DEFAULT_RELATION_NAME) is None
+        ):
+            errors.append("'saml_sync_groups' cannot be specified without a saml relation")
 
-        if self.config["saml_target_url"] and not self.config["force_https"]:
-            errors.append("'saml_target_url' cannot be specified without 'force_https' being true")
+        if (
+            self.model.get_relation(DEFAULT_RELATION_NAME) is not None
+            and not self.config["force_https"]
+        ):
+            errors.append("A saml relation cannot be specified without 'force_https' being true")
 
         if self.config.get("s3_enabled"):
             errors.extend(
@@ -282,27 +304,31 @@ class DiscourseCharm(CharmBase):
         """Get SAML configuration.
 
         Returns:
-            Dictionary with the SAML configuration settings..
+            Dictionary with the SAML configuration settings.
         """
-        ubuntu_one_fingerprint = "32:15:20:9F:A4:3C:8E:3E:8E:47:72:62:9A:86:8D:0E:E6:CF:45:D5"
-        ubuntu_one_staging_fingerprint = (
-            "D2:B4:86:49:1B:AC:29:F6:A4:C8:CF:0D:3A:8F:AD:86:36:0A:77:C0"
-        )
-        saml_fingerprints = {
-            "https://login.ubuntu.com/+saml": ubuntu_one_fingerprint,
-            "https://login.staging.ubuntu.com/+saml": ubuntu_one_staging_fingerprint,
-        }
+        relation_data = self.saml.get_relation_data()
+        if relation_data is None:
+            return {}
+
         saml_config = {}
 
-        if self.config.get("saml_target_url"):
-            saml_config["DISCOURSE_SAML_TARGET_URL"] = self.config["saml_target_url"]
-            saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
-                "true" if self.config["force_saml_login"] else "false"
-            )
-            fingerprint = saml_fingerprints.get(self.config["saml_target_url"])
-            if fingerprint:
-                saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = fingerprint
+        sso_redirect_endpoint = [
+            e
+            for e in relation_data.endpoints
+            if e.name == "SingleSignOnService"
+            and e.binding == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+        ][0]
 
+        saml_config["DISCOURSE_SAML_TARGET_URL"] = str(sso_redirect_endpoint.url)
+        certificate = relation_data.certificates[0]
+        # discourse needs SHA1 fingerprint
+        saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = (
+            hashlib.sha1(base64.b64decode(certificate)).digest().hex(":").upper()  # nosec
+        )
+
+        saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
+            "true" if self.config["force_saml_login"] else "false"
+        )
         saml_sync_groups = [
             x.strip() for x in self.config["saml_sync_groups"].split(",") if x.strip()
         ]
