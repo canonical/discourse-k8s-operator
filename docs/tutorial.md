@@ -21,7 +21,7 @@ All the above charms will the deployed in a new model named `discourse`:
 juju add-model discourse
 
 # Deploy the charms
-juju deploy redis-k8s
+juju deploy redis-k8s --channel latest/edge
 juju deploy postgresql-k8s --channel 14/stable --trust
 juju deploy discourse-k8s
 
@@ -31,7 +31,7 @@ juju config postgresql-k8s plugin_pg_trgm_enable=True
 
 # Relate redis-k8s and postgresql-k8s to discourse-k8s
 juju relate redis-k8s discourse-k8s
-juju relate discourse-k8s postgresql-k8s:db
+juju relate discourse-k8s postgresql-k8s
 
 ```
 
