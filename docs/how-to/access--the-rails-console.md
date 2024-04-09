@@ -17,14 +17,9 @@ Then ssh into the Discourse unit:
 ```
 juju ssh --container discourse discourse-k8s/leader bash   
 ```
-Now populate the required environment variables, this requires charm revision 70 or greater:
+Now access the console using Pebble:
 ```
-sudo -u _daemon_ xargs -0 -L1 -a "/proc/$(ps aux | awk '/[u]nicorn master/ {print $2;exit}')/environ" | awk '{FS="=";print "export " $1 "=\"" $2 "\""}' > /root/envi && . /root/envi && rm /root/envi
-```
-Now change to the appropriate directory and execute the command to access the console:
-```
-cd /srv/discourse/app
-RAILS_ENV=production bin/bundle exec rails console
+pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app -ti -- /srv/discourse/app/bin/bundle exec rails console
 ```
 If the output of the last command contains something similar to this:
 ```
