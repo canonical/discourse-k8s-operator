@@ -9,7 +9,7 @@ _Supported charms_: [postgresql-k8s](https://charmhub.io/postgresql-k8s),
 Database integration is a required relation for the Discourse charm to supply
 structured data storage for Discourse.
 
-Database integrate command: `juju integrate discourse-k8s postgresql-k8s:db`
+Database integrate command: `juju integrate discourse-k8s postgresql-k8s`
 
 ### grafana-dashboard
 
