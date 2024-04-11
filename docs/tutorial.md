@@ -37,36 +37,36 @@ juju relate discourse-k8s postgresql-k8s
 
 By running `juju status --relations` the current state of the deployment can be queried, with all the charms eventually reaching `Active`state:
 ```
-Model      Controller          Cloud/Region        Version  SLA          Timestamp
-discourse  microk8s-localhost  microk8s/localhost  2.9.37   unsupported  10:35:00+01:00
+Model      Controller  Cloud/Region        Version  SLA          Timestamp
+discourse  microk8s    microk8s/localhost  3.1.7    unsupported  12:48:02+02:00
 
-App             Version                       Status  Scale  Charm           Channel  Rev  Address        Exposed  Message
-discourse-k8s                                 active      1  discourse-k8s   edge      13  10.152.183.34  no       
-postgresql-k8s      14.9                      active      1  postgresql-k8s  stable    158                 no       Pod configured
-redis-k8s       ubuntu/redis@691f315          active      1  redis-k8s       stable     7                 no       
+App             Version  Status  Scale  Charm           Channel      Rev  Address         Exposed  Message
+discourse-k8s   3.2.0    active      1  discourse-k8s   stable        95  10.152.183.175  no       
+postgresql-k8s  14.10    active      1  postgresql-k8s  14/stable    193  10.152.183.59   no       
+redis-k8s       7.0.4    active      1  redis-k8s       latest/edge   27  10.152.183.46   no       
 
-Unit               Workload  Agent  Address      Ports     Message
-discourse-k8s/0*   active    idle   10.1.180.82            
-postgresql-k8s/0*  active    idle   10.1.180.81  5432/TCP  Pod configured
-redis-k8s/0*       active    idle   10.1.180.78  6379/TCP  
+Unit               Workload  Agent  Address      Ports  Message
+discourse-k8s/0*   active    idle   10.1.44.214         
+postgresql-k8s/0*  active    idle   10.1.44.219         
+redis-k8s/0*       active    idle   10.1.44.227         
 
-Relation provider    Requirer             Interface  Type     Message
-postgresql-k8s:db    discourse-k8s:db     pgsql      regular  
-postgresql-k8s:peer  postgresql-k8s:peer  peer       peer     
-redis-k8s:redis      discourse-k8s:redis  redis      regular  
-
+Integration provider           Requirer                       Interface          Type     Message
+discourse-k8s:restart          discourse-k8s:restart          rolling_op         peer     
+postgresql-k8s:database        discourse-k8s:database         postgresql_client  regular  
+postgresql-k8s:database-peers  postgresql-k8s:database-peers  postgresql_peers   peer     
+postgresql-k8s:restart         postgresql-k8s:restart         rolling_op         peer     
+postgresql-k8s:upgrade         postgresql-k8s:upgrade         upgrade            peer     
+redis-k8s:redis                discourse-k8s:redis            redis              regular  
+redis-k8s:redis-peers          redis-k8s:redis-peers          redis-peers        peer     
 ```
 
 Run `kubectl get pods -n discourse` to see the pods that are being created by the charms:
 ```
 NAME                             READY   STATUS    RESTARTS   AGE
-modeloperator-7879f68947-s4q59   1/1     Running   0          10m
-postgresql-k8s-operator-0        1/1     Running   0          10m
-redis-k8s-operator-0             1/1     Running   0          10m
-redis-k8s-0                      1/1     Running   0          10m
-postgresql-k8s-0                 1/1     Running   0          10m
-discourse-k8s-0                  2/2     Running   0          9m
-
+modeloperator-64c58d675d-csj47   1/1     Running   0          5m30s
+redis-k8s-0                      3/3     Running   0          5m22s
+discourse-k8s-0                  2/2     Running   0          5m1s
+postgresql-k8s-0                 2/2     Running   0          5m9s
 ```
 
 In order to expose the charm, the Nginx Ingress Integrator is to be deployed alongside Discourse to provide ingress capabilities
@@ -85,4 +85,4 @@ Discourse will be deployed with `discourse-k8s` as default hostname. In order to
 
 After that, visit `http://discourse-k8s` to reach Discourse.
 
-This charm allows you to add a admin user by executing the corresponding action. Instead of interacting with the Discourse UI just run `juju run-action discourse-k8s/0 add-admin-user email=email@example.com password=somepwd --wait` and it will be registered and validated.
+This charm allows you to add a admin user by executing the corresponding action. Instead of interacting with the Discourse UI just run `juju run discourse-k8s/0 add-admin-user email=email@example.com password=somelongpwd` and it will be registered and validated.
