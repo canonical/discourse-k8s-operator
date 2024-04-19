@@ -388,6 +388,23 @@ def test_anonymize_user():
     charm._on_anonymize_user_action(event)
 
 
+def test_handle_pebble_ready_event():
+    """
+    arrange: given a deployed discourse charm with all the required relations
+    act: trigger the pebble ready event on a leader unit
+    assert: the pebble plan gets updated
+    """
+    harness = helpers.start_harness(run_initial_hooks=False)
+
+    harness.set_can_connect(CONTAINER_NAME, True)
+    plan_before_event = harness.get_container_pebble_plan(CONTAINER_NAME)
+    harness.container_pebble_ready(CONTAINER_NAME)
+    plan_after_event = harness.get_container_pebble_plan(CONTAINER_NAME)
+    assert plan_before_event.__dict__ != plan_after_event.__dict__
+    assert "_services" in plan_after_event.__dict__
+    assert "discourse" in plan_after_event.__dict__["_services"]
+
+
 def test_handle_redis_relation_changed_event():
     """
     arrange: given a deployed discourse charm with all the required relations
