@@ -388,19 +388,21 @@ class DiscourseCharm(CharmBase):
         Raises:
             MissingRedisRelationDataError if the some of redis relation data is malformed/missing
         """
-        # This is the current recommended way of accessing the relation data.
-        for redis_unit in self._stored.redis_relation:  # type: ignore
-            # mypy fails to see that this is indexable
-            redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
-            try:
-                redis_hostname = str(redis_unit_data.get("hostname"))
-                redis_port = int(redis_unit_data.get("port"))
-            except (ValueError, TypeError) as exc:
-                raise MissingRedisRelationDataError() from exc
+        relation_data = self.redis.relation_data
+        if not relation_data:
+            raise MissingRedisRelationDataError("No redis relation data")
 
-            logger.debug(
-                "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
-            )
+        try:
+            redis_hostname = str(relation_data["hostname"])
+            redis_port = int(relation_data["port"])
+        except (KeyError, ValueError) as exc:
+            raise MissingRedisRelationDataError(
+                "Wrong hostname or port in Redis relation"
+            ) from exc
+
+        logger.debug(
+            "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
+        )
         return (redis_hostname, redis_port)
 
     def _create_discourse_environment_settings(self) -> typing.Dict[str, str]:
@@ -540,8 +542,7 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             self._stop_service()
             return False
-        # mypy fails do detect this stored value can be False
-        if not self._stored.redis_relation:  # type: ignore
+        if not self.redis.relation_data:
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
             self._stop_service()
             return False
