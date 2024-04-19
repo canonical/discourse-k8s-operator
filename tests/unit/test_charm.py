@@ -490,6 +490,8 @@ def test_start_when_not_leader():
     harness.charm.on.start.emit()
     harness.framework.reemit()
 
+    assert all(expected_exec_call_was_made.values())
+
 
 @pytest.mark.parametrize(
     "relation_data, should_be_ready",
