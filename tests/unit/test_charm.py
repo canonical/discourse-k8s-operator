@@ -412,7 +412,7 @@ def test_start_when_leader():
     act: trigger the start event on a leader unit
     assert: migrations are executed and assets are precompiled.
     """
-    harness = helpers.start_harness()
+    harness = helpers.start_harness(run_initial_hooks=False)
 
     # exec calls that we want to monitor
     exec_calls = [
@@ -444,6 +444,7 @@ def test_start_when_leader():
 
     harness.set_leader(True)
     harness.container_pebble_ready(SERVICE_NAME)
+    # A few events are not emitted, like config_changed.
     harness.charm.on.start.emit()
     harness.framework.reemit()
 
@@ -456,7 +457,7 @@ def test_start_when_not_leader():
     act: trigger the start event on a leader unit
     assert: migrations are executed and assets are precompiled.
     """
-    harness = helpers.start_harness()
+    harness = helpers.start_harness(run_initial_hooks=False)
 
     # exec calls that we want to monitor
     exec_calls = [
@@ -549,23 +550,19 @@ def test_is_database_relation_ready(relation_data, should_be_ready):
     "relation_data, should_be_ready",
     [
         (
-            {"hostname": "redis-host", "port": 1010},
+            {"hostname": "redis-host", "port": "1010"},
             True,
         ),
         (
-            {"hostname": "redis-host", "port": 0},
+            {"hostname": "redis-host", "port": "0"},
             False,
         ),
         (
-            {"hostname": "", "port": 1010},
+            {"hostname": "", "port": "1010"},
             False,
         ),
         (
-            {"hostname": "redis-host", "port": None},
-            False,
-        ),
-        (
-            {"hostname": None, "port": None},
+            {"hostname": "redis-host"},
             False,
         ),
         (
@@ -573,7 +570,7 @@ def test_is_database_relation_ready(relation_data, should_be_ready):
             False,
         ),
         (
-            {"port": 6379},
+            {"port": "6379"},
             False,
         ),
         (

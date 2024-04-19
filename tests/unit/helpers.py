@@ -15,13 +15,14 @@ from charm import DiscourseCharm
 DATABASE_NAME = "discourse"
 
 
-def start_harness(
+def start_harness(  # pylint: disable=too-many-arguments
     *,
     saml_fields: tuple = (False, ""),
     with_postgres: bool = True,
     with_redis: bool = True,
     with_ingress: bool = False,
     with_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
+    run_initial_hooks=True,
 ):
     """Start a harness discourse charm.
 
@@ -38,7 +39,10 @@ def start_harness(
     Returns: a ready to use harness instance
     """
     harness = Harness(DiscourseCharm)
-    harness.begin_with_initial_hooks()
+    if run_initial_hooks:
+        harness.begin_with_initial_hooks()
+    else:
+        harness.begin()
 
     # We catch all exec calls to the container by default
     harness.handle_exec("discourse", [], result=0)
@@ -117,11 +121,11 @@ def add_redis_relation(harness, relation_data=None):
     harness.add_relation_unit(redis_relation_id, "redis/0")
     # We need to bypass protected access to inject the relation data
     # pylint: disable=protected-access
-    harness.charm._stored.redis_relation = {
-        redis_relation_id: (
-            {"hostname": "redis-host", "port": 1010} if relation_data is None else relation_data
-        )
-    }
+    harness.update_relation_data(
+        redis_relation_id,
+        "redis/0",
+        {"hostname": "redis-host", "port": "1010"} if relation_data is None else relation_data,
+    )
 
 
 def _add_ingress_relation(harness):
