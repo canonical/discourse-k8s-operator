@@ -813,9 +813,13 @@ class DiscourseCharm(CharmBase):  # pylint: disable=too-many-instance-attributes
         plugins = plugins_comma_delimited.split(",")
         container = self.unit.get_container("discourse")
         if container.can_connect():
-            discourse.enable_plugins(
-                self._create_discourse_environment_settings, container, plugins
-            )
+            try:
+                stdout = discourse.enable_plugins(
+                    self._create_discourse_environment_settings(), container, plugins
+                )
+                event.log(stdout)
+            except discourse.UpdateSiteSettingsFailedError:
+                event.fail("Failed to enable settings.")
 
     def _start_service(self):
         """Start discourse."""

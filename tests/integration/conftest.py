@@ -23,6 +23,14 @@ from . import types
 
 logger = logging.getLogger(__name__)
 
+ENABLED_PLUGINS = [
+    "solved",
+    "saml",
+    "calendar",
+    "data_explorer",
+    "discourse_gamification",
+]  # prometheus is enabled by default
+
 
 @fixture(scope="module", name="metadata")
 def fixture_metadata():
@@ -193,6 +201,12 @@ async def app_fixture(
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
     await model.wait_for_idle(status="active", raise_on_error=False)
+
+    # Enable all plugins
+    action = await unit.run_action("enable-plugins", plugins=",".join(ENABLED_PLUGINS))
+    # wait for the action to complete
+    action = await action.wait()
+    logger.info("Enabled all plugins: %s", action.results)
 
     yield application
 
