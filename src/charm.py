@@ -32,8 +32,8 @@ from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.pebble import ExecError, ExecProcess, Plan
 
-from database import DatabaseHandler
 import discourse
+from database import DatabaseHandler
 
 logger = logging.getLogger(__name__)
 
@@ -813,7 +813,9 @@ class DiscourseCharm(CharmBase):  # pylint: disable=too-many-instance-attributes
         plugins = plugins_comma_delimited.split(",")
         container = self.unit.get_container("discourse")
         if container.can_connect():
-            discourse.enable_plugins(container, plugins)
+            discourse.enable_plugins(
+                self._create_discourse_environment_settings, container, plugins
+            )
 
     def _start_service(self):
         """Start discourse."""
