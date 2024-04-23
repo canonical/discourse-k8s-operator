@@ -33,6 +33,7 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingSta
 from ops.pebble import ExecError, ExecProcess, Plan
 
 from database import DatabaseHandler
+import discourse
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +84,7 @@ class MissingRedisRelationDataError(Exception):
     """Custom exception to be raised in case of malformed/missing redis relation data."""
 
 
-class DiscourseCharm(CharmBase):
+class DiscourseCharm(CharmBase):  # pylint: disable=too-many-instance-attributes
     """Charm for Discourse on kubernetes."""
 
     on = RedisRelationCharmEvents()
@@ -119,6 +120,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
+        self.framework.observe(self.on.enable_plugins_action, self._on_enable_plugins_action)
 
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
@@ -800,6 +802,18 @@ class DiscourseCharm(CharmBase):
                     # Ignore mypy warning when formatting stdout
                     f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
                 )
+
+    def _on_enable_plugins_action(self, event: ActionEvent) -> None:
+        """Enable discourse plugin(s).
+
+        Args:
+            event: Event triggering the anonymize_user action.
+        """
+        plugins_comma_delimited = event.params["plugins"]
+        plugins = plugins_comma_delimited.split(",")
+        container = self.unit.get_container("discourse")
+        if container.can_connect():
+            discourse.enable_plugins(container, plugins)
 
     def _start_service(self):
         """Start discourse."""

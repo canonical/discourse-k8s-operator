@@ -17,3 +17,9 @@ anonymize-user:
       type: string
       description: The unique identifier of the user to anonymize.
   required: [username]
+enable-plugins:
+  description: "Enable installed plugins"
+  params:
+    plugins:
+      type: string
+      description: "Comma delimited list of plugins to enable."
