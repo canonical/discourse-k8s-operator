@@ -434,7 +434,6 @@ def test_start_when_leader():
     # exec calls that we want to monitor
     exec_calls = [
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
         [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
     ]
 
@@ -478,7 +477,6 @@ def test_start_when_not_leader():
 
     # exec calls that we want to monitor
     exec_calls = [
-        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
         [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
     ]
 

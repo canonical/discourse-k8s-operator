@@ -582,25 +582,6 @@ class DiscourseCharm(CharmBase):
             logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _compile_assets(self) -> None:
-        container = self.unit.get_container(CONTAINER_NAME)
-        if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Not ready to compile assets")
-            return
-        env_settings = self._create_discourse_environment_settings()
-        self.model.unit.status = MaintenanceStatus("Compiling assets")
-        try:
-            precompile_process: ExecProcess = container.exec(
-                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-                environment=env_settings,
-                working_dir=DISCOURSE_PATH,
-                user=CONTAINER_APP_USERNAME,
-            )
-            precompile_process.wait_output()
-        except ExecError as cmd_err:
-            logger.exception("Compiling assets failed with code %d.", cmd_err.exit_code)
-            raise
-
     def _set_workload_version(self) -> None:
         container = self.unit.get_container(CONTAINER_NAME)
         if not self._are_relations_ready() or not container.can_connect():
@@ -657,8 +638,6 @@ class DiscourseCharm(CharmBase):
         try:
             logger.info("Discourse setup: about to execute migrations")
             self._execute_migrations()
-            logger.info("Discourse setup: about to compile assets")
-            self._compile_assets()
             logger.info("Discourse setup: about to mark the discourse setup process as complete")
             self._set_setup_completed()
             logger.info("Discourse setup: about to set workload version")
