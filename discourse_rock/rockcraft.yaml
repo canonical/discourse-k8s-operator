@@ -231,24 +231,6 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
       yarn install --immutable
-  perms:
-    plugin: nil
-    after: [tooling, discourse, setup, discourse-precompile-assets]
-    override-prime: |
-      chown -R 584792:584792 srv/discourse
-      chown -R 584792:584792 srv/scripts
-      mkdir -p var/lib/pebble/default/.cache
-      mkdir -p var/lib/pebble/default/.config
-      mkdir -p var/lib/pebble/default/.local
-      mkdir -p var/lib/pebble/default/.npm
-      mkdir -p var/lib/pebble/default/.yarn
-      touch var/lib/pebble/default/.yarnrc
-      chown -R 584792:584792 var/lib/pebble/default/.cache
-      chown -R 584792:584792 var/lib/pebble/default/.config
-      chown -R 584792:584792 var/lib/pebble/default/.local
-      chown -R 584792:584792 var/lib/pebble/default/.npm
-      chown -R 584792:584792 var/lib/pebble/default/.yarn
-      chown    584792:584792 var/lib/pebble/default/.yarnrc
   discourse-precompile-assets:
     plugin: nil
     after: [apply-patches, setup]
@@ -267,5 +249,21 @@ parts:
       PATH=$PATH:${CRAFT_PRIME}/usr/bin:${CRAFT_PRIME}/usr/local/bin RAILS_ENV=production DISCOURSE_DB_HOST=127.0.0.1 DISCOURSE_DB_PASSWORD=discourse bundle exec rake assets:precompile
       # Fix the symbolic links.
       find . -lname "${CRAFT_PRIME}/srv/discourse/*" -exec bash -c 'ln -snf "$(readlink "$1" | sed "s~${CRAFT_PRIME}~~")" "$1" ' sh {} \;
-      # TODO there are traces of /root/prime inside the files, not sure if that can cause any issue.
-
+  perms:
+    plugin: nil
+    after: [tooling, discourse, setup, discourse-precompile-assets]
+    override-prime: |
+      chown -R 584792:584792 srv/discourse
+      chown -R 584792:584792 srv/scripts
+      mkdir -p var/lib/pebble/default/.cache
+      mkdir -p var/lib/pebble/default/.config
+      mkdir -p var/lib/pebble/default/.local
+      mkdir -p var/lib/pebble/default/.npm
+      mkdir -p var/lib/pebble/default/.yarn
+      touch var/lib/pebble/default/.yarnrc
+      chown -R 584792:584792 var/lib/pebble/default/.cache
+      chown -R 584792:584792 var/lib/pebble/default/.config
+      chown -R 584792:584792 var/lib/pebble/default/.local
+      chown -R 584792:584792 var/lib/pebble/default/.npm
+      chown -R 584792:584792 var/lib/pebble/default/.yarn
+      chown    584792:584792 var/lib/pebble/default/.yarnrc
