@@ -204,7 +204,8 @@ async def app_fixture(
     inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
     enable_plugins_command = (
         "pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app -ti -- /bin/bash -c "
-        f'''"echo '{inline_yaml}' | /srv/discourse/app/bin/bundle exec rake site_settings:import -"'''
+        f""""echo '{inline_yaml}' | """
+        '''/srv/discourse/app/bin/bundle exec rake site_settings:import -"'''
     )
 
     action = await unit.run(f"/bin/bash -c '{enable_plugins_command}'")
