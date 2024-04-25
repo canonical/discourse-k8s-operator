@@ -200,7 +200,7 @@ async def app_fixture(
         model.add_relation(app_name, "redis-k8s"),
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
-    await model.wait_for_idle(status="active", raise_on_error=False)
+    await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=False)
     # Doing multiple exec calls here to avoid complicated and error-prone bash one-liners
     # This won't be too costly in terms of performance since we only enable a few plugins
     # and this is only a temporary solution which will be replaced with an enable_plugins
