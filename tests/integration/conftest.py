@@ -210,6 +210,7 @@ async def app_fixture(
 
     logger.info("Enabling plugins: %s", enable_plugins_command)
     action = await unit.run(f"/bin/bash -c '{enable_plugins_command}'")
+    await action.wait()
     logger.info(action.results)
 
     yield application
