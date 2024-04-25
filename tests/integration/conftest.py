@@ -23,6 +23,14 @@ from . import types
 
 logger = logging.getLogger(__name__)
 
+ENABLED_PLUGINS = [
+    "solved",
+    "saml",
+    "calendar",
+    "data_explorer",
+    "discourse_gamification",
+]
+
 
 @fixture(scope="module", name="metadata")
 def fixture_metadata():
@@ -193,6 +201,17 @@ async def app_fixture(
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
     await model.wait_for_idle(status="active", raise_on_error=False)
+    inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
+    enable_plugins_command = (
+        "pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app -ti -- /bin/bash -c "
+        f""""echo '{inline_yaml}' | """
+        '''/srv/discourse/app/bin/bundle exec rake site_settings:import -"'''
+    )
+
+    logger.info("Enabling plugins: %s", enable_plugins_command)
+    action = await unit.run(f"/bin/bash -c '{enable_plugins_command}'")
+    await action.wait()
+    logger.info(action.results)
 
     yield application
 
