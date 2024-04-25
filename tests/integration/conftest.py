@@ -212,7 +212,8 @@ async def app_fixture(
             '''/srv/discourse/app/bin/bundle exec rake site_settings:import -"'''
         )
         logger.info("enabling plugin: %s", plugin)
-        action = await unit.run(f"/bin/bash -c '{enable_plugins_command}'")
+        logger.info("running command: %s", enable_plugins_command)
+        action = await unit.run(enable_plugins_command)
         await action.wait()
         assert f"{plugin}_enabled: true" in action.results
 
