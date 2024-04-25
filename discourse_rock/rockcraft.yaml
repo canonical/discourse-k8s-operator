@@ -231,9 +231,27 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
       yarn install --immutable
+  discourse-precompile-assets:
+    plugin: nil
+    after: [apply-patches, setup]
+    build-packages:
+      - redis-tools
+      - postgresql-all
+      - postgresql-client
+    build-snaps:
+      - redis
+    override-prime: |
+      systemctl start postgresql
+      cd srv/discourse/app
+      su - postgres -c "psql -c \"CREATE DATABASE discourse;\"" || echo "Could not create database, maybe it already exists."
+      su - postgres -c "psql -c \"CREATE USER discourse WITH PASSWORD 'discourse';\"" || echo "Could not create user, maybe it already exists."
+      su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE discourse TO discourse;\""
+      PATH=$PATH:${CRAFT_PRIME}/usr/bin:${CRAFT_PRIME}/usr/local/bin RAILS_ENV=production DISCOURSE_DB_HOST=127.0.0.1 DISCOURSE_DB_PASSWORD=discourse bundle exec rake assets:precompile
+      # Fix the symbolic links.
+      find . -lname "${CRAFT_PRIME}/srv/discourse/*" -exec bash -c 'ln -snf "$(readlink "$1" | sed "s~${CRAFT_PRIME}~~")" "$1" ' sh {} \;
   perms:
     plugin: nil
-    after: [tooling, discourse, setup]
+    after: [tooling, discourse, setup, discourse-precompile-assets]
     override-prime: |
       chown -R 584792:584792 srv/discourse
       chown -R 584792:584792 srv/scripts
