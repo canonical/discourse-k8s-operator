@@ -2,8 +2,8 @@
 
 Depending on the configuration of the charm, the next external accesses are needed:
  - Access to the PostgreSQL database (mandatory).
- - Access to the S3 server is s3 is configured.
- - Access to http://github.com to download Promtail if the logging interface is configured.
+ - Access to the S3 server is S3 is configured in the charm.
+ - Access to http://github.com to download Promtail if the logging interface is used in the charm.
 
 If the option "external system avatars enabled" is enabled in the admin, access
 to https://avatars.discourse.org is necessary.
