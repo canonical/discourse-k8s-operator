@@ -10,7 +10,7 @@ to https://avatars.discourse.org is necessary.
 
 Besides that, other services, like link previews and installing themes from a git repository
 may need access to external sites to work, so allowing internet access to the Discourse instance is
-recommended. In an air gapped environment, the `model-config` options `juju-http-proxy`, `juju-https-proxy`
+recommended. In restricted environments, the `model-config` options `juju-http-proxy`, `juju-https-proxy`
 and `juju-no-proxy` can be used to set up a proxy for Discourse,
 see [Using proxies with Charmed Kubernetes](https://ubuntu.com/kubernetes/docs/proxies) for
 more information.
