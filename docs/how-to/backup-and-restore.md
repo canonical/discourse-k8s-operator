@@ -11,7 +11,7 @@ and [Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s).
 
 For this How-to, it is supposed that S3 has been configured (see [how to configure S3](./configure-s3.md).
 Running the Discourse Operator without S3 configured is not recommended as it will not work in HA mode and
-it is risky and data loss can happen in the workload container is restarted.
+it is risky and data loss can happen if the workload container is restarted.
 
 
 ## Backup and restore using Discourse backup functionality
