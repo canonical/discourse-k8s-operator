@@ -190,7 +190,7 @@ async def app_fixture(
             "plugin_pg_trgm_enable": "true",
         }
     )
-    await model.wait_for_idle(apps=[postgres_app.name], status="active", raise_on_error=False)
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
     # Add required relations
     unit = model.applications[app_name].units[0]
@@ -200,7 +200,7 @@ async def app_fixture(
         model.add_relation(app_name, "redis-k8s"),
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
-    await model.wait_for_idle(status="active", raise_on_error=False)
+    await model.wait_for_idle(status="active")
     inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
     enable_plugins_command = (
         "pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app -ti -- /bin/bash -c "
