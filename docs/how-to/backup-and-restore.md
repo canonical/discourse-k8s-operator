@@ -6,7 +6,7 @@ There are two ways to backup and restore Discourse. The
 first one is using the backup funcionality provided by Discourse.
 
 The second one consistes in backing up and restoring the database directly,
-that can be done easily thanks to [Charmed PostgreSQL](https://charmhub.io/postgresql) 
+that can be done easily thanks to [Charmed PostgreSQL](https://charmhub.io/postgresql)
 and [Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s).
 
 For this How-to, it is supposed that S3 has been configured (see [how to configure S3](./configure-s3.md).
@@ -16,11 +16,11 @@ it is risky and data loss can happen in the workload container is restarted.
 
 ## Backup and restore using Discourse backup functionality
 
-It is recommended to configure the `s3_backup_bucket` to a bucket that will store the 
-backups (see [how to configure S3](./configure-s3.md). If  `s3_backup_bucket` is not set, 
-the backups will be placed in one of the workload containers, 
+It is recommended to configure the `s3_backup_bucket` to a bucket that will store the
+backups (see [how to configure S3](./configure-s3.md). If  `s3_backup_bucket` is not set,
+the backups will be placed in one of the workload containers,
 in the path `/srv/discourse/app/public/backups/`. This will make HA deployments work incorrectly.
-Besides, it will be necessary to get the backup files and put them in a more secure place, 
+Besides, it will be necessary to get the backup files and put them in a more secure place,
 using Discourse admin interface or [juju scp](https://juju.is/docs/juju/juju-scp).
 
 A backup can be made by a site administrator using the web interface. See
@@ -32,11 +32,11 @@ Backups can also be configured to be automatically created. See [Configure autom
 
 ## Backup and restore using PostgreSQL
 
-If the same S3 bucket can be used in the restored Discourse instance, then it is only necessary 
+If the same S3 bucket can be used in the restored Discourse instance, then it is only necessary
 to backup the database.
 
 This can be easily done with [Charmed PostgreSQL](https://charmhub.io/postgresql) and [Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s).
-See [How to create and list backups in Charmed PostgreSQL](https://charmhub.io/postgresql/docs/h-create-and-list-backups) 
+See [How to create and list backups in Charmed PostgreSQL](https://charmhub.io/postgresql/docs/h-create-and-list-backups)
 or [How to create and list backups in Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s/docs/h-create-and-list-backups) for the full producedure.
 
 To restore Discourse, once it is deployed and configured as the Discourse instance to restore, it is only necessary
