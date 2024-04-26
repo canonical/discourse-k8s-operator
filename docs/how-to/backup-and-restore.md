@@ -3,9 +3,9 @@
 This document shows how to back up and restore Discourse.
 
 There are two ways to backup and restore Discourse. The
-first one is using the backup funcionality provided by Discourse.
+first one is using the backup functionality provided by Discourse.
 
-The second one consistes in backing up and restoring the database directly,
+The second one consists in backing up and restoring the database directly,
 that can be done easily thanks to [Charmed PostgreSQL](https://charmhub.io/postgresql)
 and [Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s).
 
@@ -17,7 +17,7 @@ it is risky and data loss can happen in the workload container is restarted.
 ## Backup and restore using Discourse backup functionality
 
 It is recommended to configure the `s3_backup_bucket` to a bucket that will store the
-backups (see [how to configure S3](./configure-s3.md). If  `s3_backup_bucket` is not set,
+backups (see [how to configure S3](./configure-s3.md)). If  `s3_backup_bucket` is not set,
 the backups will be placed in one of the workload containers,
 in the path `/srv/discourse/app/public/backups/`. This will make HA deployments work incorrectly.
 Besides, it will be necessary to get the backup files and put them in a more secure place,
@@ -37,7 +37,7 @@ to backup the database.
 
 This can be easily done with [Charmed PostgreSQL](https://charmhub.io/postgresql) and [Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s).
 See [How to create and list backups in Charmed PostgreSQL](https://charmhub.io/postgresql/docs/h-create-and-list-backups)
-or [How to create and list backups in Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s/docs/h-create-and-list-backups) for the full producedure.
+or [How to create and list backups in Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s/docs/h-create-and-list-backups) for the full procedure.
 
 To restore Discourse, once it is deployed and configured as the Discourse instance to restore, it is only necessary
 to restore the database. The instructions, depending on the configuration, can be found in the next links:
