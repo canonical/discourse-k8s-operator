@@ -213,9 +213,10 @@ async def app_fixture(
         )
         logger.info("enabling plugin: %s", plugin)
         logger.info("running command: %s", enable_plugins_command)
-        action = await unit.run(enable_plugins_command)
-        await action.wait()
-        assert f"{plugin}_enabled: true" in action.results
+        return_code, stdout, _ = await ops_test.juju(
+            "ssh", "--container", app_name, unit.name, f"'''{enable_plugins_command}'''"
+        )
+        assert return_code == 0 and f"{plugin}_enabled: true" in stdout
 
     yield application
 
