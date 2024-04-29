@@ -202,22 +202,11 @@ async def app_fixture(
         model.add_relation(app_name, "nginx-ingress-integrator"),
     )
     await model.wait_for_idle(apps=[application.name], status="active", raise_on_error=False)
-    # Doing multiple exec calls here to avoid complicated and error-prone bash one-liners
-    # This won't be too costly in terms of performance since we only enable a few plugins
-    # and this is only a temporary solution which will be replaced with an enable_plugins
-    # action in the future
-    # pylint: disable=line-too-long
-    for plugin in ENABLED_PLUGINS:
-        enable_plugins_command = f'''pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app -ti -- /bin/bash -c "echo '{plugin}_enabled: true' | /srv/discourse/app/bin/bundle exec rake site_settings:import -"'''
-        logger.info("enabling plugin: %s", plugin)
-        logger.info("running command: %s", enable_plugins_command)
-        return_code, stdout, stderr = await ops_test.run(
-            "juju", "ssh", "--container", "discourse", unit.name, f"'''{enable_plugins_command}'''"
-        )
-        logger.info("command stdout: %s", stdout)
-        assert (
-            return_code == 0 and f"{plugin}_enabled: true" in stdout
-        ), f"Enabling plugins failed, stderr: {stderr}"
+
+    action = await unit.run_action("enable-plugins", plugins=",".join(ENABLED_PLUGINS))
+    # wait for the action to complete
+    action = await action.wait()
+    logger.info("Enabled all plugins: %s", action.results)
 
     yield application
 

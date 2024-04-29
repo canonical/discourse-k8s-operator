@@ -119,7 +119,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.config_changed, self._on_config_changed)
         self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
-
+        self.framework.observe(self.on.enable_plugins_action, self._on_enable_plugins_action)
         self.redis = RedisRequires(self, self._stored)
         self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
 
@@ -779,6 +779,42 @@ class DiscourseCharm(CharmBase):
                     # Ignore mypy warning when formatting stdout
                     f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
                 )
+
+    def _on_enable_plugins_action(self, event: ActionEvent) -> None:
+        """Enable discourse plugin(s).
+        Args:
+            event: Event triggering the anonymize_user action.
+        """
+        plugins_comma_delimited = event.params["plugins"]
+        plugins = plugins_comma_delimited.split(",")
+        container = self.unit.get_container(CONTAINER_NAME)
+        if container.can_connect():
+            try:
+                # The rake site_settings:import task takes a yaml file as input
+                # This code inlines the yaml file to avoid having to
+                site_settings_config: typing.Dict[str, str] = {
+                    f"{plugin}_enabled": "true" for plugin in plugins
+                }
+                inline_yaml = "\n".join(
+                    f"{setting}: {value}" for setting, value in site_settings_config.items()
+                )
+                update_site_settings_command = (
+                    f"echo '{inline_yaml}' |"
+                    f" {DISCOURSE_PATH}/bin/bundle exec rake --trace site_settings:import -"
+                )
+                process: ExecProcess = container.exec(
+                    ["/bin/bash", "-c", update_site_settings_command],
+                    environment=self._create_discourse_environment_settings(),
+                    working_dir=DISCOURSE_PATH,
+                    user=CONTAINER_APP_USERNAME,
+                )
+                stdout, _ = process.wait_output()
+                event.log(stdout)
+                logger.info("enable plugins stdout: %s", stdout)
+
+            except ExecError as cmd_err:
+                logger.exception("Task site_settings:import failed.")
+                event.fail(f"Failed to enable settings: {cmd_err.stderr}")
 
     def _start_service(self):
         """Start discourse."""
