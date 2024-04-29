@@ -190,7 +190,7 @@ async def app_fixture(
             "plugin_pg_trgm_enable": "true",
         }
     )
-    await model.wait_for_idle(apps=[postgres_app.name], status="active", raise_on_error=False)
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
     # Add required relations
     unit = model.applications[app_name].units[0]
