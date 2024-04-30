@@ -487,6 +487,7 @@ class DiscourseCharm(CharmBase):
                     "user": CONTAINER_APP_USERNAME,
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
+                    "kill-delay": "20s",
                 }
             },
             "checks": {
@@ -494,13 +495,6 @@ class DiscourseCharm(CharmBase):
                     "override": "replace",
                     "level": "ready",
                     "http": {"url": f"http://localhost:{SERVICE_PORT}/srv/status"},
-                },
-                "discourse-setup-completed": {
-                    "override": "replace",
-                    "level": "ready",
-                    "exec": {
-                        "command": f"ls {SETUP_COMPLETED_FLAG_FILE}",
-                    },
                 },
             },
         }
