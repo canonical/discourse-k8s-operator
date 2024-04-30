@@ -152,7 +152,8 @@ async def app_fixture(
         trust=True,
         config={"profile": "testing"},
     )
-    await model.wait_for_idle(apps=[postgres_app.name], status="active")
+    async with ops_test.fast_forward():
+        await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
     redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
     await model.wait_for_idle(apps=[redis_app.name], status="active")
@@ -234,7 +235,7 @@ async def setup_saml_config(app: Application, model: Model):
 @pytest_asyncio.fixture(scope="module", name="admin_credentials")
 async def admin_credentials_fixture(app: Application) -> types.Credentials:
     """Admin user credentials."""
-    email = "admin-user@test.internal"
+    email = f"admin-user{secrets.randbits(32)}@test.internal"
     password = secrets.token_urlsafe(16)
     discourse_unit: Unit = app.units[0]
     action: Action = await discourse_unit.run_action(
@@ -277,6 +278,7 @@ async def admin_api_key_fixture(
         )
         # pylint doesn't see the "ok" member
         assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
+        assert "error" not in res.json()
         # Create global key
         res = sess.post(
             f"{discourse_address}/admin/api/keys",
