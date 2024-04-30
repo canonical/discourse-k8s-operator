@@ -7,7 +7,7 @@
 +  Signal.trap 'TERM' do
 +    puts 'Unicorn master intercepting TERM and sending myself QUIT after 5s instead'
 +    Thread.new do
-+      sleep 5
++      sleep 15
 +      puts 'Send QUIT signal to master'
 +      Process.kill 'QUIT', Process.pid
 +    end

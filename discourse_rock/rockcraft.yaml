@@ -268,3 +268,10 @@ parts:
       chown -R 584792:584792 var/lib/pebble/default/.npm
       chown -R 584792:584792 var/lib/pebble/default/.yarn
       chown    584792:584792 var/lib/pebble/default/.yarnrc
+checks:
+  discourse-setup-completed:
+    override: replace
+    level: ready
+    threshold: 1
+    exec:
+      command: ls /run/discourse-k8s-operator/setup_completed

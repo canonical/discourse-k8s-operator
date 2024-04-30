@@ -7,6 +7,8 @@ import logging
 import re
 import socket
 import unittest.mock
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict
 
 import pytest
@@ -14,8 +16,9 @@ import requests
 import urllib3.exceptions
 from boto3 import client
 from botocore.config import Config
-from ops.model import ActiveStatus, Application
-from pytest_operator.plugin import Model
+from juju.application import Application
+from ops.model import ActiveStatus
+from pytest_operator.plugin import Model, OpsTest
 from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
 from charm import PROMETHEUS_PORT
@@ -379,3 +382,73 @@ async def test_relations(
     await model.add_relation(app.name, "nginx-ingress-integrator")
     await model.wait_for_idle(status="active")
     test_discourse_srv_status_ok()
+
+
+async def test_upgrade(
+    app: Application,
+    model: Model,
+    pytestconfig: Config,
+    ops_test: OpsTest,
+):
+    """TODO
+    JAVI THIS TEST IS NOT TOTALLY TRUE IF S3 IS NOT CHECKED IN THE TEST FOR HA IN UPGRADE.
+    """
+
+    resp = await app.scale(3)
+    await model.wait_for_idle(status="active")
+    logging.info("RESP scale 3: %s", resp)
+
+    resources = {
+        "discourse-image": pytestconfig.getoption("--discourse-image"),
+    }
+
+    if charm_file := pytestconfig.getoption("--charm-file"):
+        charm_path: str | Path | None = f"./{charm_file}"
+    else:
+        charm_path = await ops_test.build_charm(".")
+
+    host = app.name
+
+    def check_alive():
+        response = requests.get(f"http://{host}/srv/status", timeout=2)
+        logging.info("check_alive: Response to srv body %s", response.content)
+        assert response.status_code == 200
+
+    check_alive()
+    await app.refresh(path=charm_path, resources=resources)
+
+    def upgrade_finished(active_seconds=30):
+        active_start = None
+
+        def upgrade_finished_with_active():
+            nonlocal active_start
+            active_period = timedelta(seconds=active_seconds)
+            check_alive()
+            logger.info(" app.name %s app.status %s", app.name, app.status)
+            for unit in app.units:
+                logger.info(" unit agent status: %s %s", unit.name, unit.agent_status)
+                logger.info(" unit workload status: %s", unit.workload_status)
+            is_active = app.status == "active" and all(
+                unit.workload_status == "active" for unit in app.units
+            )
+
+            now = datetime.now()
+            if is_active:
+                logger.info(" YES active ")
+                logger.info(" active_start %s ", active_start)
+                if not active_start:
+                    active_start = now
+                else:
+                    logger.info(" value of active_start - now %s ", now - active_start)
+                    logger.info(" valid state: %s ", (now - active_start > active_period))
+                    return now - active_start > active_period
+            else:
+                logger.info(" NOT active ")
+                active_start = None
+
+            return False
+
+        return upgrade_finished_with_active
+
+    await model.block_until(upgrade_finished(), timeout=10 * 60)
+    check_alive()
