@@ -390,13 +390,15 @@ async def test_upgrade(
     pytestconfig: Config,
     ops_test: OpsTest,
 ):
-    """TODO
-    JAVI THIS TEST IS NOT TOTALLY TRUE IF S3 IS NOT CHECKED IN THE TEST FOR HA IN UPGRADE.
+    """
+    arrange: Given discourse application with three units
+    act: Refresh the application (upgrade)
+    assert: The application upgrades and over all the upgrade, the application replies
+      correctly through the ingress.
     """
 
-    resp = await app.scale(3)
+    await app.scale(3)
     await model.wait_for_idle(status="active")
-    logging.info("RESP scale 3: %s", resp)
 
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
@@ -410,45 +412,54 @@ async def test_upgrade(
     host = app.name
 
     def check_alive():
-        response = requests.get(f"http://{host}/srv/status", timeout=2)
-        logging.info("check_alive: Response to srv body %s", response.content)
+        response = requests.get("http://127.0.0.1/srv/status", headers={"Host": host}, timeout=2)
+        logger.info("check_alive response: %s", response.content)
         assert response.status_code == 200
 
     check_alive()
     await app.refresh(path=charm_path, resources=resources)
 
-    def upgrade_finished(active_seconds=30):
-        active_start = None
+    def upgrade_finished(idle_seconds=15):
+        """Check that the upgrade finishes correctly (active)
 
-        def upgrade_finished_with_active():
-            nonlocal active_start
-            active_period = timedelta(seconds=active_seconds)
+        This function checks continuously during the upgrade (in every iteration
+        every 0.5 seconds) that Discourse is replying correctly to the /srv/status endpoint.
+
+        The upgrade is considered done when the units have been idle for
+        `idle_seconds` and all the units workloads and the app are active.
+        """
+        idle_start = None
+
+        def _upgrade_finished():
+            nonlocal idle_start
             check_alive()
-            logger.info(" app.name %s app.status %s", app.name, app.status)
-            for unit in app.units:
-                logger.info(" unit agent status: %s %s", unit.name, unit.agent_status)
-                logger.info(" unit workload status: %s", unit.workload_status)
+
+            idle_period = timedelta(seconds=idle_seconds)
+            is_idle = all(unit.agent_status == "idle" for unit in app.units)
+
+            now = datetime.now()
+
+            if not is_idle:
+                idle_start = None
+                return False
+
+            if not idle_start:
+                idle_start = now
+                return False
+
+            if now - idle_start < idle_period:
+                # Not idle for long enough
+                return False
+
             is_active = app.status == "active" and all(
                 unit.workload_status == "active" for unit in app.units
             )
-
-            now = datetime.now()
             if is_active:
-                logger.info(" YES active ")
-                logger.info(" active_start %s ", active_start)
-                if not active_start:
-                    active_start = now
-                else:
-                    logger.info(" value of active_start - now %s ", now - active_start)
-                    logger.info(" valid state: %s ", (now - active_start > active_period))
-                    return now - active_start > active_period
-            else:
-                logger.info(" NOT active ")
-                active_start = None
+                return True
 
             return False
 
-        return upgrade_finished_with_active
+        return _upgrade_finished
 
     await model.block_until(upgrade_finished(), timeout=10 * 60)
     check_alive()
