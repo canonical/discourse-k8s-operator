@@ -704,19 +704,45 @@ class DiscourseCharm(CharmBase):
         email = event.params["email"]
         password = event.params["password"]
         container = self.unit.get_container(CONTAINER_NAME)
+
+        # see if user already exists
+
         if container.can_connect():
             process = container.exec(
                 [
                     os.path.join(DISCOURSE_PATH, "bin/bundle"),
                     "exec",
                     "rake",
-                    "admin:create",
+                    "users:exists",
+                    email,
                 ],
-                stdin=f"{email}\n{password}\n{password}\nY\n",
                 working_dir=DISCOURSE_PATH,
                 user=CONTAINER_APP_USERNAME,
                 environment=self._create_discourse_environment_settings(),
-                timeout=60,
+            )
+            try:
+                process.wait_output()
+            except ExecError as ex:
+                # User does not exist, create it
+                if self._create_user(event, email, password):
+                    event.set_results({"user": f"{email}"})
+        else:
+            event.fail("Container is not ready")
+
+        # make user an admin
+
+        if container.can_connect():
+            process = container.exec(
+                [
+                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                    "exec",
+                    "rake",
+                    "users:make_admin",
+                    email,
+                ],
+                working_dir=DISCOURSE_PATH,
+                user=CONTAINER_APP_USERNAME,
+                environment=self._create_discourse_environment_settings(),
             )
             try:
                 process.wait_output()
@@ -724,10 +750,68 @@ class DiscourseCharm(CharmBase):
             except ExecError as ex:
                 event.fail(
                     # Parameter validation errors are printed to stdout
-                    f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
+                    f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
                 )
+                
+
+        # if container.can_connect():
+        #     process = container.exec(
+        #         [
+        #             os.path.join(DISCOURSE_PATH, "bin/bundle"),
+        #             "exec",
+        #             "rake",
+        #             "admin:create",
+        #         ],
+        #         stdin=f"{email}\n{password}\n{password}\nY\n",
+        #         working_dir=DISCOURSE_PATH,
+        #         user=CONTAINER_APP_USERNAME,
+        #         environment=self._create_discourse_environment_settings(),
+        #         timeout=60,
+        #     )
+        #     try:
+        #         process.wait_output()
+        #         event.set_results({"user": f"{email}"})
+        #     except ExecError as ex:
+        #         event.fail(
+        #             # Parameter validation errors are printed to stdout
+        #             f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
+        #         )
+        # else:
+        #     event.fail("Container is not ready")
+    
+    def _create_user(self, event, email: str, password: str) -> bool:
+        """Create a new user in Discourse.
+
+        Args:
+            email: Email of the user to be created.
+            password: Password of the user to be created.
+
+        Returns:
+            bool: True if user creation is successful, False otherwise.
+        """
+        container = self.unit.get_container(CONTAINER_NAME)
+        if container.can_connect():
+            process = container.exec(
+                [
+                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                    "exec",
+                    "rake",
+                    "users:create",
+                ],
+                working_dir=DISCOURSE_PATH,
+                user=CONTAINER_APP_USERNAME,
+                environment=self._create_discourse_environment_settings(),
+                timeout=60,
+            )
+            try:
+                process.wait_output()
+                return True
+            except ExecError as ex:
+                event.fail(f"Failed to create user with email {email}: {ex.stdout}")
+                return False
         else:
             event.fail("Container is not ready")
+            return False
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""
