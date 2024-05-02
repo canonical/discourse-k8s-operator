@@ -137,6 +137,7 @@ async def app_fixture(
     pytestconfig: Config,
     model: Model,
 ):
+    # pylint: disable=too-many-locals
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
@@ -205,15 +206,20 @@ async def app_fixture(
 
     # Enable plugins calling rake site_settings:import in one of the units.
     inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
-    logger.info("inline_yaml %s", inline_yaml)
     discourse_rake_command = "/srv/discourse/app/bin/bundle exec rake site_settings:import "
-    pebble_exec = "PEBBLE_SOCKET=/charm/containers/discourse/pebble.socket pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app"
-    full_command = f"/bin/bash -c 'echo \"{inline_yaml}\" | {pebble_exec} -- {discourse_rake_command}'"
-    logger.info("Full command: %s", full_command)
+    pebble_exec = (
+        "PEBBLE_SOCKET=/charm/containers/discourse/pebble.socket "
+        "pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app"
+    )
+    full_command = (
+        "/bin/bash -c "
+        f"'set -euo pipefail; echo \"{inline_yaml}\" | {pebble_exec} -- {discourse_rake_command}'"
+    )
+    logger.info("Enable plugins command: %s", full_command)
     action = await unit.run(full_command)
     await action.wait()
     logger.info(action.results)
-    assert action.results['return-code'] == 0, "Enable plugins failed"
+    assert action.results["return-code"] == 0, "Enable plugins failed"
 
     yield application
 
