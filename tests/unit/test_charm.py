@@ -313,7 +313,7 @@ def test_db_relation():
 def test_add_admin_user():
     """
     arrange: an email and a password
-    act: when the _on_add_admin_user_action mtehod is executed
+    act: when the _on_add_admin_user_action method is executed
     assert: the underlying rake command to add the user is executed
         with the appropriate parameters.
     """
