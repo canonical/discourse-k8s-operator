@@ -7,6 +7,7 @@ Charm for Discourse on kubernetes.
 
 **Global Variables**
 ---------------
+- **DEFAULT_RELATION_NAME**
 - **DATABASE_NAME**
 - **DISCOURSE_PATH**
 - **THROTTLE_LEVELS**
@@ -27,7 +28,7 @@ Charm for Discourse on kubernetes.
 ## <kbd>class</kbd> `DiscourseCharm`
 Charm for Discourse on kubernetes. 
 
-<a href="../src/charm.py#L85"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/charm.py#L92"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ### <kbd>function</kbd> `__init__`
 

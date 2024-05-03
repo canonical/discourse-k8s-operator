@@ -163,7 +163,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -189,7 +189,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     harness.container_pebble_ready(SERVICE_NAME)
     harness.framework.reemit()
 
-    assert harness._charm
+    assert harness.charm
     assert expected_exec_call_was_made
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
@@ -213,49 +213,6 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     assert "the-infinite-and-beyond" == updated_plan_env["DISCOURSE_S3_REGION"]
     assert "s|kI0ure_k3Y" == updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"]
     assert updated_plan_env["DISCOURSE_USE_S3"]
-    assert isinstance(harness.model.unit.status, ActiveStatus)
-
-
-def test_on_config_changed_when_valid_no_fingerprint():
-    """
-    arrange: given a deployed discourse charm with all the required relations
-    act: when a valid configuration is provided
-    assert: the appropriate configuration values are passed to the pod and the unit
-        reaches Active status.
-    """
-    harness = helpers.start_harness(
-        with_config={
-            "force_saml_login": True,
-            "saml_sync_groups": "group1",
-            "s3_enabled": False,
-            "force_https": True,
-        },
-        saml_fields=(True, "https://login.sample.com", ""),
-    )
-
-    harness.container_pebble_ready(SERVICE_NAME)
-
-    updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
-    updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
-    assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
-    assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
-    assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
-    assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
-    assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
-    assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
-    assert "discourse-k8s" == updated_plan_env["DISCOURSE_HOSTNAME"]
-    assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
-    assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
-    assert "DISCOURSE_SAML_CERT_FINGERPRINT" not in updated_plan_env
-    assert "true" == updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"]
-    assert "https://login.sample.com/+saml" == updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
-    assert "false" == updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"]
-    assert "true" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"]
-    assert "group1" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"]
-    assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
-    assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
-    assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
-    assert "DISCOURSE_USE_S3" not in updated_plan_env
     assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
@@ -370,7 +327,7 @@ def test_add_admin_user():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
             or args.stdin != f"{email}\n{password}\n{password}\nY\n"
@@ -414,7 +371,7 @@ def test_anonymize_user():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -437,8 +394,9 @@ def test_handle_pebble_ready_event():
     act: trigger the pebble ready event on a leader unit
     assert: the pebble plan gets updated
     """
-    harness = helpers.start_harness()
+    harness = helpers.start_harness(run_initial_hooks=False)
 
+    harness.set_can_connect(CONTAINER_NAME, True)
     plan_before_event = harness.get_container_pebble_plan(CONTAINER_NAME)
     harness.container_pebble_ready(CONTAINER_NAME)
     plan_after_event = harness.get_container_pebble_plan(CONTAINER_NAME)
@@ -471,12 +429,11 @@ def test_start_when_leader():
     act: trigger the start event on a leader unit
     assert: migrations are executed and assets are precompiled.
     """
-    harness = helpers.start_harness()
+    harness = helpers.start_harness(run_initial_hooks=False)
 
     # exec calls that we want to monitor
     exec_calls = [
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "--trace", "db:migrate"],
-        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
         [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
     ]
 
@@ -492,7 +449,7 @@ def test_start_when_leader():
         expected_exec_call_was_made[" ".join(args.command)] = True
 
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -503,6 +460,7 @@ def test_start_when_leader():
 
     harness.set_leader(True)
     harness.container_pebble_ready(SERVICE_NAME)
+    # A few events are not emitted, like config_changed.
     harness.charm.on.start.emit()
     harness.framework.reemit()
 
@@ -515,11 +473,10 @@ def test_start_when_not_leader():
     act: trigger the start event on a leader unit
     assert: migrations are executed and assets are precompiled.
     """
-    harness = helpers.start_harness()
+    harness = helpers.start_harness(run_initial_hooks=False)
 
     # exec calls that we want to monitor
     exec_calls = [
-        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
         [f"{DISCOURSE_PATH}/bin/rails", "runner", "puts Discourse::VERSION::STRING"],
     ]
 
@@ -535,7 +492,7 @@ def test_start_when_not_leader():
         expected_exec_call_was_made[" ".join(args.command)] = True
 
         if (
-            args.environment != harness._charm._create_discourse_environment_settings()
+            args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
         ):
@@ -548,6 +505,8 @@ def test_start_when_not_leader():
     harness.container_pebble_ready(SERVICE_NAME)
     harness.charm.on.start.emit()
     harness.framework.reemit()
+
+    assert all(expected_exec_call_was_made.values())
 
 
 @pytest.mark.parametrize(
@@ -606,23 +565,19 @@ def test_is_database_relation_ready(relation_data, should_be_ready):
     "relation_data, should_be_ready",
     [
         (
-            {"hostname": "redis-host", "port": 1010},
+            {"hostname": "redis-host", "port": "1010"},
             True,
         ),
         (
-            {"hostname": "redis-host", "port": 0},
+            {"hostname": "redis-host", "port": "0"},
             False,
         ),
         (
-            {"hostname": "", "port": 1010},
+            {"hostname": "", "port": "1010"},
             False,
         ),
         (
-            {"hostname": "redis-host", "port": None},
-            False,
-        ),
-        (
-            {"hostname": None, "port": None},
+            {"hostname": "redis-host"},
             False,
         ),
         (
@@ -630,7 +585,7 @@ def test_is_database_relation_ready(relation_data, should_be_ready):
             False,
         ),
         (
-            {"port": 6379},
+            {"port": "6379"},
             False,
         ),
         (
@@ -670,7 +625,7 @@ def test_http_proxy_env(monkeypatch):
     """
     harness = helpers.start_harness()
 
-    created_env = harness._charm._create_discourse_environment_settings()
+    created_env = harness.charm._create_discourse_environment_settings()
     assert created_env["HTTP_PROXY"] == ""
     assert created_env["http_proxy"] == ""
     assert created_env["HTTPS_PROXY"] == ""
@@ -681,7 +636,7 @@ def test_http_proxy_env(monkeypatch):
     monkeypatch.setenv("JUJU_CHARM_HTTP_PROXY", "http://proxy.test")
     monkeypatch.setenv("JUJU_CHARM_HTTPS_PROXY", "http://httpsproxy.test")
     monkeypatch.setenv("JUJU_CHARM_NO_PROXY", "noproxy.test")
-    created_env = harness._charm._create_discourse_environment_settings()
+    created_env = harness.charm._create_discourse_environment_settings()
 
     assert created_env["HTTP_PROXY"] == "http://proxy.test"
     assert created_env["http_proxy"] == "http://proxy.test"

@@ -15,13 +15,14 @@ from charm import DiscourseCharm
 DATABASE_NAME = "discourse"
 
 
-def start_harness(
+def start_harness(  # pylint: disable=too-many-arguments
     *,
-    saml_fields: tuple = (False, "", ""),
+    saml_fields: tuple = (False, ""),
     with_postgres: bool = True,
     with_redis: bool = True,
     with_ingress: bool = False,
     with_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
+    run_initial_hooks=True,
 ):
     """Start a harness discourse charm.
 
@@ -38,7 +39,10 @@ def start_harness(
     Returns: a ready to use harness instance
     """
     harness = Harness(DiscourseCharm)
-    harness.begin_with_initial_hooks()
+    if run_initial_hooks:
+        harness.begin_with_initial_hooks()
+    else:
+        harness.begin()
 
     # We catch all exec calls to the container by default
     harness.handle_exec("discourse", [], result=0)
@@ -53,7 +57,7 @@ def start_harness(
         _add_ingress_relation(harness)
 
     if saml_fields[0]:
-        _add_saml_relation(harness, saml_fields[1], saml_fields[2])
+        _add_saml_relation(harness, saml_fields[1])
 
     if with_config is not None:
         harness.update_config(with_config)
@@ -117,11 +121,11 @@ def add_redis_relation(harness, relation_data=None):
     harness.add_relation_unit(redis_relation_id, "redis/0")
     # We need to bypass protected access to inject the relation data
     # pylint: disable=protected-access
-    harness.charm._stored.redis_relation = {
-        redis_relation_id: (
-            {"hostname": "redis-host", "port": 1010} if relation_data is None else relation_data
-        )
-    }
+    harness.update_relation_data(
+        redis_relation_id,
+        "redis/0",
+        {"hostname": "redis-host", "port": "1010"} if relation_data is None else relation_data,
+    )
 
 
 def _add_ingress_relation(harness):
@@ -136,7 +140,7 @@ def _add_ingress_relation(harness):
     harness.add_relation_unit(nginx_route_relation_id, "ingress/0")
 
 
-def _add_saml_relation(harness, saml_target, fingerprint):
+def _add_saml_relation(harness, saml_target):
     """Add ingress relation and relation data to the charm.
 
     Args:
@@ -148,19 +152,16 @@ def _add_saml_relation(harness, saml_target, fingerprint):
     saml_relation_id = harness.add_relation("saml", "saml-integrator")
     harness.add_relation_unit(saml_relation_id, "saml-integrator/0")
     harness.disable_hooks()
+    binding = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
     harness.update_relation_data(
         relation_id=saml_relation_id,
         app_or_unit="saml-integrator",
         key_values={
+            "entity_id": saml_target,
+            "metadata_url": f"{saml_target}/saml/metadata",
+            "x509certs": "test",
             "single_sign_on_service_redirect_url": f"{saml_target}/+saml",
+            "single_sign_on_service_redirect_binding": binding,
         },
     )
     harness.enable_hooks()
-    harness.update_relation_data(
-        relation_id=saml_relation_id,
-        app_or_unit=harness.charm.app.name,
-        key_values={
-            "entity_id": saml_target,
-            "fingerprint": fingerprint,
-        },
-    )

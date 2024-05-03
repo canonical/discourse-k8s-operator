@@ -5,7 +5,7 @@ name: discourse
 summary: Discourse rock
 description: Discourse OCI image for the Discourse charm
 base: ubuntu@22.04
-# renovate: base: ubuntu:22.04@sha256:77906da86b60585ce12215807090eb327e7386c8fafb5402369e421f44eff17e
+# renovate: base: ubuntu:22.04@sha256:a6d2b38300ce017add71440577d5b0a90460d0e57fd7aec21dd0d1b0761bbfb2
 run-user: _daemon_  # UID/GID 584792
 license: Apache-2.0
 version: "1.0"
@@ -187,6 +187,7 @@ parts:
     override-stage: |
       git -C srv/discourse/app apply patches/lp1903695.patch
       git -C srv/discourse/app apply patches/anonymize_user.patch
+      git -C srv/discourse/app apply patches/sigterm.patch
       # The following is a fix for UglifierJS assets compilation
       # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
@@ -231,9 +232,27 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
       yarn install --immutable
+  discourse-precompile-assets:
+    plugin: nil
+    after: [apply-patches, setup]
+    build-packages:
+      - redis-tools
+      - postgresql-all
+      - postgresql-client
+    build-snaps:
+      - redis
+    override-prime: |
+      systemctl start postgresql
+      cd srv/discourse/app
+      su - postgres -c "psql -c \"CREATE DATABASE discourse;\"" || echo "Could not create database, maybe it already exists."
+      su - postgres -c "psql -c \"CREATE USER discourse WITH PASSWORD 'discourse';\"" || echo "Could not create user, maybe it already exists."
+      su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE discourse TO discourse;\""
+      PATH=$PATH:${CRAFT_PRIME}/usr/bin:${CRAFT_PRIME}/usr/local/bin RAILS_ENV=production DISCOURSE_DB_HOST=127.0.0.1 DISCOURSE_DB_PASSWORD=discourse bundle exec rake assets:precompile
+      # Fix the symbolic links.
+      find . -lname "${CRAFT_PRIME}/srv/discourse/*" -exec bash -c 'ln -snf "$(readlink "$1" | sed "s~${CRAFT_PRIME}~~")" "$1" ' sh {} \;
   perms:
     plugin: nil
-    after: [tooling, discourse, setup]
+    after: [tooling, discourse, setup, discourse-precompile-assets]
     override-prime: |
       chown -R 584792:584792 srv/discourse
       chown -R 584792:584792 srv/scripts
@@ -249,3 +268,10 @@ parts:
       chown -R 584792:584792 var/lib/pebble/default/.npm
       chown -R 584792:584792 var/lib/pebble/default/.yarn
       chown    584792:584792 var/lib/pebble/default/.yarnrc
+checks:
+  discourse-setup-completed:
+    override: replace
+    level: ready
+    threshold: 1
+    exec:
+      command: ls /run/discourse-k8s-operator/setup_completed

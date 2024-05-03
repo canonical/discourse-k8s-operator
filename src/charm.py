@@ -202,21 +202,9 @@ class DiscourseCharm(CharmBase):
         """
         self._configure_pod()
 
-    def _on_saml_data_available(self, event: SamlDataAvailableEvent) -> None:
+    def _on_saml_data_available(self, _: SamlDataAvailableEvent) -> None:
         """Handle SAML data available."""
-        if self.unit.is_leader():
-            # Utilizing the SHA1 hash is safe in this case, so a nosec ignore will be put in place.
-            fingerprint = hashlib.sha1(
-                base64.b64decode(event.certificates[0])
-            ).hexdigest()  # nosec
-            relation = self.model.get_relation(DEFAULT_RELATION_NAME)
-            # Will ignore union-attr since asserting the relation type will make bandit complain.
-            relation.data[self.app].update(  # type: ignore[union-attr]
-                {
-                    "fingerprint": fingerprint,
-                }
-            )
-            self._on_config_changed(event)
+        self._configure_pod()
 
     def _on_rolling_restart(self, _: ops.EventBase) -> None:
         """Handle rolling restart event.
@@ -316,27 +304,31 @@ class DiscourseCharm(CharmBase):
         """Get SAML configuration.
 
         Returns:
-            Dictionary with the SAML configuration settings..
+            Dictionary with the SAML configuration settings.
         """
+        relation_data = self.saml.get_relation_data()
+        if relation_data is None:
+            return {}
+
         saml_config = {}
 
-        relation = self.model.get_relation(DEFAULT_RELATION_NAME)
-        if (
-            relation is not None
-            and relation.data[self.app]
-            and relation.app
-            and relation.data[relation.app]
-        ):
-            saml_config["DISCOURSE_SAML_TARGET_URL"] = relation.data[relation.app][
-                "single_sign_on_service_redirect_url"
-            ]
-            saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
-                "true" if self.config["force_saml_login"] else "false"
-            )
-            fingerprint = relation.data[self.app].get("fingerprint")
-            if fingerprint:
-                saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = fingerprint
+        sso_redirect_endpoint = [
+            e
+            for e in relation_data.endpoints
+            if e.name == "SingleSignOnService"
+            and e.binding == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+        ][0]
 
+        saml_config["DISCOURSE_SAML_TARGET_URL"] = str(sso_redirect_endpoint.url)
+        certificate = relation_data.certificates[0]
+        # discourse needs SHA1 fingerprint
+        saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = (
+            hashlib.sha1(base64.b64decode(certificate)).digest().hex(":").upper()  # nosec
+        )
+
+        saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
+            "true" if self.config["force_saml_login"] else "false"
+        )
         saml_sync_groups = [
             x.strip() for x in self.config["saml_sync_groups"].split(",") if x.strip()
         ]
@@ -396,19 +388,21 @@ class DiscourseCharm(CharmBase):
         Raises:
             MissingRedisRelationDataError if the some of redis relation data is malformed/missing
         """
-        # This is the current recommended way of accessing the relation data.
-        for redis_unit in self._stored.redis_relation:  # type: ignore
-            # mypy fails to see that this is indexable
-            redis_unit_data = self._stored.redis_relation[redis_unit]  # type: ignore
-            try:
-                redis_hostname = str(redis_unit_data.get("hostname"))
-                redis_port = int(redis_unit_data.get("port"))
-            except (ValueError, TypeError) as exc:
-                raise MissingRedisRelationDataError() from exc
+        relation_data = self.redis.relation_data
+        if not relation_data:
+            raise MissingRedisRelationDataError("No redis relation data")
 
-            logger.debug(
-                "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
-            )
+        try:
+            redis_hostname = str(relation_data["hostname"])
+            redis_port = int(relation_data["port"])
+        except (KeyError, ValueError) as exc:
+            raise MissingRedisRelationDataError(
+                "Wrong hostname or port in Redis relation"
+            ) from exc
+
+        logger.debug(
+            "Got redis connection details from relation of %s:%s", redis_hostname, redis_port
+        )
         return (redis_hostname, redis_port)
 
     def _create_discourse_environment_settings(self) -> typing.Dict[str, str]:
@@ -493,6 +487,7 @@ class DiscourseCharm(CharmBase):
                     "user": CONTAINER_APP_USERNAME,
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
+                    "kill-delay": "20s",
                 }
             },
             "checks": {
@@ -500,13 +495,6 @@ class DiscourseCharm(CharmBase):
                     "override": "replace",
                     "level": "ready",
                     "http": {"url": f"http://localhost:{SERVICE_PORT}/srv/status"},
-                },
-                "discourse-setup-completed": {
-                    "override": "replace",
-                    "level": "ready",
-                    "exec": {
-                        "command": f"ls {SETUP_COMPLETED_FLAG_FILE}",
-                    },
                 },
             },
         }
@@ -548,8 +536,7 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             self._stop_service()
             return False
-        # mypy fails do detect this stored value can be False
-        if not self._stored.redis_relation:  # type: ignore
+        if not self.redis.relation_data:
             self.model.unit.status = WaitingStatus("Waiting for redis relation")
             self._stop_service()
             return False
@@ -587,25 +574,6 @@ class DiscourseCharm(CharmBase):
             migration_process.wait_output()
         except ExecError as cmd_err:
             logger.exception("Executing migrations failed with code %d.", cmd_err.exit_code)
-            raise
-
-    def _compile_assets(self) -> None:
-        container = self.unit.get_container(CONTAINER_NAME)
-        if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Not ready to compile assets")
-            return
-        env_settings = self._create_discourse_environment_settings()
-        self.model.unit.status = MaintenanceStatus("Compiling assets")
-        try:
-            precompile_process: ExecProcess = container.exec(
-                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "assets:precompile"],
-                environment=env_settings,
-                working_dir=DISCOURSE_PATH,
-                user=CONTAINER_APP_USERNAME,
-            )
-            precompile_process.wait_output()
-        except ExecError as cmd_err:
-            logger.exception("Compiling assets failed with code %d.", cmd_err.exit_code)
             raise
 
     def _set_workload_version(self) -> None:
@@ -664,8 +632,6 @@ class DiscourseCharm(CharmBase):
         try:
             logger.info("Discourse setup: about to execute migrations")
             self._execute_migrations()
-            logger.info("Discourse setup: about to compile assets")
-            self._compile_assets()
             logger.info("Discourse setup: about to mark the discourse setup process as complete")
             self._set_setup_completed()
             logger.info("Discourse setup: about to set workload version")

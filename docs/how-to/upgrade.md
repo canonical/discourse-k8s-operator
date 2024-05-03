@@ -22,17 +22,17 @@ juju trust nginx-ingress-integrator --scope cluster
 Because the pod-spec charm doesn't [store state](https://discourse.charmhub.io/t/keeping-state-in-juju-controllers-in-operator-framework/3303) in the Juju controller, during the upgrade the charm stored state will be lost, so the database relations will have to be recreated in order to exchange the connection details again. This can be done by running:
 ```
 juju remove-relation redis-k8s:redis discourse-k8s:redis
-juju remove-relation  postgresql-k8s:db-admin discourse-k8s:db
+juju remove-relation  postgresql-k8s discourse-k8s
 
 juju relate redis-k8s:redis discourse-k8s:redis
-juju relate postgresql-k8s:db-admin discourse-k8s:db
+juju relate postgresql-k8s discourse-k8s
 ```
 
 Note also that the following configuration options have been dropped, so manual intervention to prepare for the upgrade might be needed.
 * `db_name`: Customizing the name of the database Discourse connects to is not supported anymore. The database will have to be renamed to `discourse`, in order for the charm to be able to connect to it.
 * `redis_host`: Using a Redis instance not provided by a charm is not supported anymore. Redis should now be deployed as a charm and related to Discourse. The charm will automatically retrieve all the settings needed to connect to it from the relation. You can do this as follows:
 ```
-juju deploy redis-k8s
+juju deploy redis-k8s --channel latest/edge
 juju relate discourse-k8s redis-k8s
 ```
 * `tls_secret_name`: Providing the TLS secret via the charm configuration is not supported anymore. The secret must be provided now using the [Nginx Ingress Integrator charm](https://charmhub.io/nginx-ingress-integrator) using the `tls-secret-name` option. See above for an example.

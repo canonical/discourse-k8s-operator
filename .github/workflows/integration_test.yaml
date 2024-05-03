@@ -8,8 +8,10 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
-      extra-arguments: --localstack-address 172.17.0.1
+      extra-arguments: -x --localstack-address 172.17.0.1
       pre-run-script: localstack-installation.sh
       trivy-image-config: "trivy.yaml"
       juju-channel: 3.1/stable
       channel: 1.28-strict/stable
+      self-hosted-runner: true
+      self-hosted-runner-label: "edge"

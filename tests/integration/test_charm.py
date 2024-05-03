@@ -7,6 +7,8 @@ import logging
 import re
 import socket
 import unittest.mock
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict
 
 import pytest
@@ -14,8 +16,9 @@ import requests
 import urllib3.exceptions
 from boto3 import client
 from botocore.config import Config
-from ops.model import ActiveStatus, Application
-from pytest_operator.plugin import Model
+from juju.application import Application
+from ops.model import ActiveStatus
+from pytest_operator.plugin import Model, OpsTest
 from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
 from charm import PROMETHEUS_PORT
@@ -379,3 +382,84 @@ async def test_relations(
     await model.add_relation(app.name, "nginx-ingress-integrator")
     await model.wait_for_idle(status="active")
     test_discourse_srv_status_ok()
+
+
+async def test_upgrade(
+    app: Application,
+    model: Model,
+    pytestconfig: Config,
+    ops_test: OpsTest,
+):
+    """
+    arrange: Given discourse application with three units
+    act: Refresh the application (upgrade)
+    assert: The application upgrades and over all the upgrade, the application replies
+      correctly through the ingress.
+    """
+
+    await app.scale(3)
+    await model.wait_for_idle(status="active")
+
+    resources = {
+        "discourse-image": pytestconfig.getoption("--discourse-image"),
+    }
+
+    if charm_file := pytestconfig.getoption("--charm-file"):
+        charm_path: str | Path | None = f"./{charm_file}"
+    else:
+        charm_path = await ops_test.build_charm(".")
+
+    host = app.name
+
+    def check_alive():
+        response = requests.get("http://127.0.0.1/srv/status", headers={"Host": host}, timeout=2)
+        logger.info("check_alive response: %s", response.content)
+        assert response.status_code == 200
+
+    check_alive()
+    await app.refresh(path=charm_path, resources=resources)
+
+    def upgrade_finished(idle_seconds=15):
+        """Check that the upgrade finishes correctly (active)
+
+        This function checks continuously during the upgrade (in every iteration
+        every 0.5 seconds) that Discourse is replying correctly to the /srv/status endpoint.
+
+        The upgrade is considered done when the units have been idle for
+        `idle_seconds` and all the units workloads and the app are active.
+        """
+        idle_start = None
+
+        def _upgrade_finished():
+            nonlocal idle_start
+            check_alive()
+
+            idle_period = timedelta(seconds=idle_seconds)
+            is_idle = all(unit.agent_status == "idle" for unit in app.units)
+
+            now = datetime.now()
+
+            if not is_idle:
+                idle_start = None
+                return False
+
+            if not idle_start:
+                idle_start = now
+                return False
+
+            if now - idle_start < idle_period:
+                # Not idle for long enough
+                return False
+
+            is_active = app.status == "active" and all(
+                unit.workload_status == "active" for unit in app.units
+            )
+            if is_active:
+                return True
+
+            return False
+
+        return _upgrade_finished
+
+    await model.block_until(upgrade_finished(), timeout=10 * 60)
+    check_alive()
