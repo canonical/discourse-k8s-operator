@@ -5,7 +5,7 @@ name: discourse
 summary: Discourse rock
 description: Discourse OCI image for the Discourse charm
 base: ubuntu@22.04
-# renovate: base: ubuntu:22.04@sha256:1b8d8ff4777f36f19bfe73ee4df61e3a0b789caeff29caa019539ec7c9a57f95
+# renovate: base: ubuntu:22.04@sha256:a6d2b38300ce017add71440577d5b0a90460d0e57fd7aec21dd0d1b0761bbfb2
 run-user: _daemon_  # UID/GID 584792
 license: Apache-2.0
 version: "1.0"
@@ -187,6 +187,7 @@ parts:
     override-stage: |
       git -C srv/discourse/app apply patches/lp1903695.patch
       git -C srv/discourse/app apply patches/anonymize_user.patch
+      git -C srv/discourse/app apply patches/sigterm.patch
       # The following is a fix for UglifierJS assets compilation
       # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
@@ -267,3 +268,10 @@ parts:
       chown -R 584792:584792 var/lib/pebble/default/.npm
       chown -R 584792:584792 var/lib/pebble/default/.yarn
       chown    584792:584792 var/lib/pebble/default/.yarnrc
+checks:
+  discourse-setup-completed:
+    override: replace
+    level: ready
+    threshold: 1
+    exec:
+      command: ls /run/discourse-k8s-operator/setup_completed
