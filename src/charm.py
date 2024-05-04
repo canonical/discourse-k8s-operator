@@ -706,49 +706,50 @@ class DiscourseCharm(CharmBase):
 
         # see if user already exists
 
-        if container.can_connect():
-            process = container.exec(
-                [
-                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                    "exec",
-                    "rake",
-                    "users:exists",
-                    email,
-                ],
-                working_dir=DISCOURSE_PATH,
-                user=CONTAINER_APP_USERNAME,
-                environment=self._create_discourse_environment_settings(),
-            )
-            try:
-                process.wait_output()
-            except ExecError:
-                # User does not exist, create it
-                if self._create_user(event, email):
-                    event.set_results({"user": f"{email}"})
-        else:
+        if not container.can_connect():
             event.fail("Container is not ready")
+            return
 
-        if container.can_connect():
-            process = container.exec(
-                [
-                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                    "exec",
-                    "rake",
-                    "users:make_admin",
-                    email,
-                ],
-                working_dir=DISCOURSE_PATH,
-                user=CONTAINER_APP_USERNAME,
-                environment=self._create_discourse_environment_settings(),
-            )
-            try:
-                process.wait_output()
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                "users:exists",
+                email,
+            ],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            process.wait_output()
+        except ExecError:
+            # User does not exist, create the user before making them an admin
+            if self._create_user(event, email):
                 event.set_results({"user": f"{email}"})
-            except ExecError as ex:
-                event.fail(
-                    # Parameter validation errors are printed to stdout
-                    f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
-                )
+
+        # make user an admin
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                "users:make_admin",
+                email,
+            ],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            process.wait_output()
+            event.set_results({"user": f"{email}"})
+        except ExecError as ex:
+            event.fail(
+                # Parameter validation errors are printed to stdout
+                f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
+            )
 
     def _create_user(self, event, email: str) -> bool:
         """Create a new user in Discourse.
