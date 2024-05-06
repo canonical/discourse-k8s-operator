@@ -666,7 +666,7 @@ class DiscourseCharm(CharmBase):
         ):
             current_env = current_plan.services[SERVICE_NAME].environment
             previous_s3_info = S3Info(
-                current_env["DISCOURSE_USE_S3"] if "DISCOURSE_USE_S3" in current_env else "",
+                current_env["DISCOURSE_USE_S3"] == "true" if "DISCOURSE_USE_S3" in current_env else False,
                 current_env["DISCOURSE_S3_REGION"] if "DISCOURSE_S3_REGION" in current_env else "",
                 current_env["DISCOURSE_S3_BUCKET"] if "DISCOURSE_S3_BUCKET" in current_env else "",
                 (
