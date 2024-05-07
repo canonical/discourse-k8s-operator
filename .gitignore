@@ -11,3 +11,5 @@ env
 .pytest_cache
 .mypy_cache
 *.rock
+requirements.txt
+requirements-last-build.txt
