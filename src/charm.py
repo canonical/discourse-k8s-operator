@@ -330,7 +330,7 @@ class DiscourseCharm(CharmBase):
             "true" if self.config["force_saml_login"] else "false"
         )
         saml_sync_groups = [
-            str(x).strip() for x in self.config["saml_sync_groups"].split(",") if str(x).strip()
+            str(x).strip() for x in str(self.config["saml_sync_groups"]).split(",") if str(x).strip()
         ]
         if saml_sync_groups:
             # Per https://github.com/discourse/discourse-saml setting this to `true`
