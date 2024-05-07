@@ -143,4 +143,4 @@ protobuf = "^3.20.3"
 psycopg2-binary = "^2.9.9"
 pytest = "^8.0.1"
 pytest-operator = "^0.32.0"
-saml-test-idp = { git = "git+https://github.com/canonical/saml-test-idp.git", branch = "main" }
+saml-test-idp = { git = "https://github.com/canonical/saml-test-idp.git", branch = "main" }
