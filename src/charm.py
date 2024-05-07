@@ -238,7 +238,7 @@ class DiscourseCharm(CharmBase):
         Returns:
             The site hostname defined as part of the site_url configuration or a default value.
         """
-        return (
+        return str(
             self.config["external_hostname"] if self.config["external_hostname"] else self.app.name
         )
 
@@ -330,7 +330,7 @@ class DiscourseCharm(CharmBase):
             "true" if self.config["force_saml_login"] else "false"
         )
         saml_sync_groups = [
-            x.strip() for x in self.config["saml_sync_groups"].split(",") if x.strip()
+            str(x).strip() for x in self.config["saml_sync_groups"].split(",") if str(x).strip()
         ]
         if saml_sync_groups:
             # Per https://github.com/discourse/discourse-saml setting this to `true`

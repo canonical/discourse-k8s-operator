@@ -117,6 +117,7 @@ optional = true
 [tool.poetry.group.unit.dependencies]
 coverage = {extras = ["toml"], version = "^7.4.2"}
 pytest = "^8.0.1"
+cosl = "^0.0.11"
 
 [tool.poetry.group.coverage-report]
 optional = true
