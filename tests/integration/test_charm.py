@@ -238,7 +238,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
     saml_helper.prepare_pod(model.name, f"{app.name}-0")
     await model.wait_for_idle()
-    await app.set_config({"force_https": True})  # type: ignore[attr-defined]
+    await app.set_config({"force_https": str(True)})  # type: ignore[attr-defined]
     await saml_app.set_config(  # type: ignore[attr-defined]
         {
             "entity_id": saml_helper.entity_id,
