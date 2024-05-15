@@ -186,7 +186,7 @@ parts:
     after: [discourse, patches]
     override-stage: |
       git -C srv/discourse/app apply patches/lp1903695.patch
-      git -C srv/discourse/app apply patches/anonymize_user.patch
+      git -C srv/discourse/app apply patches/rake.patch
       git -C srv/discourse/app apply patches/sigterm.patch
       # The following is a fix for UglifierJS assets compilation
       # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
