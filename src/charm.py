@@ -701,78 +701,50 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the add_admin_user action.
         """
-        email = event.params["email"]
-        # @ can cause issues cannot escape @ symbol
-        # user / domain change config
-
         container = self.unit.get_container(CONTAINER_NAME)
 
         if not container.can_connect():
             event.fail("Unable to connect to container, container is not ready")
             return
 
-        process = container.exec(
-            [
-                os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                "exec",
-                "rake",
-                "users:exists",
-            ],
-            stdin=f"{email}\nY\n",
-            working_dir=DISCOURSE_PATH,
-            user=CONTAINER_APP_USERNAME,
-            environment=self._create_discourse_environment_settings(),
-        )
-        try:
-            process.wait_output()
-        except ExecError:
-            self._create_user(event, email)
+        self._create_user(event) 
 
-        # make user an admin
         process = container.exec(
             [
                 os.path.join(DISCOURSE_PATH, "bin/bundle"),
                 "exec",
                 "rake",
-                "users:make_admin",
-                email,
+                "admin:create",
             ],
+            stdin=f"{event.params["email"]}\n{event.params["password"]}\nN\n",
             working_dir=DISCOURSE_PATH,
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
         )
         try:
             process.wait_output()
-            event.set_results({"user": f"{email}"})
+            event.set_results({"user": f"{event.params["email"]}"})
         except ExecError as ex:
             event.fail(
-                # Parameter validation errors are printed to stdout
-                f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
+                f"Failed to make user with email {event.params["email"]} an admin: {ex.stdout}"  # type: ignore
             )
 
-    def _create_user(self, event: ActionEvent, email: str):
+    def _create_user(self, event: ActionEvent):
         """Create a new user in Discourse.
 
         Args:
-            email: Email of the user to be created.
-            password: Password of the user to be created.
-
-        Returns:
-            bool: True if user creation is successful, False otherwise.
+            event: Event triggering the create user action.
         """
+
         container = self.unit.get_container(CONTAINER_NAME)
-        password = self._generate_password()
-        # docker run -t dicouse:llal -- exec bin/bash 
-        # rake users:create email password
-        # rake --help
         process = container.exec(
             [
                 os.path.join(DISCOURSE_PATH, "bin/bundle"),
                 "exec",
                 "rake",
-                "user:create",
+                "admin:create",
             ],
-            stdin=f"{email}\n{password}\nY\n",
+            stdin=f"{event.params["email"]}\n{event.params["password"]}\nN\n",
             working_dir=DISCOURSE_PATH,
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
@@ -784,17 +756,6 @@ class DiscourseCharm(CharmBase):
             event.fail(
                 f"Failed to create user with email {email}: {ex.stdout}" # type: ignore
             )
-
-    def _generate_password(self, length: int = 16) -> str:
-        """Generate a random password.
-
-        Args:
-            length: Length of the password to generate.
-
-        Returns:
-            str: Random password.
-        """
-        return os.urandom(length).hex()
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""

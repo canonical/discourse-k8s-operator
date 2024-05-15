@@ -6,7 +6,7 @@
  end
 +
 +desc "Create the user for given credentials"
-+task "user:create" => :environment do
++task "users:create" => :environment do
 +  require "highline/import"
 +
 +  begin
