@@ -373,7 +373,7 @@ def test_add_user():
             args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
-            or args.stdin != f"{email}\n{password}\n{password}\n"
+            or args.stdin != f"{email}\n{password}\n"
             or args.timeout != 60
         ):
             raise ValueError(f"{args.command} wasn't made with the correct args.")

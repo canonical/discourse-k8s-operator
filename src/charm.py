@@ -703,11 +703,12 @@ class DiscourseCharm(CharmBase):
         """
         container = self.unit.get_container(CONTAINER_NAME)
 
+        email = event.params["email"]
+
         if not container.can_connect():
             event.fail("Unable to connect to container, container is not ready")
             return
-
-        self._create_user(event) 
+        self._create_user(event)
 
         process = container.exec(
             [
@@ -715,7 +716,7 @@ class DiscourseCharm(CharmBase):
                 "exec",
                 "rake",
                 "admin:promote",
-                event.params["email"],
+                email,
             ],
             working_dir=DISCOURSE_PATH,
             user=CONTAINER_APP_USERNAME,
@@ -723,10 +724,10 @@ class DiscourseCharm(CharmBase):
         )
         try:
             process.wait_output()
-            event.set_results({"user": f"{event.params["email"]}"})
+            event.set_results(email)
         except ExecError as ex:
             event.fail(
-                f"Failed to make user with email {event.params["email"]} an admin: {ex.stdout}"  # type: ignore
+                f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
             )
 
     def _create_user(self, event: ActionEvent):
@@ -735,8 +736,11 @@ class DiscourseCharm(CharmBase):
         Args:
             event: Event triggering the create user action.
         """
-
         container = self.unit.get_container(CONTAINER_NAME)
+
+        email = event.params["email"]
+        password = event.params["password"]
+
         process = container.exec(
             [
                 os.path.join(DISCOURSE_PATH, "bin/bundle"),
@@ -744,7 +748,7 @@ class DiscourseCharm(CharmBase):
                 "rake",
                 "users:create",
             ],
-            stdin=f"{event.params["email"]}\n{event.params["password"]}\n",
+            stdin=f"{email}\n{password}\n",
             working_dir=DISCOURSE_PATH,
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
@@ -753,9 +757,7 @@ class DiscourseCharm(CharmBase):
         try:
             process.wait_output()
         except ExecError as ex:
-            event.fail(
-                f"Failed to create user with email {email}: {ex.stdout}" # type: ignore
-            )
+            event.fail(f"Failed to create user with email {email}: {ex.stdout}")  # type: ignore
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""
