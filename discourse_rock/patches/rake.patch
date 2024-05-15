@@ -1,0 +1,87 @@
+--- /dev/null
++++ b/lib/tasks/canonical.rake
+@@ -0,0 +1,88 @@
++# frozen_string_literal: true
++
++desc "Promote a user to admin"
++task "admin:promote", [:email] => [:environment] do |_, args|
++email = args[:email]
++  if !email || email !~ /@/
++    puts "ERROR: Expecting rake admin:promote[some@email.com]"
++    exit 1
++  end
++  if User.find_by_email(email).nil?
++    puts "ERROR: User with email #{email} not found"
++    exit 1
++  end
++ admin = User.find_by_email(email)
++ admin.grant_admin!
++ admin.change_trust_level!(1) if admin.trust_level < 1
++ admin.email_tokens.update_all confirmed: true
++ admin.activate
++ say("\nYour account now has Admin privileges!")
++end
++
++desc "Create the user for given credentials"
++task "users:create" => :environment do
++  require "highline/import"
++
++  begin
++    email = ask("Email:  ")
++    existing_user = User.find_by_email(email)
++
++    # check if user account already exists
++    if existing_user
++      # user already exists, ask for password reset
++      new_user = existing_user
++      reset_password =
++        ask(
++          "User with this email already exists! Do you want to reset the password for this email? (Y/n)  ",
++        )
++      if (reset_password == "" || reset_password.downcase == "y")
++        begin
++          password = ask("Password:  ") { |q| q.echo = false }
++          password_confirmation = ask("Repeat password:  ") { |q| q.echo = false }
++          passwords_match = password == password_confirmation
++
++          say("Passwords don't match, try again...") unless passwords_match
++        end while !passwords_match
++        new_user.password = password
++      end
++    else
++      # create new user
++      new_user = User.new
++      new_user.email = email
++      new_user.username = UserNameSuggester.suggest(new_user.email)
++      begin
++        if ENV["RANDOM_PASSWORD"] == "1"
++          password = password_confirmation = SecureRandom.hex
++        else
++          password = ask("Password:  ") { |q| q.echo = false }
++          password_confirmation = ask("Repeat password:  ") { |q| q.echo = false }
++        end
++
++        passwords_match = password == password_confirmation
++
++        say("Passwords don't match, try again...") unless passwords_match
++      end while !passwords_match
++      new_user.password = password
++    end
++
++    new_user.name = ask("Full name:  ") if SiteSetting.full_name_required && new_user.name.blank?
++
++    # save/update user account
++    saved = new_user.save
++    say(new_user.errors.full_messages.join("\n")) unless saved
++  end while !saved
++
++  say "\nEnsuring account is active!"
++  new_user.active = true
++  new_user.save
++
++  if existing_user
++    say("\nAccount updated successfully!")
++  else
++    say("\nAccount created successfully with username #{new_user.username}")
++  end
++end
