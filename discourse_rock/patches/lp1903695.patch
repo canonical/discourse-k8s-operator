@@ -8,3 +8,4 @@
 +           env[Rack::RACK_INPUT].respond_to?(:size) && env[Rack::RACK_INPUT].size > 0
          return 413, { "Cache-Control" => "private, max-age=0, must-revalidate" }, []
        end
+
