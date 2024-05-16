@@ -1,3 +1,2 @@
 ops==2.12.0
-ops-lib-pgsql
 pydantic==2.7.1

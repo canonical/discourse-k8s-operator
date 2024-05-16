@@ -1,5 +1,5 @@
 --- /dev/null
-+++ b/lib/tasks/canonical.rake
++++ b/lib/tasks/discourse-charm.rake
 @@ -0,0 +1,88 @@
 +# frozen_string_literal: true
 +
