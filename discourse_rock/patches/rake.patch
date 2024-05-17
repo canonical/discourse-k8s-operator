@@ -1,6 +1,6 @@
---- /dev/null
+--- a/lib/tasks/discourse-charm.rake
 +++ b/lib/tasks/discourse-charm.rake
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,84 @@
 +# frozen_string_literal: true
 +
 +desc "Promote a user to admin"
