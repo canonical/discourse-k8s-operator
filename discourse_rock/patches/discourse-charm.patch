@@ -5,21 +5,21 @@
 +
 +desc "Promote a user to admin"
 +task "admin:promote", [:email] => [:environment] do |_, args|
-+email = args[:email]
++  email = args[:email]
 +  if !email || email !~ /@/
 +    puts "ERROR: Expecting rake admin:promote[some@email.com]"
 +    exit 1
 +  end
-+  if User.find_by_email(email).nil?
++  admin = User.find_by_email(email)
++  if admin.nil?
 +    puts "ERROR: User with email #{email} not found"
 +    exit 1
 +  end
-+ admin = User.find_by_email(email)
-+ admin.grant_admin!
-+ admin.change_trust_level!(1) if admin.trust_level < 1
-+ admin.email_tokens.update_all confirmed: true
-+ admin.activate
-+ say("\nYour account now has Admin privileges!")
++  admin.grant_admin!
++  admin.change_trust_level!(1) if admin.trust_level < 1
++  admin.email_tokens.update_all confirmed: true
++  admin.activate
++  say("\nYour account now has Admin privileges!")
 +end
 +
 +desc "Create the user for given credentials"
