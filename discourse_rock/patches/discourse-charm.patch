@@ -84,4 +84,5 @@
 +  else
 +    say("\nAccount created successfully with username #{new_user.username}")
 +  end
++  new_user.activate
 +end
