@@ -708,7 +708,9 @@ class DiscourseCharm(CharmBase):
         if not container.can_connect():
             event.fail("Unable to connect to container, container is not ready")
             return
-        self._create_user(event)
+        if not self._create_user(event.params["email"], event.params["password"]):
+            event.fail(f"Failed to create user with email {email}")
+            return
 
         process = container.exec(
             [
@@ -730,16 +732,13 @@ class DiscourseCharm(CharmBase):
                 f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
             )
 
-    def _create_user(self, event: ActionEvent):
+    def _create_user(self, email: str, password: str) -> bool:
         """Create a new user in Discourse.
 
         Args:
             event: Event triggering the create user action.
         """
         container = self.unit.get_container(CONTAINER_NAME)
-
-        email = event.params["email"]
-        password = event.params["password"]
 
         process = container.exec(
             [
@@ -756,8 +755,9 @@ class DiscourseCharm(CharmBase):
         )
         try:
             process.wait_output()
-        except ExecError as ex:
-            event.fail(f"Failed to create user with email {email}: {ex.stdout}")  # type: ignore
+        except ExecError:
+            return False
+        return True
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""

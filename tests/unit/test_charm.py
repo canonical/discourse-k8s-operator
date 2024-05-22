@@ -393,7 +393,7 @@ def test_add_user():
         "email": email,
         "password": password,
     }
-    charm._create_user(event)
+    assert charm._create_user(email, password)
 
 
 def test_anonymize_user():
