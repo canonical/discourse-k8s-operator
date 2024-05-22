@@ -41,6 +41,10 @@ options:
     type: string
     description: "Enable TLS encryption for smtp connections."
     default: "true"
+  smtp_force_https:
+    type: boolean
+    description: "Force https for smtp connections."
+    default: "true"
   smtp_force_tls:
     type: string
     description: "Force implicit TLS as per RFC 8314 3.3."
