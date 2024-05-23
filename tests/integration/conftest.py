@@ -243,7 +243,6 @@ async def setup_saml_config(app: Application, model: Model):
 async def admin_credentials_fixture(app: Application) -> types.Credentials:
     """Admin user credentials."""
     email = f"admin-user{secrets.randbits(32)}@test.internal"
-    password = secrets.token_urlsafe(16)
     discourse_unit: Unit = app.units[0]
     action: Action = await discourse_unit.run_action(
         "create-user", email=email, admin=True
