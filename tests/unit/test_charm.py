@@ -310,10 +310,10 @@ def test_db_relation():
     ), "database name should be set after relation joined"
 
 
-def test_add_admin_user():
+def test_promote_user():
     """
     arrange: an email and a password
-    act: when the _on_add_admin_user_action method is executed
+    act: when the _on_promote_user_action method is executed
     assert: the underlying rake command to add the user is executed
         with the appropriate parameters.
     """
@@ -344,19 +344,17 @@ def test_add_admin_user():
     charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
 
     email = "sample@email.com"
-    password = "somepassword"  # nosec
     event = MagicMock(spec=ActionEvent)
     event.params = {
         "email": email,
-        "password": password,
     }
-    charm._on_add_admin_user_action(event)
+    charm._on_promote_user_action(event)
 
 
-def test_add_user():
+def test_create_user():
     """
     arrange: an email and a password
-    act: when the _on_add_user_action method is executed
+    act: when the _on_create_user_action method is executed
     assert: the underlying rake command to add the user is executed
         with the appropriate parameters.
     """
@@ -373,7 +371,6 @@ def test_add_user():
             args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
-            or args.stdin != f"{email}\n{password}\n{password}\nN\n"
             or args.timeout != 60
         ):
             raise ValueError(f"{args.command} wasn't made with the correct args.")
@@ -387,13 +384,11 @@ def test_add_user():
     charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
 
     email = "sample@email.com"
-    password = "somepassword"  # nosec
     event = MagicMock(spec=ActionEvent)
     event.params = {
         "email": email,
-        "password": password,
     }
-    charm._on_add_user_action(event)
+    charm._on_create_user_action(event)
 
 
 def test_anonymize_user():

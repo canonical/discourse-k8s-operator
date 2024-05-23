@@ -7,6 +7,8 @@ import base64
 import hashlib
 import logging
 import os.path
+import random
+import string
 import typing
 from collections import defaultdict, namedtuple
 
@@ -117,7 +119,8 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.upgrade_charm, self._on_upgrade_charm)
         self.framework.observe(self.on.discourse_pebble_ready, self._on_discourse_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
+        self.framework.observe(self.on.promote_user_action, self._on_promote_user_action)
+        self.framework.observe(self.on.create_user_action, self._on_create_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
         self.redis = RedisRequires(self, self._stored)
@@ -695,8 +698,8 @@ class DiscourseCharm(CharmBase):
             self._start_service()
             self.model.unit.status = ActiveStatus()
 
-    def _on_add_admin_user_action(self, event: ActionEvent) -> None:
-        """Add a new admin user to Discourse.
+    def _on_promote_user_action(self, event: ActionEvent) -> None:
+        """Promote a user to a specific trust level.
 
         Args:
             event: Event triggering the add_admin_user action.
@@ -717,7 +720,8 @@ class DiscourseCharm(CharmBase):
         try:
             user_exists.wait_output()
         except ExecError:
-            self._on_add_user_action(event)
+            event.fail(f"User with email {email} does not exist")
+            return
 
         process = container.exec(
             [
@@ -740,7 +744,7 @@ class DiscourseCharm(CharmBase):
                 f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
             )
 
-    def _on_add_user_action(self, event: ActionEvent):
+    def _on_create_user_action(self, event: ActionEvent):
         """Create a new user in Discourse.
 
         Args:
@@ -752,7 +756,19 @@ class DiscourseCharm(CharmBase):
             return
 
         email = event.params["email"]
-        password = event.params["password"]
+        password = self._generate_password(16)
+
+        user_exists = container.exec(
+            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", "users:exists", email],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            user_exists.wait_output()
+            event.fail(f"User with email {email} already exists")
+        except ExecError:
+            pass
 
         process = container.exec(
             [
@@ -769,9 +785,23 @@ class DiscourseCharm(CharmBase):
         )
         try:
             process.wait_output()
-            event.set_results(email)
+            event.set_results({"email": email, "password": password})
         except ExecError as ex:
             event.fail(f"Failed to make user with email {email}: {ex.stdout}")  # type: ignore
+        
+        if event.params.get("admin") == True:
+            self._on_promote_user_action(event)
+
+    def _generate_password(self, length: int) -> str:
+        """Generate a random password.
+
+        Args:
+            length: Length of the password to generate.
+
+        Returns:
+            Random password.
+        """
+        return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""

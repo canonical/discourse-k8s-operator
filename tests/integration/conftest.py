@@ -246,9 +246,10 @@ async def admin_credentials_fixture(app: Application) -> types.Credentials:
     password = secrets.token_urlsafe(16)
     discourse_unit: Unit = app.units[0]
     action: Action = await discourse_unit.run_action(
-        "add-admin-user", email=email, password=password
+        "create-user", email=email, admin=True
     )
     await action.wait()
+    password = action.results["password"]
     admin_credentials = types.Credentials(
         email=email, username=email.split("@", maxsplit=1)[0], password=password
     )
