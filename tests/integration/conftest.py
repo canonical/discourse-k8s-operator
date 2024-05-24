@@ -244,9 +244,7 @@ async def admin_credentials_fixture(app: Application) -> types.Credentials:
     """Admin user credentials."""
     email = f"admin-user{secrets.randbits(32)}@test.internal"
     discourse_unit: Unit = app.units[0]
-    action: Action = await discourse_unit.run_action(
-        "create-user", email=email, admin=True
-    )
+    action: Action = await discourse_unit.run_action("create-user", email=email, admin=True)
     await action.wait()
     password = action.results["password"]
     admin_credentials = types.Credentials(

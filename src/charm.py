@@ -770,6 +770,9 @@ class DiscourseCharm(CharmBase):
         except ExecError:
             pass
 
+        # Admin flag is optional, if it is true, the user will be created as an admin
+        admin_flag = "Y" if event.params.get("admin") else "N"
+
         process = container.exec(
             [
                 os.path.join(DISCOURSE_PATH, "bin/bundle"),
@@ -777,7 +780,7 @@ class DiscourseCharm(CharmBase):
                 "rake",
                 "admin:create",
             ],
-            stdin=f"{email}\n{password}\n{password}\nN\n",
+            stdin=f"{email}\n{password}\n{password}\n{admin_flag}\n",
             working_dir=DISCOURSE_PATH,
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
@@ -788,9 +791,6 @@ class DiscourseCharm(CharmBase):
             event.set_results({"email": email, "password": password})
         except ExecError as ex:
             event.fail(f"Failed to make user with email {email}: {ex.stdout}")  # type: ignore
-        
-        if event.params.get("admin") == True:
-            self._on_promote_user_action(event)
 
     def _generate_password(self, length: int) -> str:
         """Generate a random password.

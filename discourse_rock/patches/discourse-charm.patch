@@ -5,7 +5,7 @@
 +
 +desc "Check if a user exists for given email address"
 +task "users:exists", [:email] => [:environment] do |_, args|
-+email = args[:email]
++  email = args[:email]
 +  if !email || email !~ /@/
 +    puts "ERROR: Expecting rake users:exists[some@email.com]"
 +    exit 1
