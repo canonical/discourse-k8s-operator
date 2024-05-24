@@ -738,7 +738,7 @@ class DiscourseCharm(CharmBase):
         )
         try:
             process.wait_output()
-            event.set_results(email)
+            event.set_results({"email": email})
         except ExecError as ex:
             event.fail(
                 f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
