@@ -251,10 +251,10 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     # username can't be "discourse" or it will be renamed
     username = "ubuntu"
     email = "ubuntu@canonical.com"
-    password = "test-discourse-k8s-password"  # nosec
+    password = "test-discourse-k8s-password"  # nosecue
     saml_helper.register_user(username=username, email=email, password=password)
 
-    action_result = await run_action(app.name, "add-admin-user", email=email, password=password)
+    action_result = await run_action(app.name, "create-user", email=email, admin=True)
     assert "user" in action_result
 
     host = app.name

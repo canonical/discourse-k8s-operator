@@ -7,7 +7,7 @@ import base64
 import hashlib
 import logging
 import os.path
-import random
+import secrets
 import string
 import typing
 from collections import defaultdict, namedtuple
@@ -801,7 +801,9 @@ class DiscourseCharm(CharmBase):
         Returns:
             Random password.
         """
-        return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+        choices = string.ascii_letters + string.digits
+        password = "".join([secrets.choice(choices) for _ in range(length)])
+        return password
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""
