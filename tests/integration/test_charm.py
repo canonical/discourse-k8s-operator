@@ -308,11 +308,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
             verify=False,
             data={"SAMLResponse": saml_response.data["SAMLResponse"], "SameSite": "1"},
         )
-        session.post(
-            saml_response.url,
-            verify=False,
-            data=saml_response.data
-        )
+        session.post(saml_response.url, verify=False, data=saml_response.data)
 
         preference_page = session.get(
             f"https://{host}/u/{username}/preferences/account",
