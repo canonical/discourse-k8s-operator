@@ -230,11 +230,11 @@ async def setup_saml_config(app: Application, model: Model):
     discourse_app = model.applications[app.name]
     original_config: dict = await discourse_app.get_config()
     original_config = {k: v["value"] for k, v in original_config.items()}
-    await discourse_app.set_config({"force_https": "true"})
+    await discourse_app.set_config({"force_https": true})
     yield
     await discourse_app.set_config(
         {
-            "force_https": str(original_config["force_https"]).lower(),
+            "force_https": original_config["force_https"],
         }
     )
 
