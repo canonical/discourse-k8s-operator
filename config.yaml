@@ -20,7 +20,7 @@ options:
   force_https:
     type: boolean
     description: Configure Discourse to use https.
-    default: true
+    default: false
   force_saml_login:
     type: boolean
     description: "Force SAML login (full screen, no local database logins)."
