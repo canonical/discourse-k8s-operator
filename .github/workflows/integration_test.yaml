@@ -15,4 +15,3 @@ jobs:
       channel: 1.28-strict/stable
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
-      tmate-debug: true
