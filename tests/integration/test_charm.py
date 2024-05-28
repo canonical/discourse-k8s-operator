@@ -220,32 +220,13 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     app: Application,
     requests_timeout: int,
     run_action,
-    model: Model,
+    saml_helper: SamlK8sTestHelper,
 ):
     """
     arrange: after discourse charm has been deployed, with all required relation established.
     act: add an admin user and enable force-https mode.
     assert: user can login discourse using SAML Authentication.
     """
-    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
-    saml_app: Application = await model.deploy(
-        "saml-integrator",
-        channel="latest/edge",
-        series="jammy",
-        trust=True,
-    )
-    await model.wait_for_idle()
-    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
-    saml_helper.prepare_pod(model.name, f"{app.name}-0")
-    await model.wait_for_idle()
-    await saml_app.set_config(  # type: ignore[attr-defined]
-        {
-            "entity_id": saml_helper.entity_id,
-            "metadata_url": saml_helper.metadata_url,
-        }
-    )
-    await model.add_relation(app.name, "saml-integrator")
-    await model.wait_for_idle()
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     # discourse need a long password and a valid email
     # username can't be "discourse" or it will be renamed

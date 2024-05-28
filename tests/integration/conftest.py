@@ -18,6 +18,7 @@ from juju.unit import Unit
 from ops.model import WaitingStatus
 from pytest import Config, fixture
 from pytest_operator.plugin import Model, OpsTest
+from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
 from . import types
 
@@ -230,13 +231,36 @@ async def setup_saml_config(app: Application, model: Model):
     discourse_app = model.applications[app.name]
     original_config: dict = await discourse_app.get_config()
     original_config = {k: v["value"] for k, v in original_config.items()}
-    await discourse_app.set_config({"force_https": True})
+    await discourse_app.set_config({"force_https": "true"})
     yield
-    await discourse_app.set_config(
+    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
+    saml_app: Application = await model.deploy(
+        "saml-integrator",
+        channel="latest/edge",
+        series="jammy",
+        trust=True,
+    )
+    await model.wait_for_idle()
+    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
+    saml_helper.prepare_pod(model.name, f"{app.name}-0")
+    await model.wait_for_idle()
+    await saml_app.set_config(  # type: ignore[attr-defined]
         {
-            "force_https": original_config["force_https"],
+            "entity_id": saml_helper.entity_id,
+            "metadata_url": saml_helper.metadata_url,
         }
     )
+    await model.add_relation(app.name, "saml-integrator")
+    await model.wait_for_idle()
+    yield saml_helper
+    await discourse_app.set_config(
+        {
+            "force_https": str(original_config["force_https"]).lower(),
+        }
+    )
+    await app.destroy_relation(app.name, "saml-integrator")
+    await model.applications["saml-integrator"].destroy()
+    await model.wait_for_idle()
 
 
 @pytest_asyncio.fixture(scope="module", name="admin_credentials")
