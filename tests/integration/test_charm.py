@@ -379,7 +379,7 @@ async def test_relations(
 
     # Removing the relation to ingress should keep the charm active
     await model.applications[app.name].remove_relation("nginx-route", "nginx-ingress-integrator")
-    await model.wait_for_idle(status="active")
+    await model.wait_for_idle(apps=[app.name], status="active")
     test_discourse_srv_status_ok()
 
     await model.add_relation(app.name, "nginx-ingress-integrator")
