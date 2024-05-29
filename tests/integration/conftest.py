@@ -232,7 +232,7 @@ async def setup_saml_config(app: Application, model: Model):
     original_config: dict = await discourse_app.get_config()
     original_config = {k: v["value"] for k, v in original_config.items()}
     await discourse_app.set_config({"force_https": "true"})
-    yield
+
     saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
     saml_app: Application = await model.deploy(
         "saml-integrator",
@@ -252,6 +252,7 @@ async def setup_saml_config(app: Application, model: Model):
     )
     await model.add_relation(app.name, "saml-integrator")
     await model.wait_for_idle()
+
     yield saml_helper
 
 

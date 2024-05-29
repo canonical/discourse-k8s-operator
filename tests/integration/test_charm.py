@@ -220,13 +220,14 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     app: Application,
     requests_timeout: int,
     run_action,
-    saml_helper: SamlK8sTestHelper,
+    setup_saml_config,
 ):
     """
     arrange: after discourse charm has been deployed, with all required relation established.
     act: add an admin user and enable force-https mode.
     assert: user can login discourse using SAML Authentication.
     """
+    saml_helper = setup_saml_config
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     # discourse need a long password and a valid email
     # username can't be "discourse" or it will be renamed
