@@ -13,6 +13,9 @@ create-user:
     email:
       type: string
       description: User email.
+    admin:
+      type: boolean
+      description: Whether the user should be an admin.
   required: [email]
 anonymize-user:
   description: Anonymize a user.
