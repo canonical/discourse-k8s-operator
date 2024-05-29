@@ -285,6 +285,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
         session.get(f"https://{host}", verify=False)
         response = session.get(
             f"https://{host}/session/csrf",
+            verify=False,
             headers={"Accept": "application/json"},
             timeout=requests_timeout,
         )
@@ -292,6 +293,7 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
         redirect_response = session.post(
             f"https://{host}/auth/saml",
             data={"authenticity_token": csrf_token},
+            verify=False,
             timeout=requests_timeout,
             allow_redirects=False,
         )
@@ -303,9 +305,10 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
         assert f"https://{host}" in saml_response.url
         session.post(
             saml_response.url,
+            verify=False,
             data={"SAMLResponse": saml_response.data["SAMLResponse"], "SameSite": "1"},
         )
-        session.post(saml_response.url, data=saml_response.data)
+        session.post(saml_response.url, verify=False, data=saml_response.data)
 
         preference_page = session.get(
             f"https://{host}/u/{username}/preferences/account",
@@ -376,7 +379,7 @@ async def test_relations(
 
     # Removing the relation to ingress should keep the charm active
     await model.applications[app.name].remove_relation("nginx-route", "nginx-ingress-integrator")
-    await model.wait_for_idle(status="active")
+    await model.wait_for_idle(apps=[app.name], status="active")
     test_discourse_srv_status_ok()
 
     await model.add_relation(app.name, "nginx-ingress-integrator")
