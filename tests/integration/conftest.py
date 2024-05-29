@@ -253,14 +253,6 @@ async def setup_saml_config(app: Application, model: Model):
     await model.add_relation(app.name, "saml-integrator")
     await model.wait_for_idle()
     yield saml_helper
-    await discourse_app.set_config(
-        {
-            "force_https": str(original_config["force_https"]).lower(),
-        }
-    )
-    await app.destroy_relation(app.name, "saml-integrator")
-    await model.applications["saml-integrator"].destroy()
-    await model.wait_for_idle()
 
 
 @pytest_asyncio.fixture(scope="module", name="admin_credentials")
