@@ -231,12 +231,6 @@ async def setup_saml_config(app: Application, model: Model):
     original_config: dict = await discourse_app.get_config()
     original_config = {k: v["value"] for k, v in original_config.items()}
     await discourse_app.set_config({"force_https": "true"})
-    yield
-    await discourse_app.set_config(
-        {
-            "force_https": str(original_config["force_https"]).lower(),
-        }
-    )
 
 
 @pytest_asyncio.fixture(scope="module", name="admin_credentials")
