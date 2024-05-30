@@ -13,5 +13,6 @@ jobs:
       trivy-image-config: "trivy.yaml"
       juju-channel: 3.1/stable
       channel: 1.28-strict/stable
+      modules: '["test_charm", "test_saml"]'
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
