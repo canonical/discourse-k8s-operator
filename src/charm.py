@@ -706,7 +706,7 @@ class DiscourseCharm(CharmBase):
         """Promote a user to a specific trust level.
 
         Args:
-            event: Event triggering the add_admin_user action.
+            event: Event triggering the promote_user action.
         """
         container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
@@ -752,7 +752,7 @@ class DiscourseCharm(CharmBase):
         """Create a new user in Discourse.
 
         Args:
-            event: Event triggering the add_user action.
+            event: Event triggering the create_user action.
         """
         container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
