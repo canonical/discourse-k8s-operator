@@ -13,7 +13,9 @@ import pytest
 import requests
 from boto3 import client
 from botocore.config import Config
+from juju.action import Action
 from juju.application import Application
+from juju.unit import Unit
 from ops.model import ActiveStatus
 from pytest_operator.plugin import Model, OpsTest
 
@@ -357,3 +359,26 @@ async def test_upgrade(
 
     await model.block_until(upgrade_finished(), timeout=10 * 60)
     check_alive()
+
+
+@pytest.mark.asyncio
+async def test_user_creation(
+    app: Application,
+):
+    """
+    arrange: Given discourse application
+    act: when creating a user
+    assert: the user should be created successfully.
+    """
+
+    email = f"admin-user@test.internal"
+    discourse_unit: Unit = app.units[0]
+    action: Action = await discourse_unit.run_action("create-user", email=email)
+    await action.wait()
+    assert action.results["user"] == email
+
+    # Re-creating the same user should fail, as the user already exists
+    email = f"admin-user@test.internal"
+    action: Action = await discourse_unit.run_action("create-user", email=email)
+    await action.wait()
+    assert action.results["user"] == email

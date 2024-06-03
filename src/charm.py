@@ -716,7 +716,7 @@ class DiscourseCharm(CharmBase):
         email = event.params["email"]
 
         user_exists = container.exec(
-            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", "users:exists", email],
+            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", f"users:exists[{email}]"],
             working_dir=DISCOURSE_PATH,
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
@@ -724,6 +724,9 @@ class DiscourseCharm(CharmBase):
         try:
             user_exists.wait_output()
         except ExecError:
+            if ex.exit_code == 1:
+                event.fail(f"Error checking if user with email {email} exists: {ex.stdout}")
+                return
             event.fail(f"User with email {email} does not exist")
             return
 
@@ -763,7 +766,7 @@ class DiscourseCharm(CharmBase):
         password = self._generate_password(16)
 
         user_exists = container.exec(
-            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", "users:exists", email],
+            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", f"users:exists[{email}]"],
             working_dir=DISCOURSE_PATH,
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
@@ -771,7 +774,11 @@ class DiscourseCharm(CharmBase):
         try:
             user_exists.wait_output()
             event.fail(f"User with email {email} already exists")
-        except ExecError:
+            return
+        except ExecError as ex:
+            if ex.exit_code == 1:
+                event.fail(f"Error checking if user with email {email} exists: {ex.stdout}")
+                return
             pass
 
         # Admin flag is optional, if it is true, the user will be created as an admin
@@ -833,26 +840,30 @@ class DiscourseCharm(CharmBase):
         """
         username = event.params["username"]
         container = self.unit.get_container("discourse")
-        if container.can_connect():
-            process = container.exec(
-                [
-                    "bash",
-                    "-c",
-                    f"./bin/bundle exec rake users:anonymize[{username}]",
-                ],
-                working_dir=DISCOURSE_PATH,
-                user=CONTAINER_APP_USERNAME,
-                environment=self._create_discourse_environment_settings(),
+        if not container.can_connect():
+            event.fail("Unable to connect to container, container is not ready")
+            return
+
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                f"users:anonymize[{username}]",
+            ],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            process.wait_output()
+            event.set_results({"user": f"{username}"})
+        except ExecError as ex:
+            event.fail(
+                # Parameter validation errors are printed to stdout
+                # Ignore mypy warning when formatting stdout
+                f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
             )
-            try:
-                process.wait_output()
-                event.set_results({"user": f"{username}"})
-            except ExecError as ex:
-                event.fail(
-                    # Parameter validation errors are printed to stdout
-                    # Ignore mypy warning when formatting stdout
-                    f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
-                )
 
     def _start_service(self):
         """Start discourse."""
