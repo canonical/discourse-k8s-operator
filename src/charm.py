@@ -27,7 +27,6 @@ from charms.saml_integrator.v0.saml import (
     SamlRequires,
 )
 from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent
-from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.pebble import ExecError, ExecProcess, Plan
