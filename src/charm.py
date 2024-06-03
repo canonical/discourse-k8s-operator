@@ -779,7 +779,6 @@ class DiscourseCharm(CharmBase):
             if ex.exit_code == 1:
                 event.fail(f"Error checking if user with email {email} exists: {ex.stdout}")
                 return
-            pass
 
         # Admin flag is optional, if it is true, the user will be created as an admin
         admin_flag = "Y" if event.params.get("admin") else "N"
