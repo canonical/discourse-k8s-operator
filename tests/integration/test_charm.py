@@ -371,14 +371,14 @@ async def test_user_creation(
     assert: the user should be created successfully.
     """
 
-    email = f"admin-user@test.internal"
+    email = "admin-user@test.internal"
     discourse_unit: Unit = app.units[0]
     action: Action = await discourse_unit.run_action("create-user", email=email)
     await action.wait()
     assert action.results["user"] == email
 
     # Re-creating the same user should fail, as the user already exists
-    email = f"admin-user@test.internal"
+    email = "admin-user@test.internal"
     action: Action = await discourse_unit.run_action("create-user", email=email)
     await action.wait()
     assert action.status == "failed"

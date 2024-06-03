@@ -723,7 +723,7 @@ class DiscourseCharm(CharmBase):
         )
         try:
             user_exists.wait_output()
-        except ExecError:
+        except ExecError as ex:
             if ex.exit_code == 1:
                 event.fail(f"Error checking if user with email {email} exists: {ex.stdout}")
                 return
