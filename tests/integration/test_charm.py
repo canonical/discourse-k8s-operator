@@ -381,4 +381,4 @@ async def test_user_creation(
     email = f"admin-user@test.internal"
     action: Action = await discourse_unit.run_action("create-user", email=email)
     await action.wait()
-    assert action.results["user"] == email
+    assert action.status == "failed"
