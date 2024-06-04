@@ -723,10 +723,7 @@ class DiscourseCharm(CharmBase):
         )
         try:
             user_exists.wait_output()
-        except ExecError as ex:
-            if ex.exit_code == 1:
-                event.fail(f"Error checking if user with email {email} exists: {ex.stdout}")
-                return
+        except ExecError:
             event.fail(f"User with email {email} does not exist")
             return
 
@@ -775,10 +772,8 @@ class DiscourseCharm(CharmBase):
             user_exists.wait_output()
             event.fail(f"User with email {email} already exists")
             return
-        except ExecError as ex:
-            if ex.exit_code == 1:
-                event.fail(f"Error checking if user with email {email} exists: {ex.stdout}")
-                return
+        except ExecError:
+            pass
 
         # Admin flag is optional, if it is true, the user will be created as an admin
         admin_flag = "Y" if event.params.get("admin") else "N"

@@ -362,7 +362,7 @@ async def test_upgrade(
 
 
 @pytest.mark.asyncio
-async def test_user_creation(
+async def test_create_user(
     app: Application,
 ):
     """

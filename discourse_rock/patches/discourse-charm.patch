@@ -1,19 +1,15 @@
 --- a/lib/tasks/discourse-charm.rake
 +++ b/lib/tasks/discourse-charm.rake
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,11 @@
 +# frozen_string_literal: true
 +
 +desc "Check if a user exists for given email address"
 +task "users:exists", [:email] => [:environment] do |_, args|
 +  email = args[:email]
-+  if !email || email !~ /@/
-+    puts "ERROR: Expecting rake users:exists[some@email.com]"
-+    exit 1
-+  end
 +  if User.find_by_email(email)
 +    puts "User with email #{email} exists"
 +    exit 0
 +  end
 +  puts "ERROR: User with email #{email} not found"
-+  exit 2
++  exit 1
 +end
