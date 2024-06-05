@@ -761,7 +761,6 @@ class DiscourseCharm(CharmBase):
 
         email = event.params["email"]
         password = self._generate_password(16)
-
         user_exists = container.exec(
             [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", f"users:exists[{email}]"],
             working_dir=DISCOURSE_PATH,
@@ -777,7 +776,6 @@ class DiscourseCharm(CharmBase):
 
         # Admin flag is optional, if it is true, the user will be created as an admin
         admin_flag = "Y" if event.params.get("admin") else "N"
-
         process = container.exec(
             [
                 os.path.join(DISCOURSE_PATH, "bin/bundle"),

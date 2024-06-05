@@ -352,6 +352,48 @@ def test_promote_user():
     assert expected_exec_call_was_made
 
 
+def test_create_user():
+    """
+    arrange: an email and a password
+    act: when the _on_create_user_action method is executed
+    assert: the underlying rake command to add the user is executed
+        with the appropriate parameters.
+    """
+    harness = helpers.start_harness()
+
+    # We catch the exec call that we expect to register it and make sure that the
+    # args passed to it are correct.
+    expected_exec_call_was_made = False
+
+    def bundle_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+        expected_exec_call_was_made = True
+        if (
+            args.environment != harness.charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+            or args.timeout != 60
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    harness.handle_exec(
+        SERVICE_NAME,
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
+        handler=bundle_handler,
+    )
+
+    charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
+
+    email = "admin-user@test.internal"
+    password = "test-discourse-k8s-password"  # nosec
+    event = MagicMock(spec=ActionEvent)
+    event.params = {
+        "email": email
+    }
+    charm._on_create_user_action(event)
+    assert expected_exec_call_was_made
+
+
 def test_anonymize_user():
     """
     arrange: set up discourse

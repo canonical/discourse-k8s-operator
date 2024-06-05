@@ -193,6 +193,8 @@ parts:
       # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
       sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
+    prime:
+      - srv/discourse/app/lib/tasks/discourse-charm.rake
   scripts:
     plugin: dump
     source: scripts

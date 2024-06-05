@@ -378,7 +378,38 @@ async def test_create_user(
     assert action.results["user"] == email
 
     # Re-creating the same user should fail, as the user already exists
-    email = "admin-user@test.internal"
     break_action: Action = await discourse_unit.run_action("create-user", email=email)
     await break_action.wait()
     assert break_action.status == "failed"
+
+# promote user
+# discourse api call to check admin status
+
+@pytest.mark.asyncio
+async def test_promote_user(
+    app: Application,
+    discourse_address: str,
+):
+    """
+    arrange: Given discourse application
+    act: when promoting a user
+    assert: the user should be promoted successfully.
+    """
+
+    email = "test-user@test.internal"
+    discourse_unit: Unit = app.units[0]
+    action: Action = await discourse_unit.run_action("create-user", email=email)
+    await action.wait()
+    assert action.results["user"] == email
+
+    # use api call to check user status
+    category_info = {"name": "test", "color": "FFFFFF"}
+    res = requests.post(
+        f"{discourse_address}/categories.json",
+        headers={
+            "Api-Key": admin_api_key,
+            "Api-Username": admin_credentials.username,
+        },
+        json=category_info,
+        timeout=60,
+    )
