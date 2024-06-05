@@ -188,9 +188,9 @@ async def test_create_category(
     admin_api_key: str,
 ):
     """
-    arrange: Given discourse application and an admin user
-    act: if an admin user creates a category
-    assert: a category should be created normally.
+    arrange: A discourse application and an admin user
+    act: If an admin user creates a category
+    assert: A category should be created normally.
     """
     category_info = {"name": "test", "color": "FFFFFF"}
     res = requests.post(
@@ -216,9 +216,9 @@ async def test_serve_compiled_assets(
     discourse_address: str,
 ):
     """
-    arrange: Given discourse application
-    act: when accessing a page that does not exist
-    assert: a compiled asset should be served.
+    arrange: A discourse application
+    act: Access a page that does not exist
+    assert: A compiled asset should be served.
     """
     res = requests.get(f"{discourse_address}/404", timeout=60)
     not_found_page = str(res.content)
@@ -237,9 +237,9 @@ async def test_relations(
     requests_timeout: int,
 ):
     """
-    arrange: Given discourse application
-    act: when removing some of its relations
-    assert: it should have the correct status
+    arrange: A discourse application
+    act: Remove some of its relations
+    assert: It should have the correct status
     """
 
     def test_discourse_srv_status_ok():
@@ -287,7 +287,7 @@ async def test_upgrade(
     ops_test: OpsTest,
 ):
     """
-    arrange: Given discourse application with three units
+    arrange: A discourse application with three units
     act: Refresh the application (upgrade)
     assert: The application upgrades and over all the upgrade, the application replies
       correctly through the ingress.
@@ -366,9 +366,9 @@ async def test_create_user(
     app: Application,
 ):
     """
-    arrange: Given discourse application
-    act: when creating a user
-    assert: the user should be created successfully.
+    arrange: A discourse application
+    act: Create a user
+    assert: User is created, and re-creating the same user should fail
     """
 
     email = "admin-user@test.internal"
@@ -389,9 +389,9 @@ async def test_promote_user(
     discourse_address: str,
 ):
     """
-    arrange: Given discourse application
-    act: when promoting a user
-    assert: the user should be promoted successfully.
+    arrange: A discourse application
+    act: Promote a user to admin
+    assert: User cannot access the admin API before being promoted
     """
     with requests.session() as sess:
         res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
@@ -413,7 +413,7 @@ async def test_promote_user(
             )
             return res.json()["key"]["key"]
 
-        def attempt_login(email: str, password: str) -> str:
+        def attempt_login(email: str, password: str):
             res = sess.post(
                 f"{discourse_address}/session",
                 headers={
@@ -432,18 +432,18 @@ async def test_promote_user(
 
         email = "test-user@test.internal"
         discourse_unit: Unit = app.units[0]
-        action: Action = await discourse_unit.run_action("create-user", email=email)
-        await action.wait()
-        assert action.results["user"] == email
+        create_action: Action = await discourse_unit.run_action("create-user", email=email)
+        await create_action.wait()
+        assert create_action.results["user"] == email
 
-        attempt_login(email, action.results["password"])
+        attempt_login(email, create_action.results["password"])
 
         # This should fail as the user is not promoted
         assert get_api_key() is None
 
         # Promote the user
-        action: Action = await discourse_unit.run_action("promote-user", email=email)
-        await action.wait()
+        promote_action: Action = await discourse_unit.run_action("promote-user", email=email)
+        await promote_action.wait()
 
         # Check the user is promoted
         assert get_api_key()
