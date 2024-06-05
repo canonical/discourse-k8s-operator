@@ -382,8 +382,6 @@ async def test_create_user(
     await break_action.wait()
     assert break_action.status == "failed"
 
-# promote user
-# discourse api call to check admin status
 
 @pytest.mark.asyncio
 async def test_promote_user(
@@ -395,21 +393,57 @@ async def test_promote_user(
     act: when promoting a user
     assert: the user should be promoted successfully.
     """
+    with requests.session() as sess:
+        res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
+        # pylint doesn't see the "ok" member
+        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
+        data = res.json()
+        assert data["csrf"], data
+        csrf = data["csrf"]
 
-    email = "test-user@test.internal"
-    discourse_unit: Unit = app.units[0]
-    action: Action = await discourse_unit.run_action("create-user", email=email)
-    await action.wait()
-    assert action.results["user"] == email
+        def get_api_key() -> str:
+            res = sess.post(
+                f"{discourse_address}/admin/api/keys",
+                headers={
+                    "Content-Type": "application/json",
+                    "X-CSRF-Token": csrf,
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                json={"key": {"description": "admin-api-key", "username": None}},
+            )
+            return res.json()["key"]["key"]
 
-    # use api call to check user status
-    category_info = {"name": "test", "color": "FFFFFF"}
-    res = requests.post(
-        f"{discourse_address}/categories.json",
-        headers={
-            "Api-Key": admin_api_key,
-            "Api-Username": admin_credentials.username,
-        },
-        json=category_info,
-        timeout=60,
-    )
+        def attempt_login(email: str, password: str) -> str:
+            res = sess.post(
+                f"{discourse_address}/session",
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "X-CSRF-Token": csrf,
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                data={
+                    "login": email,
+                    "password": password,
+                    "second_factor_method": "1",
+                    "timezone": "Asia/Hong_Kong",
+                },
+            )
+            assert "error" not in res.json()
+
+        email = "test-user@test.internal"
+        discourse_unit: Unit = app.units[0]
+        action: Action = await discourse_unit.run_action("create-user", email=email)
+        await action.wait()
+        assert action.results["user"] == email
+
+        attempt_login(email, action.results["password"])
+
+        # This should fail as the user is not promoted
+        assert get_api_key() is None
+
+        # Promote the user
+        action: Action = await discourse_unit.run_action("promote-user", email=email)
+        await action.wait()
+
+        # Check the user is promoted
+        assert get_api_key()

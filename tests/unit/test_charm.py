@@ -385,12 +385,9 @@ def test_create_user():
     charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
 
     email = "admin-user@test.internal"
-    password = "test-discourse-k8s-password"  # nosec
     event = MagicMock(spec=ActionEvent)
-    event.params = {
-        "email": email
-    }
-    charm._on_create_user_action(event)
+    event.params = {"email": email}
+    charm._on_create_user_action(event, True)
     assert expected_exec_call_was_made
 
 
