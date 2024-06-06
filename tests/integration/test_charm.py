@@ -193,7 +193,7 @@ async def test_create_category(
     assert: A category should be created normally.
     """
     category_info = {"name": "test", "color": "FFFFFF"}
-    res = requests.post(
+    response = requests.post(
         f"{discourse_address}/categories.json",
         headers={
             "Api-Key": admin_api_key,
@@ -202,7 +202,7 @@ async def test_create_category(
         json=category_info,
         timeout=60,
     )
-    category_id = res.json()["category"]["id"]
+    category_id = response.json()["category"]["id"]
     category = requests.get(f"{discourse_address}/c/{category_id}/show.json", timeout=60).json()[
         "category"
     ]
@@ -220,8 +220,8 @@ async def test_serve_compiled_assets(
     act: Access a page that does not exist
     assert: A compiled asset should be served.
     """
-    res = requests.get(f"{discourse_address}/404", timeout=60)
-    not_found_page = str(res.content)
+    response = requests.get(f"{discourse_address}/404", timeout=60)
+    not_found_page = str(response.content)
 
     asset_matches = re.search(
         r"(onpopstate-handler).+.js", not_found_page
@@ -393,16 +393,18 @@ async def test_promote_user(
     act: Promote a user to admin
     assert: User cannot access the admin API before being promoted
     """
-    with requests.session() as sess:
-        res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
+    with requests.session() as session:
+        response = session.get(
+            f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}
+        )
         # pylint doesn't see the "ok" member
-        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
-        data = res.json()
+        assert response.ok, response.text  # pylint: disable=no-member
+        data = response.json()
         assert data["csrf"], data
         csrf = data["csrf"]
 
         def get_api_key() -> str:
-            res = sess.post(
+            response = session.post(
                 f"{discourse_address}/admin/api/keys",
                 headers={
                     "Content-Type": "application/json",
@@ -411,10 +413,10 @@ async def test_promote_user(
                 },
                 json={"key": {"description": "admin-api-key", "username": None}},
             )
-            return res.json()["key"]["key"]
+            return response.json()["key"]["key"]
 
         def attempt_login(email: str, password: str):
-            res = sess.post(
+            response = session.post(
                 f"{discourse_address}/session",
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -428,7 +430,7 @@ async def test_promote_user(
                     "timezone": "Asia/Hong_Kong",
                 },
             )
-            assert "error" not in res.json()
+            assert "error" not in response.json()
 
         email = "test-user@test.internal"
         discourse_unit: Unit = app.units[0]
@@ -441,9 +443,7 @@ async def test_promote_user(
         # This should fail as the user is not promoted
         assert get_api_key() is None
 
-        # Promote the user
         promote_action: Action = await discourse_unit.run_action("promote-user", email=email)
         await promote_action.wait()
 
-        # Check the user is promoted
         assert get_api_key()
