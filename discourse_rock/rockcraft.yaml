@@ -186,6 +186,7 @@ parts:
     after: [discourse, patches]
     override-stage: |
       git -C srv/discourse/app apply patches/lp1903695.patch
+      touch srv/discourse/app/patches/discourse-charm.patch
       git -C srv/discourse/app apply patches/discourse-charm.patch
       git -C srv/discourse/app apply patches/sigterm.patch
       # The following is a fix for UglifierJS assets compilation
