@@ -160,7 +160,7 @@ parts:
   discourse-calendar:
     plugin: dump
     after: [discourse, bundler-config]
-      source: https://github.com/discourse/discourse-calendar.git
+    source: https://github.com/discourse/discourse-calendar.git
     source-commit: 84ef46a38cf02748ecacad16c5d9c6fec12dc8da
     source-depth: 1
     organize:
