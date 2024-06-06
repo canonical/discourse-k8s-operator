@@ -160,7 +160,6 @@ parts:
   discourse-calendar:
     plugin: dump
     after: [discourse, bundler-config]
-      touch srv/discourse/app/lib/tasks/discourse-charm.rake
       source: https://github.com/discourse/discourse-calendar.git
     source-commit: 84ef46a38cf02748ecacad16c5d9c6fec12dc8da
     source-depth: 1
@@ -187,7 +186,7 @@ parts:
     after: [discourse, patches]
     override-stage: |
       git -C srv/discourse/app apply patches/lp1903695.patch
-      touch srv/discourse/app/patches/discourse-charm.patch
+      touch srv/discourse/app/patches/discourse-charm.rake
       git -C srv/discourse/app apply patches/discourse-charm.patch
       git -C srv/discourse/app apply patches/sigterm.patch
       # The following is a fix for UglifierJS assets compilation
