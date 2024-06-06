@@ -14,6 +14,7 @@ import ops
 import pytest
 from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.pebble import ExecError
 
 from charm import CONTAINER_NAME, DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
 from tests.unit import helpers
@@ -365,7 +366,7 @@ def test_create_user():
     # args passed to it are correct.
     expected_exec_call_was_made = False
 
-    def bundle_handler(args: ops.testing.ExecArgs) -> None:
+    def create_bundle_handler(args: ops.testing.ExecArgs) -> None:
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
@@ -376,18 +377,29 @@ def test_create_user():
         ):
             raise ValueError(f"{args.command} wasn't made with the correct args.")
 
+    def exists_bundle_handler(event: ops.testing.ExecArgs) -> None:
+        print("1")
+        raise ExecError(command=event.command,  exit_code=1, stdout="", stderr="")
+
+    email = "admin-user@test.internal"
+    
+    harness.handle_exec(
+        SERVICE_NAME,
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", f"users:exists[{email}]"],
+        handler=exists_bundle_handler
+    )
+
     harness.handle_exec(
         SERVICE_NAME,
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
-        handler=bundle_handler,
+        handler=create_bundle_handler,
     )
 
     charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
 
-    email = "admin-user@test.internal"
     event = MagicMock(spec=ActionEvent)
     event.params = {"email": email}
-    charm._on_create_user_action(event, True)
+    charm._on_create_user_action(event)
     assert expected_exec_call_was_made
 
 

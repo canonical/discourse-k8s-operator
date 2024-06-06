@@ -743,7 +743,7 @@ class DiscourseCharm(CharmBase):
                 f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
             )
 
-    def _on_create_user_action(self, event: ActionEvent, skip_validation: bool = False) -> None:
+    def _on_create_user_action(self, event: ActionEvent) -> None:
         """Create a new user in Discourse.
 
         Args:
@@ -762,15 +762,14 @@ class DiscourseCharm(CharmBase):
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
         )
-        # The validation can be skipped if the action is called from a test
-        if not skip_validation:
-            try:
-                user_exists.wait_output()
-                event.fail(f"User with email {email} already exists")
-                return
-            except ExecError:
-                pass
-
+        try:
+            user_exists.wait_output()
+            print("2")
+            event.fail(f"User with email {email} already exists")
+            return
+        except ExecError:
+            print("3")
+            pass
         # Admin flag is optional, if it is true, the user will be created as an admin
         admin_flag = "Y" if event.params.get("admin") else "N"
         process = container.exec(
