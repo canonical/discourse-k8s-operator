@@ -1,12 +1,12 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
-promote-user:
-  description: Promote a user to admin.
+anonymize-user:
+  description: Anonymize a user.
   params:
-    email:
+    username:
       type: string
-      description: User email.
-  required: [email]
+      description: The unique identifier of the user to anonymize.
+  required: [username]
 create-user:
   description: Create a new user.
   params:
@@ -17,10 +17,10 @@ create-user:
       type: boolean
       description: Whether the user should be an admin.
   required: [email]
-anonymize-user:
-  description: Anonymize a user.
+promote-user:
+  description: Promote a user to admin.
   params:
-    username:
+    email:
       type: string
-      description: The unique identifier of the user to anonymize.
-  required: [username]
+      description: User email.
+  required: [email]

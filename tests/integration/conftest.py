@@ -277,14 +277,14 @@ async def admin_api_key_fixture(
     """Admin user API key"""
     with requests.session() as sess:
         # Get CSRF token
-        res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
+        response = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
         # pylint doesn't see the "ok" member
-        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
-        data = res.json()
+        assert response.status_code == requests.codes.ok, response.text  # pylint: disable=no-member
+        data = response.json()
         assert data["csrf"], data
         csrf = data["csrf"]
         # Create session & login
-        res = sess.post(
+        response = sess.post(
             f"{discourse_address}/session",
             headers={
                 "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -299,10 +299,10 @@ async def admin_api_key_fixture(
             },
         )
         # pylint doesn't see the "ok" member
-        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
-        assert "error" not in res.json()
+        assert response.status_code == requests.codes.ok, response.text  # pylint: disable=no-member
+        assert "error" not in response.json()
         # Create global key
-        res = sess.post(
+        response = sess.post(
             f"{discourse_address}/admin/api/keys",
             headers={
                 "Content-Type": "application/json",
@@ -312,8 +312,8 @@ async def admin_api_key_fixture(
             json={"key": {"description": "admin-api-key", "username": None}},
         )
         # pylint doesn't see the "ok" member
-        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
+        assert response.status_code == requests.codes.ok, response.text  # pylint: disable=no-member
 
-    data = res.json()
+    data = response.json()
     assert data["key"]["key"], data
     return data["key"]["key"]
