@@ -459,7 +459,7 @@ def test_start_when_leader():
         harness.handle_exec(SERVICE_NAME, call, handler=exec_handler)
 
     # The leader-elected event will cause rollingops to fail because the RollingOpsManager has not
-    # yet been initilised in the charm's __init__ method.
+    # yet been initialised in the charm's __init__ method.
     harness.disable_hooks()
     harness.set_leader(True)
     harness.enable_hooks()
