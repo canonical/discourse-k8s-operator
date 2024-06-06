@@ -29,7 +29,6 @@ from charms.saml_integrator.v0.saml import (
     SamlRequires,
 )
 from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent
-from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.pebble import ExecError, ExecProcess, Plan
@@ -89,7 +88,6 @@ class DiscourseCharm(CharmBase):
     """Charm for Discourse on kubernetes."""
 
     on = RedisRelationCharmEvents()
-    _stored = StoredState()
 
     def __init__(self, *args):
         """Initialize defaults and event handlers."""
@@ -108,9 +106,6 @@ class DiscourseCharm(CharmBase):
             self._on_database_relation_broken,
         )
 
-        self._stored.set_default(
-            redis_relation={},
-        )
         self._require_nginx_route()
         self.saml = SamlRequires(self)
         self.framework.observe(self.saml.on.saml_data_available, self._on_saml_data_available)
@@ -123,7 +118,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.create_user_action, self._on_create_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
-        self.redis = RedisRequires(self, self._stored)
+        self.redis = RedisRequires(self)
         self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
 
         self._metrics_endpoint = MetricsEndpointProvider(
