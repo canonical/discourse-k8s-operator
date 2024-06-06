@@ -361,7 +361,11 @@ def test_create_user(mock_exec):
     assert: the underlying rake command to add the user is executed
         with the appropriate parameters.
     """
-    mock_exec.return_value = MagicMock(wait_output=MagicMock(side_effect=ExecError(command="", exit_code=1, stdout="", stderr="")))   
+    mock_exec.return_value = MagicMock(
+        wait_output=MagicMock(
+            side_effect=ExecError(command=[""], exit_code=1, stdout="", stderr="")
+        )
+    )
     harness = helpers.start_harness()
 
     # We catch the exec call that we expect to register it and make sure that the
@@ -380,15 +384,14 @@ def test_create_user(mock_exec):
             raise ValueError(f"{args.command} wasn't made with the correct args.")
 
     def exists_bundle_handler(event: ops.testing.ExecArgs) -> None:
-        print("1")
-        raise ExecError(command=event.command,  exit_code=1, stdout="", stderr="")
+        raise ExecError(command=event.command, exit_code=1, stdout="", stderr="")
 
     email = "admin-user@test.internal"
-    
+
     harness.handle_exec(
         SERVICE_NAME,
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", f"users:exists[{email}]"],
-        handler=exists_bundle_handler
+        handler=exists_bundle_handler,
     )
 
     harness.handle_exec(

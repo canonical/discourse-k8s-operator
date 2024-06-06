@@ -440,10 +440,9 @@ async def test_promote_user(
 
         attempt_login(email, create_action.results["password"])
 
-        # This should fail as the user is not promoted
-        assert get_api_key() is None
+        assert get_api_key() is None, "This should fail as the user is not promoted"
 
         promote_action: Action = await discourse_unit.run_action("promote-user", email=email)
         await promote_action.wait()
 
-        assert get_api_key()
+        assert get_api_key(), "This should succeed as the user is promoted"
