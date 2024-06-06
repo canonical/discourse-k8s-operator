@@ -763,12 +763,10 @@ class DiscourseCharm(CharmBase):
             environment=self._create_discourse_environment_settings(),
         )
         try:
-            user_exists.wait_output()
-            print("2")
+            assert user_exists.wait_output()
             event.fail(f"User with email {email} already exists")
             return
         except ExecError:
-            print("3")
             pass
         # Admin flag is optional, if it is true, the user will be created as an admin
         admin_flag = "Y" if event.params.get("admin") else "N"

@@ -353,13 +353,15 @@ def test_promote_user():
     assert expected_exec_call_was_made
 
 
-def test_create_user():
+@patch.object(ops.Container, "exec")
+def test_create_user(mock_exec):
     """
     arrange: an email and a password
     act: when the _on_create_user_action method is executed
     assert: the underlying rake command to add the user is executed
         with the appropriate parameters.
     """
+    mock_exec.return_value = MagicMock(wait_output=MagicMock(side_effect=ExecError(command="", exit_code=1, stdout="", stderr="")))   
     harness = helpers.start_harness()
 
     # We catch the exec call that we expect to register it and make sure that the

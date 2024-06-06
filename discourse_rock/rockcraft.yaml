@@ -159,8 +159,36 @@ parts:
       "*": srv/discourse/app/plugins/discourse-templates/
   discourse-calendar:
     plugin: dump
+    after: [discourse, bundler-config]
       touch srv/discourse/app/lib/tasks/discourse-charm.rake
-
+      source: https://github.com/discourse/discourse-calendar.git
+    source-commit: 84ef46a38cf02748ecacad16c5d9c6fec12dc8da
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-calendar/
+  discourse-gamification:
+    plugin: dump
+    after: [discourse, bundler-config]
+    source: https://github.com/discourse/discourse-gamification.git
+    source-commit: 5951fc573702090c0dc95b12d4aa3a053303bd63
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-gamification/
+  patches:
+    plugin: dump
+    after: [discourse]
+    source: patches
+    organize:
+      "*": srv/discourse/app/patches/
+  apply-patches:
+    plugin: nil
+    build-packages:
+      - git
+    after: [discourse, patches]
+    override-stage: |
+      git -C srv/discourse/app apply patches/lp1903695.patch
+      touch srv/discourse/app/patches/discourse-charm.patch
+      git -C srv/discourse/app apply patches/discourse-charm.patch
       git -C srv/discourse/app apply patches/sigterm.patch
       # The following is a fix for UglifierJS assets compilation
       # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
