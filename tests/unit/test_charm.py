@@ -458,7 +458,11 @@ def test_start_when_leader():
     for call in exec_calls:
         harness.handle_exec(SERVICE_NAME, call, handler=exec_handler)
 
+    # The leader-elected event will cause rollingops to fail because the RollingOpsManager has not
+    # yet been initialised in the charm's __init__ method.
+    harness.disable_hooks()
     harness.set_leader(True)
+    harness.enable_hooks()
     harness.container_pebble_ready(SERVICE_NAME)
     # A few events are not emitted, like config_changed.
     harness.charm.on.start.emit()
