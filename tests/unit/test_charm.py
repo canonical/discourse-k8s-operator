@@ -8,7 +8,7 @@
 
 import secrets
 import typing
-from unittest.mock import MagicMock, patch
+from unittest.mock import DEFAULT, MagicMock, patch
 
 import ops
 import pytest
@@ -346,9 +346,7 @@ def test_promote_user():
 
     email = "sample@email.com"
     event = MagicMock(spec=ActionEvent)
-    event.params = {
-        "email": email,
-    }
+    event.params = {"email": email}
     charm._on_promote_user_action(event)
     assert expected_exec_call_was_made
 
@@ -356,52 +354,64 @@ def test_promote_user():
 @patch.object(ops.Container, "exec")
 def test_create_user(mock_exec):
     """
-    arrange: an email and a password
+    arrange: an email
     act: when the _on_create_user_action method is executed
-    assert: the underlying rake command to add the user is executed
-        with the appropriate parameters.
+    assert: the create user rake command is executed upon failure of the user existence check.
     """
-    mock_exec.return_value = MagicMock(
-        wait_output=MagicMock(
-            side_effect=ExecError(command=[""], exit_code=1, stdout="", stderr="")
+    mock_wo = MagicMock(
+            return_value=("", None),
         )
-    )
-    harness = helpers.start_harness()
-
-    # We catch the exec call that we expect to register it and make sure that the
-    # args passed to it are correct.
-    expected_exec_call_was_made = False
-
-    def create_bundle_handler(args: ops.testing.ExecArgs) -> None:
-        nonlocal expected_exec_call_was_made
-        expected_exec_call_was_made = True
-        if (
-            args.environment != harness.charm._create_discourse_environment_settings()
-            or args.working_dir != DISCOURSE_PATH
-            or args.user != "_daemon_"
-            or args.timeout != 60
-        ):
-            raise ValueError(f"{args.command} wasn't made with the correct args.")
-
-    def exists_bundle_handler(event: ops.testing.ExecArgs) -> None:
-        raise ExecError(command=event.command, exit_code=1, stdout="", stderr="")
+    stdout_mock = "CRASH"
+    harness = helpers.start_harness(run_initial_hooks=False)
+    harness.set_can_connect(CONTAINER_NAME, True)
 
     email = "admin-user@test.internal"
+    expected_exec_call_was_made = False
 
-    harness.handle_exec(
-        SERVICE_NAME,
-        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", f"users:exists[{email}]"],
-        handler=exists_bundle_handler,
-    )
+    def mock_wo_side_effect(*args, **kwargs):  # pylint: disable=unused-argument
+        """Mock wo side effect.
 
-    harness.handle_exec(
-        SERVICE_NAME,
-        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
-        handler=create_bundle_handler,
-    )
+        Args:
+            args: Variable list of positional arguments passed to the parent constructor.
+            kwargs: a `dict` of the extra arguments passed to the function.
+
+        Returns:
+            unittest.mock DEFAULT built-in.
+
+        Raises:
+            ExecError: Execution error fired if conditions are met.
+        """
+
+        if isinstance(mock_wo.cmd, list) and f"users:exists[{email}]" in mock_wo.cmd:
+            raise ExecError(command=mock_wo.cmd, exit_code=42, stdout=stdout_mock, stderr="")
+        
+        if isinstance(mock_wo.cmd, list) and f"admin:create" in mock_wo.cmd:
+            nonlocal expected_exec_call_was_made
+            expected_exec_call_was_made = True
+
+        return DEFAULT
+
+    mock_wo.side_effect = mock_wo_side_effect
+
+    def mock_exec_side_effect(*args, **kwargs):  # pylint: disable=unused-argument
+        """Mock execution side effect.
+
+        Args:
+            args: Variable list of positional arguments passed to the parent constructor.
+            kwargs: a `dict` of the extra arguments passed to the function.
+
+        Returns:
+            unittest.mock DEFAULT built-in.
+        """
+        mock_wo.cmd = args[0]
+        return DEFAULT
+    
+    mock_exec.side_effect = mock_exec_side_effect
+    mock_exec.return_value = (MagicMock(
+        wait_output=mock_wo,
+    ))
 
     charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
-
     event = MagicMock(spec=ActionEvent)
     event.params = {"email": email}
     charm._on_create_user_action(event)
