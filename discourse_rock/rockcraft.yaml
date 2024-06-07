@@ -12,6 +12,11 @@ version: "1.0"
 platforms:
   amd64:
 parts:
+  add-user:
+    plugin: nil
+    overlay-script: |
+      mkdir -p $CRAFT_OVERLAY/run/discourse-k8s-operator
+      chmod 755 $CRAFT_OVERLAY/run/discourse-k8s-operator
   tooling:
     plugin: nil
     overlay-packages:
