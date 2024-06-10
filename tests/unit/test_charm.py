@@ -385,10 +385,6 @@ def test_create_user(mock_exec):
         if isinstance(mock_wo.cmd, list) and f"users:exists[{email}]" in mock_wo.cmd:
             raise ExecError(command=mock_wo.cmd, exit_code=42, stdout=stdout_mock, stderr="")
 
-        if isinstance(mock_wo.cmd, list) and "admin:create" in mock_wo.cmd:
-            nonlocal expected_exec_call_was_made
-            expected_exec_call_was_made = True
-
         return DEFAULT
 
     mock_wo.side_effect = mock_wo_side_effect
@@ -404,6 +400,19 @@ def test_create_user(mock_exec):
             unittest.mock DEFAULT built-in.
         """
         mock_wo.cmd = args[0]
+
+        if isinstance(mock_wo.cmd, list) and "admin:create" in mock_wo.cmd:
+            nonlocal expected_exec_call_was_made
+            expected_exec_call_was_made = True
+            if (
+                kwargs["environment"] != harness.charm._create_discourse_environment_settings()
+                or kwargs["working_dir"] != DISCOURSE_PATH
+                or kwargs["user"] != "_daemon_"
+                or email not in kwargs["stdin"]
+                or kwargs["timeout"] != 60
+            ):
+                raise ValueError(f"{mock_wo.cmd} wasn't made with the correct args.")
+
         return DEFAULT
 
     mock_exec.side_effect = mock_exec_side_effect

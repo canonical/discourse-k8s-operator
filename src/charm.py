@@ -763,7 +763,7 @@ class DiscourseCharm(CharmBase):
             environment=self._create_discourse_environment_settings(),
         )
         try:
-            assert user_exists.wait_output()
+            user_exists.wait_output()
             event.fail(f"User with email {email} already exists")
             return
         except ExecError:
