@@ -395,7 +395,7 @@ async def test_promote_user(
     """
     with requests.session() as session:
         response = session.get(
-            f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}
+            f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}, timeout=60
         )
         # pylint doesn't see the "ok" member
         assert response.ok, response.text  # pylint: disable=no-member
@@ -412,6 +412,7 @@ async def test_promote_user(
                     "X-Requested-With": "XMLHttpRequest",
                 },
                 json={"key": {"description": "admin-api-key", "username": None}},
+                timeout=60,
             )
             return response.json()["key"]["key"]
 
@@ -429,6 +430,7 @@ async def test_promote_user(
                     "second_factor_method": "1",
                     "timezone": "Asia/Hong_Kong",
                 },
+                timeout=60,
             )
             assert "error" not in response.json()
 
