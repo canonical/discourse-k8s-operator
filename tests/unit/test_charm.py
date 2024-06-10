@@ -368,6 +368,11 @@ def test_create_user(mock_exec):
     email = "admin-user@test.internal"
     expected_exec_call_was_made = False
 
+    test_users = {
+        "email": "standard_user@test.internal", "admin": False, "check": False,
+        "email": "admin_user@test.internal", "admin": True, "check": False
+    }
+
     def mock_wo_side_effect(*args, **kwargs):  # pylint: disable=unused-argument
         """Mock wo side effect.
 
@@ -412,6 +417,10 @@ def test_create_user(mock_exec):
                 or kwargs["timeout"] != 60
             ):
                 raise ValueError(f"{mock_wo.cmd} wasn't made with the correct args.")
+            if test_users[0]["email"] in kwargs["stdin"] and "n\nY\n" in kwargs["stdin"]:
+                test_users[0]["check"] = True
+            if test_users[1]["email"] in kwargs["stdin"] and "Y\n" in kwargs["stdin"]:
+                test_users[1]["check"] = True
 
         return DEFAULT
 
@@ -421,10 +430,19 @@ def test_create_user(mock_exec):
     )
 
     charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
-    event = MagicMock(spec=ActionEvent)
-    event.params = {"email": email}
-    charm._on_create_user_action(event)
-    assert expected_exec_call_was_made
+
+    for user in test_users:
+        event = MagicMock(spec=ActionEvent)
+        event.params = {"email": user["email"], "admin": user["admin"]}
+        charm._on_create_user_action(event)
+        assert user["check"]
+        # assert expected_exec_call_was_made
+        # expected_exec_call_was_made = False
+
+    # event = MagicMock(spec=ActionEvent)
+    # event.params = {"email": test_users[0]["email"]}
+    # charm._on_create_user_action(event)
+    # assert expected_exec_call_was_made
 
 
 def test_anonymize_user():
