@@ -359,8 +359,8 @@ def test_create_user(mock_exec):
     assert: the create user rake command is executed upon failure of the user existence check.
     """
     mock_wo = MagicMock(
-            return_value=("", None),
-        )
+        return_value=("", None),
+    )
     stdout_mock = "CRASH"
     harness = helpers.start_harness(run_initial_hooks=False)
     harness.set_can_connect(CONTAINER_NAME, True)
@@ -384,8 +384,8 @@ def test_create_user(mock_exec):
 
         if isinstance(mock_wo.cmd, list) and f"users:exists[{email}]" in mock_wo.cmd:
             raise ExecError(command=mock_wo.cmd, exit_code=42, stdout=stdout_mock, stderr="")
-        
-        if isinstance(mock_wo.cmd, list) and f"admin:create" in mock_wo.cmd:
+
+        if isinstance(mock_wo.cmd, list) and "admin:create" in mock_wo.cmd:
             nonlocal expected_exec_call_was_made
             expected_exec_call_was_made = True
 
@@ -405,11 +405,11 @@ def test_create_user(mock_exec):
         """
         mock_wo.cmd = args[0]
         return DEFAULT
-    
+
     mock_exec.side_effect = mock_exec_side_effect
-    mock_exec.return_value = (MagicMock(
+    mock_exec.return_value = MagicMock(
         wait_output=mock_wo,
-    ))
+    )
 
     charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
     event = MagicMock(spec=ActionEvent)
