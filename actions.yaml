@@ -16,6 +16,10 @@ create-user:
     admin:
       type: boolean
       description: Whether the user should be an admin.
+    active:
+      type: boolean
+      description: Whether the user should be email-verified and active.
+      default: true
   required: [email]
 promote-user:
   description: Promote a user to admin.

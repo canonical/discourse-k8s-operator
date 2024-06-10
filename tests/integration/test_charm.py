@@ -432,9 +432,9 @@ async def test_promote_user(
             )
             assert "error" not in response.json()
 
-        email = "test-user@test.internal"
+        email = "test-promote-user@test.internal"
         discourse_unit: Unit = app.units[0]
-        create_action: Action = await discourse_unit.run_action("create-user", email=email)
+        create_action: Action = await discourse_unit.run_action("create-user", email=email, admin=False)
         await create_action.wait()
         assert create_action.results["user"] == email
 

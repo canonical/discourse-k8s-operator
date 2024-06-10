@@ -13,3 +13,16 @@
 +  puts "ERROR: User with email #{email} not found"
 +  exit 1
 +end
++
++desc "Activate a user account"
++task "users:activate", [:email] => [:environment] do |_, args|
++  email = args[:email]
++  user = User.find_by_email(email)
++  if !user
++    puts "User with email #{email} does not exist"
++    exit 1
++  end
++  user.email_tokens.update_all(confirmed: true)
++  puts "User with email #{email} activated"
++  exit 0
++end
