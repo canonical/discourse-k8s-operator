@@ -783,25 +783,27 @@ class DiscourseCharm(CharmBase):
             environment=self._create_discourse_environment_settings(),
             timeout=60,
         )
-        if not event.params.get("admin") and not event.params.get("active"):
-            activate_process = container.exec(
-                [
-                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                    "exec",
-                    "rake",
-                    f"users:activate[{email}]",
-                ],
-                working_dir=DISCOURSE_PATH,
-                user=CONTAINER_APP_USERNAME,
-                environment=self._create_discourse_environment_settings(),
-            )
-            activate_process.wait_output()
-            logger.info(f"User {email} activated")
         try:
             process.wait_output()
             event.set_results({"user": email, "password": password})
         except ExecError as ex:
             event.fail(f"Failed to make user with email {email}: {ex.stdout}")  # type: ignore
+
+        if event.params.get("admin") or not event.params.get("active"):
+            return
+
+        activate_process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                f"users:activate[{email}]",
+            ],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        activate_process.wait_output()
 
     def _generate_password(self, length: int) -> str:
         """Generate a random password.

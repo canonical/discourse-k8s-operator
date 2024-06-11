@@ -404,7 +404,7 @@ async def test_promote_user(
         assert data["csrf"], data
         csrf = data["csrf"]
 
-        def get_api_key() -> str:
+        def get_api_key() -> bool:
             response = session.post(
                 f"{discourse_address}/admin/api/keys",
                 headers={
@@ -415,7 +415,9 @@ async def test_promote_user(
                 json={"key": {"description": "admin-api-key", "username": None}},
                 timeout=60,
             )
-            return response.json()["key"]["key"]
+            if "error_type" in response.json():
+                return False
+            return True
 
         def attempt_login(email: str, password: str):
             response = session.post(
@@ -437,17 +439,13 @@ async def test_promote_user(
 
         email = "test-promote-user@test.internal"
         discourse_unit: Unit = app.units[0]
-        create_action: Action = await discourse_unit.run_action(
-            "create-user", email=email, admin=False
-        )
+        create_action: Action = await discourse_unit.run_action("create-user", email=email)
         await create_action.wait()
         assert create_action.results["user"] == email
 
-        logger.info("User created, attempting to login")
-
         attempt_login(email, create_action.results["password"])
 
-        assert get_api_key() is None, "This should fail as the user is not promoted"
+        assert not get_api_key(), "This should fail as the user is not promoted"
 
         promote_action: Action = await discourse_unit.run_action("promote-user", email=email)
         await promote_action.wait()

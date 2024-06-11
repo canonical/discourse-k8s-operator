@@ -1,6 +1,6 @@
 --- a/lib/tasks/discourse-charm.rake
 +++ b/lib/tasks/discourse-charm.rake
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,25 @@
 +# frozen_string_literal: true
 +
 +desc "Check if a user exists for given email address"
