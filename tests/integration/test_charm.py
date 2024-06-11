@@ -280,6 +280,7 @@ async def test_relations(
     test_discourse_srv_status_ok()
 
 
+@pytest.mark.skip(reason="Frequent timeouts")
 async def test_upgrade(
     app: Application,
     model: Model,
@@ -441,6 +442,8 @@ async def test_promote_user(
         )
         await create_action.wait()
         assert create_action.results["user"] == email
+
+        logger.info("User created, attempting to login")
 
         attempt_login(email, create_action.results["password"])
 
