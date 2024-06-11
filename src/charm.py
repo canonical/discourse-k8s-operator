@@ -784,7 +784,7 @@ class DiscourseCharm(CharmBase):
             timeout=60,
         )
         if not event.params.get("admin") and not event.params.get("active"):
-            container.exec(
+            activate_process = container.exec(
                 [
                     os.path.join(DISCOURSE_PATH, "bin/bundle"),
                     "exec",
@@ -795,6 +795,8 @@ class DiscourseCharm(CharmBase):
                 user=CONTAINER_APP_USERNAME,
                 environment=self._create_discourse_environment_settings(),
             )
+            activate_process.wait_output()
+            logger.info(f"User {email} activated")
         try:
             process.wait_output()
             event.set_results({"user": email, "password": password})
