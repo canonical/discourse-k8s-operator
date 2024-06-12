@@ -415,7 +415,10 @@ async def test_promote_user(
                 json={"key": {"description": "admin-api-key", "username": None}},
                 timeout=60,
             )
-            if "error_type" in response.json():
+            logger.info("get_api_key response json: %s", response.json())
+            logger.info("get_api_key response text: %s", response.text)
+            logger.info("get_api_key response cond: %s", str(response.json().get("key") is None))
+            if response.json().get("key") is None:
                 return False
             return True
 
