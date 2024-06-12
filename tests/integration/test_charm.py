@@ -388,12 +388,23 @@ async def test_create_user(
 async def test_promote_user(
     app: Application,
     discourse_address: str,
+    model: Model,
+    requests_timeout: float,
 ):
     """
     arrange: A discourse application
     act: Promote a user to admin
     assert: User cannot access the admin API before being promoted
     """
+
+    def test_discourse_srv_status_ok():
+        response = requests.get(f"{discourse_address}/srv/status", timeout=requests_timeout)
+        assert response.status_code == 200
+
+    # The charm should be active when starting this test
+    await model.wait_for_idle(status="active")
+    test_discourse_srv_status_ok()
+
     with requests.session() as session:
         response = session.get(
             f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}, timeout=60
