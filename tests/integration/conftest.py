@@ -157,7 +157,8 @@ async def app_fixture(
     async with ops_test.fast_forward():
         await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
-    redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/stable")
+    # Revision 28 is being used due to https://github.com/canonical/redis-k8s-operator/issues/87.
+    redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge", revision=28)
     await model.wait_for_idle(apps=[redis_app.name], status="active")
 
     await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
