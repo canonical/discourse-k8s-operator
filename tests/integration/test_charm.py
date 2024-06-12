@@ -415,9 +415,6 @@ async def test_promote_user(
                 json={"key": {"description": "admin-api-key", "username": None}},
                 timeout=60,
             )
-            logger.info("get_api_key response json: %s", response.json())
-            logger.info("get_api_key response text: %s", response.text)
-            logger.info("get_api_key response cond: %s", str(response.json().get("key") is None))
             if response.json().get("key") is None:
                 return False
             return True
@@ -438,6 +435,13 @@ async def test_promote_user(
                 },
                 timeout=60,
             )
+            try:
+                "error" not in response.json()
+            except Exception as e:
+                logger.error("Error in response: %s", response.text)
+                raise e
+
+            assert response.ok, response.text  # pylint: disable=no-member
             assert "error" not in response.json()
 
         email = "test-promote-user@test.internal"
