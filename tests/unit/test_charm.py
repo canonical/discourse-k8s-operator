@@ -383,7 +383,7 @@ def test_create_user(mock_exec):
         """
 
         if isinstance(mock_wo.cmd, list) and f"users:exists[{email}]" in mock_wo.cmd:
-            raise ExecError(command=mock_wo.cmd, exit_code=42, stdout=stdout_mock, stderr="")
+            raise ExecError(command=mock_wo.cmd, exit_code=2, stdout=stdout_mock, stderr="")
 
         return DEFAULT
 
