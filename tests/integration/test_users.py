@@ -10,7 +10,6 @@ import requests
 from juju.action import Action
 from juju.application import Application
 from juju.unit import Unit
-from pytest_operator.plugin import Model
 
 logger = logging.getLogger(__name__)
 
@@ -44,22 +43,12 @@ async def test_create_user(
 async def test_promote_user(
     app: Application,
     discourse_address: str,
-    model: Model,
-    requests_timeout: float,
 ):
     """
     arrange: A discourse application
     act: Promote a user to admin
     assert: User cannot access the admin API before being promoted
     """
-
-    def test_discourse_srv_status_ok():
-        response = requests.get(f"{discourse_address}/srv/status", timeout=requests_timeout)
-        assert response.status_code == 200
-
-    # The charm should be active when starting this test
-    await model.wait_for_idle(status="active")
-    test_discourse_srv_status_ok()
 
     with requests.session() as session:
 
@@ -106,12 +95,6 @@ async def test_promote_user(
                 "timezone": "Asia/Hong_Kong",
             },
         )
-
-        try:
-            "error" not in response.json()
-        except Exception as e:
-            logger.error("Error in response: %s", response.text)
-            raise e
 
         assert response.ok, response.text  # pylint: disable=no-member
         assert "error" not in response.json()

@@ -718,8 +718,13 @@ class DiscourseCharm(CharmBase):
         )
         try:
             user_exists.wait_output()
-        except ExecError:
-            event.fail(f"User with email {email} does not exist")
+        except ExecError as ex:
+            if ex.exit_code == 2:
+                event.fail(f"User with email {email} does not exist")
+            else:
+                event.fail(
+                    f"Error checking if user with email {email} exists: {ex.stdout}"  # type: ignore
+                )
             return
 
         process = container.exec(
@@ -766,8 +771,12 @@ class DiscourseCharm(CharmBase):
             user_exists.wait_output()
             event.fail(f"User with email {email} already exists")
             return
-        except ExecError:
-            pass
+        except ExecError as ex:
+            if ex.exit_code == 2:
+                pass
+            else:
+                event.fail(f"Error checking if user with email {email} exists: {ex.stdout}")
+                return
         # Admin flag is optional, if it is true, the user will be created as an admin
         admin_flag = "Y" if event.params.get("admin") else "N"
         process = container.exec(
@@ -788,6 +797,7 @@ class DiscourseCharm(CharmBase):
             event.set_results({"user": email, "password": password})
         except ExecError as ex:
             event.fail(f"Failed to make user with email {email}: {ex.stdout}")  # type: ignore
+            return
 
         if event.params.get("admin") or not event.params.get("active"):
             return
@@ -803,7 +813,19 @@ class DiscourseCharm(CharmBase):
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
         )
-        activate_process.wait_output()
+        try:
+            activate_process.wait_output()
+        except ExecError as ex:
+            if ex.exit_code == 2:
+                event.fail(
+                    f"Could not find user {email} for activation: {ex.stdout}"  # type: ignore
+                )
+                return
+            event.fail(
+                # Parameter validation errors are printed to stdout
+                # Ignore mypy warning when formatting stdout
+                f"Failed to activate user with email {email}: {ex.stdout}"  # type: ignore
+            )
 
     def _generate_password(self, length: int) -> str:
         """Generate a random password.

@@ -11,7 +11,7 @@
 +    exit 0
 +  end
 +  puts "ERROR: User with email #{email} not found"
-+  exit 1
++  exit 2
 +end
 +
 +desc "Activate a user account"
@@ -20,7 +20,7 @@
 +  user = User.find_by_email(email)
 +  if !user
 +    puts "User with email #{email} does not exist"
-+    exit 1
++    exit 2
 +  end
 +  user.email_tokens.update_all(confirmed: true)
 +  puts "User with email #{email} activated"
