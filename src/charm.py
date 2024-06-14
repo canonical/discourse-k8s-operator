@@ -719,7 +719,7 @@ class DiscourseCharm(CharmBase):
         except ExecError as ex:
             if ex.exit_code == 2:
                 return False
-            raise ex
+            raise
 
     def _activate_user(self, email: str) -> bool:
         """Activate a user with the given email.
