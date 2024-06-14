@@ -745,7 +745,7 @@ class DiscourseCharm(CharmBase):
         except ExecError as ex:
             if ex.exit_code == 2:
                 return False
-            raise ex
+            raise
 
     def _on_promote_user_action(self, event: ActionEvent) -> None:
         """Promote a user to a specific trust level.
