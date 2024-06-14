@@ -696,6 +696,30 @@ class DiscourseCharm(CharmBase):
         if self._is_config_valid() and container.can_connect():
             self._start_service()
             self.model.unit.status = ActiveStatus()
+    
+    def _user_exists(self, email: str) -> bool:
+        """Check if a user with the given email exists.
+
+        Args:
+            email: Email of the user to check.
+
+        Returns:
+            True if the user exists, False otherwise.
+        """
+        container = self.unit.get_container(CONTAINER_NAME)
+        user_exists = container.exec(
+            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", f"users:exists[{email}]"],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            user_exists.wait_output()
+            return True
+        except ExecError as ex:
+            if ex.exit_code == 2:
+                return False
+            raise ex
 
     def _on_promote_user_action(self, event: ActionEvent) -> None:
         """Promote a user to a specific trust level.
@@ -710,21 +734,8 @@ class DiscourseCharm(CharmBase):
 
         email = event.params["email"]
 
-        user_exists = container.exec(
-            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", f"users:exists[{email}]"],
-            working_dir=DISCOURSE_PATH,
-            user=CONTAINER_APP_USERNAME,
-            environment=self._create_discourse_environment_settings(),
-        )
-        try:
-            user_exists.wait_output()
-        except ExecError as ex:
-            if ex.exit_code == 2:
-                event.fail(f"User with email {email} does not exist")
-            else:
-                event.fail(
-                    f"Error checking if user with email {email} exists: {ex.stdout}"  # type: ignore
-                )
+        if not self._user_exists(email):
+            event.fail(f"User with email {email} does not exist")
             return
 
         process = container.exec(
@@ -761,24 +772,14 @@ class DiscourseCharm(CharmBase):
 
         email = event.params["email"]
         password = self._generate_password(16)
-        user_exists = container.exec(
-            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", f"users:exists[{email}]"],
-            working_dir=DISCOURSE_PATH,
-            user=CONTAINER_APP_USERNAME,
-            environment=self._create_discourse_environment_settings(),
-        )
-        try:
-            user_exists.wait_output()
+
+        if self._user_exists(email):
             event.fail(f"User with email {email} already exists")
             return
-        except ExecError as ex:
-            if ex.exit_code == 2:
-                pass
-            else:
-                event.fail(f"Error checking if user with email {email} exists: {ex.stdout}")
-                return
+
         # Admin flag is optional, if it is true, the user will be created as an admin
         admin_flag = "Y" if event.params.get("admin") else "N"
+
         process = container.exec(
             [
                 os.path.join(DISCOURSE_PATH, "bin/bundle"),
@@ -813,6 +814,7 @@ class DiscourseCharm(CharmBase):
             user=CONTAINER_APP_USERNAME,
             environment=self._create_discourse_environment_settings(),
         )
+
         try:
             activate_process.wait_output()
         except ExecError as ex:

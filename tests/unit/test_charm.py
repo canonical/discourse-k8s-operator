@@ -342,12 +342,8 @@ def test_promote_user():
         handler=bundle_handler,
     )
 
-    charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
-
     email = "sample@email.com"
-    event = MagicMock(spec=ActionEvent)
-    event.params = {"email": email}
-    charm._on_promote_user_action(event)
+    harness.run_action("promote-user", {"email": email})
     assert expected_exec_call_was_made
 
 
@@ -361,11 +357,13 @@ def test_create_user(mock_exec):
     mock_wo = MagicMock(
         return_value=("", None),
     )
-    stdout_mock = "CRASH"
+
+    email = "admin-user@test.internal"
+
+    stdout_mock = f"ERROR: User with email {email} not found"
     harness = helpers.start_harness(run_initial_hooks=False)
     harness.set_can_connect(CONTAINER_NAME, True)
 
-    email = "admin-user@test.internal"
     expected_exec_call_was_made = False
 
     def mock_wo_side_effect(*args, **kwargs):  # pylint: disable=unused-argument
@@ -420,10 +418,7 @@ def test_create_user(mock_exec):
         wait_output=mock_wo,
     )
 
-    charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
-    event = MagicMock(spec=ActionEvent)
-    event.params = {"email": email}
-    charm._on_create_user_action(event)
+    harness.run_action("create-user", {"email": email})
     assert expected_exec_call_was_made
 
 
@@ -456,10 +451,8 @@ def test_anonymize_user():
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", f"users:anonymize[{username}]"],
         handler=bundle_handler,
     )
-    charm: DiscourseCharm = typing.cast(DiscourseCharm, harness.charm)
-    event = MagicMock(spec=ActionEvent)
-    event.params = {"username": username}
-    charm._on_anonymize_user_action(event)
+
+    harness.run_action("anonymize-user", {"username": username})
     assert expected_exec_call_was_made
 
 
