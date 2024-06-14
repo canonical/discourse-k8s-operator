@@ -358,24 +358,24 @@ def test_create_user():
     # We catch the exec call that we expect to register it and make sure that the
     # args passed to it are correct.
     expected_exec_call_was_made = False
+    email = "sample@email.com"
 
-    def bundle_handler(args: ops.testing.ExecArgs) -> None:
+    def mock_create_user(args: ops.testing.ExecArgs) -> None:
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
             args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
+            or email not in args.stdin
             or args.user != "_daemon_"
             or args.timeout != 60
         ):
             raise ValueError(f"{args.command} wasn't made with the correct args.")
 
-    email = "sample@email.com"
-
     harness.handle_exec(
         SERVICE_NAME,
         [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
-        handler=bundle_handler,
+        handler=mock_create_user,
     )
 
     stdout = "ERROR: User with email f{email} not found"
