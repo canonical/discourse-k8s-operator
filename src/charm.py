@@ -696,7 +696,7 @@ class DiscourseCharm(CharmBase):
         if self._is_config_valid() and container.can_connect():
             self._start_service()
             self.model.unit.status = ActiveStatus()
-    
+
     def _user_exists(self, email: str) -> bool:
         """Check if a user with the given email exists.
 
@@ -721,6 +721,70 @@ class DiscourseCharm(CharmBase):
                 return False
             raise ex
 
+    def _create_or_promote_user(
+        self, email: str, promote: bool = False, password: str | None = None, admin: bool = False
+    ) -> None:
+        """TODO this wraps admin:create. a bit ugly that does two things.
+
+        Args:
+            email: TODO
+            promote: TODO
+            password: TODO
+            admin: TODO
+        """
+        container = self.unit.get_container(CONTAINER_NAME)
+        if promote:
+            discourse_stdin = f"{email}\nn\nY\n"
+        else:
+            if admin:
+                discourse_stdin = f"{email}\n{password}\n{password}\nY\n"
+            else:
+                discourse_stdin = f"{email}\n{password}\n{password}\nN\n"
+
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                "admin:create",
+            ],
+            stdin=discourse_stdin,
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+            timeout=60,
+        )
+        try:
+            process.wait_output()
+        except ExecError as ex:
+            logger.exception("Error creating/promoting user")
+            raise ex
+
+    def _activate_user(self, email: str) -> None:
+        """TODO.
+
+        Args:
+            email: TODO
+        """
+        container = self.unit.get_container(CONTAINER_NAME)
+        activate_process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                f"users:activate[{email}]",
+            ],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+
+        try:
+            activate_process.wait_output()
+        except ExecError as ex:
+            logger.exception("Error activating user")
+            raise ex
+
     def _on_promote_user_action(self, event: ActionEvent) -> None:
         """Promote a user to a specific trust level.
 
@@ -738,6 +802,7 @@ class DiscourseCharm(CharmBase):
             event.fail(f"User with email {email} does not exist")
             return
 
+        self._create_or_promote_user(email, promote=True)
         process = container.exec(
             [
                 os.path.join(DISCOURSE_PATH, "bin/bundle"),
@@ -772,62 +837,19 @@ class DiscourseCharm(CharmBase):
 
         email = event.params["email"]
         password = self._generate_password(16)
+        admin = bool(event.params.get("admin", False))
+        active = bool(event.params.get("active", False))
 
         if self._user_exists(email):
             event.fail(f"User with email {email} already exists")
             return
 
-        # Admin flag is optional, if it is true, the user will be created as an admin
-        admin_flag = "Y" if event.params.get("admin") else "N"
+        self._create_or_promote_user(email, password=password, admin=admin)
 
-        process = container.exec(
-            [
-                os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                "exec",
-                "rake",
-                "admin:create",
-            ],
-            stdin=f"{email}\n{password}\n{password}\n{admin_flag}\n",
-            working_dir=DISCOURSE_PATH,
-            user=CONTAINER_APP_USERNAME,
-            environment=self._create_discourse_environment_settings(),
-            timeout=60,
-        )
-        try:
-            process.wait_output()
-            event.set_results({"user": email, "password": password})
-        except ExecError as ex:
-            event.fail(f"Failed to make user with email {email}: {ex.stdout}")  # type: ignore
-            return
+        if not admin or active:
+            self._activate_user(email)
 
-        if event.params.get("admin") or not event.params.get("active"):
-            return
-
-        activate_process = container.exec(
-            [
-                os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                "exec",
-                "rake",
-                f"users:activate[{email}]",
-            ],
-            working_dir=DISCOURSE_PATH,
-            user=CONTAINER_APP_USERNAME,
-            environment=self._create_discourse_environment_settings(),
-        )
-
-        try:
-            activate_process.wait_output()
-        except ExecError as ex:
-            if ex.exit_code == 2:
-                event.fail(
-                    f"Could not find user {email} for activation: {ex.stdout}"  # type: ignore
-                )
-                return
-            event.fail(
-                # Parameter validation errors are printed to stdout
-                # Ignore mypy warning when formatting stdout
-                f"Failed to activate user with email {email}: {ex.stdout}"  # type: ignore
-            )
+        event.set_results({"user": email, "password": password})
 
     def _generate_password(self, length: int) -> str:
         """Generate a random password.
