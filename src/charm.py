@@ -803,26 +803,7 @@ class DiscourseCharm(CharmBase):
             return
 
         self._create_or_promote_user(email, promote=True)
-        process = container.exec(
-            [
-                os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                "exec",
-                "rake",
-                "admin:create",
-            ],
-            stdin=f"{email}\nn\nY\n",
-            working_dir=DISCOURSE_PATH,
-            user=CONTAINER_APP_USERNAME,
-            environment=self._create_discourse_environment_settings(),
-            timeout=60,
-        )
-        try:
-            process.wait_output()
-            event.set_results({"user": email})
-        except ExecError as ex:
-            event.fail(
-                f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
-            )
+        event.set_results({"user": email})
 
     def _on_create_user_action(self, event: ActionEvent) -> None:
         """Create a new user in Discourse.
