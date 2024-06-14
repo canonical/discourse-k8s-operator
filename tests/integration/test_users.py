@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 @pytest.mark.asyncio
 async def test_create_user(
     app: Application,
-    discourse_address: str,
 ):
     """
     arrange: A discourse application
