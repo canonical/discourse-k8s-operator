@@ -347,8 +347,7 @@ def test_promote_user():
     assert expected_exec_call_was_made
 
 
-@patch.object(ops.Container, "exec")
-def test_create_user(mock_exec):
+def test_create_user():
     """
     arrange: an email
     act: when the _on_create_user_action method is executed
@@ -367,10 +366,11 @@ def test_create_user(mock_exec):
             args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
-            or args.stdin != f"{email}\nn\nY\n"
             or args.timeout != 60
         ):
             raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    email = "sample@email.com"
 
     harness.handle_exec(
         SERVICE_NAME,
@@ -378,8 +378,14 @@ def test_create_user(mock_exec):
         handler=bundle_handler,
     )
 
-    email = "sample@email.com"
-    harness.run_action("promote-user", {"email": email})
+    stdout = "ERROR: User with email f{email} not found"
+    harness.handle_exec(
+        SERVICE_NAME,
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", f"users:exists[{email}]"],
+        result=ops.testing.ExecResult(exit_code=2, stdout=stdout, stderr=""),
+    )
+
+    harness.run_action("create-user", {"email": email})
     assert expected_exec_call_was_made
 
 
