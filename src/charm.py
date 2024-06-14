@@ -721,6 +721,32 @@ class DiscourseCharm(CharmBase):
                 return False
             raise ex
 
+    def _activate_user(self, email: str) -> bool:
+        """Activate a user with the given email.
+
+        Args:
+            email: Email of the user to activate.
+        """
+        container = self.unit.get_container(CONTAINER_NAME)
+        activate_process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                f"users:activate[{email}]",
+            ],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            activate_process.wait_output()
+            return True
+        except ExecError as ex:
+            if ex.exit_code == 2:
+                return False
+            raise ex
+
     def _on_promote_user_action(self, event: ActionEvent) -> None:
         """Promote a user to a specific trust level.
 
@@ -795,39 +821,16 @@ class DiscourseCharm(CharmBase):
         )
         try:
             process.wait_output()
-            event.set_results({"user": email, "password": password})
         except ExecError as ex:
             event.fail(f"Failed to make user with email {email}: {ex.stdout}")  # type: ignore
             return
 
-        if event.params.get("admin") or not event.params.get("active"):
-            return
-
-        activate_process = container.exec(
-            [
-                os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                "exec",
-                "rake",
-                f"users:activate[{email}]",
-            ],
-            working_dir=DISCOURSE_PATH,
-            user=CONTAINER_APP_USERNAME,
-            environment=self._create_discourse_environment_settings(),
-        )
-
-        try:
-            activate_process.wait_output()
-        except ExecError as ex:
-            if ex.exit_code == 2:
-                event.fail(
-                    f"Could not find user {email} for activation: {ex.stdout}"  # type: ignore
-                )
+        if not event.params.get("admin") and event.params.get("active"):
+            if not self._activate_user(email):
+                event.fail(f"Could not find user {email} to activate")
                 return
-            event.fail(
-                # Parameter validation errors are printed to stdout
-                # Ignore mypy warning when formatting stdout
-                f"Failed to activate user with email {email}: {ex.stdout}"  # type: ignore
-            )
+
+        event.set_results({"user": email, "password": password})
 
     def _generate_password(self, length: int) -> str:
         """Generate a random password.
@@ -844,7 +847,7 @@ class DiscourseCharm(CharmBase):
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""
-        container = self.unit.get_container("discourse")
+        container = self.unit.get_container(CONTAINER_NAME)
         force_bool = str(self.config["force_https"]).lower()
         process = container.exec(
             [
@@ -865,7 +868,7 @@ class DiscourseCharm(CharmBase):
             event: Event triggering the anonymize_user action.
         """
         username = event.params["username"]
-        container = self.unit.get_container("discourse")
+        container = self.unit.get_container(CONTAINER_NAME)
         if not container.can_connect():
             event.fail("Unable to connect to container, container is not ready")
             return

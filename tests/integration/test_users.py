@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @pytest.mark.asyncio
 async def test_create_user(
     app: Application,
+    discourse_address: str,
 ):
     """
     arrange: A discourse application
@@ -27,7 +28,7 @@ async def test_create_user(
     await app.model.wait_for_idle(status="active")
     discourse_unit: Unit = app.units[0]
 
-    email = "admin-user@test.internal"
+    email = "test-user@test.internal"
 
     action: Action = await discourse_unit.run_action("create-user", email=email)
     await action.wait()
