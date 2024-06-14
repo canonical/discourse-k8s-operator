@@ -83,8 +83,7 @@ the registry:
 
 ```shell
     cd [project_dir]/discourse_rock && rockcraft pack rockcraft.yaml
-    skopeo --insecure-policy copy oci-archive:discourse_1.0_amd64.rock docker-daemon:localhost:32000/discourse:latest
-    docker push localhost:32000/discourse:latest
+    rockcraft.skopeo --insecure-policy copy --dest-tls-verify=false oci-archive:discourse_1.0_amd64.rock docker://localhost:32000/discourse:latest
 ```
 
 ### Deploy

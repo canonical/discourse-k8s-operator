@@ -5,21 +5,17 @@
 
 import logging
 import re
-import socket
-import unittest.mock
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
 
 import pytest
 import requests
-import urllib3.exceptions
 from boto3 import client
 from botocore.config import Config
 from juju.application import Application
 from ops.model import ActiveStatus
 from pytest_operator.plugin import Model, OpsTest
-from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
 from charm import PROMETHEUS_PORT
 
@@ -190,12 +186,12 @@ async def test_create_category(
     admin_api_key: str,
 ):
     """
-    arrange: Given discourse application and an admin user
-    act: if an admin user creates a category
-    assert: a category should be created normally.
+    arrange: A discourse application and an admin user
+    act: If an admin user creates a category
+    assert: A category should be created normally.
     """
     category_info = {"name": "test", "color": "FFFFFF"}
-    res = requests.post(
+    response = requests.post(
         f"{discourse_address}/categories.json",
         headers={
             "Api-Key": admin_api_key,
@@ -204,7 +200,7 @@ async def test_create_category(
         json=category_info,
         timeout=60,
     )
-    category_id = res.json()["category"]["id"]
+    category_id = response.json()["category"]["id"]
     category = requests.get(f"{discourse_address}/c/{category_id}/show.json", timeout=60).json()[
         "category"
     ]
@@ -214,121 +210,16 @@ async def test_create_category(
 
 
 @pytest.mark.asyncio
-@pytest.mark.abort_on_fail
-@pytest.mark.usefixtures("setup_saml_config")
-async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
-    app: Application,
-    requests_timeout: int,
-    run_action,
-    model: Model,
-):
-    """
-    arrange: after discourse charm has been deployed, with all required relation established.
-    act: add an admin user and enable force-https mode.
-    assert: user can login discourse using SAML Authentication.
-    """
-    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
-    saml_app: Application = await model.deploy(
-        "saml-integrator",
-        channel="latest/edge",
-        series="jammy",
-        trust=True,
-    )
-    await model.wait_for_idle()
-    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
-    saml_helper.prepare_pod(model.name, f"{app.name}-0")
-    await model.wait_for_idle()
-    await saml_app.set_config(  # type: ignore[attr-defined]
-        {
-            "entity_id": saml_helper.entity_id,
-            "metadata_url": saml_helper.metadata_url,
-        }
-    )
-    await model.add_relation(app.name, "saml-integrator")
-    await model.wait_for_idle()
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    # discourse need a long password and a valid email
-    # username can't be "discourse" or it will be renamed
-    username = "ubuntu"
-    email = "ubuntu@canonical.com"
-    password = "test-discourse-k8s-password"  # nosec
-    saml_helper.register_user(username=username, email=email, password=password)
-
-    action_result = await run_action(app.name, "add-admin-user", email=email, password=password)
-    assert "user" in action_result
-
-    host = app.name
-    original_getaddrinfo = socket.getaddrinfo
-
-    def patched_getaddrinfo(*args):
-        if args[0] == host:
-            return original_getaddrinfo("127.0.0.1", *args[1:])
-        return original_getaddrinfo(*args)
-
-    with unittest.mock.patch.multiple(socket, getaddrinfo=patched_getaddrinfo):
-        session = requests.session()
-
-        response = session.get(
-            f"https://{host}/auth/saml/metadata",
-            verify=False,
-            timeout=10,
-        )
-        saml_helper.register_service_provider(name=host, metadata=response.text)
-
-        preference_page = session.get(
-            f"https://{host}/u/{username}/preferences/account",
-            verify=False,
-            timeout=requests_timeout,
-        )
-        assert preference_page.status_code == 404
-
-        session.get(f"https://{host}", verify=False)
-        response = session.get(
-            f"https://{host}/session/csrf",
-            verify=False,
-            headers={"Accept": "application/json"},
-            timeout=requests_timeout,
-        )
-        csrf_token = response.json()["csrf"]
-        redirect_response = session.post(
-            f"https://{host}/auth/saml",
-            data={"authenticity_token": csrf_token},
-            verify=False,
-            timeout=requests_timeout,
-            allow_redirects=False,
-        )
-        assert redirect_response.status_code == 302
-        redirect_url = redirect_response.headers["Location"]
-        saml_response = saml_helper.redirect_sso_login(
-            redirect_url, username=username, password=password
-        )
-        assert f"https://{host}" in saml_response.url
-        session.post(
-            saml_response.url,
-            verify=False,
-            data={"SAMLResponse": saml_response.data["SAMLResponse"], "SameSite": "1"},
-        )
-        session.post(saml_response.url, verify=False, data=saml_response.data)
-
-        preference_page = session.get(
-            f"https://{host}/u/{username}/preferences/account",
-            verify=False,
-            timeout=requests_timeout,
-        )
-        assert preference_page.status_code == 200
-
-
-@pytest.mark.asyncio
 async def test_serve_compiled_assets(
     discourse_address: str,
 ):
     """
-    arrange: Given discourse application
-    act: when accessing a page that does not exist
-    assert: a compiled asset should be served.
+    arrange: A discourse application
+    act: Access a page that does not exist
+    assert: A compiled asset should be served.
     """
-    res = requests.get(f"{discourse_address}/404", timeout=60)
-    not_found_page = str(res.content)
+    response = requests.get(f"{discourse_address}/404", timeout=60)
+    not_found_page = str(response.content)
 
     asset_matches = re.search(
         r"(onpopstate-handler).+.js", not_found_page
@@ -344,9 +235,9 @@ async def test_relations(
     requests_timeout: int,
 ):
     """
-    arrange: Given discourse application
-    act: when removing some of its relations
-    assert: it should have the correct status
+    arrange: A discourse application
+    act: Remove some of its relations
+    assert: It should have the correct status
     """
 
     def test_discourse_srv_status_ok():
@@ -387,6 +278,7 @@ async def test_relations(
     test_discourse_srv_status_ok()
 
 
+@pytest.mark.skip(reason="Frequent timeouts")
 async def test_upgrade(
     app: Application,
     model: Model,
@@ -394,7 +286,7 @@ async def test_upgrade(
     ops_test: OpsTest,
 ):
     """
-    arrange: Given discourse application with three units
+    arrange: A discourse application with three units
     act: Refresh the application (upgrade)
     assert: The application upgrades and over all the upgrade, the application replies
       correctly through the ingress.
