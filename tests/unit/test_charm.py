@@ -354,71 +354,32 @@ def test_create_user(mock_exec):
     act: when the _on_create_user_action method is executed
     assert: the create user rake command is executed upon failure of the user existence check.
     """
-    mock_wo = MagicMock(
-        return_value=("", None),
-    )
+    harness = helpers.start_harness()
 
-    email = "admin-user@test.internal"
-
-    stdout_mock = f"ERROR: User with email {email} not found"
-    harness = helpers.start_harness(run_initial_hooks=False)
-    harness.set_can_connect(CONTAINER_NAME, True)
-
+    # We catch the exec call that we expect to register it and make sure that the
+    # args passed to it are correct.
     expected_exec_call_was_made = False
 
-    def mock_wo_side_effect(*args, **kwargs):  # pylint: disable=unused-argument
-        """Mock wo side effect.
+    def bundle_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+        expected_exec_call_was_made = True
+        if (
+            args.environment != harness.charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+            or args.stdin != f"{email}\nn\nY\n"
+            or args.timeout != 60
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
 
-        Args:
-            args: Variable list of positional arguments passed to the parent constructor.
-            kwargs: a `dict` of the extra arguments passed to the function.
-
-        Returns:
-            unittest.mock DEFAULT built-in.
-
-        Raises:
-            ExecError: Execution error fired if conditions are met.
-        """
-
-        if isinstance(mock_wo.cmd, list) and f"users:exists[{email}]" in mock_wo.cmd:
-            raise ExecError(command=mock_wo.cmd, exit_code=2, stdout=stdout_mock, stderr="")
-
-        return DEFAULT
-
-    mock_wo.side_effect = mock_wo_side_effect
-
-    def mock_exec_side_effect(*args, **kwargs):  # pylint: disable=unused-argument
-        """Mock execution side effect.
-
-        Args:
-            args: Variable list of positional arguments passed to the parent constructor.
-            kwargs: a `dict` of the extra arguments passed to the function.
-
-        Returns:
-            unittest.mock DEFAULT built-in.
-        """
-        mock_wo.cmd = args[0]
-
-        if isinstance(mock_wo.cmd, list) and "admin:create" in mock_wo.cmd:
-            nonlocal expected_exec_call_was_made
-            expected_exec_call_was_made = True
-            if (
-                kwargs["environment"] != harness.charm._create_discourse_environment_settings()
-                or kwargs["working_dir"] != DISCOURSE_PATH
-                or kwargs["user"] != "_daemon_"
-                or email not in kwargs["stdin"]
-                or kwargs["timeout"] != 60
-            ):
-                raise ValueError(f"{mock_wo.cmd} wasn't made with the correct args.")
-
-        return DEFAULT
-
-    mock_exec.side_effect = mock_exec_side_effect
-    mock_exec.return_value = MagicMock(
-        wait_output=mock_wo,
+    harness.handle_exec(
+        SERVICE_NAME,
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
+        handler=bundle_handler,
     )
 
-    harness.run_action("create-user", {"email": email})
+    email = "sample@email.com"
+    harness.run_action("promote-user", {"email": email})
     assert expected_exec_call_was_made
 
 
