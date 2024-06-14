@@ -696,7 +696,7 @@ class DiscourseCharm(CharmBase):
         if self._is_config_valid() and container.can_connect():
             self._start_service()
             self.model.unit.status = ActiveStatus()
-    
+
     def _user_exists(self, email: str) -> bool:
         """Check if a user with the given email exists.
 

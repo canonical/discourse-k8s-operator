@@ -7,16 +7,13 @@
 # Protected access check is disabled in tests as we're injecting test data
 
 import secrets
-import typing
-from unittest.mock import DEFAULT, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import ops
 import pytest
-from ops.charm import ActionEvent
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
-from ops.pebble import ExecError
 
-from charm import CONTAINER_NAME, DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME, DiscourseCharm
+from charm import CONTAINER_NAME, DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME
 from tests.unit import helpers
 
 
@@ -311,7 +308,7 @@ def test_db_relation():
     ), "database name should be set after relation joined"
 
 
-def test_promote_user():
+def test_promote_user_success():
     """
     arrange: an email and a password
     act: when the _on_promote_user_action method is executed
@@ -347,7 +344,7 @@ def test_promote_user():
     assert expected_exec_call_was_made
 
 
-def test_create_user():
+def test_promote_user_fail():
     """
     arrange: an email
     act: when the _on_create_user_action method is executed
@@ -366,7 +363,65 @@ def test_create_user():
         if (
             args.environment != harness.charm._create_discourse_environment_settings()
             or args.working_dir != DISCOURSE_PATH
-            or email not in args.stdin
+            or email not in str(args.stdin)
+            or args.user != "_daemon_"
+            or args.timeout != 60
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    harness.handle_exec(
+        SERVICE_NAME,
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
+        handler=mock_create_user,
+    )
+
+    stdout = "ERROR: User with email f{email} not found"
+
+    # Exit code 2 means that the user cannot be found in the rake task.
+    harness.handle_exec(
+        SERVICE_NAME,
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", f"users:exists[{email}]"],
+        result=ops.testing.ExecResult(exit_code=2, stdout=stdout, stderr=""),
+    )
+    try:
+        harness.run_action("promote-user", {"email": email})
+        assert False
+    except ops.testing.ActionFailed as e:
+        assert e.message == f"User with email {email} does not exist"
+
+    # Exit code 1 means that the rake task failed.
+    harness.handle_exec(
+        SERVICE_NAME,
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", f"users:exists[{email}]"],
+        result=ops.testing.ExecResult(exit_code=1, stdout=stdout, stderr=""),
+    )
+    try:
+        harness.run_action("promote-user", {"email": email})
+        assert False
+    except ops.pebble.ExecError as e:
+        assert "non-zero exit code 1" in str(e)
+
+
+def test_create_user_success():
+    """
+    arrange: an email
+    act: when the _on_create_user_action method is executed
+    assert: the create user rake command is executed upon failure of the user existence check.
+    """
+    harness = helpers.start_harness()
+
+    # We catch the exec call that we expect to register it and make sure that the
+    # args passed to it are correct.
+    expected_exec_call_was_made = False
+    email = "sample@email.com"
+
+    def mock_create_user(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+        expected_exec_call_was_made = True
+        if (
+            args.environment != harness.charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or email not in str(args.stdin)
             or args.user != "_daemon_"
             or args.timeout != 60
         ):
@@ -387,6 +442,44 @@ def test_create_user():
 
     harness.run_action("create-user", {"email": email})
     assert expected_exec_call_was_made
+
+
+def test_create_user_fail():
+    """
+    arrange: an email
+    act: when the _on_create_user_action method is executed
+    assert: the create user rake command is executed upon failure of the user existence check.
+    """
+    harness = helpers.start_harness()
+
+    # We catch the exec call that we expect to register it and make sure that the
+    # args passed to it are correct.
+    expected_exec_call_was_made = False
+    email = "sample@email.com"
+
+    def mock_create_user(args: ops.testing.ExecArgs) -> None:
+        nonlocal expected_exec_call_was_made
+        expected_exec_call_was_made = True
+        if (
+            args.environment != harness.charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or email not in str(args.stdin)
+            or args.user != "_daemon_"
+            or args.timeout != 60
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    harness.handle_exec(
+        SERVICE_NAME,
+        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
+        handler=mock_create_user,
+    )
+
+    try:
+        harness.run_action("create-user", {"email": email})
+        assert False
+    except ops.testing.ActionFailed as e:
+        assert e.message == f"User with email {email} already exists"
 
 
 def test_anonymize_user():
