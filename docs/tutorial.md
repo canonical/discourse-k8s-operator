@@ -79,10 +79,12 @@ juju trust nginx-ingress-integrator --scope=cluster
 juju relate discourse-k8s nginx-ingress-integrator
 ```
 
-Discourse will be deployed with `discourse-k8s` as default hostname. In order to reach it, modify your `/etc/hosts` file so that it points to `127.0.0.1`
+To create an admin user, run:
+```
+juju run discourse-k8s/0 create-user admin=true email=email@example.com
+```
+The command will return the password of the created user. Discourse will be deployed with `discourse-k8s` as default hostname. In order to reach it, modify your `/etc/hosts` file so that it points to `127.0.0.1`
 
 `echo 127.0.0.1 discourse-k8s >> /etc/hosts`
 
-After that, visit `http://discourse-k8s` to reach Discourse.
-
-This charm allows you to add a admin user by executing the corresponding action. Instead of interacting with the Discourse UI just run `juju run discourse-k8s/0 add-admin-user email=email@example.com password=somelongpwd` and it will be registered and validated.
+After that, visit `http://discourse-k8s` to reach Discourse, using the credentials returned from the `create-user` action to login.
