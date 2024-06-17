@@ -18,6 +18,7 @@ from juju.unit import Unit
 from ops.model import WaitingStatus
 from pytest import Config, fixture
 from pytest_operator.plugin import Model, OpsTest
+from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
 from . import types
 
@@ -232,17 +233,37 @@ async def setup_saml_config(app: Application, model: Model):
     original_config = {k: v["value"] for k, v in original_config.items()}
     await discourse_app.set_config({"force_https": "true"})
 
+    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
+    saml_app: Application = await model.deploy(
+        "saml-integrator",
+        channel="latest/edge",
+        series="jammy",
+        trust=True,
+    )
+    await model.wait_for_idle()
+    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
+    saml_helper.prepare_pod(model.name, f"{app.name}-0")
+    await model.wait_for_idle()
+    await saml_app.set_config(  # type: ignore[attr-defined]
+        {
+            "entity_id": saml_helper.entity_id,
+            "metadata_url": saml_helper.metadata_url,
+        }
+    )
+    await model.add_relation(app.name, "saml-integrator")
+    await model.wait_for_idle()
+
+    yield saml_helper
+
 
 @pytest_asyncio.fixture(scope="module", name="admin_credentials")
 async def admin_credentials_fixture(app: Application) -> types.Credentials:
     """Admin user credentials."""
     email = f"admin-user{secrets.randbits(32)}@test.internal"
-    password = secrets.token_urlsafe(16)
     discourse_unit: Unit = app.units[0]
-    action: Action = await discourse_unit.run_action(
-        "add-admin-user", email=email, password=password
-    )
+    action: Action = await discourse_unit.run_action("create-user", email=email, admin=True)
     await action.wait()
+    password = action.results["password"]
     admin_credentials = types.Credentials(
         email=email, username=email.split("@", maxsplit=1)[0], password=password
     )
@@ -254,16 +275,18 @@ async def admin_api_key_fixture(
     admin_credentials: types.Credentials, discourse_address: str
 ) -> str:
     """Admin user API key"""
-    with requests.session() as sess:
+    with requests.session() as session:
         # Get CSRF token
-        res = sess.get(f"{discourse_address}/session/csrf", headers={"Accept": "application/json"})
+        response = session.get(
+            f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}
+        )
         # pylint doesn't see the "ok" member
-        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
-        data = res.json()
+        assert response.ok, response.text  # pylint: disable=no-member
+        data = response.json()
         assert data["csrf"], data
         csrf = data["csrf"]
         # Create session & login
-        res = sess.post(
+        response = session.post(
             f"{discourse_address}/session",
             headers={
                 "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
@@ -278,10 +301,10 @@ async def admin_api_key_fixture(
             },
         )
         # pylint doesn't see the "ok" member
-        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
-        assert "error" not in res.json()
+        assert response.ok, response.text  # pylint: disable=no-member
+        assert "error" not in response.json()
         # Create global key
-        res = sess.post(
+        response = session.post(
             f"{discourse_address}/admin/api/keys",
             headers={
                 "Content-Type": "application/json",
@@ -291,8 +314,8 @@ async def admin_api_key_fixture(
             json={"key": {"description": "admin-api-key", "username": None}},
         )
         # pylint doesn't see the "ok" member
-        assert res.status_code == requests.codes.ok, res.text  # pylint: disable=no-member
+        assert response.ok, response.text  # pylint: disable=no-member
 
-    data = res.json()
+    data = response.json()
     assert data["key"]["key"], data
     return data["key"]["key"]

@@ -17,6 +17,10 @@ options:
     type: string
     description: "External hostname this discourse instance responds to. Defaults to application name."
     default: ""
+  force_https:
+    type: boolean
+    description: Configure Discourse to use https.
+    default: false
   force_saml_login:
     type: boolean
     description: "Force SAML login (full screen, no local database logins)."
@@ -134,7 +138,3 @@ options:
     type: string
     description: "Throttle level - blocks excessive usage by ip. Accepted values: none, permissive, strict."
     default: none
-  force_https:
-    type: boolean
-    description: Configure Discourse to use https.
-    default: false
