@@ -1,15 +1,5 @@
 # Copyright 2024 Canonical Ltd.
 # See LICENSE file for licensing details.
-add-admin-user:
-  description: Add a new admin user.
-  params:
-    email:
-      type: string
-      description: User email.
-    password:
-      type: string
-      description: User password.
-  required: [email, password]
 anonymize-user:
   description: Anonymize a user.
   params:
@@ -17,3 +7,24 @@ anonymize-user:
       type: string
       description: The unique identifier of the user to anonymize.
   required: [username]
+create-user:
+  description: Create a new user.
+  params:
+    email:
+      type: string
+      description: User email.
+    admin:
+      type: boolean
+      description: Whether the user should be an admin.
+    active:
+      type: boolean
+      description: Whether the user should be email-verified and active.
+      default: true
+  required: [email]
+promote-user:
+  description: Promote a user to admin.
+  params:
+    email:
+      type: string
+      description: User email.
+  required: [email]

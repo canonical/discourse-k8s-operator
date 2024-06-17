@@ -7,6 +7,8 @@ import base64
 import hashlib
 import logging
 import os.path
+import secrets
+import string
 import typing
 from collections import defaultdict, namedtuple
 
@@ -112,7 +114,8 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.upgrade_charm, self._on_upgrade_charm)
         self.framework.observe(self.on.discourse_pebble_ready, self._on_discourse_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self.framework.observe(self.on.add_admin_user_action, self._on_add_admin_user_action)
+        self.framework.observe(self.on.promote_user_action, self._on_promote_user_action)
+        self.framework.observe(self.on.create_user_action, self._on_create_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
 
         self.redis = RedisRequires(self)
@@ -694,43 +697,157 @@ class DiscourseCharm(CharmBase):
             self._start_service()
             self.model.unit.status = ActiveStatus()
 
-    def _on_add_admin_user_action(self, event: ActionEvent) -> None:
-        """Add a new admin user to Discourse.
+    def _user_exists(self, email: str) -> bool:
+        """Check if a user with the given email exists.
 
         Args:
-            event: Event triggering the add_admin_user action.
+            email: Email of the user to check.
+
+        Returns:
+            True if the user exists, False otherwise.
         """
-        email = event.params["email"]
-        password = event.params["password"]
         container = self.unit.get_container(CONTAINER_NAME)
-        if container.can_connect():
-            process = container.exec(
-                [
-                    os.path.join(DISCOURSE_PATH, "bin/bundle"),
-                    "exec",
-                    "rake",
-                    "admin:create",
-                ],
-                stdin=f"{email}\n{password}\n{password}\nY\n",
-                working_dir=DISCOURSE_PATH,
-                user=CONTAINER_APP_USERNAME,
-                environment=self._create_discourse_environment_settings(),
-                timeout=60,
+        user_exists = container.exec(
+            [os.path.join(DISCOURSE_PATH, "bin/bundle"), "exec", "rake", f"users:exists[{email}]"],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            user_exists.wait_output()
+            return True
+        except ExecError as ex:
+            if ex.exit_code == 2:
+                return False
+            raise
+
+    def _activate_user(self, email: str) -> bool:
+        """Activate a user with the given email.
+
+        Args:
+            email: Email of the user to activate.
+        """
+        container = self.unit.get_container(CONTAINER_NAME)
+        activate_process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                f"users:activate[{email}]",
+            ],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            activate_process.wait_output()
+            return True
+        except ExecError as ex:
+            if ex.exit_code == 2:
+                return False
+            raise
+
+    def _on_promote_user_action(self, event: ActionEvent) -> None:
+        """Promote a user to a specific trust level.
+
+        Args:
+            event: Event triggering the promote_user action.
+        """
+        container = self.unit.get_container(CONTAINER_NAME)
+        if not container.can_connect():
+            event.fail("Unable to connect to container, container is not ready")
+            return
+
+        email = event.params["email"]
+
+        if not self._user_exists(email):
+            event.fail(f"User with email {email} does not exist")
+            return
+
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                "admin:create",
+            ],
+            stdin=f"{email}\nn\nY\n",
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+            timeout=60,
+        )
+        try:
+            process.wait_output()
+            event.set_results({"user": email})
+        except ExecError as ex:
+            event.fail(
+                f"Failed to make user with email {email} an admin: {ex.stdout}"  # type: ignore
             )
-            try:
-                process.wait_output()
-                event.set_results({"user": f"{email}"})
-            except ExecError as ex:
-                event.fail(
-                    # Parameter validation errors are printed to stdout
-                    f"Failed to create user with email {email}: {ex.stdout}"  # type: ignore
-                )
-        else:
-            event.fail("Container is not ready")
+
+    def _on_create_user_action(self, event: ActionEvent) -> None:
+        """Create a new user in Discourse.
+
+        Args:
+            event: Event triggering the create_user action.
+        """
+        container = self.unit.get_container(CONTAINER_NAME)
+        if not container.can_connect():
+            event.fail("Unable to connect to container, container is not ready")
+            return
+
+        email = event.params["email"]
+        password = self._generate_password(16)
+
+        if self._user_exists(email):
+            event.fail(f"User with email {email} already exists")
+            return
+
+        # Admin flag is optional, if it is true, the user will be created as an admin
+        admin_flag = "Y" if event.params.get("admin") else "N"
+
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                "admin:create",
+            ],
+            stdin=f"{email}\n{password}\n{password}\n{admin_flag}\n",
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+            timeout=60,
+        )
+        try:
+            process.wait_output()
+        except ExecError as ex:
+            event.fail(f"Failed to make user with email {email}: {ex.stdout}")  # type: ignore
+            return
+
+        if not event.params.get("admin") and event.params.get("active"):
+            if not self._activate_user(email):
+                event.fail(f"Could not find user {email} to activate")
+                return
+
+        event.set_results({"user": email, "password": password})
+
+    def _generate_password(self, length: int) -> str:
+        """Generate a random password.
+
+        Args:
+            length: Length of the password to generate.
+
+        Returns:
+            Random password.
+        """
+        choices = string.ascii_letters + string.digits
+        password = "".join([secrets.choice(choices) for _ in range(length)])
+        return password
 
     def _config_force_https(self) -> None:
         """Config Discourse to force_https option based on charm configuration."""
-        container = self.unit.get_container("discourse")
+        container = self.unit.get_container(CONTAINER_NAME)
         force_bool = str(self.config["force_https"]).lower()
         process = container.exec(
             [
@@ -751,27 +868,31 @@ class DiscourseCharm(CharmBase):
             event: Event triggering the anonymize_user action.
         """
         username = event.params["username"]
-        container = self.unit.get_container("discourse")
-        if container.can_connect():
-            process = container.exec(
-                [
-                    "bash",
-                    "-c",
-                    f"./bin/bundle exec rake users:anonymize[{username}]",
-                ],
-                working_dir=DISCOURSE_PATH,
-                user=CONTAINER_APP_USERNAME,
-                environment=self._create_discourse_environment_settings(),
+        container = self.unit.get_container(CONTAINER_NAME)
+        if not container.can_connect():
+            event.fail("Unable to connect to container, container is not ready")
+            return
+
+        process = container.exec(
+            [
+                os.path.join(DISCOURSE_PATH, "bin/bundle"),
+                "exec",
+                "rake",
+                f"users:anonymize[{username}]",
+            ],
+            working_dir=DISCOURSE_PATH,
+            user=CONTAINER_APP_USERNAME,
+            environment=self._create_discourse_environment_settings(),
+        )
+        try:
+            process.wait_output()
+            event.set_results({"user": f"{username}"})
+        except ExecError as ex:
+            event.fail(
+                # Parameter validation errors are printed to stdout
+                # Ignore mypy warning when formatting stdout
+                f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
             )
-            try:
-                process.wait_output()
-                event.set_results({"user": f"{username}"})
-            except ExecError as ex:
-                event.fail(
-                    # Parameter validation errors are printed to stdout
-                    # Ignore mypy warning when formatting stdout
-                    f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
-                )
 
     def _start_service(self):
         """Start discourse."""
