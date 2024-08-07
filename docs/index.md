@@ -28,7 +28,7 @@ fixes and constructive feedback.
 
 - [Code of conduct](https://ubuntu.com/community/code-of-conduct)
 - [Get support](https://discourse.charmhub.io/)
-- [Join our online chat](https://chat.charmhub.io/charmhub/channels/charm-dev)
+- [Join our online chat](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
 - [Contribute](https://charmhub.io/discourse-k8s/docs/how-to-contribute)
 
 # Contents
@@ -44,11 +44,9 @@ fixes and constructive feedback.
   1. [How to configure SMTP](how-to/configure-smtp.md)
   1. [How to contribute](how-to/contribute.md)
   1. [How to upgrade](how-to/upgrade.md)
-  1. [How to backup and restore](how-to/backup-and-restore.md)
 1. [Reference](reference)
   1. [Actions](reference/actions.md)
   1. [Configurations](reference/configurations.md)
   1. [Integrations](reference/integrations.md)
   1. [Plugins](reference/plugins.md)
-  1. [External Access](reference/external-access.md)
 1. [Getting started](tutorial.md)
