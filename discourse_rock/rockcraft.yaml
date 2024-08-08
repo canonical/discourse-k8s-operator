@@ -173,6 +173,14 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-gamification/
+  discourse-chat-integration:
+    plugin: dump
+    after: [discourse, bundler-config]
+    source: https://github.com/discourse/discourse-chat-integration.git
+    source-commit: 5c8408e58b6ad0c5e2ad495861a91c231bb1fc89
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-chat-integration/
   patches:
     plugin: dump
     after: [discourse]
@@ -215,6 +223,7 @@ parts:
       - discourse-saml
       - discourse-solved
       - discourse-templates
+      - discourse-chat-integration
       - patches
       - scripts
       - tooling
@@ -233,6 +242,7 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
+      bin/bundle install --gemfile="plugins/discourse-chat-integration/Gemfile"
       yarn install --immutable
   discourse-precompile-assets:
     plugin: nil
