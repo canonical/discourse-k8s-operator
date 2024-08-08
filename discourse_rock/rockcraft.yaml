@@ -177,7 +177,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-chat-integration.git
-    source-commit: 5c8408e58b6ad0c5e2ad495861a91c231bb1fc89
+    source-commit: 2e17b03e9a435de0079ae1c2eed1b48a11ad16a9
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-chat-integration/
