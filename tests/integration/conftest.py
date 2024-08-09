@@ -30,6 +30,7 @@ ENABLED_PLUGINS = [
     "calendar",
     "data_explorer",
     "discourse_gamification",
+    "chat_integration",
 ]
 
 
