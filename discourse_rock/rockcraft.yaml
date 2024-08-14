@@ -206,11 +206,6 @@ parts:
     source: scripts
     organize:
       "*": srv/scripts/
-  scripts:
-    plugin: dump
-    source: scripts
-    organize:
-      "*": srv/scripts/
   setup:
     plugin: nil
     after:
@@ -283,7 +278,7 @@ parts:
       chown -R 584792:584792 var/lib/pebble/default/.local
       chown -R 584792:584792 var/lib/pebble/default/.npm
       chown -R 584792:584792 var/lib/pebble/default/.yarn
-      chown    584792:584792 var/lib/pebble/default/.yarn
+      chown    584792:584792 var/lib/pebble/default/.yarnrc
   imagemagick:
     after:
       - tooling
