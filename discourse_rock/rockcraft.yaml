@@ -14,7 +14,6 @@ platforms:
 parts:
   tooling:
     plugin: nil
-    after: [imagemagick]
     overlay-packages:
       - brotli
       - g++
@@ -189,7 +188,6 @@ parts:
   setup:
     plugin: nil
     after:
-      - imagemagick
       - bundler-config
       - discourse
       - discourse-calendar
@@ -260,6 +258,8 @@ parts:
       chown -R 584792:584792 var/lib/pebble/default/.yarn
       chown    584792:584792 var/lib/pebble/default/.yarn
   imagemagick:
+    after:
+      - tooling
     plugin: nil
     source: https://github.com/ImageMagick/ImageMagick.git
     source-type: git
