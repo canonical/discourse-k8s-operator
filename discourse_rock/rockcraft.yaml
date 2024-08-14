@@ -180,6 +180,32 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-chat-integration/
+  patches:
+    plugin: dump
+    after: [discourse]
+    source: patches
+    organize:
+      "*": srv/discourse/app/patches/
+  apply-patches:
+    plugin: nil
+    build-packages:
+      - git
+    after: [discourse, patches]
+    override-stage: |
+      git -C srv/discourse/app apply patches/lp1903695.patch
+      git -C srv/discourse/app apply patches/discourse-charm.patch
+      git -C srv/discourse/app apply patches/sigterm.patch
+      # The following is a fix for UglifierJS assets compilation
+      # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
+      sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
+      sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
+    prime:
+      - srv/discourse/app/lib/tasks/discourse-charm.rake
+  scripts:
+    plugin: dump
+    source: scripts
+    organize:
+      "*": srv/scripts/
   scripts:
     plugin: dump
     source: scripts
@@ -188,6 +214,7 @@ parts:
   setup:
     plugin: nil
     after:
+      - apply-patches
       - bundler-config
       - discourse
       - discourse-calendar
@@ -201,6 +228,7 @@ parts:
       - discourse-solved
       - discourse-templates
       - discourse-chat-integration
+      - patches
       - scripts
       - tooling
     build-packages:
@@ -222,8 +250,7 @@ parts:
       yarn install --immutable
   discourse-precompile-assets:
     plugin: nil
-    after:
-      - setup
+    after: [apply-patches, setup]
     build-packages:
       - redis-tools
       - postgresql-all
