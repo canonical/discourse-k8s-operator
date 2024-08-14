@@ -280,9 +280,7 @@ parts:
       chown -R 584792:584792 var/lib/pebble/default/.yarn
       chown    584792:584792 var/lib/pebble/default/.yarnrc
   imagemagick:
-    after:
-      - tooling
-    plugin: nil
+    plugin: autotools
     source: https://github.com/ImageMagick/ImageMagick.git
     source-type: git
     source-tag: 7.1.1-36
@@ -354,9 +352,10 @@ parts:
     override-build: |
       craftctl default
 
-      mkdir -p $CRAFT_PART_INSTALL/usr
-      PKG_CONF_LIBDIR=/usr/lib LDFLAGS=-L/usr/lib CFLAGS='-O2 -I$PREFIX/include' ./configure \
-                --prefix=$CRAFT_PART_INSTALL/usr \
+      export CFLAGS='-O2'
+
+      ./configure \
+                --prefix=/usr \
                 --enable-static \
                 --enable-bounds-checking \
                 --enable-hdri \
@@ -377,7 +376,7 @@ parts:
                 --with-heic \
                 --with-rsvg \
                 --with-webp
-      make all -j"$(nproc)" && make install
+      make all -j"$(nproc)" && make install DESTDIR=$CRAFT_PART_INSTALL
       ldconfig $CRAFT_PART_INSTALL/usr/lib
 
       # Validate ImageMagick install
