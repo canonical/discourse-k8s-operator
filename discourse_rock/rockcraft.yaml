@@ -14,7 +14,7 @@ platforms:
 parts:
   tooling:
     plugin: nil
-    after: [image-magick]
+    after: [imagemagick]
     overlay-packages:
       - brotli
       - g++
@@ -189,7 +189,7 @@ parts:
   setup:
     plugin: nil
     after:
-      - image-magick
+      - imagemagick
       - bundler-config
       - discourse
       - discourse-calendar
