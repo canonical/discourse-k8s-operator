@@ -322,33 +322,19 @@ parts:
       - libheif-dev
       - libaom-dev
     stage-packages:
-      - libde265-0
-      - libde265-dev
       - libjpeg-turbo8
-      - libjpeg-turbo8-dev
-      - libwebp7
       - x265
-      - libx265-dev
       - libtool
       - libpng16-16
-      - libpng-dev
-      - libwebp-dev
       - libgomp1
       - libwebpmux3
       - libwebpdemux2
       - ghostscript
-      - libxml2-dev
       - libxml2-utils
       - librsvg2-dev
       - libltdl-dev
-      - libbz2-dev
       - gsfonts
-      - libtiff-dev
-      - libfreetype6-dev
-      - libjpeg-dev
       - libheif1
-      - libheif-dev
-      - libaom-dev
     override-build: |
       craftctl default
 
