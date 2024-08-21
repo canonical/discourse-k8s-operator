@@ -21,7 +21,6 @@ parts:
       - gettext-base
       - gifsicle
       - git
-      - imagemagick
       - jhead
       - jpegoptim
       - libjpeg-turbo-progs
@@ -65,7 +64,7 @@ parts:
     plugin: dump
     source: https://github.com/discourse/discourse.git
     source-depth: 1
-    source-tag: v3.2.0
+    source-tag: v3.3.0
     source-type: git
     override-build: |
       craftctl default
@@ -99,7 +98,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-solved.git
-    source-commit: 526a44644a7b3f0c2a3ba4fc16e72f364e9fce6d
+    source-commit: dc1ef92be23332a54854751a23b9029463584845
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-solved/
@@ -115,7 +114,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-mermaid-theme-component.git
-    source-commit: 6fc85e72896b1933c8d2b12a0b34333db43c8cbe
+    source-commit: 5c435f02551fa4c1ddc41844865091d2f1c3b2d1
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-mermaid-theme-component/
@@ -123,7 +122,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-saml.git
-    source-commit: 197b39978602e0ac6386c3e55ddc42f73efbfbce
+    source-commit: d59be6e624a530d16d03ae7d6da2f14dd526267c
     source-depth: 1
     override-build: |
       craftctl default
@@ -134,7 +133,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-prometheus.git
-    source-commit: 831dba15659055361966e0c42e6b517b3d7b133b
+    source-commit: b1b899ca995783ef5eba90c35dbfc120a2949c38
     source-depth: 1
     override-build: |
       craftctl default
@@ -145,7 +144,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-data-explorer.git
-    source-commit: ebe71a7a138c856d88737eb11b5096a42d4fbaf3
+    source-commit: 2d0dc39767f0c68d333f113c550731a5546c3137
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-data-explorer/
@@ -153,7 +152,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-templates.git
-    source-commit: bb410b2a7d84f4503a9fa8a1fbbe017d627348d8
+    source-commit: 2cacb5e5d33d447191e80a29c01973f84c40dc83
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-templates/
@@ -161,7 +160,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-calendar.git
-    source-commit: 84ef46a38cf02748ecacad16c5d9c6fec12dc8da
+    source-commit: 908ad614bc412f831f929ca726a4bda0b9ccaab6
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-calendar/
@@ -169,7 +168,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-gamification.git
-    source-commit: 5951fc573702090c0dc95b12d4aa3a053303bd63
+    source-commit: 4abb818a6b511878885bb594593dd35e76e1fc08
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-gamification/
@@ -177,7 +176,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-chat-integration.git
-    source-commit: 2e17b03e9a435de0079ae1c2eed1b48a11ad16a9
+    source-commit: e19808d4ad3f7d16cd9b93f315ca586f694e6288
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-chat-integration/
@@ -280,6 +279,94 @@ parts:
       chown -R 584792:584792 var/lib/pebble/default/.npm
       chown -R 584792:584792 var/lib/pebble/default/.yarn
       chown    584792:584792 var/lib/pebble/default/.yarnrc
+  imagemagick:
+    plugin: autotools
+    source: https://github.com/ImageMagick/ImageMagick.git
+    source-type: git
+    source-tag: 7.1.1-36
+    build-packages:
+      - git
+      - make
+      - gcc
+      - pkg-config
+      - autoconf
+      - curl
+      - g++
+      - yasm
+      - cmake
+      - libde265-0
+      - libde265-dev
+      - libjpeg-turbo8
+      - libjpeg-turbo8-dev
+      - libwebp7
+      - x265
+      - libx265-dev
+      - libtool
+      - libpng16-16
+      - libpng-dev
+      - libwebp-dev
+      - libgomp1
+      - libwebpmux3
+      - libwebpdemux2
+      - ghostscript
+      - libxml2-dev
+      - libxml2-utils
+      - librsvg2-dev
+      - libltdl-dev
+      - libbz2-dev
+      - gsfonts
+      - libtiff-dev
+      - libfreetype6-dev
+      - libjpeg-dev
+      - libheif1
+      - libheif-dev
+      - libaom-dev
+    stage-packages:
+      - libjpeg-turbo8
+      - x265
+      - libtool
+      - libpng16-16
+      - libgomp1
+      - libwebpmux3
+      - libwebpdemux2
+      - ghostscript
+      - libxml2-utils
+      - librsvg2-dev
+      - libltdl-dev
+      - gsfonts
+      - libheif1
+    override-build: |
+      craftctl default
+
+      export CFLAGS='-O2'
+
+      ./configure \
+                --prefix=/usr \
+                --enable-static \
+                --enable-bounds-checking \
+                --enable-hdri \
+                --enable-hugepages \
+                --with-threads \
+                --with-modules \
+                --with-quantum-depth=16 \
+                --without-magick-plus-plus \
+                --with-bzlib \
+                --with-zlib \
+                --without-autotrace \
+                --with-freetype \
+                --with-jpeg \
+                --without-lcms \
+                --with-lzma \
+                --with-png \
+                --with-tiff \
+                --with-heic \
+                --with-rsvg \
+                --with-webp
+      make all -j"$(nproc)" && make install DESTDIR=$CRAFT_PART_INSTALL
+      ldconfig $CRAFT_PART_INSTALL/usr/lib
+
+      # Validate ImageMagick install
+      test $($CRAFT_PART_INSTALL/usr/bin/magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 checks:
   discourse-setup-completed:
     override: replace
