@@ -12,27 +12,32 @@ You will need:
 ## Deploy this charm
 
 Discourse requires connections to PostgreSQL and Redis, so those will be deployed too and related to the Discourse charm. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
-Note that Discourse requires PostgreSQL extensions to be available in the relation.
+
+> NOTE: Discourse requires PostgreSQL extensions to be available in the relation.
 
 All the above charms will the deployed in a new model named `discourse`:
 
 ```
-# Add the model
 juju add-model discourse
+```
 
-# Deploy the charms
+Deploy the charms:
+```
 juju deploy redis-k8s --channel latest/edge
 juju deploy postgresql-k8s --channel 14/stable --trust
 juju deploy discourse-k8s
+```
 
-# Enable required PostgreSQL extensions
+Enable the required PostgreSQL extensions:
+```
 juju config postgresql-k8s plugin_hstore_enable=True
 juju config postgresql-k8s plugin_pg_trgm_enable=True
+```
 
-# Relate redis-k8s and postgresql-k8s to discourse-k8s
+Relate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
+```
 juju relate redis-k8s discourse-k8s
 juju relate discourse-k8s postgresql-k8s
-
 ```
 
 By running `juju status --relations` the current state of the deployment can be queried, with all the charms eventually reaching `Active`state:
