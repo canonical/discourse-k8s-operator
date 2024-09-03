@@ -390,16 +390,18 @@ class DiscourseCharm(CharmBase):
         Raises:
             MissingRedisRelationDataError if the some of redis relation data is malformed/missing
         """
-        relation_data = self.redis.relation_data
-        if not relation_data:
+        relation = self.model.get_relation(self.redis.relation_name)
+        if not relation:
             raise MissingRedisRelationDataError("No redis relation data")
 
         try:
-            redis_hostname = str(relation_data["hostname"])
-            redis_port = int(relation_data["port"])
+            relation_data = relation.data[self.model.relations["redis"][0].app]
+            redis_hostname = relation_data["leader-host"]
+            unit_relation = self.redis.relation_data
+            redis_port = int(unit_relation["port"])
         except (KeyError, ValueError) as exc:
             raise MissingRedisRelationDataError(
-                "Wrong hostname or port in Redis relation"
+                "Wrong hostname or port in Redis App data"
             ) from exc
 
         logger.debug(
