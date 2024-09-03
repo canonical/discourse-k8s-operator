@@ -109,7 +109,7 @@ def add_postgres_relation(harness):
     )
 
 
-def add_redis_relation(harness, relation_data=None):
+def add_redis_relation(harness, relation_data=None, app_data=None):
     """Add redis relation and relation data to the charm.
 
     Args:
@@ -117,7 +117,11 @@ def add_redis_relation(harness, relation_data=None):
 
     Returns: the same harness instance with an added relation
     """
-    redis_relation_id = harness.add_relation("redis", "redis")
+    redis_relation_id = harness.add_relation(
+        "redis",
+        "redis",
+        app_data={"leader-host": "redis-host"} if app_data is None else app_data,
+    )
     harness.add_relation_unit(redis_relation_id, "redis/0")
     # We need to bypass protected access to inject the relation data
     # pylint: disable=protected-access
@@ -131,7 +135,7 @@ def add_redis_relation(harness, relation_data=None):
 def _add_ingress_relation(harness):
     """Add ingress relation and relation data to the charm.
 
-    Args:
+    Arg:
         - A harness instance
 
     Returns: the same harness instance with an added relation
