@@ -4,7 +4,7 @@ To configure Discourse's SAML integration you'll have to set the following confi
 
 If you wish to force the login to go through SAML, enable `force_saml_login`.
 The groups to be synced from the provider can be defined in `saml_sync_groups` as a comma-separated list of values.
-In order to implement the relation discourse has to be related with the [saml-integrator](https://charmhub.io/saml-integrator):
+In order to implement the relation, Discourse has to be related with the [saml-integrator](https://charmhub.io/saml-integrator):
 ```
 juju deploy saml-integrator --channel=edge
 # Set the SAML integrator configs
