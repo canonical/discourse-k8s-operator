@@ -393,10 +393,16 @@ class DiscourseCharm(CharmBase):
         relation = self.model.get_relation(self.redis.relation_name)
         if not relation:
             raise MissingRedisRelationDataError("No redis relation data")
+        relation_app_data = relation.data[relation.app]
+        redis_hostname = (
+            str(relation_app_data.get("leader-host"))
+            if relation_app_data.get("leader-host")
+            else None
+        )
 
         try:
-            relation_data = relation.data[self.model.relations["redis"][0].app]
-            redis_hostname = relation_data["leader-host"]
+            if not redis_hostname:
+                redis_hostname = str(self.redis.relation_data["hostname"])
             redis_port = int(self.redis.relation_data["port"])
         except (KeyError, ValueError) as exc:
             raise MissingRedisRelationDataError(

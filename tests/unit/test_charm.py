@@ -702,6 +702,11 @@ def test_is_database_relation_ready(relation_data, should_be_ready):
             True,
         ),
         (
+            {"hostname": "redis-host", "port": "1010"},
+            {},
+            True,
+        ),
+        (
             {"hostname": "redis-host", "port": "0"},
             {"leader-host": ""},
             False,
