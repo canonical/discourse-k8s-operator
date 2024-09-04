@@ -135,7 +135,7 @@ def add_redis_relation(harness, relation_data=None, app_data=None):
 def _add_ingress_relation(harness):
     """Add ingress relation and relation data to the charm.
 
-    Arg:
+    Args:
         - A harness instance
 
     Returns: the same harness instance with an added relation

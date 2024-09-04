@@ -397,8 +397,7 @@ class DiscourseCharm(CharmBase):
         try:
             relation_data = relation.data[self.model.relations["redis"][0].app]
             redis_hostname = relation_data["leader-host"]
-            unit_relation = self.redis.relation_data
-            redis_port = int(unit_relation["port"])
+            redis_port = int(self.redis.relation_data["port"])
         except (KeyError, ValueError) as exc:
             raise MissingRedisRelationDataError(
                 "Wrong hostname or port in Redis App data"
