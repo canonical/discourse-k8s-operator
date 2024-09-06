@@ -1,2 +1,2 @@
 ops==2.16.1
-pydantic==2.8.2
+pydantic==2.9.0
