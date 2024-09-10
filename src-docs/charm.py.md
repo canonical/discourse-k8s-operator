@@ -10,7 +10,6 @@ Charm for Discourse on kubernetes.
 - **DEFAULT_RELATION_NAME**
 - **DATABASE_NAME**
 - **DISCOURSE_PATH**
-- **THROTTLE_LEVELS**
 - **LOG_PATHS**
 - **PROMETHEUS_PORT**
 - **REQUIRED_S3_SETTINGS**

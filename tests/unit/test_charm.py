@@ -694,46 +694,58 @@ def test_is_database_relation_ready(relation_data, should_be_ready):
 
 
 @pytest.mark.parametrize(
-    "relation_data, should_be_ready",
+    "relation_data, app_data, should_be_ready",
     [
         (
             {"hostname": "redis-host", "port": "1010"},
+            {"leader-host": "redis-host"},
+            True,
+        ),
+        (
+            {"hostname": "redis-host", "port": "1010"},
+            {},
             True,
         ),
         (
             {"hostname": "redis-host", "port": "0"},
+            {"leader-host": ""},
             False,
         ),
         (
             {"hostname": "", "port": "1010"},
+            {"leader-host": ""},
             False,
         ),
         (
             {"hostname": "redis-host"},
+            {},
             False,
         ),
         (
+            {},
             {},
             False,
         ),
         (
             {"port": "6379"},
+            {},
             False,
         ),
         (
             {"hostname": "redis-port"},
+            {},
             False,
         ),
     ],
 )
-def test_is_redis_relation_ready(relation_data, should_be_ready):
+def test_is_redis_relation_ready(relation_data, app_data, should_be_ready):
     """
     arrange: given a deployed discourse charm and some relation data
     act: add the redis relation to the charm
     assert: the charm should wait for some correct relation data
     """
     harness = helpers.start_harness(with_postgres=True, with_redis=False)
-    helpers.add_redis_relation(harness, relation_data)
+    helpers.add_redis_relation(harness, relation_data, app_data)
     assert should_be_ready == harness.charm._are_relations_ready()
 
 
