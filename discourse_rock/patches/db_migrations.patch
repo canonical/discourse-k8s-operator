@@ -1,17 +1,16 @@
 diff --git a/db/post_migrate/20240212034010_drop_deprecated_columns.rb b/db/post_migrate/20240212034010_drop_deprecated_columns.rb
-index 0899da20..586643ba 100644
+index 0899da20..015fc6d5 100644
 --- a/db/post_migrate/20240212034010_drop_deprecated_columns.rb
 +++ b/db/post_migrate/20240212034010_drop_deprecated_columns.rb
-@@ -19,6 +19,13 @@ class DropDeprecatedColumns < ActiveRecord::Migration[7.0]
+@@ -19,6 +19,11 @@ class DropDeprecatedColumns < ActiveRecord::Migration[7.0]
    }
-
+ 
    def up
 +    execute <<~SQL
-+    DROP TRIGGER IF EXISTS invites_user_id_readonly ON invites;
-+
-+    DROP TRIGGER IF EXISTS invites_redeemed_at_readonly ON invites;
-+
-+    DROP TRIGGER IF EXISTS user_api_keys_scopes_readonly ON user_api_keys;
-+  SQL
++      DROP TRIGGER IF EXISTS invites_user_id_readonly ON invites;
++      DROP TRIGGER IF EXISTS invites_redeemed_at_readonly ON invites;
++      DROP TRIGGER IF EXISTS user_api_keys_scopes_readonly ON user_api_keys;
++    SQL
      DROPPED_COLUMNS.each { |table, columns| Migration::ColumnDropper.execute_drop(table, columns) }
    end
+ 
