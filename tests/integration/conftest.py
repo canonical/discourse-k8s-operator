@@ -152,6 +152,7 @@ async def app_fixture(
         "postgresql-k8s",
         channel="14/stable",
         series="jammy",
+        revision=300,
         trust=True,
         config={"profile": "testing"},
     )
