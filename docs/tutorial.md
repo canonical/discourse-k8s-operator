@@ -1,13 +1,17 @@
 # Deploy the Discourse charm for the first time
 
-In this tutorial, we'll walk you through the process of deploying the Discourse charm, relating it to the nginx-ingress-integrator charm, the postgresql-k8s charm and the redis-k8s charm, and inspecting the kubernetes resources created.
+## What you'll do
+
+- Deploy the Discourse charm
+- Integrate with nginx-ingress-integrator, postgresql-k8s and redis-k8s charms
+- Inspect the Kubernetes resources created
+
+In this tutorial, we'll go through each step of the process to get a basic Discourse deployment.
 
 ## Requirements
 
-You will need:
-
 * A laptop or desktop running Ubuntu (or you can use a VM).
-* [Juju and Microk8s](https://juju.is/docs/olm/microk8s) installed. We’ll also want to make sure the ingress add-on is enabled, which we can do by running `microk8s enable ingress`.
+* Juju and [Microk8s](https://juju.is/docs/olm/microk8s) installed. We’ll also want to make sure the ingress add-on is enabled, which we can do by running `microk8s enable ingress`.
 
 ## Deploy this charm
 
