@@ -110,3 +110,12 @@ echo 127.0.0.1 discourse-k8s >> /etc/hosts
 ```
 
 After that, visit `http://discourse-k8s` to reach Discourse, using the credentials returned from the `create-user` action to login.
+
+### Clean up the environment 
+
+Congratulations! You have successfully finished the Discourse tutorial. You can now remove the 
+model environment that you've created using the following command:
+
+```
+juju destroy-model discourse --destroy-storage
+```
