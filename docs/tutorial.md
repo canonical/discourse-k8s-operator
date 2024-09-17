@@ -23,9 +23,9 @@ To easily clean up the resources and separate your workload from the contents of
 juju add-model discourse
 ```
 
-### Deploy this charm
+### Deploy the charms
 
-Discourse requires connections to PostgreSQL and Redis, so those will be deployed too and related to the Discourse charm. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
+Discourse requires connections to PostgreSQL and Redis. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
 
 > NOTE: Discourse requires PostgreSQL extensions to be available in the relation.
 
@@ -44,13 +44,13 @@ juju config postgresql-k8s plugin_pg_trgm_enable=True
 
 ### Integrate the charms
 
-Relate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
+Integrate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
 ```
-juju relate redis-k8s discourse-k8s
-juju relate discourse-k8s postgresql-k8s
+juju integrate redis-k8s discourse-k8s
+juju integrate discourse-k8s postgresql-k8s
 ```
 
-By running `juju status --relations` the current state of the deployment can be queried, with all the charms eventually reaching `Active`state:
+By running `juju status --relations` the current state of the deployment can be queried:
 ```
 Model      Controller  Cloud/Region        Version  SLA          Timestamp
 discourse  microk8s    microk8s/localhost  3.1.7    unsupported  12:48:02+02:00
@@ -74,6 +74,7 @@ postgresql-k8s:upgrade         postgresql-k8s:upgrade         upgrade           
 redis-k8s:redis                discourse-k8s:redis            redis              regular  
 redis-k8s:redis-peers          redis-k8s:redis-peers          redis-peers        peer     
 ```
+The deployment finishes when all the charms show `Active` states.
 
 Run `kubectl get pods -n discourse` to see the pods that are being created by the charms:
 ```
@@ -86,24 +87,26 @@ postgresql-k8s-0                 2/2     Running   0          5m9s
 
 ### Provide ingress capabilities 
 
-In order to expose the charm, the Nginx Ingress Integrator is to be deployed alongside Discourse to provide ingress capabilities
+In order to expose the charm, the Nginx Ingress Integrator needs to be deployed and integrated with Discourse:
 
 ```
 juju deploy nginx-ingress-integrator
 # If your cluster has RBAC enabled you'll be prompted to run the following:
 juju trust nginx-ingress-integrator --scope=cluster
 
-juju relate discourse-k8s nginx-ingress-integrator
+juju integrate discourse-k8s nginx-ingress-integrator
 ```
 
 ### Create an admin user and log in
 
-To create an admin user, run:
+To create an admin user, use the `create-user` action:
 ```
 juju run discourse-k8s/0 create-user admin=true email=email@example.com
 ```
-The command will return the password of the created user. Discourse will be deployed with `discourse-k8s` as default hostname. In order to reach it, modify your `/etc/hosts` file so that it points to `127.0.0.1`
+The command will return the password of the created user. Discourse will be deployed with `discourse-k8s` as default hostname. In order to reach it, modify your `/etc/hosts` file so that it points to `127.0.0.1`:
 
-`echo 127.0.0.1 discourse-k8s >> /etc/hosts`
+```
+echo 127.0.0.1 discourse-k8s >> /etc/hosts
+```
 
 After that, visit `http://discourse-k8s` to reach Discourse, using the credentials returned from the `create-user` action to login.
