@@ -13,17 +13,21 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 * A laptop or desktop running Ubuntu (or you can use a VM).
 * Juju and [Microk8s](https://juju.is/docs/olm/microk8s) installed. We’ll also want to make sure the ingress add-on is enabled, which we can do by running `microk8s enable ingress`.
 
-## Deploy this charm
+## Steps
 
-Discourse requires connections to PostgreSQL and Redis, so those will be deployed too and related to the Discourse charm. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
+### Set up environment
 
-> NOTE: Discourse requires PostgreSQL extensions to be available in the relation.
-
-All the above charms will the deployed in a new model named `discourse`:
+To easily clean up the resources and separate your workload from the contents of this tutorial, set up a new Juju model named `discourse`:
 
 ```
 juju add-model discourse
 ```
+
+### Deploy this charm
+
+Discourse requires connections to PostgreSQL and Redis, so those will be deployed too and related to the Discourse charm. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
+
+> NOTE: Discourse requires PostgreSQL extensions to be available in the relation.
 
 Deploy the charms:
 ```
@@ -37,6 +41,8 @@ Enable the required PostgreSQL extensions:
 juju config postgresql-k8s plugin_hstore_enable=True
 juju config postgresql-k8s plugin_pg_trgm_enable=True
 ```
+
+### Integrate the charms
 
 Relate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
 ```
@@ -78,6 +84,8 @@ discourse-k8s-0                  2/2     Running   0          5m1s
 postgresql-k8s-0                 2/2     Running   0          5m9s
 ```
 
+### Provide ingress capabilities 
+
 In order to expose the charm, the Nginx Ingress Integrator is to be deployed alongside Discourse to provide ingress capabilities
 
 ```
@@ -87,6 +95,8 @@ juju trust nginx-ingress-integrator --scope=cluster
 
 juju relate discourse-k8s nginx-ingress-integrator
 ```
+
+### Create an admin user and log in
 
 To create an admin user, run:
 ```
