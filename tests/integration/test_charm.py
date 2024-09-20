@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 """Discourse integration tests."""
 
+import json
 import logging
 import re
 from datetime import datetime, timedelta
@@ -14,10 +15,10 @@ import requests
 from boto3 import client
 from botocore.config import Config
 from juju.application import Application
-from ops.model import ActiveStatus
+from ops.model import ActiveStatus, WaitingStatus
 from pytest_operator.plugin import Model, OpsTest
 
-from charm import PROMETHEUS_PORT
+from charm import DISCOURSE_PATH, PROMETHEUS_PORT
 
 from . import types
 
@@ -76,6 +77,143 @@ async def test_setup_discourse(
     )
 
     assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+@pytest.mark.abort_on_fail
+async def test_db_migration(model: Model, ops_test: OpsTest, run_action):
+
+    postgres_app = await model.deploy(
+        "postgresql-k8s",
+        channel="14/stable",
+        series="jammy",
+        trust=True,
+        config={"profile": "testing"},
+    )
+    async with ops_test.fast_forward():
+        await model.wait_for_idle(apps=[postgres_app.name], status="active")
+
+    redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
+    await model.wait_for_idle(apps=[redis_app.name], status="active")
+
+    await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
+    app_name = "discourse-k8s"
+    discourse_app = await model.deploy(
+        app_name,
+        channel="latest/edge",
+        revision=162,
+        series="focal",
+        resources={"discourse-image": "152"},
+    )
+    await model.wait_for_idle(apps=[app_name], status="waiting")
+
+    logger.info("Deployed discourse ")
+    # configure postgres
+    await postgres_app.set_config(
+        {
+            "plugin_hstore_enable": "true",
+            "plugin_pg_trgm_enable": "true",
+        }
+    )
+    logger.info("Configured postgresql")
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
+
+    logger.info("Checking discourse status")
+    # Add required relations
+    unit = model.applications[app_name].units[0]
+    assert unit.workload_status == WaitingStatus.name  # type: ignore
+    logger.info("Adding relations")
+    await model.add_relation(app_name, "postgresql-k8s:database")
+    await model.add_relation(app_name, "redis-k8s")
+    await model.add_relation(app_name, "nginx-ingress-integrator")
+    logger.info("Added relations")
+    await model.wait_for_idle(apps=[app_name], status="active")
+    # import pdb; pdb.set_trace()
+    logger.info("Create mock database")
+
+    # Create mock database
+    # Get the api key first
+    return_code, api_key, _ = await ops_test.juju(
+        "ssh",
+        "--container",
+        "discourse",
+        unit.name,
+        f"pebble exec --user=_daemon_ --context=discourse -w={DISCOURSE_PATH} -- {DISCOURSE_PATH}/bin/bundle exec rake api_key:create_master['api key description']",
+    )
+    api_key = api_key.strip()
+    # create admin user
+    user_1_pass = await run_action(app_name, "create-user", email="email@example.com", admin=True)
+    logger.info("email password: %s", user_1_pass)
+    logger.info("api_key: %s",api_key )
+    return_code, invite_output, _ = await ops_test.juju(
+        "ssh",
+        "--container",
+        "discourse",
+        unit.name,
+        f"pebble exec --user=_daemon_ --context=discourse -w={DISCOURSE_PATH} -- {DISCOURSE_PATH}/bin/bundle exec rake admin:invite['email2@example.com']",
+    )
+    logger.info("invite output: %s", invite_output)
+
+    # import pdb; pdb.set_trace()
+    # await run_action(app_name, "create-user", email="email2@example.com", admin=True)
+    # create regular user
+    header = {"Api-Key": api_key, "Api-Username": "email", "Host": "discourse-k8s"}
+    # user_json = {
+    #     "name": "email2",
+    #     "email": "email2@example.com",
+    #     "password": "Strong.Password",
+    #     "username": "email2",
+    #     "active": False,
+    #     "approved": False,
+    # }
+    # user_result = requests.post("http://127.0.0.1/users.json", json=user_json, headers=header)
+    # logger.warning(user_result.text)
+    # user_id = json.loads(user_result.text)["user_id"]
+    # new_res = requests.put(f"http://127.0.0.1/admin/users/{user_id}/activate.json", json={"id": user_id}, headers=header)
+    # logger.info("new_res : %s",new_res.text )
+    # import pdb; pdb.set_trace()
+    # create a topic
+    example_topic = {
+        "title": "test topic for integration tests",
+        "category": 4,
+        "category_id": 4,
+        "raw": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        "id": 12,
+    }
+    # header["Api-Username"] = "email2"
+    post_res = requests.post("http://127.0.0.1/posts.json", json=example_topic, headers=header)
+    post_json = json.loads(post_res.text)
+    logger.info(post_json)
+    # import pdb; pdb.set_trace()
+    reply_obj = {
+        "raw": "https://github.com/canonical/discourse-k8s-operator/pull/287",
+        "topic_id": post_json["topic_id"],
+    }
+    post_res = requests.post("http://127.0.0.1/posts.json", json=reply_obj, headers=header)
+    # import pdb ;pdb.set_trace()
+    header["Api-Username"] = "email2"
+    reply_obj = {
+        "raw": """"
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque eu vehicula eros. Aliquam id velit ac libero rutrum vulputate. Fusce at vehicula justo. Cras vulputate aliquet nisi in viverra. Nullam vitae libero tincidunt, feugiat mi ac, condimentum lacus. Nulla quam nisi, sodales quis tempor eu, blandit at justo. Proin semper finibus accumsan. Aliquam non nunc at dolor dapibus luctus id a leo.
+
+Fusce mollis, augue quis pharetra porttitor, ante felis euismod ante, at dignissim enim felis ac sem. Praesent at purus faucibus, tincidunt arcu eget, dapibus lectus. Etiam scelerisque pulvinar enim ut blandit. Morbi sed nibh et nisi convallis fermentum. Nullam nec ultricies arcu, et imperdiet sapien. Aliquam mauris ipsum, blandit id semper in, tincidunt sed quam. Fusce sollicitudin sollicitudin elit et condimentum. Duis tempus ligula arcu, eu fringilla eros placerat sit amet. Donec tempus enim et finibus rutrum. Vestibulum ac erat ac dolor maximus accumsan. Nulla aliquam diam non felis feugiat dictum.
+
+Cras hendrerit odio arcu, nec ultrices lectus tincidunt in. Nam gravida viverra mi eu accumsan. Sed luctus tellus posuere mi venenatis, ac elementum purus porttitor. Ut vel massa dui. Duis auctor sapien in aliquet ultricies. Maecenas quis nibh id metus porta tempor. Sed imperdiet erat massa, non consectetur velit aliquam a. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla vestibulum tortor leo, vel congue ex ullamcorper venenatis. Donec ipsum ex, ultrices sed congue et, ornare non purus. Nulla ornare eget metus in suscipit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Donec aliquet ornare est, eu posuere ligula. Nunc at viverra turpis. Maecenas sed volutpat augue, ut mollis nunc. Nam quis felis ac enim blandit aliquet. Duis facilisis enim id erat vehicula, nec tempor est blandit. Quisque eu nulla non nibh consequat porta.
+
+Aliquam in elementum tortor. Sed purus magna, vulputate eu lacus sit amet, dapibus gravida enim. Maecenas at orci vel erat accumsan feugiat sit amet non ante. Aliquam imperdiet, augue sed volutpat efficitur, massa arcu tempus sapien, eget iaculis ipsum lorem at mauris. Fusce ligula risus, condimentum quis odio ut, maximus viverra mi. Maecenas eget lectus porttitor dui commodo ultricies. Mauris aliquam, turpis ut facilisis mattis, orci felis aliquam erat, eget posuere nisl metus sed orci. Vivamus tellus dolor, sodales dapibus urna vitae, venenatis rutrum erat. Cras efficitur tempor tortor, non dictum dui facilisis eu. Morbi nec turpis eu neque aliquet bibendum id at erat. Nullam lacinia maximus consectetur. Fusce finibus arcu eu luctus auctor. Aenean porttitor in turpis dignissim auctor. Proin finibus non justo in efficitur.
+""",
+        "topic_id": post_json["topic_id"],
+    }
+    post_res = requests.post("http://127.0.0.1/posts.json", json=reply_obj, headers=header)
+
+    resources = {"discourse-image": "localhost:32000/discourse-rock:1.1"}
+    charm_path = await ops_test.build_charm(".")
+    await discourse_app.refresh(path=charm_path, resources=resources)
+    # import pdb; pdb.set_trace()
+    assert True, "TODO"
 
 
 @pytest.mark.asyncio
