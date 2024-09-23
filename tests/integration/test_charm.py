@@ -90,6 +90,7 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
         "postgresql-k8s",
         channel="14/stable",
         series="jammy",
+        revision=300,
         trust=True,
         config={"profile": "testing"},
     )
