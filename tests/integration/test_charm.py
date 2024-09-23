@@ -82,9 +82,10 @@ async def test_setup_discourse(
 @pytest.mark.abort_on_fail
 async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Config, run_action):
     """
-    arrange: preload postgres with a mock db
-    act: deploy and integrate with discourse
-    assert: discourse must be active idle
+    arrange: preload postgres with a mock db that is created in Discource v3.2.0
+    act: deploy and integrate with discourse v3.3.0
+    assert: discourse must be active idle, previously it was creating migration
+    errors related to not being able to delete some columns because of triggers
     """
     postgres_app = await model.deploy(
         "postgresql-k8s",
@@ -109,7 +110,6 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
     return_code, _, _ = await ops_test.juju(
         "scp",
         "--container",
-        # postgres_app.name,
         "postgresql",
         "./mock_db",
         f"{postgres_app.units[0].name}:.",
