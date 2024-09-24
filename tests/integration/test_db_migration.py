@@ -17,10 +17,14 @@ logger = logging.getLogger(__name__)
 @pytest.mark.abort_on_fail
 async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Config, run_action):
     """
-    arrange: preload postgres with a mock db that is created in Discource v3.2.0
-    act: deploy and integrate with discourse v3.3.0
-    assert: discourse must be active idle, previously it was creating migration
-    errors related to not being able to delete some columns because of triggers
+    arrange: preload postgres with a testing db that is created in Discourse v3.2.0
+    act: deploy and integrate with Discourse v3.3.0 (latest)
+    assert: discourse is active/idle
+
+    Discourse must be active idle, it might create migration errors related to
+    not being able to delete some columns because of triggers. This is fixed
+    with a patch but this patch only works for Discourse v3.2.0 and we might
+    need to create a new patch for the new version of Discourse.
     """
     postgres_app = await model.deploy(
         "postgresql-k8s",

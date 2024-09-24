@@ -1,5 +1,5 @@
 # Creating the testing database
-At the writing this document, the testing database is created using Discourse v3.2.0.
+At the writing this document, the testing database is created using Discourse v3.2.0 and used to test migration from v3.2.0 to v3.3.0.
 
 ## Creating the database
 First of all we need to deploy the Discourse following the [tutorial](https://github.com/canonical/discourse-k8s-operator/blob/main/docs/tutorial.md).
