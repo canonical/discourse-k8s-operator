@@ -92,7 +92,7 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
     )
     assert (
         "f9502188a646cdb286ae6572ad6198c711ecdea8" in latest_git_version
-    ), "Discourse v3.2.0 git version  does not match with the database version"
+    ), "Discourse v3.2.0 git version does not match with the database version"
 
     redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
     await model.wait_for_idle(apps=[redis_app.name], status="active")
