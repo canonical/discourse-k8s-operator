@@ -32,7 +32,6 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
     )
     async with ops_test.fast_forward():
         await model.wait_for_idle(apps=[postgres_app.name], status="active")
-    # configure postgres
     await postgres_app.set_config(
         {
             "plugin_hstore_enable": "true",
@@ -42,16 +41,17 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
     await model.wait_for_idle(apps=[postgres_app.name], status="active")
     db_pass = await run_action(postgres_app.name, "get-password", username="operator")
     db_pass = db_pass["password"]
-    return_code, _, _ = await ops_test.juju(
+    return_code, _, scp_err = await ops_test.juju(
         "scp",
         "--container",
         "postgresql",
-        "./mock_db",
+        "./testing_database/testing_database.sql",
         f"{postgres_app.units[0].name}:.",
     )
-    assert return_code == 0
 
-    return_code, _, _ = await ops_test.juju(
+    assert return_code == 0, scp_err
+
+    return_code, _, ssh_err = await ops_test.juju(
         "ssh",
         "--container",
         "postgresql",
@@ -59,19 +59,19 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
         "createdb -h localhost -U operator --password discourse",
         stdin=str.encode(f"{db_pass}\n"),
     )
-    assert return_code == 0
+    assert return_code == 0, ssh_err
 
-    return_code, _, _ = await ops_test.juju(
+    return_code, _, ssh_err = await ops_test.juju(
         "ssh",
         "--container",
         "postgresql",
         postgres_app.units[0].name,
         "pg_restore -h localhost -U operator\
               --password -d discourse\
-                  --no-owner --clean --if-exists ./mock_db",
+                  --no-owner --clean --if-exists ./testing_database.sql",
         stdin=str.encode(f"{db_pass}\n"),
     )
-    assert return_code == 0
+    assert return_code == 0, ssh_err
     redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
     await model.wait_for_idle(apps=[redis_app.name], status="active")
 
@@ -86,7 +86,6 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
         series="focal",
     )
     await model.wait_for_idle(apps=[app_name], status="waiting")
-    # Add required relations
     unit = discourse_application.units[0]
     assert unit.workload_status == WaitingStatus.name  # type: ignore
     await model.add_relation(app_name, "postgresql-k8s:database")
