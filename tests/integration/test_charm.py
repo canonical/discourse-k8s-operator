@@ -14,7 +14,7 @@ import requests
 from boto3 import client
 from botocore.config import Config
 from juju.application import Application
-from ops.model import ActiveStatus, WaitingStatus
+from ops.model import ActiveStatus
 from pytest_operator.plugin import Model, OpsTest
 
 from charm import PROMETHEUS_PORT

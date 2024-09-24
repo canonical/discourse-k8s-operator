@@ -12,6 +12,7 @@ from pytest_operator.plugin import Model, OpsTest
 
 logger = logging.getLogger(__name__)
 
+
 @pytest.mark.asyncio
 @pytest.mark.abort_on_fail
 async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Config, run_action):
