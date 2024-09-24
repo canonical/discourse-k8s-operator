@@ -76,16 +76,33 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
         stdin=str.encode(f"{db_pass}\n"),
     )
     assert return_code == 0, ssh_err
+
+    # ensure we are using the Discourse v3.2.0 database
+    # Discourse v3.2.0 uses the git commit hash:
+    # f9502188a646cdb286ae6572ad6198c711ecdea8
+    return_code, latest_git_version, _ = await ops_test.juju(
+        "ssh",
+        "--container",
+        "postgresql",
+        postgres_app.units[0].name,
+        "psql -h localhost -U operator\
+              --password -d discourse\
+                  -c 'SELECT git_version FROM schema_migration_details LIMIT 1;'",
+        stdin=str.encode(f"{db_pass}\n"),
+    )
+    assert (
+        "f9502188a646cdb286ae6572ad6198c711ecdea8" in latest_git_version
+    ), "Discourse v3.2.0 git version  does not match with the database version"
+
     redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
     await model.wait_for_idle(apps=[redis_app.name], status="active")
 
-    resources = {"discourse-image": pytestconfig.getoption("--discourse-image")}
     charm = await ops_test.build_charm(".")
     await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
     app_name = "discourse-k8s"
     discourse_application = await model.deploy(
         charm,
-        resources=resources,
+        resources={"discourse-image": pytestconfig.getoption("--discourse-image")},
         application_name=app_name,
         series="focal",
     )
