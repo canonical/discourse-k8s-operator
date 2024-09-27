@@ -8,7 +8,7 @@ built with a focus on simplicity, user-friendliness, and responsiveness, making 
 devices. Discourse provides various moderation and administration tools, enabling community managers to maintain a healthy and 
 constructive environment.
 
-This charm simplifies initial deployment of Discourse on Kubernetes, such as scaling the number of instances, integration 
+This charm simplifies operations of Discourse on Kubernetes, such as scaling the number of instances, integration 
 with SSO, access to S3 for redundant file storage and more. It allows for deployment on many different Kubernetes 
 platforms, from [MicroK8s](https://microk8s.io) or [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud 
 Kubernetes offerings.
