@@ -110,7 +110,7 @@ rbac                 # (core) Role-Based Access Control for authorisation
 ```
 If the output is empty then RBAC is not enabled.
 
-If your cluster has RBAC enabled, you'll be prompted to run the following (If you are working inside the Multipass vm, chances are you have RBAC enabled):
+If your cluster has RBAC enabled, you'll be prompted to run the following (If you are working inside the Multipass VM, chances are you have RBAC enabled):
 
 ```bash
 juju trust nginx-ingress-integrator --scope=cluster
@@ -128,7 +128,7 @@ juju run discourse-k8s/0 create-user admin=true email=email@example.com
 ```
 The command will return the password of the created user. Discourse will be deployed with `discourse-k8s` as default hostname.
 If you are using a Multipass instance you need to forward the request from your local to the Multipass instance.
-First get the Multipass instances IP address. Since the indico is served on the local address of the Multipass VM we need to use the ip address of the VM. To get the IP address of a Multipass instance run the following command:
+First get the Multipass instances IP address. Since the Discourse is served on the local address of the Multipass VM we need to use the ip address of the VM. To get the IP address of a Multipass instance run the following command:
 
 ```bash
 ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc'
@@ -163,4 +163,4 @@ To remove the Multipass instance you created for this tutorial, use the followin
 ```bash
 multipass delete --purge my-juju-vm
 ```
-It is also a good idea to remove the `10.131.49.76 indico.local` line from the `/etc/hosts` file.
+It is also a good idea to remove the `10.131.49.76 discourse-k8s` line from the `/etc/hosts` file.
