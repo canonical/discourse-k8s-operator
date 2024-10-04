@@ -9,10 +9,11 @@
 In this tutorial, we'll go through each step of the process to get a basic Discourse deployment.
 
 ## Requirements
-
-- A laptop or desktop running Ubuntu (or you can use a VM).
+- A working station, e.g., a laptop, with amd64 architecture.
 - Juju 3 installed and bootstrapped to a MicroK8s controller. You can accomplish this process by following this guide: [Set up / Tear down your test environment](https://juju.is/docs/juju/set-up--tear-down-your-test-environment)
 - NGINX Ingress Controller. If you're using [MicroK8s](https://microk8s.io/), this can be done by running the command `microk8s enable ingress`. For more details, see [Addon: Ingress](https://microk8s.io/docs/addon-ingress).
+
+For more information about how to install Juju, see [Get started with Juju](https://juju.is/docs/olm/get-started-with-juju).
 
 ## Steps
 
@@ -98,9 +99,24 @@ In order to expose the charm, the Nginx Ingress Integrator needs to be deployed 
 
 ```bash
 juju deploy nginx-ingress-integrator
-#If your cluster has RBAC enabled, you'll be prompted to run the following (If you are working inside the Multipass vm, chances are you have RBAC enabled):
-juju trust nginx-ingress-integrator --scope=cluster
+```
+To check if RBAC is enabled run the following command:
+```bash
+microk8s status | grep rbac
+```
+If it is enabled, then the output should be like the following:
+```bash
+rbac                 # (core) Role-Based Access Control for authorisation
+```
+If the output is empty then RBAC is not enabled.
 
+If your cluster has RBAC enabled, you'll be prompted to run the following (If you are working inside the Multipass vm, chances are you have RBAC enabled):
+
+```bash
+juju trust nginx-ingress-integrator --scope=cluster
+```
+Then you need to integrate the charm with Nginx Ingress Integrator:
+```bash
 juju integrate discourse-k8s nginx-ingress-integrator
 ```
 
@@ -115,7 +131,7 @@ If you are using a Multipass instance you need to forward the request from your 
 First get the Multipass instances IP address. Since the indico is served on the local address of the Multipass VM we need to use the ip address of the VM. To get the IP address of a Multipass instance run the following command:
 
 ```bash
-ip a | awk '/inet .* ens3/{print $2}' | cut -d'/' -f1
+ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc'
 ```
 The result should be something like this:
 ```bash
@@ -124,7 +140,7 @@ The result should be something like this:
 
 Add the ip address to the /etc/hosts file:
 ```bash
-echo "10.131.49.76 discourse-k8s" >> /etc/hosts
+echo "10.131.49.76 discourse-k8s" | sudo tee -a /etc/hosts
 ```
 
 If you are following the tutorial in your local machine, modify your `/etc/hosts` file so that it points to `127.0.0.1`:
