@@ -15,12 +15,16 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 
 For more information about how to install Juju, see [Get started with Juju](https://juju.is/docs/olm/get-started-with-juju).
 
+:warning: When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
+VM IP in steps that assume you're running locally. To get the IP address of the
+Multipass instance run ```multipass info my-juju-vm```.
 ## Steps
 
 ### Shell into the Multipass VM
+> NOTE: If you're working locally, you don't need to do this step.
 
 To be able to work inside the Multipass VM first you need to log in with the following command:
-```bash
+```
 multipass shell my-juju-vm
 ```
 
@@ -28,7 +32,7 @@ multipass shell my-juju-vm
 
 To easily clean up the resources and separate your workload from the contents of this tutorial, set up a new Juju model named `discourse-tutorial`:
 
-```bash
+```
 juju add-model discourse-tutorial
 ```
 
@@ -39,27 +43,27 @@ Discourse requires connections to PostgreSQL and Redis. For more information, se
 > NOTE: Discourse requires PostgreSQL extensions to be available in the relation.
 
 Deploy the charms:
-```bash
+```
 juju deploy redis-k8s --channel latest/edge
 juju deploy postgresql-k8s --channel 14/stable --trust
 juju deploy discourse-k8s
 ```
 
 Enable the required PostgreSQL extensions:
-```bash
+```
 juju config postgresql-k8s plugin_hstore_enable=True plugin_pg_trgm_enable=True
 ```
 
 ### Integrate with the Redis k8s charm the PostgreSQL k8s charm
 
 Integrate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
-```bash
+```
 juju integrate redis-k8s discourse-k8s
 juju integrate discourse-k8s postgresql-k8s
 ```
 
 By running `juju status --relations` the current state of the deployment can be queried:
-```bash
+```
 Model               Controller  Cloud/Region        Version  SLA          Timestamp
 discourse-tutorial  microk8s    microk8s/localhost  3.5.4    unsupported  14:07:18+03:00
 
@@ -85,7 +89,7 @@ redis-k8s:redis-peers          redis-k8s:redis-peers          redis-peers       
 The deployment finishes when all the charms show `Active` states.
 
 Run `kubectl get pods -n discourse-tutorial` to see the pods that are being created by the charms:
-```bash
+```
 NAME                             READY   STATUS    RESTARTS   AGE
 modeloperator-c584f6f9f-qf9gr    1/1     Running   0          5m30s
 redis-k8s-0                      3/3     Running   0          5m22s
@@ -97,55 +101,39 @@ postgresql-k8s-0                 2/2     Running   0          5m9s
 
 In order to expose the charm, the Nginx Ingress Integrator needs to be deployed and integrated with Discourse:
 
-```bash
+```
 juju deploy nginx-ingress-integrator
 ```
 To check if RBAC is enabled run the following command:
-```bash
+```
 microk8s status | grep rbac
 ```
 If it is enabled, then the output should be like the following:
-```bash
+```
 rbac                 # (core) Role-Based Access Control for authorisation
 ```
 If the output is empty then RBAC is not enabled.
 
-If your cluster has RBAC enabled, you'll be prompted to run the following (If you are working inside the Multipass VM, chances are you have RBAC enabled):
-
-```bash
+If your cluster has RBAC enabled, you'll be prompted to run the following command:
+```
 juju trust nginx-ingress-integrator --scope=cluster
 ```
 Then you need to integrate the charm with Nginx Ingress Integrator:
-```bash
+```
 juju integrate discourse-k8s nginx-ingress-integrator
 ```
 
 ### Create an admin user and log in
 
 To create an admin user, use the `create-user` action:
-```bash
+```
 juju run discourse-k8s/0 create-user admin=true email=email@example.com
 ```
 The command will return the password of the created user. Discourse will be deployed with `discourse-k8s` as default hostname.
-If you are using a Multipass instance you need to forward the request from your local to the Multipass instance.
-First get the Multipass instances IP address. Since the Discourse is served on the local address of the Multipass VM we need to use the ip address of the VM. To get the IP address of a Multipass instance run the following command:
-
-```bash
-ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc'
-```
-The result should be something like this:
-```bash
-10.131.49.76
-```
-
-Add the ip address to the /etc/hosts file:
-```bash
-echo "10.131.49.76 discourse-k8s" | sudo tee -a /etc/hosts
-```
 
 If you are following the tutorial in your local machine, modify your `/etc/hosts` file so that it points to `127.0.0.1`:
 
-```bash
+```
 echo 127.0.0.1 discourse-k8s >> /etc/hosts
 ```
 
@@ -156,11 +144,11 @@ After that, visit `http://discourse-k8s` to reach Discourse, using the credentia
 Congratulations! You have successfully finished the Discourse tutorial. You can now remove the
 model environment that you've created using the following command:
 
-```bash
+```
 juju destroy-model discourse-tutorial --destroy-storage
 ```
-To remove the Multipass instance you created for this tutorial, use the following command.
-```bash
+If you used Multipass, to remove the Multipass instance you created for this tutorial, use the following command.
+```
 multipass delete --purge my-juju-vm
 ```
-Finally, remove the `10.131.49.76 discourse-k8s` line from the `/etc/hosts` file.
+Finally, remove the `127.0.0.1 discourse-k8s` line from the `/etc/hosts` file.
