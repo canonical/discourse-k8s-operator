@@ -90,7 +90,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/canonical/discourse-rad-plugin.git
-    source-commit: 7fe719abd459ab2d2736d6ad2ca7810b045dd154
+    source-commit: c3fb45df590cc602a364eae81af56fe57f6c44a5
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-rad-plugin/
