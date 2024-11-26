@@ -1,0 +1,30 @@
+# wee_alloc is Unmaintained https://github.com/advisories/GHSA-rc23-xxgq-x27g
+GHSA-rc23-xxgq-x27g
+# pebble
+CVE-2024-34156
+# shlex from ruby test
+GHSA-r7qv-8r2h-pg27
+# squoosh npm package
+CVE-2021-32810
+CVE-2022-23639
+# Ruby Gems
+CVE-2024-7254
+CVE-2015-9284
+CVE-2017-11430
+CVE-2024-45409
+GHSA-cvp8-5r8g-fhvq
+CVE-2024-49761
+CVE-2024-45409
+CVE-2024-47220
+# Python setuptools
+CVE-2024-6345
+# Nodejs
+CVE-2021-23424 # ansi-html
+CVE-2024-39338 # axios
+CVE-2024-45590 # body-parser
+CVE-2024-4068 # braces
+CVE-2024-21538 # cross-spawn
+CVE-2024-29415 # ip
+CVE-2024-45296 # path-to-regexp
+CVE-2024-37890 # ws
+private-key
