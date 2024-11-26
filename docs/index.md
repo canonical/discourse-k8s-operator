@@ -1,17 +1,11 @@
-# Discourse Operator
-A [Juju](https://juju.is/) [charm](https://juju.is/docs/olm/charmed-operators) deploying and managing Discourse on Kubernetes.
+This charm simplifies initial deployment and "day N" operations of Discourse
+on Kubernetes, such as scaling the number of instances, integration with SSO,
+access to S3 for redundant file storage and more. It allows for deployment on
+many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) or
+[Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud Kubernetes
+offerings.
 
-Discourse is an open-source software application used to create customer-friendly and community-friendly discussion platforms, 
-forums, and mailing lists. It's designed to work as a discussion platform for various topics and is widely used by numerous 
-organizations and individuals to build communities, provide customer support, and facilitate conversations. The platform is 
-built with a focus on simplicity, user-friendliness, and responsiveness, making it accessible from both desktops and mobile 
-devices. Discourse provides various moderation and administration tools, enabling community managers to maintain a healthy and 
-constructive environment.
-
-This charm simplifies operations of Discourse on Kubernetes, such as scaling the number of instances, integration 
-with SSO, access to S3 for redundant file storage and more. It allows for deployment on many different Kubernetes 
-platforms, from [MicroK8s](https://microk8s.io) or [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud 
-Kubernetes offerings.
+Discourse is an open-source software application used to create customer-friendly and community-friendly discussion platforms, forums, and mailing lists. It's designed to work as a discussion platform for various topics and is widely used by numerous organizations and individuals to build communities, provide customer support, and facilitate conversations. The platform is built with a focus on simplicity, user-friendliness, and responsiveness, making it accessible from both desktops and mobile devices. Discourse provides various moderation and administration tools, enabling community managers to maintain a healthy and constructive environment.
 
 ## In this documentation
 
@@ -39,7 +33,8 @@ fixes and constructive feedback.
 
 # Contents
 
-1. [Tutorial](tutorial.md)
+1. [Explanation](explanation)
+  1. [Charm architecture](explanation/charm-architecture.md)
 1. [How To](how-to)
   1. [Access the Rails console](how-to/access--the-rails-console.md)
   1. [Backup and restore](how-to/backup-and-restore.md)
@@ -56,6 +51,4 @@ fixes and constructive feedback.
   1. [External Access](reference/external-access.md)
   1. [Integrations](reference/integrations.md)
   1. [Plugins](reference/plugins.md)
-  1. [External Access](reference/external-access.md)
-1. [Explanation](explanation)
-  1. [Charm architecture](explanation/charm-architecture.md)
+1. [Getting started](tutorial.md)
