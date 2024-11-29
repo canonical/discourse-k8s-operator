@@ -9,36 +9,50 @@ A juju charm deploying and managing Discourse on Kubernetes. Discourse is the
 100% open source discussion platform. Use it as a mailing list, discussion
 forum or long-form chat room.
 
-This charm simplifies initial deployment and "day N" operations of Discourse
-on Kubernetes, such as scaling the number of instances, integration with SSO,
-access to S3 for redundant file storage and more. It allows for deployment on
-many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) or
+Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling, and more.
+For Charmed Discourse, this includes:
+  - Scaling
+  - Integration with SSO
+  - Integration with S3 for redundant file storage
+
+It allows for deployment on
+many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) to
 [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud Kubernetes
 offerings.
 
-As such, the charm makes it easy for those looking to take control of their own
-discussion platform whilst keeping operations simple, and gives them the
-freedom to deploy on the Kubernetes platform of their choice.
+For information about how to deploy, integrate, and manage this charm,
+see the Official [Discourse Operator Documentation](https://charmhub.io/discourse-k8s/docs).
 
-For DevOps or SRE teams this charm will make operating Discourse simple and
-straightforward through Juju's clean interface. It will allow easy deployment
-into multiple environments for testing of changes, and supports scaling out for
-enterprise deployments.
+## Get started
+
+You can follow the tutorial [here](https://charmhub.io/discourse-k8s/docs/tutorial).
+
+### Basic operations
+
+The following actions are available for this charm:
+    - anonymize-user: anonymize a user
+    - create-user: create a new user
+    - promote-user: promote a user to admin
+
+You can check out the [full list of actions here](https://charmhub.io/discourse-k8s/actions).
+
+## Integrations
+
+This charm can be integrated with other Juju charms and services:
+
+    - [Redis](https://charmhub.io/redis-k8s): Redis is an open source (BSD licensed), in-memory data structure store, used as a database, cache and message broker.
+    - [Saml](https://charmhub.io/saml-integrator): SAML is an open standard used for authentication.
+    - [Postgresql](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system. It has more than 15 years of active development and a proven architecture that has earned it a strong reputation for reliability, data integrity, and correctness.
+
+    and much more. You can find the full list of integrations [here](https://charmhub.io/discourse-k8s/integrations).
+
+## Learn more
+* [Read more](https://charmhub.io/discourse-k8s) <!--Link to the charm's official documentation-->
+* [Developer documentation](https://docs.discourse.org/) <!--Link to any developer documentation-->
+* [Official webpage](https://www.discourse.org/index) <!--(Optional) Link to official webpage/blog/marketing content-->
+* [Troubleshooting](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) <!--(Optional) Link to a page or section about troubleshooting/FAQ-->
 
 ## Project and community
-
-The Discourse Operator is a member of the Ubuntu family. It's an open source
-project that warmly welcomes community projects, contributions, suggestions,
-fixes and constructive feedback.
-* [Code of conduct](https://ubuntu.com/community/code-of-conduct)
-* [Get support](https://discourse.charmhub.io/)
-* [Join our online chat](https://chat.charmhub.io/charmhub/channels/charm-dev)
-* [Contribute](https://charmhub.io/discourse-k8s/docs/how-to-contribute)
-* [Get started](https://charmhub.io/discourse-k8s/docs/getting-started)
-
-Thinking about using the Discourse Operator for your next project? [Get in touch](https://chat.charmhub.io/charmhub/channels/charm-dev)!
-
----
-
-For further details,
-[see the charm's detailed documentation](https://charmhub.io/discourse-k8s/docs).
+* [Issues](https://github.com/canonical/discourse-k8s-operator/issues) <!--Link to GitHub issues (if applicable)-->
+* [Contributing](https://charmhub.io/discourse-k8s/docs/how-to-contribute) <!--Link to any contribution guides-->
+* [Matrix](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) <!--Link to contact info (if applicable), e.g. Matrix channel-->
