@@ -9,7 +9,7 @@ A juju charm deploying and managing Discourse on Kubernetes. Discourse is the
 100% open source discussion platform. Use it as a mailing list, discussion
 forum or long-form chat room.
 
-Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling, and more.
+Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling and more.
 For Charmed Discourse, this includes:
   - Scaling
   - Integration with SSO
@@ -20,7 +20,7 @@ many different Kubernetes platforms, from [MicroK8s](https://microk8s.io) to
 [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud Kubernetes
 offerings.
 
-For information about how to deploy, integrate, and manage this charm,
+For information about how to deploy, integrate and manage this charm,
 see the Official [Discourse Operator Documentation](https://charmhub.io/discourse-k8s/docs).
 
 ## Get started
@@ -30,9 +30,9 @@ You can follow the tutorial [here](https://charmhub.io/discourse-k8s/docs/tutori
 ### Basic operations
 
 The following actions are available for this charm:
-    - anonymize-user: anonymize a user
-    - create-user: create a new user
-    - promote-user: promote a user to admin
+  - `anonymize-user`: anonymize a user
+  - `create-user`: create a new user
+  - `promote-user`: promote a user to admin
 
 You can check out the [full list of actions here](https://charmhub.io/discourse-k8s/actions).
 
