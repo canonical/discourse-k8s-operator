@@ -40,11 +40,11 @@ You can check out the [full list of actions here](https://charmhub.io/discourse-
 
 This charm can be integrated with other Juju charms and services:
 
-    - [Redis](https://charmhub.io/redis-k8s): Redis is an open source (BSD licensed), in-memory data structure store, used as a database, cache and message broker.
-    - [Saml](https://charmhub.io/saml-integrator): SAML is an open standard used for authentication.
-    - [Postgresql](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system. It has more than 15 years of active development and a proven architecture that has earned it a strong reputation for reliability, data integrity, and correctness.
+  - [Redis](https://charmhub.io/redis-k8s): Redis is an open source (BSD licensed), in-memory data structure store, used as a database, cache and message broker.
+  - [Saml](https://charmhub.io/saml-integrator): SAML is an open standard used for authentication.
+  - [Postgresql](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system.
 
-    and much more. You can find the full list of integrations [here](https://charmhub.io/discourse-k8s/integrations).
+For a full list of integrations, see the [Charmhub documentation](https://charmhub.io/discourse-k8s/integrations).
 
 ## Learn more
 * [Read more](https://charmhub.io/discourse-k8s) <!--Link to the charm's official documentation-->
