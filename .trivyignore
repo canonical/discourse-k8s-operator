@@ -2,6 +2,7 @@
 GHSA-rc23-xxgq-x27g
 # pebble
 CVE-2024-34156
+CVE-2024-45338
 # shlex from ruby test
 GHSA-r7qv-8r2h-pg27
 # squoosh npm package
