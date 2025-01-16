@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 options:
   cors_origin:
@@ -138,3 +138,8 @@ options:
     type: string
     description: "Throttle level - blocks excessive usage by ip. Accepted values: none, permissive, strict."
     default: none
+  sidekiq_max_memory:
+    description: Maximum memory for sidekiq in megabytes. This configuration
+      will set the UNICORN_SIDEKIQ_MAX_RSS environment variable.
+    type: int
+    default: 1000

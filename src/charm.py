@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Charm for Discourse on kubernetes."""
@@ -453,6 +453,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_SMTP_PORT": str(self.config["smtp_port"]),
             "DISCOURSE_SMTP_USER_NAME": self.config["smtp_username"],
             "RAILS_ENV": "production",
+            "UNICORN_SIDEKIQ_MAX_RSS": str(self.config["sidekiq_max_memory"]),
         }
         pod_config.update(self._get_saml_config())
 

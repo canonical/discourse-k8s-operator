@@ -1,4 +1,4 @@
-# Copyright 2024 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Unit tests for Discourse charm."""
@@ -514,6 +514,28 @@ def test_anonymize_user():
 
     harness.run_action("anonymize-user", {"username": username})
     assert expected_exec_call_was_made
+
+
+def test_sidekiq_env_variable():
+    """
+    arrange: given a deployed discourse charm with all the required relations
+    act: trigger the pebble ready event on a leader unit
+    assert: the pebble plan gets updated
+    """
+    harness = helpers.start_harness(run_initial_hooks=False)
+
+    harness.set_can_connect(CONTAINER_NAME, True)
+    harness.container_pebble_ready(CONTAINER_NAME)
+    plan_before_set_config = (
+        harness.get_container_pebble_plan(CONTAINER_NAME).services["discourse"].environment
+    )
+    harness.update_config({"sidekiq_max_memory": 500})
+    plan_after_set_config = (
+        harness.get_container_pebble_plan(CONTAINER_NAME).services["discourse"].environment
+    )
+    assert plan_before_set_config != plan_after_set_config
+    assert "1000" in plan_before_set_config["UNICORN_SIDEKIQ_MAX_RSS"]
+    assert "500" in plan_after_set_config["UNICORN_SIDEKIQ_MAX_RSS"]
 
 
 def test_handle_pebble_ready_event():
