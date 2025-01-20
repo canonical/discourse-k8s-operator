@@ -33,5 +33,5 @@ Please, provide some information about your PR before proceeding.
 - [ ] The documentation is generated using `src-docs`
 - [ ] The documentation for charmhub is updated.
 - [ ] The PR is tagged with appropriate label (`urgent`, `trivial`, `complex`)
-
+- [ ] The changelog is updated.
 <!-- Explanation for any unchecked items above -->
