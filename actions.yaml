@@ -28,3 +28,5 @@ promote-user:
       type: string
       description: User email.
   required: [email]
+upload-s3-assets:
+  description: Upload assets to S3.

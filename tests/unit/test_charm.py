@@ -516,6 +516,69 @@ def test_anonymize_user():
     assert expected_exec_call_was_made
 
 
+def test_upload_s3_assets_action():
+    """
+    arrange: set up discourse
+    act: execute the _on_upload_s3_assets_action method
+    assert: the underlying rake command to upload s3 assets and expire
+        missing assets are executed appropriately.
+    """
+    harness = helpers.start_harness()
+
+    # We catch the exec call that we expect to register it and make sure that the
+    # action calls the correct commands.
+    upload_assets_called = False
+    expire_missing_assets_called = False
+    upload_assets_command = [
+        f"{DISCOURSE_PATH}/bin/bundle",
+        "exec",
+        "rake",
+        "s3:upload_assets",
+    ]
+    expire_missing_assets_command = [
+        f"{DISCOURSE_PATH}/bin/bundle",
+        "exec",
+        "rake",
+        "s3:expire_missing_assets",
+    ]
+
+    def upload_assets_bundle_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal upload_assets_called
+        upload_assets_called = True
+        if (
+            args.environment != harness.charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+            or args.command != upload_assets_command
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    def expire_missing_assets_bundle_handler(args: ops.testing.ExecArgs) -> None:
+        nonlocal expire_missing_assets_called
+        expire_missing_assets_called = True
+        if (
+            args.environment != harness.charm._create_discourse_environment_settings()
+            or args.working_dir != DISCOURSE_PATH
+            or args.user != "_daemon_"
+            or args.command != expire_missing_assets_command
+        ):
+            raise ValueError(f"{args.command} wasn't made with the correct args.")
+
+    harness.handle_exec(
+        SERVICE_NAME,
+        upload_assets_command,
+        handler=upload_assets_bundle_handler,
+    )
+    harness.handle_exec(
+        SERVICE_NAME,
+        expire_missing_assets_command,
+        handler=expire_missing_assets_bundle_handler,
+    )
+    harness.run_action("upload-s3-assets")
+    assert upload_assets_called
+    assert expire_missing_assets_called
+
+
 def test_sidekiq_env_variable():
     """
     arrange: given a deployed discourse charm with all the required relations

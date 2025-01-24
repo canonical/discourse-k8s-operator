@@ -117,6 +117,7 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(self.on.promote_user_action, self._on_promote_user_action)
         self.framework.observe(self.on.create_user_action, self._on_create_user_action)
         self.framework.observe(self.on.anonymize_user_action, self._on_anonymize_user_action)
+        self.framework.observe(self.on.upload_s3_assets_action, self._on_upload_s3_assets_action)
 
         self.redis = RedisRequires(self)
         self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
@@ -899,6 +900,43 @@ class DiscourseCharm(CharmBase):
                 # Parameter validation errors are printed to stdout
                 # Ignore mypy warning when formatting stdout
                 f"Failed to anonymize user with username {username}:{ex.stdout}"  # type: ignore
+            )
+
+    def _on_upload_s3_assets_action(self, event: ActionEvent) -> None:
+        container = self.unit.get_container(CONTAINER_NAME)
+        if not self._are_relations_ready() or not container.can_connect():
+            logger.info("Not ready to upload assets to S3")
+            return
+        env_settings = self._create_discourse_environment_settings()
+        self.model.unit.status = MaintenanceStatus("Uploading assets to S3")
+        logger.info("Uploading assets to S3")
+        try:
+            process = container.exec(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:upload_assets"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user=CONTAINER_APP_USERNAME,
+            )
+            process.wait_output()
+            logger.info("Uploaded assets to S3")
+
+            logger.info("Expiring missing assets")
+            process = container.exec(
+                [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "s3:expire_missing_assets"],
+                environment=env_settings,
+                working_dir=DISCOURSE_PATH,
+                user=CONTAINER_APP_USERNAME,
+            )
+            process.wait_output()
+            logger.info("Expired missing assets")
+
+            event.set_results({"result": "Uploaded assets to S3"})
+        except ExecError as cmd_err:
+            logger.exception("Uploading S3 assets failed with code %d.", cmd_err.exit_code)
+            event.fail(
+                # Parameter validation errors are printed to stdout
+                # Ignore mypy warning when formatting stdout
+                f"Uploading S3 assets failed with {cmd_err}."  # type: ignore
             )
 
     def _start_service(self):
