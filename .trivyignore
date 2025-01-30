@@ -28,6 +28,10 @@ CVE-2024-21538 # cross-spawn
 CVE-2024-29415 # ip
 CVE-2024-45296 # path-to-regexp
 CVE-2024-37890 # ws
+CVE-2024-52798 # libc
 private-key
 # Kernel
 CVE-2024-53103
+# libc
+CVE-2024-56658
+
