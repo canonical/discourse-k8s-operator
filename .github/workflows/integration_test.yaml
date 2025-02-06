@@ -14,4 +14,5 @@ jobs:
       juju-channel: 3.1/stable
       channel: 1.28-strict/stable
       modules: '["test_charm", "test_saml", "test_users", "test_db_migration"]'
-      self-hosted-runner: false
+      self-hosted-runner: true
+      self-hosted-runner-label: "edge"
