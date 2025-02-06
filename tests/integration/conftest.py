@@ -156,8 +156,7 @@ async def app_fixture(
         trust=True,
         config={"profile": "testing"},
     )
-    async with ops_test.fast_forward():
-        await model.wait_for_idle(apps=[postgres_app.name], status="active")
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
 
     redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
     await model.wait_for_idle(apps=[redis_app.name], status="active")
