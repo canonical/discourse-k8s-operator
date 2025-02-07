@@ -34,8 +34,7 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
         trust=True,
         config={"profile": "testing"},
     )
-    async with ops_test.fast_forward():
-        await model.wait_for_idle(apps=[postgres_app.name], status="active")
+    await model.wait_for_idle(apps=[postgres_app.name], status="active")
     await postgres_app.set_config(
         {
             "plugin_hstore_enable": "true",
