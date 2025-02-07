@@ -58,3 +58,4 @@ fixes and constructive feedback.
   1. [Plugins](reference/plugins.md)
 1. [Explanation](explanation)
   1. [Charm architecture](explanation/charm-architecture.md)
+1. [Changelog](changelog.md)
