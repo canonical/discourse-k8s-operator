@@ -98,7 +98,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/canonical-web-and-design/discourse-markdown-note.git
-    source-commit: f4426d5929de067f123659dc690e9438a324817a
+    source-commit: a0d7276360db732c2252507e207ebadd2ffc9fbe
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/markdown-note/
