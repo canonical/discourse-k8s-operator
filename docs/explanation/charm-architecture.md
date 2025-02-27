@@ -21,9 +21,31 @@ This shows there are 2 containers - the one named above, as well as a container 
 
 And if you run `kubectl describe pod discourse-k8s-0`, all the containers will have as Command ```/charm/bin/pebble```. That's because Pebble is responsible for the processes startup as explained above.
 
+## Charm architecture diagram
+
+```mermaid
+C4Component
+title Component diagram for Discourse Charm
+
+Container_Boundary(discourse, "Discourse") {
+  Component(pebble, "Pebble", "", "Pebble starts the Discourse server and app with a special script")
+  Component(unicorn-server, "Unicorn server", "", "Serves the Discourse application")
+  Component(charm, "Discourse App", "", "Discourse application")
+
+  Rel(pebble, unicorn-server, "")
+  Rel(unicorn-server, charm, "")
+}
+```
+
+## High-level overview of a Discourse deployment
+
+Below is a diagram of a basic Discourse deployment. It consists of three charms
+deployed on a Kubernetes cloud: the Discourse charm, the Redis charm, and the
+PostgreSQL charm.
+
 ```mermaid
 C4Container
-title Container diagram for Discourse
+title Container diagram for Discourse deployment
 
 Container_Boundary(c1, "Discourse") {
     System(discourse_charm, "Discourse", "", "Provides sharing a remote session")
@@ -44,6 +66,7 @@ UpdateRelStyle(user, discourse_charm ,$textColor="blue" , $offsetY="-30", $offse
 UpdateRelStyle(discourse_charm, redis_charm, $textColor="blue", $offsetY="-30", $offsetX="-40")
 UpdateRelStyle(discourse_charm, postgresql_charm, $textColor="blue", $offsetX="20")
 ```
+
 
 ## Containers
 
