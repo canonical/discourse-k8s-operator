@@ -28,7 +28,7 @@ C4Component
 title Component diagram for Discourse Charm
 
 Container_Boundary(discourse, "Discourse") {
-  Component(pebble, "Pebble", "", "Pebble starts the Discourse server and app with a special script")
+  Component(pebble, "Pebble", "", "Starts the Discourse server and app")
   Component(unicorn-server, "Unicorn server", "", "Serves the Discourse application")
   Component(charm, "Discourse App", "", "Discourse application")
 
