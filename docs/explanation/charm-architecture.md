@@ -21,6 +21,53 @@ This shows there are 2 containers - the one named above, as well as a container 
 
 And if you run `kubectl describe pod discourse-k8s-0`, all the containers will have as Command ```/charm/bin/pebble```. That's because Pebble is responsible for the processes startup as explained above.
 
+## Charm architecture diagram
+
+```mermaid
+C4Component
+title Component diagram for Discourse Charm
+
+Container_Boundary(discourse, "Discourse") {
+  Component(pebble, "Pebble", "", "Starts the Discourse server and app")
+  Component(unicorn-server, "Unicorn server", "", "Serves the Discourse application")
+  Component(charm, "Discourse App", "", "Discourse application")
+
+  Rel(pebble, unicorn-server, "")
+  Rel(unicorn-server, charm, "")
+}
+```
+
+## High-level overview of a Discourse deployment
+
+Below is a diagram of a basic Discourse deployment. It consists of three charms
+deployed on a Kubernetes cloud: the Discourse charm, the Redis charm, and the
+PostgreSQL charm.
+
+```mermaid
+C4Container
+title Container diagram for Discourse deployment
+
+Container_Boundary(c1, "Discourse") {
+    System(discourse_charm, "Discourse", "", "Provides sharing a remote session")
+ }
+System_Boundary(c2, "Redis") {
+    SystemDb(redis_charm, "Redis", "Charm managing Redis Database.")
+ }
+System_Boundary(c3, "PostgreSQL") {
+    SystemDb(postgresql_charm, "PostgreSQL", "Charm managing PostgreSQL Database.")
+ }
+Person(user, "User", "Discourse User")
+
+Rel(user, discourse_charm, "provides connection")
+BiRel(discourse_charm, redis_charm, "cache storage")
+BiRel(discourse_charm, postgresql_charm, "store information in the database")
+
+UpdateRelStyle(user, discourse_charm ,$textColor="blue" , $offsetY="-30", $offsetX="10")
+UpdateRelStyle(discourse_charm, redis_charm, $textColor="blue", $offsetY="-30", $offsetX="-40")
+UpdateRelStyle(discourse_charm, postgresql_charm, $textColor="blue", $offsetX="20")
+```
+
+
 ## Containers
 
 Configuration files for the containers can be found in [the image directory of the charm repository](https://github.com/canonical/discourse-k8s-operator/tree/main/image).
@@ -31,7 +78,7 @@ Discourse is a Ruby on Rails application deployed on top of the [Unicorn server]
 
 The server is started in HTTP mode (port `3000`) serving all the content. Alongside it there's a standalone process running the [Prometheus Exporter Plugin for Discourse](https://github.com/discourse/discourse-prometheus) (port `9394`).
 
-The workload that this container is running is defined in the [Discourse dockerfile in the charm repository](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse.Dockerfile).
+The workload that this container is running is defined in the [Discourse Rockfile in the charm repository](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse_rock/rockcraft.yaml).
 
 ## OCI images
 
