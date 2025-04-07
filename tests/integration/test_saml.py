@@ -38,7 +38,7 @@ def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     password = "test-discourse-k8s-password"  # nosecue
     saml_helper.register_user(username=username, email=email, password=password)
 
-    task = juju.run(app.name + "/", "create-user", {"email": email})
+    task = juju.run(app.name + "/0", "create-user", {"email": email})
     assert "user" in task.results
 
     host = app.name

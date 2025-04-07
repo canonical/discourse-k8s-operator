@@ -31,7 +31,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
         trust=True,
         config={"profile": "testing"},
     )
-    juju.wait(lambda status: status.apps["postgresl-k8s"].is_active)
+    juju.wait(lambda status: status.apps["postgresql-k8s"].is_active)
     juju.config(
         "postgresql-k8s",
         {
@@ -39,22 +39,22 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
             "plugin_pg_trgm_enable": "true",
         },
     )
-    juju.wait(lambda status: status.apps["postgresl-k8s"].is_active)
-    task = juju.run("postgresl-k8s/0", "get-password", {"username": "operator"})
+    juju.wait(lambda status: status.apps["postgresql-k8s"].is_active)
+    task = juju.run("postgresql-k8s/0", "get-password", {"username": "operator"})
     db_pass = task.results["password"]
     juju.cli(
         "scp",
         "--container",
         "postgresql",
         "./testing_database/testing_database.sql",
-        "postgresl-k8s/0:.",
+        "postgresql-k8s/0:.",
     )
 
     juju.cli(
         "ssh",
         "--container",
         "postgresql",
-        "postgresl-k8s/0",
+        "postgresql-k8s/0",
         "createdb -h localhost -U operator --password discourse",
         stdin=db_pass + "\n",
     )
@@ -63,7 +63,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
         "ssh",
         "--container",
         "postgresql",
-        "postgresl-k8s/0",
+        "postgresql-k8s/0",
         "pg_restore -h localhost -U operator \
               --password -d discourse \
               --no-owner --clean --if-exists ./testing_database.sql",
@@ -77,7 +77,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
         "ssh",
         "--container",
         "postgresql",
-        "postgresl-k8s/0",
+        "postgresql-k8s/0",
         "psql -h localhost -U operator \
               --password -d discourse \
               -c 'SELECT git_version FROM schema_migration_details LIMIT 1;'",
