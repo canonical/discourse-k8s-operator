@@ -73,6 +73,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | 
     """
     if not localstack_address:
         pytest.skip("requires --localstack-address argument")
+        return
 
     s3_conf: Dict = generate_s3_config(localstack_address)
 

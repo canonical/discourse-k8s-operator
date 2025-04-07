@@ -84,6 +84,16 @@ def discourse_address_fixture(app: types.App, juju: jubilant.Juju):
     return f"http://{unit_ip}:3000"
 
 
+def pytest_addoption(parser: pytest.OptionGroup):
+    """Add --keep-models command-line argument."""
+    parser.addoption(
+        "--keep-models",
+        action="store_true",
+        default=False,
+        help="keep temporarily-created models",
+    )
+
+
 @pytest.fixture(scope="module")
 def juju(
     request: pytest.FixtureRequest, pytestconfig: pytest.Config
@@ -214,7 +224,6 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         trust=True,
     )
 
-    # TODO: should this be jubilant.all_units_idle?
     def all_units_idle(status: jubilant.Status) -> bool:
         for app in status.apps.values():
             for unit in app.units.values():
