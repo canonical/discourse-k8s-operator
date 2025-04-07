@@ -5,17 +5,13 @@
 
 import logging
 import re
-from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Dict
 
+import jubilant
 import pytest
 import requests
 from boto3 import client
 from botocore.config import Config
-from juju.application import Application
-from ops.model import ActiveStatus
-from pytest_operator.plugin import Model, OpsTest
 
 from charm import PROMETHEUS_PORT
 
@@ -24,49 +20,39 @@ from . import types
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_active(app: Application):
+def test_active(app: types.App, juju: jubilant.Juju):
     """Check that the charm is active.
     Assume that the charm has already been built and is running.
     """
-    # Application actually does have units
-    # Mypy has difficulty with ActiveStatus
-    assert app.units[0].workload_status == ActiveStatus.name  # type: ignore
+    status = juju.status()
+    assert status.apps[app.name].units[app.name + "/0"].is_active
 
 
-@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_prom_exporter_is_up(app: Application):
+def test_prom_exporter_is_up(app: types.App, juju: jubilant.Juju):
     """
     arrange: given charm in its initial state
     act: when the metrics endpoint is scraped
     assert: the response is 200 (HTTP OK)
     """
-    # Application actually does have units
-    discourse_unit = app.units[0]  # type: ignore
-    assert discourse_unit
+    status = juju.status()
+    assert app.name + "/0" in status.apps[app.name].units
     cmd = f"/usr/bin/curl -m 30 http://localhost:{PROMETHEUS_PORT}/metrics"
-    action = await discourse_unit.run(cmd, timeout=60)
-    await action.wait()
-    code = action.results.get("return-code")
-    stdout = action.results.get("stdout")
-    stderr = action.results.get("stderr")
-    assert code == 0, f"{cmd} failed ({code}): {stderr or stdout}"
+    juju.exec(cmd, unit=app.name + "/0", wait=60)
 
 
-@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_setup_discourse(
+@pytest.mark.usefixtures("app")
+def test_setup_discourse(
     app_config: Dict[str, str],
     requests_timeout: float,
     discourse_address: str,
 ):
     """Check discourse servers the registration page."""
-
     session = requests.session()
     logger.info("Getting registration page")
-    # Send request to bootstrap page and set Host header to app_name (which the application
+    # Send request to bootstrap page and set Host header to app name (which the application
     # expects)
     response = session.get(
         f"{discourse_address}/finish-installation/register",
@@ -78,14 +64,15 @@ async def test_setup_discourse(
     assert response.status_code == 200
 
 
-@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_s3_conf(app: Application, localstack_address: str, model: Model):
+def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | None):
     """Check that the bootstrap page is reachable
     with the charm configured with an S3 target
     Assume that the charm has already been built and is running.
     This test requires a localstack deployed
     """
+    if not localstack_address:
+        pytest.skip("requires --localstack-address argument")
 
     s3_conf: Dict = generate_s3_config(localstack_address)
 
@@ -93,18 +80,16 @@ async def test_s3_conf(app: Application, localstack_address: str, model: Model):
 
     # Discourse S3 client uses subdomain bucket routing,
     # I need to inject subdomain in the DNS (not needed if everything runs localhost)
-    # Application actually does have units
-    action = await app.units[0].run(  # type: ignore
-        f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.s3.{s3_conf["domain"]}" >> /etc/hosts'
+    juju.exec(
+        f'echo "{s3_conf["ip_address"]}  {s3_conf["bucket"]}.s3.{s3_conf["domain"]}" >> /etc/hosts',
+        unit=app.name + "/0",
     )
-    await action.wait()
-    assert action.results.get("return-code") == 0, "Can't inject S3 IP in Discourse hosts"
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
-    # Application does actually have attribute set_config
-    await app.set_config(  # type: ignore
+    juju.config(
+        app.name,
         {
-            "s3_enabled": "true",
+            "s3_enabled": True,
             # The final URL is computed by discourse, we need to pass the main URL
             "s3_endpoint": s3_conf["endpoint"],
             "s3_bucket": s3_conf["bucket"],
@@ -112,9 +97,9 @@ async def test_s3_conf(app: Application, localstack_address: str, model: Model):
             "s3_access_key_id": s3_conf["credentials"]["access-key"],
             # Default localstack region
             "s3_region": s3_conf["region"],
-        }
+        },
     )
-    await model.wait_for_idle(status="active")
+    juju.wait(jubilant.all_active)
 
     logger.info("Discourse config updated, checking bucket content")
 
@@ -150,9 +135,10 @@ async def test_s3_conf(app: Application, localstack_address: str, model: Model):
     assert object_count > 0
 
     # Cleanup
-    await app.set_config(  # type: ignore
+    juju.config(
+        app.name,
         {
-            "s3_enabled": "false",
+            "s3_enabled": False,
             # The final URL is computed by discourse, we need to pass the main URL
             "s3_endpoint": "",
             "s3_bucket": "",
@@ -160,9 +146,9 @@ async def test_s3_conf(app: Application, localstack_address: str, model: Model):
             "s3_access_key_id": "",
             # Default localstack region
             "s3_region": "",
-        }
+        },
     )
-    await model.wait_for_idle(status="active")
+    juju.wait(jubilant.all_active)
 
 
 def generate_s3_config(localstack_address: str) -> Dict:
@@ -179,8 +165,8 @@ def generate_s3_config(localstack_address: str) -> Dict:
     }
 
 
-@pytest.mark.asyncio
-async def test_create_category(
+@pytest.mark.usefixtures("app")
+def test_create_category(
     discourse_address: str,
     admin_credentials: types.Credentials,
     admin_api_key: str,
@@ -209,10 +195,8 @@ async def test_create_category(
     assert category["color"] == category_info["color"]
 
 
-@pytest.mark.asyncio
-async def test_serve_compiled_assets(
-    discourse_address: str,
-):
+@pytest.mark.usefixtures("app")
+def test_serve_compiled_assets(discourse_address: str):
     """
     arrange: A discourse application
     act: Access a page that does not exist
@@ -227,11 +211,10 @@ async def test_serve_compiled_assets(
     assert asset_matches, "Compiled asset not found."
 
 
-@pytest.mark.asyncio
-async def test_relations(
-    app: Application,
+def test_relations(
+    app: types.App,
+    juju: jubilant.Juju,
     discourse_address: str,
-    model: Model,
     requests_timeout: int,
 ):
     """
@@ -245,116 +228,34 @@ async def test_relations(
         assert response.status_code == 200
 
     # The charm should be active when starting this test
-    await model.wait_for_idle(status="active")
+    juju.wait(jubilant.all_active)
     test_discourse_srv_status_ok()
 
     # Removing the relation to postgresql should disable the charm
-    await model.applications[app.name].remove_relation("database", "postgresql-k8s:database")
-    await model.wait_for_idle(apps=[app.name], status="waiting")
+    juju.remove_relation(app.name, "postgresql-k8s:database")
+    juju.wait(lambda status: status.apps[app.name].is_waiting)
     with pytest.raises(requests.ConnectionError):
         test_discourse_srv_status_ok()
 
-    await model.add_relation(app.name, "postgresql-k8s:database")
-    await model.wait_for_idle(status="active")
+    juju.integrate(app.name, "postgresql-k8s:database")
+    juju.wait(jubilant.all_active)
     test_discourse_srv_status_ok()
 
     # Removing the relation to redis should disable the charm
-    await model.applications[app.name].remove_relation("redis", "redis-k8s")
-    await model.wait_for_idle(apps=[app.name], status="waiting")
+    juju.remove_relation(app.name, "redis-k8s")
+    juju.wait(lambda status: status.apps[app.name].is_waiting)
     with pytest.raises(requests.ConnectionError):
         test_discourse_srv_status_ok()
 
-    await model.add_relation(app.name, "redis-k8s")
-    await model.wait_for_idle(status="active")
+    juju.integrate(app.name, "redis-k8s")
+    juju.wait(jubilant.all_active)
     test_discourse_srv_status_ok()
 
     # Removing the relation to ingress should keep the charm active
-    await model.applications[app.name].remove_relation("nginx-route", "nginx-ingress-integrator")
-    await model.wait_for_idle(apps=[app.name], status="active")
+    juju.remove_relation(app.name, "nginx-ingress-integrator")
+    juju.wait(lambda status: status.apps[app.name].is_active)
     test_discourse_srv_status_ok()
 
-    await model.add_relation(app.name, "nginx-ingress-integrator")
-    await model.wait_for_idle(status="active")
+    juju.integrate(app.name, "nginx-ingress-integrator")
+    juju.wait(jubilant.all_active)
     test_discourse_srv_status_ok()
-
-
-@pytest.mark.skip(reason="Frequent timeouts")
-async def test_upgrade(
-    app: Application,
-    model: Model,
-    pytestconfig: Config,
-    ops_test: OpsTest,
-):
-    """
-    arrange: A discourse application with three units
-    act: Refresh the application (upgrade)
-    assert: The application upgrades and over all the upgrade, the application replies
-      correctly through the ingress.
-    """
-
-    await app.scale(3)
-    await model.wait_for_idle(status="active")
-
-    resources = {
-        "discourse-image": pytestconfig.getoption("--discourse-image"),
-    }
-
-    if charm_file := pytestconfig.getoption("--charm-file"):
-        charm_path: str | Path | None = f"./{charm_file}"
-    else:
-        charm_path = await ops_test.build_charm(".")
-
-    host = app.name
-
-    def check_alive():
-        response = requests.get("http://127.0.0.1/srv/status", headers={"Host": host}, timeout=2)
-        logger.info("check_alive response: %s", response.content)
-        assert response.status_code == 200
-
-    check_alive()
-    await app.refresh(path=charm_path, resources=resources)
-
-    def upgrade_finished(idle_seconds=15):
-        """Check that the upgrade finishes correctly (active)
-
-        This function checks continuously during the upgrade (in every iteration
-        every 0.5 seconds) that Discourse is replying correctly to the /srv/status endpoint.
-
-        The upgrade is considered done when the units have been idle for
-        `idle_seconds` and all the units workloads and the app are active.
-        """
-        idle_start = None
-
-        def _upgrade_finished():
-            nonlocal idle_start
-            check_alive()
-
-            idle_period = timedelta(seconds=idle_seconds)
-            is_idle = all(unit.agent_status == "idle" for unit in app.units)
-
-            now = datetime.now()
-
-            if not is_idle:
-                idle_start = None
-                return False
-
-            if not idle_start:
-                idle_start = now
-                return False
-
-            if now - idle_start < idle_period:
-                # Not idle for long enough
-                return False
-
-            is_active = app.status == "active" and all(
-                unit.workload_status == "active" for unit in app.units
-            )
-            if is_active:
-                return True
-
-            return False
-
-        return _upgrade_finished
-
-    await model.block_until(upgrade_finished(), timeout=10 * 60)
-    check_alive()
