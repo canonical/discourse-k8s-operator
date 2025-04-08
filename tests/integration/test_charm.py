@@ -224,39 +224,45 @@ def test_relations(
     assert: It should have the correct status
     """
 
-    def test_discourse_srv_status_ok():
-        response = requests.get(f"{discourse_address}/srv/status", timeout=requests_timeout)
-        assert response.status_code == 200
+    def srv_status():
+        return requests.get(f"{discourse_address}/srv/status", timeout=requests_timeout)
+
+    def srv_status_raises_connection_error():
+        try:
+            srv_status()
+            return False
+        except requests.ConnectionError:
+            return True
 
     # The charm should be active when starting this test
     juju.wait(jubilant.all_active)
-    test_discourse_srv_status_ok()
+    assert srv_status().status_code == 200
 
     # Removing the relation to postgresql should disable the charm
     juju.remove_relation(app.name, "postgresql-k8s:database")
-    juju.wait(lambda status: status.apps[app.name].is_waiting)
-    with pytest.raises(requests.ConnectionError):
-        test_discourse_srv_status_ok()
+    juju.wait(
+        lambda status: status.apps[app.name].is_waiting and srv_status_raises_connection_error()
+    )
 
     juju.integrate(app.name, "postgresql-k8s:database")
     juju.wait(jubilant.all_active)
-    test_discourse_srv_status_ok()
+    assert srv_status().status_code == 200
 
     # Removing the relation to redis should disable the charm
     juju.remove_relation(app.name, "redis-k8s")
-    juju.wait(lambda status: status.apps[app.name].is_waiting)
-    with pytest.raises(requests.ConnectionError):
-        test_discourse_srv_status_ok()
+    juju.wait(
+        lambda status: status.apps[app.name].is_waiting and srv_status_raises_connection_error()
+    )
 
     juju.integrate(app.name, "redis-k8s")
     juju.wait(jubilant.all_active)
-    test_discourse_srv_status_ok()
+    assert srv_status().status_code == 200
 
     # Removing the relation to ingress should keep the charm active
     juju.remove_relation(app.name, "nginx-ingress-integrator")
     juju.wait(lambda status: status.apps[app.name].is_active)
-    test_discourse_srv_status_ok()
+    assert srv_status().status_code == 200
 
     juju.integrate(app.name, "nginx-ingress-integrator")
     juju.wait(jubilant.all_active)
-    test_discourse_srv_status_ok()
+    assert srv_status().status_code == 200
