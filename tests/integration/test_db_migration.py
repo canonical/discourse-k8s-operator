@@ -90,7 +90,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
     juju.wait(lambda status: status.apps["redis-k8s"].is_active)
 
-    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True)
+    juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
 
     juju.deploy(
         charm=charm_file,
