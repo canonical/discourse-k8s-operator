@@ -84,33 +84,34 @@ def discourse_address_fixture(app: types.App, juju: jubilant.Juju):
     return f"http://{unit_ip}:3000"
 
 
-def pytest_addoption(parser: pytest.OptionGroup):
-    """Add --keep-models command-line argument."""
-    parser.addoption(
-        "--keep-models",
-        action="store_true",
-        default=False,
-        help="keep temporarily-created models",
-    )
-
-
 @pytest.fixture(scope="module")
-def juju(
-    request: pytest.FixtureRequest, pytestconfig: pytest.Config
-) -> Generator[jubilant.Juju, None, None]:
+def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]:
     """Pytest fixture that wraps :meth:`jubilant.with_model`."""
-    use_existing = pytestconfig.getoption("--use-existing", default=False)
+
+    def show_debug_log(juju: jubilant.Juju):
+        if request.session.testsfailed:
+            log = juju.debug_log(limit=1000)
+            print(log, end="")
+
+    use_existing = request.config.getoption("--use-existing", default=False)
     if use_existing:
-        yield jubilant.Juju()
+        juju = jubilant.Juju()
+        yield juju
+        show_debug_log(juju)
+        return
+
+    model = request.config.getoption("--model")
+    if model:
+        juju = jubilant.Juju(model=model)
+        yield juju
+        show_debug_log(juju)
         return
 
     keep_models = cast(bool, request.config.getoption("--keep-models"))
     with jubilant.temp_model(keep=keep_models) as juju:
         juju.wait_timeout = 10 * 60
         yield juju
-        if request.session.testsfailed:
-            log = juju.debug_log(limit=1000)
-            print(log, end="")
+        show_debug_log(juju)
 
 
 @pytest.fixture(scope="session")
