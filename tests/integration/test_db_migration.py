@@ -31,7 +31,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
         trust=True,
         config={"profile": "testing"},
     )
-    juju.wait(lambda status: status.apps["postgresql-k8s"].is_active)
+    juju.wait(lambda status: status.apps["postgresql-k8s"].is_active, timeout=20*60)
     juju.config(
         "postgresql-k8s",
         {

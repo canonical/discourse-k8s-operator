@@ -158,7 +158,7 @@ def app_fixture(
         config={"profile": "testing"},
     )
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
-    juju.wait(lambda status: jubilant.all_active(status, ["postgresql-k8s", "redis-k8s"]))
+    juju.wait(lambda status: jubilant.all_active(status, ["postgresql-k8s", "redis-k8s"]), timeout=20*60)
 
     juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
 
