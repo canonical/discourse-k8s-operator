@@ -4,11 +4,11 @@ The following guides cover key processes and common tasks for managing
 and using the Discourse charm.
 
 ## Initial setup
-* [Access the Rails Console]
+* [Configure the hostname]
 * [Configure the container]
 
 ## Basic operations
-* [Configure the hostname]
+* [Access the Rails Console]
 * [Configure S3]
 * [Configure SMTP]
 

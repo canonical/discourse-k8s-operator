@@ -41,9 +41,9 @@ fixes and constructive feedback.
 
 1. [Tutorial](tutorial.md)
 1. [How To](how-to)
-  1. [Access the Rails console](how-to/access--the-rails-console.md)
-  1. [Configure the container](how-to/configure-container.md)
   1. [Configure the hostname](how-to/configure-hostname.md)
+  1. [Configure the container](how-to/configure-container.md)
+  1. [Access the Rails console](how-to/access--the-rails-console.md)
   1. [Configure S3](how-to/configure-s3.md)
   1. [Configure SMTP](how-to/configure-smtp.md)
   1. [Configure SAML](how-to/configure-saml.md)
