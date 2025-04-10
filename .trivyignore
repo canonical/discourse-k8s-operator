@@ -17,11 +17,15 @@ GHSA-cvp8-5r8g-fhvq
 CVE-2024-49761
 CVE-2024-45409
 CVE-2024-47220
+GHSA-mrxw-mxhj-p664
+GHSA-hw46-3hmr-x9xv
+CVE-2025-27610
 # Python setuptools
 CVE-2024-6345
 # Nodejs
 CVE-2021-23424 # ansi-html
 CVE-2024-39338 # axios
+CVE-2025-27152 # axios
 CVE-2024-45590 # body-parser
 CVE-2024-4068 # braces
 CVE-2024-21538 # cross-spawn
@@ -29,6 +33,7 @@ CVE-2024-29415 # ip
 CVE-2024-45296 # path-to-regexp
 CVE-2024-37890 # ws
 CVE-2024-52798 # libc
+CVE-2024-12905 # tar-fs
 private-key
 # Kernel
 CVE-2024-53103
@@ -39,3 +44,5 @@ CVE-2024-35864
 CVE-2022-0995
 CVE-2024-26928
 CVE-2024-57798
+CVE-2023-52664
+CVE-2024-53168
