@@ -1,5 +1,13 @@
 # Changelog
 
+### 2025-04-09
+
+- Add how-to landing page.
+
+### 2025-02-26
+
+- Add charm architecture diagram.
+
 ### 2025-01-20
 
 - Add changelog for tracking user-relevant changes.
