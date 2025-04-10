@@ -20,7 +20,6 @@ from . import types
 logger = logging.getLogger(__name__)
 
 
-# TODO: figure out a good way to handle abort_on_fail (a pytest-operator feature)
 @pytest.mark.abort_on_fail
 def test_active(app: types.App, juju: jubilant.Juju):
     """Check that the charm is active.

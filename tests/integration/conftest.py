@@ -28,6 +28,38 @@ ENABLED_PLUGINS = [
 ]
 
 
+def pytest_addoption(parser):
+    """Adds parser switches."""
+    parser.addoption("--discourse-image", action="store")
+    parser.addoption("--localstack-address", action="store")
+    parser.addoption("--saml-email", action="store")
+    parser.addoption("--saml-password", action="store")
+    parser.addoption("--charm-file", action="store", default=None)
+    parser.addoption(
+        "--use-existing",
+        action="store_true",
+        default=False,
+        help="This will skip deployment of the charms. Useful for local testing.",
+    )
+    parser.addoption(
+        "--keep-models",
+        action="store_true",
+        default=False,
+        help="keep temporarily-created models",
+    )
+    parser.addoption(
+        "--model",
+        action="store",
+        help="Juju model to use; if not provided, a new model "
+        "will be created for each test which requires one",
+    )
+
+
+def pytest_configure(config):
+    """Adds config options."""
+    config.addinivalue_line("markers", "abort_on_fail")
+
+
 @pytest.fixture(scope="session", name="metadata")
 def fixture_metadata():
     """Provides charm metadata."""
@@ -158,7 +190,10 @@ def app_fixture(
         config={"profile": "testing"},
     )
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
-    juju.wait(lambda status: jubilant.all_active(status, ["postgresql-k8s", "redis-k8s"]), timeout=20*60)
+    juju.wait(
+        lambda status: jubilant.all_active(status, ["postgresql-k8s", "redis-k8s"]),
+        timeout=20 * 60,
+    )
 
     juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
 
@@ -262,12 +297,8 @@ def admin_credentials_fixture(juju: jubilant.Juju, app: types.App) -> types.Cred
 
 
 @pytest.fixture(scope="module", name="admin_api_key")
-def admin_api_key_fixture(
-    app: types.App, admin_credentials: types.Credentials, discourse_address: str
-) -> str:
+def admin_api_key_fixture(admin_credentials: types.Credentials, discourse_address: str) -> str:
     """Admin user API key"""
-    _ = app  # fixture required for side effect
-
     with requests.session() as session:
         # Get CSRF token
         response = session.get(
@@ -312,3 +343,25 @@ def admin_api_key_fixture(
     data = response.json()
     assert data["key"]["key"], data
     return data["key"]["key"]
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Set rep_* attribute."""
+    _ = call  # unused argument
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, "rep_" + rep.when, rep)
+
+
+@pytest.fixture(autouse=True)
+def abort_on_fail(request: pytest.FixtureRequest):
+    """Fixture which aborts other tests in module after first fails."""
+    abort_on_fail = request.node.get_closest_marker("abort_on_fail")
+    if abort_on_fail and getattr(request.module, "__aborted__", False):
+        pytest.xfail("abort_on_fail")
+
+    _ = yield
+
+    if abort_on_fail and request.node.rep_call.failed:
+        request.module.__aborted__ = True
