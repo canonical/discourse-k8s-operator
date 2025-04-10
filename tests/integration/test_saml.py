@@ -7,21 +7,21 @@ import logging
 import socket
 import unittest.mock
 
+import jubilant
 import pytest
 import requests
 import urllib3.exceptions
-from juju.application import Application  # pylint: disable=import-error
+
+from . import types
 
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-@pytest.mark.usefixtures("setup_saml_config")
-async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
-    app: Application,
+def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
+    juju: jubilant.Juju,
+    app: types.App,
     requests_timeout: int,
-    run_action,
     setup_saml_config,
 ):
     """
@@ -38,8 +38,8 @@ async def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
     password = "test-discourse-k8s-password"  # nosecue
     saml_helper.register_user(username=username, email=email, password=password)
 
-    action_result = await run_action(app.name, "create-user", email=email)
-    assert "user" in action_result
+    task = juju.run(app.name + "/0", "create-user", {"email": email})
+    assert "user" in task.results
 
     host = app.name
     original_getaddrinfo = socket.getaddrinfo
