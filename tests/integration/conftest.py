@@ -5,7 +5,7 @@
 import logging
 import pathlib
 import secrets
-import subprocess
+import subprocess  # nosec B404
 from collections.abc import Generator
 from typing import Any, Dict, cast
 
@@ -125,7 +125,9 @@ def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
         return
 
     try:
-        subprocess.run(["charmcraft", "pack"], check=True, capture_output=True, text=True)
+        subprocess.run(
+            ["charmcraft", "pack"], check=True, capture_output=True, text=True
+        )  # nosec B603, B607
     except subprocess.CalledProcessError as exc:
         raise OSError(f"Error packing charm: {exc}; Stderr:\n{exc.stderr}") from None
 
