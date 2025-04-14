@@ -5,6 +5,7 @@
 import logging
 import pathlib
 import secrets
+import subprocess
 from collections.abc import Generator
 from typing import Any, Dict, cast
 
@@ -112,15 +113,21 @@ def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]
         juju.wait_timeout = 10 * 60
         yield juju
         show_debug_log(juju)
+        return
 
 
 @pytest.fixture(scope="session")
 def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
-    """Pytest fixture that returns the filename of the packed charm, or --charm-file is set."""
+    """Pytest fixture that packs the charm and returns the filename, or --charm-file if set."""
     charm_file = pytestconfig.getoption("--charm-file")
     if charm_file:
         yield charm_file
         return
+
+    try:
+        subprocess.run(["charmcraft", "pack"], check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as exc:
+        raise OSError(f"Error packing charm: {exc}; Stderr:\n{exc.stderr}") from None
 
     app_name = metadata["name"]
     charm_path = pathlib.Path(__file__).parent.parent.parent
@@ -315,7 +322,7 @@ def admin_api_key_fixture(admin_credentials: types.Credentials, discourse_addres
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    """Set rep_* attribute."""
+    """Pytest hook wrapper to set the test's rep_* attribute for abort_on_fail."""
     _ = call  # unused argument
     outcome = yield
     rep = outcome.get_result()
