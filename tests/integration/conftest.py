@@ -29,14 +29,14 @@ ENABLED_PLUGINS = [
 ]
 
 
-@pytest.fixture(scope="session", name="metadata")
-def fixture_metadata():
+@pytest.fixture(scope="session")
+def metadata():
     """Provides charm metadata."""
     yield yaml.safe_load(pathlib.Path("./metadata.yaml").read_text(encoding="UTF-8"))
 
 
-@pytest.fixture(scope="session", name="app_config")
-def fixture_app_config():
+@pytest.fixture(scope="session")
+def app_config():
     """Provides app config."""
     yield {
         "developer_emails": "noreply@canonical.com",
@@ -342,4 +342,3 @@ def abort_on_fail(request: pytest.FixtureRequest):
 
     if abort_on_fail and request.node.rep_call.failed:
         request.module.__aborted__ = True
-
