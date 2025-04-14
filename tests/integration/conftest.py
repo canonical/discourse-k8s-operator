@@ -342,3 +342,4 @@ def abort_on_fail(request: pytest.FixtureRequest):
 
     if abort_on_fail and request.node.rep_call.failed:
         request.module.__aborted__ = True
+
