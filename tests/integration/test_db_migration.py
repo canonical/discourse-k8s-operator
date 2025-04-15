@@ -23,38 +23,39 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
     with a patch but this patch only works for Discourse v3.2.0 and we might
     need to create a new patch for the new version of Discourse.
     """
+    pg_app_name = "postgresql-k8s"
     juju.deploy(
-        "postgresql-k8s",
+        pg_app_name,
         channel="14/stable",
         base="ubuntu@22.04",
         revision=300,
         trust=True,
         config={"profile": "testing"},
     )
-    juju.wait(lambda status: status.apps["postgresql-k8s"].is_active, timeout=20 * 60)
+    juju.wait(lambda status: status.apps[pg_app_name].is_active, timeout=20 * 60)
     juju.config(
-        "postgresql-k8s",
+        pg_app_name,
         {
             "plugin_hstore_enable": "true",
             "plugin_pg_trgm_enable": "true",
         },
     )
-    juju.wait(lambda status: status.apps["postgresql-k8s"].is_active)
-    task = juju.run("postgresql-k8s/0", "get-password", {"username": "operator"})
+    juju.wait(lambda status: status.apps[pg_app_name].is_active)
+    task = juju.run(pg_app_name + "/0", "get-password", {"username": "operator"})
     db_pass = task.results["password"]
     juju.cli(
         "scp",
         "--container",
         "postgresql",
         "./testing_database/testing_database.sql",
-        "postgresql-k8s/0:.",
+        pg_app_name + "/0:.",
     )
 
     juju.cli(
         "ssh",
         "--container",
         "postgresql",
-        "postgresql-k8s/0",
+        pg_app_name + "/0",
         "createdb -h localhost -U operator --password discourse",
         stdin=db_pass + "\n",
     )
@@ -63,7 +64,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
         "ssh",
         "--container",
         "postgresql",
-        "postgresql-k8s/0",
+        pg_app_name + "/0",
         "pg_restore -h localhost -U operator \
               --password -d discourse \
               --no-owner --clean --if-exists ./testing_database.sql",
@@ -77,7 +78,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
         "ssh",
         "--container",
         "postgresql",
-        "postgresql-k8s/0",
+        pg_app_name + "/0",
         "psql -h localhost -U operator \
               --password -d discourse \
               -c 'SELECT git_version FROM schema_migration_details LIMIT 1;'",
@@ -92,18 +93,19 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
 
     juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
 
+    discourse_app_name = "discourse-k8s"
     juju.deploy(
         charm=charm_file,
-        app="discourse-k8s",
+        app=discourse_app_name,
         resources={"discourse-image": pytestconfig.getoption("--discourse-image")},
         base="ubuntu@20.04",
     )
-    juju.wait(lambda status: status.apps["discourse-k8s"].is_waiting)
+    juju.wait(lambda status: status.apps[discourse_app_name].is_waiting)
 
-    juju.integrate("discourse-k8s", "postgresql-k8s:database")
-    juju.integrate("discourse-k8s", "redis-k8s")
-    juju.integrate("discourse-k8s", "nginx-ingress-integrator")
+    juju.integrate(discourse_app_name, pg_app_name + ":database")
+    juju.integrate(discourse_app_name, "redis-k8s")
+    juju.integrate(discourse_app_name, "nginx-ingress-integrator")
     juju.wait(
-        lambda status: status.apps["discourse-k8s"].is_active,
-        error=lambda status: status.apps["discourse-k8s"].is_error,
+        lambda status: status.apps[discourse_app_name].is_active,
+        error=lambda status: status.apps[discourse_app_name].is_error,
     )

@@ -15,7 +15,7 @@ from botocore.config import Config
 
 from charm import PROMETHEUS_PORT
 
-from . import types
+from . import helpers, types
 
 logger = logging.getLogger(__name__)
 
@@ -266,3 +266,44 @@ def test_relations(
     juju.integrate(app.name, "nginx-ingress-integrator")
     juju.wait(jubilant.all_active)
     assert srv_status().status_code == 200
+
+
+@pytest.mark.skip(reason="Frequent timeouts")
+def test_upgrade(
+    app: types.App,
+    juju: jubilant.Juju,
+    pytestconfig: pytest.Config,
+    charm_file: str,
+):
+    """
+    arrange: A discourse application with three units
+    act: Refresh the application (upgrade)
+    assert: The application upgrades and over all the upgrade, the application replies
+      correctly through the ingress.
+    """
+
+    juju.add_unit(app.name, num_units=2)
+    juju.wait(jubilant.all_active)
+
+    resources = {
+        "discourse-image": pytestconfig.getoption("--discourse-image"),
+    }
+
+    host = app.name
+
+    def srv_status():
+        response = requests.get("http://127.0.0.1/srv/status", headers={"Host": host}, timeout=2)
+        logger.info("check_alive response: %s", response.content)
+        return response
+
+    assert srv_status().status_code == 200
+    juju.refresh(app.name, path=charm_file, resources=resources)
+
+    juju.wait(
+        lambda status: (
+            srv_status().status_code == 200
+            and helpers.all_units_idle(status, [app.name])
+            and jubilant.all_active(status, [app.name])
+        ),
+        successes=15,
+    )
