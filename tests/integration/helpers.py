@@ -1,3 +1,5 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
 """Various helper functions for use in integration tests."""
 
 from collections.abc import Iterable
