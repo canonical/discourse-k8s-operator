@@ -5,45 +5,34 @@
 
 import logging
 
+import jubilant
 import pytest
 import requests
-from juju.action import Action
-from juju.application import Application
-from juju.unit import Unit
+
+from . import types
 
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.asyncio
-async def test_create_user(
-    app: Application,
-):
+def test_create_user(juju: jubilant.Juju, app: types.App):
     """
     arrange: A discourse application
     act: Create a user
     assert: User is created, and re-creating the same user should fail
     """
-
-    await app.model.wait_for_idle(status="active")
-    discourse_unit: Unit = app.units[0]
+    juju.wait(jubilant.all_active)
 
     email = "test-user@test.internal"
 
-    action: Action = await discourse_unit.run_action("create-user", email=email)
-    await action.wait()
-    assert action.results["user"] == email
+    task = juju.run(app.name + "/0", "create-user", {"email": email})
+    assert task.results["user"] == email
 
     # Re-creating the same user should fail, as the user already exists
-    break_action: Action = await discourse_unit.run_action("create-user", email=email)
-    await break_action.wait()
-    assert break_action.status == "failed"
+    with pytest.raises(jubilant.TaskError):
+        juju.run(app.name + "/0", "create-user", {"email": email})
 
 
-@pytest.mark.asyncio
-async def test_promote_user(
-    app: Application,
-    discourse_address: str,
-):
+def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: str):
     """
     arrange: A discourse application
     act: Promote a user to admin
@@ -76,10 +65,8 @@ async def test_promote_user(
         csrf = data["csrf"]
 
         email = "test-promote-user@test.internal"
-        discourse_unit: Unit = app.units[0]
-        create_action: Action = await discourse_unit.run_action("create-user", email=email)
-        await create_action.wait()
-        assert create_action.results["user"] == email
+        task = juju.run(app.name + "/0", "create-user", {"email": email})
+        assert task.results["user"] == email
 
         response = session.post(
             f"{discourse_address}/session",
@@ -90,7 +77,7 @@ async def test_promote_user(
             },
             data={
                 "login": email,
-                "password": create_action.results["password"],
+                "password": task.results["password"],
                 "second_factor_method": "1",
                 "timezone": "Asia/Hong_Kong",
             },
@@ -101,7 +88,5 @@ async def test_promote_user(
 
         assert not get_api_key(csrf), "This should fail as the user is not promoted"
 
-        promote_action: Action = await discourse_unit.run_action("promote-user", email=email)
-        await promote_action.wait()
-
+        juju.run(app.name + "/0", "promote-user", {"email": email})
         assert get_api_key(csrf), "This should succeed as the user is promoted"

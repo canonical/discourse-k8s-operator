@@ -6,6 +6,12 @@
 from typing import NamedTuple
 
 
+class App(NamedTuple):
+    """Holds deployed application information for app_fixture."""
+
+    name: str
+
+
 class Credentials(NamedTuple):
     """Credentials to login to an application.
     Attrs:
