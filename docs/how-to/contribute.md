@@ -94,7 +94,7 @@ juju add-model discourse-dev
 # Enable DEBUG logging
 juju model-config logging-config="<root>=INFO;unit=DEBUG"
 # Deploy the charm (assuming you're on amd64)
-juju deploy ./discourse-k8s_ubuntu-22.04-amd64.charm \
+juju deploy ./discourse-k8s_ubuntu-20.04-amd64.charm \
   --resource discourse-image=localhost:32000/discourse:latest \
 ```
 
