@@ -2,15 +2,13 @@
 # See LICENSE file for licensing details.
 """Various helper functions for use in integration tests."""
 
-from collections.abc import Iterable
-
 import jubilant
 
 
-def all_units_idle(status: jubilant.Status, apps: Iterable[str] | None = None) -> bool:
+def all_units_idle(status: jubilant.Status, *apps: str) -> bool:
     """Report whether all unit agents in *status* (or given *apps*) are in "idle" status."""
-    if apps is None:
-        apps = status.apps.keys()
+    if not apps:
+        apps = tuple(status.apps.keys())
 
     for app in apps:
         app_info = status.apps.get(app)

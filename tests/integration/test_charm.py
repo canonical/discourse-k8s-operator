@@ -302,8 +302,8 @@ def test_upgrade(
     juju.wait(
         lambda status: (
             srv_status().status_code == 200
-            and helpers.all_units_idle(status, [app.name])
-            and jubilant.all_active(status, [app.name])
+            and helpers.all_units_idle(status, app.name)
+            and jubilant.all_active(status, app.name)
         ),
         successes=15,
     )

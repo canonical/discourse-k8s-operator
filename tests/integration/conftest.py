@@ -168,7 +168,7 @@ def app_fixture(
     )
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
     juju.wait(
-        lambda status: jubilant.all_active(status, ["postgresql-k8s", "redis-k8s"]),
+        lambda status: jubilant.all_active(status, "postgresql-k8s", "redis-k8s"),
         timeout=20 * 60,
     )
 
@@ -186,7 +186,7 @@ def app_fixture(
         base="ubuntu@20.04",
     )
 
-    juju.wait(lambda status: jubilant.all_waiting(status, [app_name]))
+    juju.wait(lambda status: jubilant.all_waiting(status, app_name))
 
     # configure postgres
     juju.config(
@@ -196,7 +196,7 @@ def app_fixture(
             "plugin_pg_trgm_enable": "true",
         },
     )
-    juju.wait(lambda status: jubilant.all_active(status, ["postgresql-k8s"]))
+    juju.wait(lambda status: jubilant.all_active(status, "postgresql-k8s"))
 
     # Add required relations
     status = juju.status()
