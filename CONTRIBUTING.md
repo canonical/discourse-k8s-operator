@@ -92,10 +92,9 @@ To improve contribution tracking,
 we use the [Canonical contributor license agreement](https://assets.ubuntu.com/v1/ff2478d1-Canonical-HA-CLA-ANY-I_v1.2.pdf)
 and require a "sign-off" for any changes going into each branch.
 
-The sign-off is a simple line at the end of the commit message
-certifying that you wrote it
+The sign-off is a cryptographic verification method. It is simple line at the
+end of the commit message certifying that you wrote it
 or have the right to commit it as an open-source contribution.
-
 To sign off on a commit, follow the [GitHub documentation](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
 
 ## Develop
