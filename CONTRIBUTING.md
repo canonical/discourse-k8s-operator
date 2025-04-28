@@ -89,8 +89,7 @@ your pull request must provide the following details:
 ### Signing commits
 
 To improve contribution tracking,
-we use the developer certificate of origin
-([DCO 1.1](https://developercertificate.org/))
+we use the [Canonical contributor license agreement](https://assets.ubuntu.com/v1/ff2478d1-Canonical-HA-CLA-ANY-I_v1.2.pdf)
 and require a "sign-off" for any changes going into each branch.
 
 The sign-off is a simple line at the end of the commit message
