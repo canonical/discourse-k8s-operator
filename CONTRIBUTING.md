@@ -108,13 +108,6 @@ The code for this charm can be downloaded as follows:
 git clone https://github.com/canonical/discourse-k8s-operator
 ```
 
-You can use the environments created by `tox` for development:
-
-```shell
-tox --notest -e unit
-source .tox/unit/bin/activate
-```
-
 You can create an environment for development with `python3-venv`:
 
 ```bash
