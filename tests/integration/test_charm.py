@@ -15,7 +15,7 @@ from botocore.config import Config
 
 from charm import PROMETHEUS_PORT
 
-from . import helpers, types
+from . import types
 
 logger = logging.getLogger(__name__)
 
@@ -302,7 +302,7 @@ def test_upgrade(
     juju.wait(
         lambda status: (
             srv_status().status_code == 200
-            and helpers.all_units_idle(status, app.name)
+            and jubilant.all_agents_idle(status, app.name)
             and jubilant.all_active(status, app.name)
         ),
         successes=15,

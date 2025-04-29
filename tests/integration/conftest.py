@@ -15,7 +15,7 @@ import requests
 import yaml
 from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
-from . import helpers, types
+from . import types
 
 logger = logging.getLogger(__name__)
 
@@ -237,10 +237,10 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         trust=True,
     )
 
-    juju.wait(helpers.all_units_idle)
+    juju.wait(jubilant.all_agents_idle)
     saml_helper.prepare_pod(juju.model, "saml-integrator-0")
     saml_helper.prepare_pod(juju.model, f"{app.name}-0")
-    juju.wait(helpers.all_units_idle)
+    juju.wait(jubilant.all_agents_idle)
     juju.config(
         "saml-integrator",
         {
@@ -249,7 +249,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         },
     )
     juju.integrate(app.name, "saml-integrator")
-    juju.wait(helpers.all_units_idle)
+    juju.wait(jubilant.all_agents_idle)
 
     yield saml_helper
 
