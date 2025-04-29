@@ -25,11 +25,6 @@ This document explains the processes and practices recommended for contributing 
 When contributing, you must abide by the
 [Ubuntu Code of Conduct](https://ubuntu.com/community/ethos/code-of-conduct).
 
-## Canonical contributor agreement
-
-Canonical welcomes contributions to the Discourse charm. Please check out our
-[contributor agreement](https://ubuntu.com/legal/contributors) if you're interested in contributing to the solution.
-
 ## Releases and versions
 
 This project uses [semantic versioning](https://semver.org/).
@@ -90,12 +85,22 @@ your pull request must provide the following details:
 
 To improve contribution tracking,
 we use the [Canonical contributor license agreement](https://assets.ubuntu.com/v1/ff2478d1-Canonical-HA-CLA-ANY-I_v1.2.pdf)
-and require a "sign-off" for any changes going into each branch.
+as a legal sign-off, and we require all commits to have verified signatures.
 
-The sign-off is a cryptographic verification method. It is simple line at the
+#### Canonical contributor agreement
+
+Canonical welcomes contributions to the Discourse charm. Please check out our
+[contributor agreement](https://ubuntu.com/legal/contributors) if you're interested in contributing to the solution.
+
+The Canonical contributor license agreement (CLA) sign-off is simple line at the
 end of the commit message certifying that you wrote it
 or have the right to commit it as an open-source contribution.
-To sign off on a commit, follow the [GitHub documentation](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
+
+#### Verified signatures on commits
+
+All commits in a pull request must have cryptographic (verified) signatures.
+To add signatures on your commits, follow the
+[GitHub documentation](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
 
 ## Develop
 
