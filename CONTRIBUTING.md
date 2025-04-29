@@ -85,14 +85,14 @@ your pull request must provide the following details:
 
 To improve contribution tracking,
 we use the [Canonical contributor license agreement](https://assets.ubuntu.com/v1/ff2478d1-Canonical-HA-CLA-ANY-I_v1.2.pdf)
-as a legal sign-off, and we require all commits to have verified signatures.
+(CLA) as a legal sign-off, and we require all commits to have verified signatures.
 
 #### Canonical contributor agreement
 
 Canonical welcomes contributions to the Discourse charm. Please check out our
 [contributor agreement](https://ubuntu.com/legal/contributors) if you're interested in contributing to the solution.
 
-The Canonical contributor license agreement (CLA) sign-off is simple line at the
+The CLA sign-off is simple line at the
 end of the commit message certifying that you wrote it
 or have the right to commit it as an open-source contribution.
 
