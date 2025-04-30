@@ -17,12 +17,12 @@ Kubernetes offerings.
 
 | | |
 |--|--|
-|  [Tutorials](/t/discourse-k8s-docs-getting-started/12157)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](/t/discourse-k8s-docs-how-to-configure-the-container/12141) </br> Step-by-step guides covering key operations and common tasks |
-| [Reference](/t/discourse-k8s-docs-integrations/12155) </br> Technical information - specifications, APIs, architecture | [Explanation](/t/discourse-k8s-docs-charm-architecture/12139) </br> Concepts - discussion and clarification of key topics  |
+|  [Tutorials](/t/discourse-k8s-docs-getting-started/12157)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](/t/discourse-k8s-docs-how-to-configure-the-hostname/12143) </br> Step-by-step guides covering key operations and common tasks | 
+| [Reference](/t/discourse-k8s-docs-actions/12327) </br> Technical information - specifications, APIs, architecture | [Explanation](/t/discourse-k8s-docs-charm-architecture/12139) </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation
 
-Documentation is an important part of this project, and we take the same open-source approach to the documentation as the code. As such, we welcome community contributions, suggestions and constructive feedback on our documentation. Our documentation is hosted on the [Charmhub forum](https://discourse.charmhub.io/t/discourse-documentation-overview/3773) to enable easy collaboration. Please use the "Help us improve this documentation" links on each documentation page to either directly change something you see that's wrong, ask a question, or make a suggestion about a potential change via the comments section.
+Documentation is an important part of this project, and we take the same open-source approach to the documentation as the code. As such, we welcome community contributions, suggestions, and constructive feedback on our documentation. See [How to contribute](https://charmhub.io/discourse-k8s/docs/how-to-contribute) for more information.
 
 If there's a particular area of documentation that you'd like to see that's missing, please [file a bug](https://github.com/canonical/discourse-k8s-operator/issues).
 
@@ -41,15 +41,15 @@ fixes and constructive feedback.
 
 1. [Tutorial](tutorial.md)
 1. [How To](how-to)
-  1. [Access the Rails console](how-to/access--the-rails-console.md)
-  1. [Backup and restore](how-to/backup-and-restore.md)
-  1. [Configure the container](how-to/configure-container.md)
   1. [Configure the hostname](how-to/configure-hostname.md)
+  1. [Configure the container](how-to/configure-container.md)
+  1. [Access the Rails console](how-to/access--the-rails-console.md)
   1. [Configure S3](how-to/configure-s3.md)
-  1. [Configure SAML](how-to/configure-saml.md)
   1. [Configure SMTP](how-to/configure-smtp.md)
-  1. [Contribute](how-to/contribute.md)
+  1. [Configure SAML](how-to/configure-saml.md)
+  1. [Backup and restore](how-to/backup-and-restore.md)
   1. [Upgrade](how-to/upgrade.md)
+  1. [Contribute](how-to/contribute.md)
 1. [Reference](reference)
   1. [Actions](reference/actions.md)
   1. [Configurations](reference/configurations.md)
