@@ -28,8 +28,9 @@ def test_create_user(juju: jubilant.Juju, app: types.App):
     assert task.results["user"] == email
 
     # Re-creating the same user should fail, as the user already exists
-    with pytest.raises(jubilant.TaskError):
+    with pytest.raises(jubilant.TaskError) as excinfo:
         juju.run(app.name + "/0", "create-user", {"email": email})
+    assert excinfo.value.task.status == "failed"
 
 
 def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: str):
