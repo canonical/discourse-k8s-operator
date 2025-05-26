@@ -36,8 +36,8 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
     juju.config(
         pg_app_name,
         {
-            "plugin_hstore_enable": "true",
-            "plugin_pg_trgm_enable": "true",
+            "plugin_hstore_enable": True,
+            "plugin_pg_trgm_enable": True,
         },
     )
     juju.wait(lambda status: status.apps[pg_app_name].is_active)

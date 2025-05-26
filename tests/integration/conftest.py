@@ -192,8 +192,8 @@ def app_fixture(
     juju.config(
         "postgresql-k8s",
         {
-            "plugin_hstore_enable": "true",
-            "plugin_pg_trgm_enable": "true",
+            "plugin_hstore_enable": True,
+            "plugin_pg_trgm_enable": True,
         },
     )
     juju.wait(lambda status: jubilant.all_active(status, "postgresql-k8s"))
