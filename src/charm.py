@@ -241,6 +241,34 @@ class DiscourseCharm(CharmBase):
             if self.config["external_hostname"]
             else self.app.name
         )
+    
+    def _get_cors_origin(self) -> str:
+        """Return the combined CORS origins from 'cors_origin' and, if enabled,
+        'external_hostname' and 's3_cdn_url'. Skips augmentation if 'cors_origin' is '*'.
+
+        Returns:
+            Comma-separated CORS origins string.
+        """
+        user_value = self.config.get("cors_origin", "").strip()
+        if user_value == "*":
+            # No need to augment if all origins allowed
+            return "*"
+        
+        origins = set()
+        if user_value:
+            origins.update(o.strip() for o in user_value.split(",") if o.strip())
+
+        if self.config.get("augment_cors_origin"):
+            ext = self.config.get("external_hostname")
+            if ext:
+                scheme = "https" if self.config.get("force_https") else "http"
+                origins.add(f"{scheme}://{ext}")
+
+            cdn = self.config.get("s3_cdn_url")
+            if cdn:
+                origins.add(cdn)
+
+        return ",".join(sorted(origins)) if origins else ""
 
     def _is_setup_completed(self) -> bool:
         """Check if the _set_up_discourse process has finished.
@@ -431,7 +459,7 @@ class DiscourseCharm(CharmBase):
             "CONTAINER_APP_NAME": CONTAINER_NAME,
             "CONTAINER_APP_ROOT": "/srv/discourse",
             "CONTAINER_APP_USERNAME": CONTAINER_APP_USERNAME,
-            "DISCOURSE_CORS_ORIGIN": self.config["cors_origin"],
+            "DISCOURSE_CORS_ORIGIN": self._get_cors_origin(),
             "DISCOURSE_DB_HOST": database_relation_data["POSTGRES_HOST"],
             "DISCOURSE_DB_NAME": database_relation_data["POSTGRES_DB"],
             "DISCOURSE_DB_PASSWORD": database_relation_data["POSTGRES_PASSWORD"],
