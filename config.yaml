@@ -3,17 +3,17 @@
 options:
   augment_cors_origin:
     type: boolean
-    default: false
     description: |
-      When enabled, the charm will automatically add the external_hostname (with
-      http or https depending on force_https) and s3_cdn_url values to the
-      DISCOURSE_CORS_ORIGIN setting. This augments any values explicitly set
-      via the cors_origin config option.
+      Appends external_hostname (with http/https) and s3_cdn_url to the list of
+      allowed CORS origins. Has no effect if 'cors_origin' is "*". 
+      To rely only on automatic cors origins, set 'cors_origin' to an empty string.
+    default: false
   cors_origin:
     type: string
     description: |
-      Comma-separated list of CORS origins. When augment_cors_origin is enabled,
-      these values are combined with external_hostname and s3_cdn_url automatically.
+      Comma-separated list of allowed CORS origins. Defaults to "*", allowing all
+      origins. To restrict access, provide specific origins or set to an empty string
+      to rely solely on 'augment_cors_origin' if enabled.
     default: "*"
   developer_emails:
     type: string
