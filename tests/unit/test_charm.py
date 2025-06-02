@@ -844,3 +844,133 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(harness.charm, "_setup_and_activate", setup_and_activate)
     harness.charm.on.upgrade_charm.emit()
     setup_and_activate.assert_called_once()
+
+@pytest.mark.parametrize(
+    "test_label, config, expected",
+    [
+        (
+            "Wildcard disables augmentation",
+            {
+                "cors_origin": "*",
+                "augment_cors_origin": True,
+                "external_hostname": "example.com",
+                "force_https": True,
+                "s3_cdn_url": "https://cdn.test",
+            },
+            "*",
+        ),
+        (
+            "No cors_origin, no augmentation enabled",
+            {
+                "cors_origin": "",
+                "augment_cors_origin": False,
+                "external_hostname": "example.com",
+                "force_https": True,
+                "s3_cdn_url": "https://cdn.test",
+            },
+            "",
+        ),
+        (
+            "Augment only with external_hostname (HTTPS)",
+            {
+                "cors_origin": "",
+                "augment_cors_origin": True,
+                "external_hostname": "example.com",
+                "force_https": True,
+                "s3_cdn_url": "",
+            },
+            "https://example.com",
+        ),
+        (
+            "Augment only with s3_cdn_url",
+            {
+                "cors_origin": "",
+                "augment_cors_origin": True,
+                "external_hostname": "",
+                "force_https": True,
+                "s3_cdn_url": "https://cdn.test",
+            },
+            "https://cdn.test",
+        ),
+        (
+            "Augment with both external_hostname (HTTP) and s3_cdn_url",
+            {
+                "cors_origin": "",
+                "augment_cors_origin": True,
+                "external_hostname": "example.com",
+                "force_https": False,
+                "s3_cdn_url": "https://cdn.test",
+            },
+            "http://example.com,https://cdn.test",
+        ),
+        (
+            "User-defined cors_origin, no augmentation",
+            {
+                "cors_origin": "https://custom.origin",
+                "augment_cors_origin": False,
+                "external_hostname": "example.com",
+                "force_https": True,
+                "s3_cdn_url": "https://cdn.test",
+            },
+            "https://custom.origin",
+        ),
+        (
+            "User-defined cors_origin with augmentation enabled",
+            {
+                "cors_origin": "https://custom.origin",
+                "augment_cors_origin": True,
+                "external_hostname": "example.com",
+                "force_https": True,
+                "s3_cdn_url": "https://cdn.test",
+            },
+            "https://cdn.test,https://custom.origin,https://example.com",
+        ),
+        (
+            "Empty cors_origin with augmentation",
+            {
+                "cors_origin": "",
+                "augment_cors_origin": True,
+                "external_hostname": "example.com",
+                "force_https": True,
+                "s3_cdn_url": "https://cdn.test",
+            },
+            "https://cdn.test,https://example.com",
+        ),
+        (
+            "Multiple user-defined cors_origins with augmentation",
+            {
+                "cors_origin": "https://foo.com, https://bar.com",
+                "augment_cors_origin": True,
+                "external_hostname": "example.com",
+                "force_https": False,
+                "s3_cdn_url": "https://cdn.test",
+            },
+            "http://example.com,https://bar.com,https://cdn.com,https://foo.com",
+        ),
+        (
+            "Duplicated origins across config and augmentation",
+            {
+                "cors_origin": " https://foo.com , https://foo.com ",
+                "augment_cors_origin": True,
+                "external_hostname": "foo.com",
+                "force_https": True,
+                "s3_cdn_url": "https://foo.com",
+            },
+            "https://foo.com",
+        ),
+    ],
+)
+def test_get_cors_origin_behavior(test_label, config, expected):
+    """
+    arrange: deploy charm with CORS-related config
+    act: configure charm with varying CORS inputs
+    assert: DISCOURSE_CORS_ORIGIN matches expected result
+    """
+    harness = helpers.start_harness(with_config=config)
+    harness.container_pebble_ready(SERVICE_NAME)
+
+    env = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()["services"][SERVICE_NAME]["environment"]
+    assert env["DISCOURSE_CORS_ORIGIN"] == expected, (
+        f"[{test_label}] Expected '{expected}', got '{env['DISCOURSE_CORS_ORIGIN']}'"
+    )
+    assert isinstance(harness.model.unit.status, ActiveStatus)

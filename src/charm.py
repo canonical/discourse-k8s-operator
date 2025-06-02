@@ -268,7 +268,7 @@ class DiscourseCharm(CharmBase):
             if cdn:
                 origins.add(cdn)
 
-        return ",".join(sorted(origins)) if origins else ""
+        return ",".join(sorted(origins)).lower() if origins else ""
 
     def _is_setup_completed(self) -> bool:
         """Check if the _set_up_discourse process has finished.
