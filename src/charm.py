@@ -249,6 +249,14 @@ class DiscourseCharm(CharmBase):
         Returns:
             Comma-separated CORS origins string.
         """
+        logger.warning(
+            "CORS config values - cors_origin: %r, augment_cors_origin: %r, external_hostname: %r, s3_cdn_url: %r, force_https: %r",
+            self.config.get("cors_origin"),
+            self.config.get("augment_cors_origin"),
+            self.config.get("external_hostname"),
+            self.config.get("s3_cdn_url"),
+            self.config.get("force_https"),
+        )
         user_value = self.config.get("cors_origin", "").strip()
         if user_value == "*":
             # No need to augment if all origins allowed

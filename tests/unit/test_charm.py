@@ -945,7 +945,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "force_https": False,
                 "s3_cdn_url": "https://cdn.test",
             },
-            "http://example.com,https://bar.com,https://cdn.com,https://foo.com",
+            "http://example.com,https://bar.com,https://cdn.test,https://foo.com",
         ),
         (
             "Duplicated origins across config and augmentation",
