@@ -6,7 +6,7 @@
 <!-- "Operator" is part of the name -->
 # Discourse Operator
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
-A juju charm deploying and managing Discourse on Kubernetes. Discourse is the
+A Juju charm deploying and managing Discourse on Kubernetes. Discourse is the
 100% open source discussion platform. Use it as a mailing list, discussion
 forum or long-form chat room.
 
