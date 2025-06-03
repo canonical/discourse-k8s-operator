@@ -1,4 +1,7 @@
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+<!-- SMTP is typically used uppercase-->
 # How to configure SMTP
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 To configure Discourse's SMTP you'll have to set the following configuration options with the appropriate values for your SMTP server by running `juju config [charm_name] [configuration]=[value]`.
 

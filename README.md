@@ -2,9 +2,10 @@
 [![Publish to edge](https://github.com/canonical/discourse-k8s-operator/actions/workflows/publish_charm.yaml/badge.svg)](https://github.com/canonical/discourse-k8s-operator/actions/workflows/publish_charm.yaml)
 [![Promote charm](https://github.com/canonical/discourse-k8s-operator/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/discourse-k8s-operator/actions/workflows/promote_charm.yaml)
 [![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
-
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+<!-- "Operator" is part of the name -->
 # Discourse Operator
-
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 A juju charm deploying and managing Discourse on Kubernetes. Discourse is the
 100% open source discussion platform. Use it as a mailing list, discussion
 forum or long-form chat room.

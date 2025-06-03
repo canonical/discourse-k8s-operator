@@ -17,7 +17,7 @@ NAME                            READY   STATUS    RESTARTS   AGE
 discourse-k8s-0                 2/2     Running   0          65m
 ```
 
-This shows there are 2 containers - the one named above, as well as a container for the charm code itself.
+This shows there are two containers - the one named above, as well as a container for the charm code itself.
 
 And if you run `kubectl describe pod discourse-k8s-0`, all the containers will have as Command ```/charm/bin/pebble```. That's because Pebble is responsible for the processes startup as explained above.
 
@@ -87,6 +87,8 @@ The OCI image is built using [Rockcraft](https://canonical-rockcraft.readthedocs
 This is done by publishing a resource to Charmhub as described in the [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 
 ## Integrations
+
+This section provides information about the integrations.
 
 ### Ingress
 

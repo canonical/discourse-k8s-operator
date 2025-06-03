@@ -13,15 +13,15 @@ Please, provide some information about your PR before proceeding.
 
 <!-- The reason the change is needed -->
 
-### Juju Events Changes
+### Juju events changes
 
 <!-- Any changes to the juju events being observed (newly added, significantly modified or deleted) -->
 
-### Module Changes
+### Module changes
 
 <!-- Any high level changes to modules and why (Service, Observer, helper) -->
 
-### Library Changes
+### Library changes
 
 <!-- Any changes to charm libraries -->
 

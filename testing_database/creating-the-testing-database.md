@@ -5,7 +5,7 @@ To get the same result use Charm revision 162 and resource revision 152.
 ## Create the database
 First of all we need to deploy the Discourse following the [tutorial](https://github.com/canonical/discourse-k8s-operator/blob/main/docs/tutorial.md).
 
-Then, we need to create a 2 new users for testing using the actions:
+Then, we need to create a two new users for testing using the actions:
 
 ```juju run discourse-k8s/0 create-user email=email@example.com admin=true```
 ```juju run discourse-k8s/0 create-user email=email2@example.com```

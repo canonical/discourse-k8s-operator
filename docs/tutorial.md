@@ -1,12 +1,12 @@
 # Deploy the Discourse charm for the first time
 
+In this tutorial, we'll go through each step of the process to get a basic Discourse deployment.
+
 ## What you'll do
 
 - Deploy the Discourse charm
 - Integrate with nginx-ingress-integrator, postgresql-k8s and redis-k8s charms
 - Inspect the Kubernetes resources created
-
-In this tutorial, we'll go through each step of the process to get a basic Discourse deployment.
 
 ## Requirements
 - A working station, e.g., a laptop, with amd64 architecture.
@@ -53,8 +53,10 @@ Enable the required PostgreSQL extensions:
 ```
 juju config postgresql-k8s plugin_hstore_enable=True plugin_pg_trgm_enable=True
 ```
-
-### Integrate with the Redis k8s charm the PostgreSQL k8s charm
+<!-- vale Canonical.007-Headings-sentence-case = NO-->
+<!-- Redis and PostgreSQL are uppercase as they are the name of the charms-->
+### Integrate with the Redis k8s charm and the PostgreSQL k8s charm
+<!-- vale Canonical.007-Headings-sentence-case = YES-->
 
 Integrate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
 ```

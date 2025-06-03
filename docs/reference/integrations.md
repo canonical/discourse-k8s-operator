@@ -1,5 +1,7 @@
 # Integrations
 
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+<!-- The headings are relation endpoints, makes sense they are lowercase as in metadata.yaml-->
 ### db
 
 _Interface_: pgsql
@@ -70,6 +72,7 @@ juju integrate discourse-k8s prometheus-k8s
 ```
 
 ### redis
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 _Interface_: redis  
 
