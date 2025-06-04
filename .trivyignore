@@ -20,6 +20,8 @@ CVE-2024-47220
 GHSA-mrxw-mxhj-p664
 GHSA-hw46-3hmr-x9xv
 CVE-2025-27610
+CVE-2025-43857 # net-imap
+CVE-2025-46727 # rack
 # Python setuptools
 CVE-2024-6345
 # Nodejs
@@ -34,6 +36,7 @@ CVE-2024-45296 # path-to-regexp
 CVE-2024-37890 # ws
 CVE-2024-52798 # libc
 CVE-2024-12905 # tar-fs
+CVE-2025-48387 # tar-fs - Fixed in newer version of Discourse
 private-key
 # Kernel
 CVE-2024-53103
@@ -47,3 +50,4 @@ CVE-2024-57798
 CVE-2023-52664
 CVE-2024-53168
 CVE-2024-56551
+CVE-2024-50047
