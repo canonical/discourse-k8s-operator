@@ -43,7 +43,7 @@ This charm can be integrated with other Juju charms and services:
 
   - [Redis](https://charmhub.io/redis-k8s): Redis is an open source (BSD licensed), in-memory data structure store, used as a database, cache and message broker.
   - [Saml](https://charmhub.io/saml-integrator): SAML is an open standard used for authentication.
-  - [Postgresql](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system.
+  - [PostgreSQL](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system.
 
 For a full list of integrations, see the [Charmhub documentation](https://charmhub.io/discourse-k8s/integrations).
 

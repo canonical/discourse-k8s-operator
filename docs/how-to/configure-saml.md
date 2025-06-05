@@ -1,7 +1,4 @@
-<!-- vale Canonical.007-Headings-sentence-case = NO -->
-<!-- SAML is typically used uppercase-->
 # How to configure SAML
-<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 To configure Discourse's SAML integration you'll have to set the following configuration options with the appropriate values for your SAML server by running `juju config [charm_name] [configuration]=[value]`.
 

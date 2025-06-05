@@ -25,7 +25,7 @@ Ssh into the database
 Create a folder to dump the db
 ```mkdir -p /srv/dump/```
 
-Dump the db. Ip here is the unit ip
+Dump the db. IP here is the unit IP
 ```pg_dump -Fc -h 10.1.187.134 -U operator -d discourse > "/srv/dump/testing_database.sql"```
 
 Exit the container

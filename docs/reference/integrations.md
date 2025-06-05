@@ -7,7 +7,7 @@
 _Interface_: pgsql
 
 _Supported charms_: [postgresql-k8s](https://charmhub.io/postgresql-k8s),
-[postgresql](https://charmhub.io/postgresql)
+[PostgreSQL](https://charmhub.io/postgresql)
 
 Database integration is a required relation for the Discourse charm to supply
 structured data storage for Discourse.
@@ -49,7 +49,7 @@ _Supported charms_: [nginx-ingress-integrator](https://charmhub.io/nginx-ingress
 Ingress manages external http/https access to services in a kubernetes cluster.
 Note that the kubernetes cluster must already have an nginx ingress controller
 already deployed. Documentation to enable ingress in MicroK8s can be found in
-[Addon: Ingress](https://microk8s.io/docs/addon-ingress).
+[Add-on: Ingress](https://microk8s.io/docs/addon-ingress).
 
 Ingress integrate command: 
 ```
@@ -57,8 +57,10 @@ juju integrate discourse-k8s nginx-ingress-integrator
 ```
 
 ### metrics-endpoint
-
+<!-- vale Canonical.000-US-spellcheck = NO -->
+<!-- prometheus_scrape is the name of the interface>
 _Interface_: [prometheus_scrape](https://charmhub.io/interfaces/prometheus_scrape-v0)
+<!-- vale Canonical.000-US-spellcheck = NO -->
 
 _Supported charms_: [prometheus-k8s](https://charmhub.io/prometheus-k8s)
 
