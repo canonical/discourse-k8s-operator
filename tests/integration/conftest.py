@@ -2,22 +2,17 @@
 # See LICENSE file for licensing details.
 """Discourse integration tests fixtures."""
 
-import asyncio
 import logging
+import pathlib
 import secrets
-from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, cast
+import subprocess  # nosec B404
+from collections.abc import Generator
+from typing import Any, Dict, cast
 
-import pytest_asyncio
+import jubilant
+import pytest
 import requests
 import yaml
-from juju.action import Action
-from juju.application import Application
-from juju.client._definitions import ApplicationStatus, FullStatus, UnitStatus
-from juju.unit import Unit
-from ops.model import WaitingStatus
-from pytest import Config, fixture
-from pytest_operator.plugin import Model, OpsTest
 from saml_test_helper import SamlK8sTestHelper  # pylint: disable=import-error
 
 from . import types
@@ -34,20 +29,14 @@ ENABLED_PLUGINS = [
 ]
 
 
-@fixture(scope="module", name="metadata")
-def fixture_metadata():
+@pytest.fixture(scope="session")
+def metadata():
     """Provides charm metadata."""
-    yield yaml.safe_load(Path("./metadata.yaml").read_text(encoding="UTF-8"))
+    yield yaml.safe_load(pathlib.Path("./metadata.yaml").read_text(encoding="UTF-8"))
 
 
-@fixture(scope="module", name="app_name")
-def fixture_app_name(metadata):
-    """Provides app name from the metadata."""
-    yield metadata["name"]
-
-
-@fixture(scope="module", name="app_config")
-def fixture_app_config():
+@pytest.fixture(scope="session")
+def app_config():
     """Provides app config."""
     yield {
         "developer_emails": "noreply@canonical.com",
@@ -58,17 +47,14 @@ def fixture_app_config():
     }
 
 
-@fixture(scope="module")
-def localstack_address(pytestconfig: Config):
+@pytest.fixture(scope="session")
+def localstack_address(pytestconfig: pytest.Config):
     """Provides localstack IP address to be used in the integration test"""
-    address = pytestconfig.getoption("--localstack-address")
-    if not address:
-        raise ValueError("--localstack-address argument is required for selected test cases")
-    yield address
+    yield pytestconfig.getoption("--localstack-address")
 
 
-@fixture(scope="module")
-def saml_email(pytestconfig: Config):
+@pytest.fixture(scope="session")
+def saml_email(pytestconfig: pytest.Config):
     """SAML login email address test argument for SAML integration tests"""
     email = pytestconfig.getoption("--saml-email")
     if not email:
@@ -76,8 +62,8 @@ def saml_email(pytestconfig: Config):
     return email
 
 
-@fixture(scope="module")
-def saml_password(pytestconfig: Config):
+@pytest.fixture(scope="session")
+def saml_password(pytestconfig: pytest.Config):
     """SAML login password test argument for SAML integration tests"""
     password = pytestconfig.getoption("--saml-password")
     if not password:
@@ -85,126 +71,140 @@ def saml_password(pytestconfig: Config):
     return password
 
 
-@fixture(scope="module")
+@pytest.fixture(scope="session")
 def requests_timeout():
     """Provides a global default timeout for HTTP requests"""
     yield 15
 
 
-@fixture(scope="module", name="model")
-def model_fixture(ops_test: OpsTest) -> Model:
-    """Juju model API client."""
-    assert ops_test.model
-    return ops_test.model
-
-
-@fixture(scope="module")
-def run_action(model: Model) -> Callable[..., Awaitable[Any]]:
-    """Create an async function to run action and return results."""
-
-    async def _run_action(application_name: str, action_name: str, **params):
-        """Run a specified action.
-
-        Args:
-            application_name: Name the application is deployed with.
-            action_name: Name of the action to be executed.
-            params: Dictionary with action parameters.
-
-        Returns:
-            The results of the executed action
-        """
-        application = model.applications[application_name]
-        action = await application.units[0].run_action(action_name, **params)
-        await action.wait()
-        return action.results
-
-    return _run_action
-
-
-@pytest_asyncio.fixture(scope="module", name="discourse_address")
-async def discourse_address_fixture(model: Model, app: Application):
+@pytest.fixture(scope="module", name="discourse_address")
+def discourse_address_fixture(app: types.App, juju: jubilant.Juju):
     """Get discourse web address."""
-    status: FullStatus = await model.get_status()
-    app_status = cast(ApplicationStatus, status.applications[app.name])
-    unit_status = cast(UnitStatus, app_status.units[f"{app.name}/0"])
-    unit_ip = cast(str, unit_status.address)
+    status = juju.status()
+    unit_ip = status.apps[app.name].units[app.name + "/0"].address
     return f"http://{unit_ip}:3000"
 
 
-@pytest_asyncio.fixture(scope="module", name="app")
-async def app_fixture(
-    ops_test: OpsTest,
-    app_name: str,
+@pytest.fixture(scope="module")
+def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]:
+    """Pytest fixture that wraps :meth:`jubilant.with_model`."""
+
+    def show_debug_log(juju: jubilant.Juju):
+        if request.session.testsfailed:
+            log = juju.debug_log(limit=1000)
+            print(log, end="")
+
+    use_existing = request.config.getoption("--use-existing", default=False)
+    if use_existing:
+        juju = jubilant.Juju()
+        yield juju
+        show_debug_log(juju)
+        return
+
+    model = request.config.getoption("--model")
+    if model:
+        juju = jubilant.Juju(model=model)
+        yield juju
+        show_debug_log(juju)
+        return
+
+    keep_models = cast(bool, request.config.getoption("--keep-models"))
+    with jubilant.temp_model(keep=keep_models) as juju:
+        juju.wait_timeout = 10 * 60
+        yield juju
+        show_debug_log(juju)
+        return
+
+
+@pytest.fixture(scope="session")
+def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
+    """Pytest fixture that packs the charm and returns the filename, or --charm-file if set."""
+    charm_file = pytestconfig.getoption("--charm-file")
+    if charm_file:
+        yield charm_file
+        return
+
+    try:
+        subprocess.run(
+            ["charmcraft", "pack"], check=True, capture_output=True, text=True
+        )  # nosec B603, B607
+    except subprocess.CalledProcessError as exc:
+        raise OSError(f"Error packing charm: {exc}; Stderr:\n{exc.stderr}") from None
+
+    app_name = metadata["name"]
+    charm_path = pathlib.Path(__file__).parent.parent.parent
+    charms = [p.absolute() for p in charm_path.glob(f"{app_name}_*.charm")]
+    assert charms, f"{app_name} .charm file not found"
+    assert len(charms) == 1, f"{app_name} has more than one .charm file, unsure which to use"
+    yield str(charms[0])
+
+
+@pytest.fixture(scope="module", name="app")
+def app_fixture(
+    juju: jubilant.Juju,
+    metadata: Dict[str, Any],
     app_config: Dict[str, str],
-    pytestconfig: Config,
-    model: Model,
+    pytestconfig: pytest.Config,
+    charm_file: str,
 ):
     # pylint: disable=too-many-locals
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
+    app_name = metadata["name"]
+
     use_existing = pytestconfig.getoption("--use-existing", default=False)
     if use_existing:
-        yield model.applications[app_name]
+        yield types.App(app_name)
         return
 
-    postgres_app = await model.deploy(
+    juju.deploy(
         "postgresql-k8s",
         channel="14/stable",
-        series="jammy",
+        base="ubuntu@22.04",
         revision=300,
         trust=True,
         config={"profile": "testing"},
     )
-    await model.wait_for_idle(apps=[postgres_app.name], status="active")
+    juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
+    juju.wait(
+        lambda status: jubilant.all_active(status, "postgresql-k8s", "redis-k8s"),
+        timeout=20 * 60,
+    )
 
-    redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
-    await model.wait_for_idle(apps=[redis_app.name], status="active")
-
-    await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
+    juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
 
     resources = {
         "discourse-image": pytestconfig.getoption("--discourse-image"),
     }
 
-    if charm := pytestconfig.getoption("--charm-file"):
-        application = await model.deploy(
-            f"./{charm}",
-            resources=resources,
-            application_name=app_name,
-            config=app_config,
-            series="focal",
-        )
-    else:
-        charm = await ops_test.build_charm(".")
-        application = await model.deploy(
-            charm,
-            resources=resources,
-            application_name=app_name,
-            config=app_config,
-            series="focal",
-        )
+    juju.deploy(
+        charm=charm_file,
+        app=app_name,
+        resources=resources,
+        config=app_config,
+        base="ubuntu@20.04",
+    )
 
-    await model.wait_for_idle(apps=[application.name], status="waiting")
+    juju.wait(lambda status: jubilant.all_waiting(status, app_name))
 
     # configure postgres
-    await postgres_app.set_config(
+    juju.config(
+        "postgresql-k8s",
         {
-            "plugin_hstore_enable": "true",
-            "plugin_pg_trgm_enable": "true",
-        }
+            "plugin_hstore_enable": True,
+            "plugin_pg_trgm_enable": True,
+        },
     )
-    await model.wait_for_idle(apps=[postgres_app.name], status="active")
+    juju.wait(lambda status: jubilant.all_active(status, "postgresql-k8s"))
 
     # Add required relations
-    unit = model.applications[app_name].units[0]
-    assert unit.workload_status == WaitingStatus.name  # type: ignore
-    await asyncio.gather(
-        model.add_relation(app_name, "postgresql-k8s:database"),
-        model.add_relation(app_name, "redis-k8s"),
-        model.add_relation(app_name, "nginx-ingress-integrator"),
-    )
-    await model.wait_for_idle(status="active")
+    status = juju.status()
+    assert status.apps[app_name].units[app_name + "/0"].is_waiting
+    juju.integrate(app_name, "postgresql-k8s:database")
+    juju.integrate(app_name, "redis-k8s")
+    juju.integrate(app_name, "nginx-ingress-integrator")
+    juju.wait(jubilant.all_active)
 
     # Enable plugins calling rake site_settings:import in one of the units.
     inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
@@ -218,63 +218,56 @@ async def app_fixture(
         f"'set -euo pipefail; echo \"{inline_yaml}\" | {pebble_exec} -- {discourse_rake_command}'"
     )
     logger.info("Enable plugins command: %s", full_command)
-    action = await unit.run(full_command)
-    await action.wait()
-    logger.info(action.results)
-    assert action.results["return-code"] == 0, "Enable plugins failed"
+    task = juju.exec(full_command, unit=app_name + "/0")
+    logger.info(task.results)
 
-    yield application
+    yield types.App(app_name)
 
 
-@pytest_asyncio.fixture(scope="module")
-async def setup_saml_config(app: Application, model: Model):
+@pytest.fixture(scope="module")
+def setup_saml_config(juju: jubilant.Juju, app: types.App):
     """Set SAML related charm config to enable SAML authentication."""
-    discourse_app = model.applications[app.name]
-    original_config: dict = await discourse_app.get_config()
-    original_config = {k: v["value"] for k, v in original_config.items()}
-    await discourse_app.set_config({"force_https": "true"})
+    juju.config(app.name, {"force_https": True})
 
-    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model.name)
-    saml_app: Application = await model.deploy(
+    saml_helper = SamlK8sTestHelper.deploy_saml_idp(juju.model)
+    juju.deploy(
         "saml-integrator",
         channel="latest/edge",
-        series="jammy",
+        base="ubuntu@22.04",
         trust=True,
     )
-    await model.wait_for_idle()
-    saml_helper.prepare_pod(model.name, f"{saml_app.name}-0")
-    saml_helper.prepare_pod(model.name, f"{app.name}-0")
-    await model.wait_for_idle()
-    await saml_app.set_config(  # type: ignore[attr-defined]
+
+    juju.wait(jubilant.all_agents_idle)
+    saml_helper.prepare_pod(juju.model, "saml-integrator-0")
+    saml_helper.prepare_pod(juju.model, f"{app.name}-0")
+    juju.wait(jubilant.all_agents_idle)
+    juju.config(
+        "saml-integrator",
         {
             "entity_id": saml_helper.entity_id,
             "metadata_url": saml_helper.metadata_url,
-        }
+        },
     )
-    await model.add_relation(app.name, "saml-integrator")
-    await model.wait_for_idle()
+    juju.integrate(app.name, "saml-integrator")
+    juju.wait(jubilant.all_agents_idle)
 
     yield saml_helper
 
 
-@pytest_asyncio.fixture(scope="module", name="admin_credentials")
-async def admin_credentials_fixture(app: Application) -> types.Credentials:
+@pytest.fixture(scope="module", name="admin_credentials")
+def admin_credentials_fixture(juju: jubilant.Juju, app: types.App) -> types.Credentials:
     """Admin user credentials."""
     email = f"admin-user{secrets.randbits(32)}@test.internal"
-    discourse_unit: Unit = app.units[0]
-    action: Action = await discourse_unit.run_action("create-user", email=email, admin=True)
-    await action.wait()
-    password = action.results["password"]
+    task = juju.run(f"{app.name}/0", "create-user", {"email": email, "admin": True})
+    password = task.results["password"]
     admin_credentials = types.Credentials(
         email=email, username=email.split("@", maxsplit=1)[0], password=password
     )
     return admin_credentials
 
 
-@pytest_asyncio.fixture(scope="module", name="admin_api_key")
-async def admin_api_key_fixture(
-    admin_credentials: types.Credentials, discourse_address: str
-) -> str:
+@pytest.fixture(scope="module", name="admin_api_key")
+def admin_api_key_fixture(admin_credentials: types.Credentials, discourse_address: str) -> str:
     """Admin user API key"""
     with requests.session() as session:
         # Get CSRF token
@@ -320,3 +313,25 @@ async def admin_api_key_fixture(
     data = response.json()
     assert data["key"]["key"], data
     return data["key"]["key"]
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Pytest hook wrapper to set the test's rep_* attribute for abort_on_fail."""
+    _ = call  # unused argument
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, "rep_" + rep.when, rep)
+
+
+@pytest.fixture(autouse=True)
+def abort_on_fail(request: pytest.FixtureRequest):
+    """Fixture which aborts other tests in module after first fails."""
+    abort_on_fail = request.node.get_closest_marker("abort_on_fail")
+    if abort_on_fail and getattr(request.module, "__aborted__", False):
+        pytest.xfail("abort_on_fail")
+
+    _ = yield
+
+    if abort_on_fail and request.node.rep_call.failed:
+        request.module.__aborted__ = True

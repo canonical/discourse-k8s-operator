@@ -5,17 +5,14 @@
 
 import logging
 
+import jubilant
 import pytest
-from botocore.config import Config
-from ops.model import WaitingStatus
-from pytest_operator.plugin import Model, OpsTest
 
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.asyncio
 @pytest.mark.abort_on_fail
-async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Config, run_action):
+def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_file: str):
     """
     arrange: preload postgres with a testing db that is created in Discourse v3.2.0
     act: deploy and integrate with Discourse v3.3.0 (latest)
@@ -26,90 +23,89 @@ async def test_db_migration(model: Model, ops_test: OpsTest, pytestconfig: Confi
     with a patch but this patch only works for Discourse v3.2.0 and we might
     need to create a new patch for the new version of Discourse.
     """
-    postgres_app = await model.deploy(
-        "postgresql-k8s",
+    pg_app_name = "postgresql-k8s"
+    juju.deploy(
+        pg_app_name,
         channel="14/stable",
-        series="jammy",
+        base="ubuntu@22.04",
         revision=300,
         trust=True,
         config={"profile": "testing"},
     )
-    await model.wait_for_idle(apps=[postgres_app.name], status="active")
-    await postgres_app.set_config(
+    juju.wait(lambda status: status.apps[pg_app_name].is_active, timeout=20 * 60)
+    juju.config(
+        pg_app_name,
         {
-            "plugin_hstore_enable": "true",
-            "plugin_pg_trgm_enable": "true",
-        }
+            "plugin_hstore_enable": True,
+            "plugin_pg_trgm_enable": True,
+        },
     )
-    await model.wait_for_idle(apps=[postgres_app.name], status="active")
-    db_pass = await run_action(postgres_app.name, "get-password", username="operator")
-    db_pass = db_pass["password"]
-    return_code, _, scp_err = await ops_test.juju(
+    juju.wait(lambda status: status.apps[pg_app_name].is_active)
+    task = juju.run(pg_app_name + "/0", "get-password", {"username": "operator"})
+    db_pass = task.results["password"]
+    juju.cli(
         "scp",
         "--container",
         "postgresql",
         "./testing_database/testing_database.sql",
-        f"{postgres_app.units[0].name}:.",
+        pg_app_name + "/0:.",
     )
 
-    assert return_code == 0, scp_err
-
-    return_code, _, ssh_err = await ops_test.juju(
+    juju.cli(
         "ssh",
         "--container",
         "postgresql",
-        postgres_app.units[0].name,
+        pg_app_name + "/0",
         "createdb -h localhost -U operator --password discourse",
-        stdin=str.encode(f"{db_pass}\n"),
+        stdin=db_pass + "\n",
     )
-    assert return_code == 0, ssh_err
 
-    return_code, _, ssh_err = await ops_test.juju(
+    juju.cli(
         "ssh",
         "--container",
         "postgresql",
-        postgres_app.units[0].name,
-        "pg_restore -h localhost -U operator\
-              --password -d discourse\
-                  --no-owner --clean --if-exists ./testing_database.sql",
-        stdin=str.encode(f"{db_pass}\n"),
+        pg_app_name + "/0",
+        "pg_restore -h localhost -U operator \
+              --password -d discourse \
+              --no-owner --clean --if-exists ./testing_database.sql",
+        stdin=db_pass + "\n",
     )
-    assert return_code == 0, ssh_err
 
     # ensure we are using the Discourse v3.2.0 database
     # Discourse v3.2.0 uses the git commit hash:
     # f9502188a646cdb286ae6572ad6198c711ecdea8
-    return_code, latest_git_version, _ = await ops_test.juju(
+    latest_git_version = juju.cli(
         "ssh",
         "--container",
         "postgresql",
-        postgres_app.units[0].name,
-        "psql -h localhost -U operator\
-              --password -d discourse\
-                  -c 'SELECT git_version FROM schema_migration_details LIMIT 1;'",
-        stdin=str.encode(f"{db_pass}\n"),
+        pg_app_name + "/0",
+        "psql -h localhost -U operator \
+              --password -d discourse \
+              -c 'SELECT git_version FROM schema_migration_details LIMIT 1;'",
+        stdin=db_pass + "\n",
     )
     assert (
         "f9502188a646cdb286ae6572ad6198c711ecdea8" in latest_git_version
     ), "Discourse v3.2.0 git version does not match with the database version"
 
-    redis_app = await model.deploy("redis-k8s", series="jammy", channel="latest/edge")
-    await model.wait_for_idle(apps=[redis_app.name], status="active")
+    juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
+    juju.wait(lambda status: status.apps["redis-k8s"].is_active)
 
-    charm = await ops_test.build_charm(".")
-    await model.deploy("nginx-ingress-integrator", series="focal", trust=True)
-    app_name = "discourse-k8s"
-    discourse_application = await model.deploy(
-        charm,
+    juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
+
+    discourse_app_name = "discourse-k8s"
+    juju.deploy(
+        charm=charm_file,
+        app=discourse_app_name,
         resources={"discourse-image": pytestconfig.getoption("--discourse-image")},
-        application_name=app_name,
-        series="focal",
+        base="ubuntu@20.04",
     )
-    await model.wait_for_idle(apps=[app_name], status="waiting")
-    unit = discourse_application.units[0]
-    assert unit.workload_status == WaitingStatus.name  # type: ignore
-    await model.add_relation(app_name, "postgresql-k8s:database")
-    await model.add_relation(app_name, "redis-k8s")
-    await model.add_relation(app_name, "nginx-ingress-integrator")
-    await model.wait_for_idle(apps=[app_name], status="active", raise_on_error=True)
-    await model.wait_for_idle(apps=[app_name], status="active", raise_on_error=True)
+    juju.wait(lambda status: status.apps[discourse_app_name].is_waiting)
+
+    juju.integrate(discourse_app_name, pg_app_name + ":database")
+    juju.integrate(discourse_app_name, "redis-k8s")
+    juju.integrate(discourse_app_name, "nginx-ingress-integrator")
+    juju.wait(
+        lambda status: status.apps[discourse_app_name].is_active,
+        error=lambda status: status.apps[discourse_app_name].is_error,
+    )

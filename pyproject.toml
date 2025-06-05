@@ -58,3 +58,6 @@ check_untyped_defs = true
 
 [tool.pylint.SIMILARITIES]
 min-similarity-lines=10
+disable = [
+	"W0621",  # Redefining name %r from outer scope (line %s)
+]
