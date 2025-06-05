@@ -868,7 +868,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "force_https": True,
                 "s3_cdn_url": "https://cdn.test",
             },
-            "*", # Default value remains
+            "*",
             BlockedStatus('invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty'),
             id = "Raise error when invalid CORS config",
         ),
