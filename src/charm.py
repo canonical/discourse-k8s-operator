@@ -299,10 +299,9 @@ class DiscourseCharm(CharmBase):
             If config is valid.
         """
         errors = []
-        missing_fields = self._get_missing_config_fields()
 
-        if missing_fields:
-            errors.append(f"Required configuration missing: {','.join(missing_fields)}")
+        if self.config.get("enable_cors") and self.config.get("cors_origin") == "" and not self.config.get("augment_cors_origin"):
+            errors.append("invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty")
 
         if self.config["throttle_level"] not in THROTTLE_LEVELS:
             errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
@@ -379,15 +378,6 @@ class DiscourseCharm(CharmBase):
             saml_config["DISCOURSE_SAML_SYNC_GROUPS_LIST"] = "|".join(saml_sync_groups)
 
         return saml_config
-
-    def _get_missing_config_fields(self) -> typing.List[str]:
-        """Check for missing fields in juju config.
-
-        Returns:
-            List of required fields that are either not present or empty.
-        """
-        needed_fields = ["cors_origin"]
-        return [field for field in needed_fields if not self.config.get(field)]
 
     def _get_s3_env(self) -> typing.Dict[str, typing.Any]:
         """Get the list of S3-related environment variables from charm's configuration.

@@ -189,6 +189,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
 
     assert harness.charm
     assert expected_exec_call_was_made
+    assert isinstance(harness.model.unit.status, ActiveStatus)
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
@@ -211,7 +212,6 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     assert "the-infinite-and-beyond" == updated_plan_env["DISCOURSE_S3_REGION"]
     assert "s|kI0ure_k3Y" == updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"]
     assert updated_plan_env["DISCOURSE_USE_S3"]
-    assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
 def test_on_config_changed_when_valid():
@@ -245,6 +245,7 @@ def test_on_config_changed_when_valid():
         saml_fields=(True, "https://login.ubuntu.com", "fingerprint"),
     )
     harness.container_pebble_ready(SERVICE_NAME)
+    assert isinstance(harness.model.unit.status, ActiveStatus)
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
@@ -282,7 +283,6 @@ def test_on_config_changed_when_valid():
     assert "apikey" == updated_plan_env["DISCOURSE_SMTP_USER_NAME"]
     assert updated_plan_env["DISCOURSE_USE_S3"]
     assert updated_plan_env["FORCE_S3_UPLOADS"]
-    assert isinstance(harness.model.unit.status, ActiveStatus)
 
 
 def test_db_relation():
@@ -846,10 +846,9 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
     setup_and_activate.assert_called_once()
 
 @pytest.mark.parametrize(
-    "test_label, config, expected",
+    "config, expected, status",
     [
-        (
-            "Wildcard disables augmentation",
+        pytest.param(
             {
                 "cors_origin": "*",
                 "augment_cors_origin": True,
@@ -858,9 +857,10 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "https://cdn.test",
             },
             "*",
+            ActiveStatus(),
+            id = "Wildcard disables augmentation",
         ),
-        (
-            "No cors_origin, no augmentation enabled",
+        pytest.param(
             {
                 "cors_origin": "",
                 "augment_cors_origin": False,
@@ -868,10 +868,11 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "force_https": True,
                 "s3_cdn_url": "https://cdn.test",
             },
-            "",
+            "*", # Default value remains
+            BlockedStatus('invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty'),
+            id = "Raise error when invalid CORS config",
         ),
-        (
-            "Augment only with external_hostname (HTTPS)",
+        pytest.param(
             {
                 "cors_origin": "",
                 "augment_cors_origin": True,
@@ -880,9 +881,10 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "",
             },
             "https://example.com",
+            ActiveStatus(),
+            id = "Augment only with external_hostname (HTTPS)",
         ),
-        (
-            "Augment only with s3_cdn_url",
+        pytest.param(
             {
                 "cors_origin": "",
                 "augment_cors_origin": True,
@@ -891,9 +893,10 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "https://cdn.test",
             },
             "https://cdn.test",
+            ActiveStatus(),
+            id = "Augment only with s3_cdn_url",
         ),
-        (
-            "Augment with both external_hostname (HTTP) and s3_cdn_url",
+        pytest.param(
             {
                 "cors_origin": "",
                 "augment_cors_origin": True,
@@ -902,9 +905,10 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "https://cdn.test",
             },
             "http://example.com,https://cdn.test",
+            ActiveStatus(),
+            id = "Augment with both external_hostname (HTTP) and s3_cdn_url",
         ),
-        (
-            "User-defined cors_origin, no augmentation",
+        pytest.param(
             {
                 "cors_origin": "https://custom.origin",
                 "augment_cors_origin": False,
@@ -913,9 +917,10 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "https://cdn.test",
             },
             "https://custom.origin",
+            ActiveStatus(),
+            id = "User-defined cors_origin, no augmentation",
         ),
-        (
-            "User-defined cors_origin with augmentation enabled",
+        pytest.param(
             {
                 "cors_origin": "https://custom.origin",
                 "augment_cors_origin": True,
@@ -924,20 +929,10 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "https://cdn.test",
             },
             "https://cdn.test,https://custom.origin,https://example.com",
+            ActiveStatus(),
+            id = "User-defined cors_origin with augmentation enabled",
         ),
-        (
-            "Empty cors_origin with augmentation",
-            {
-                "cors_origin": "",
-                "augment_cors_origin": True,
-                "external_hostname": "example.com",
-                "force_https": True,
-                "s3_cdn_url": "https://cdn.test",
-            },
-            "https://cdn.test,https://example.com",
-        ),
-        (
-            "Multiple user-defined cors_origins with augmentation",
+        pytest.param(
             {
                 "cors_origin": "https://foo.com, https://bar.com",
                 "augment_cors_origin": True,
@@ -946,9 +941,10 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "https://cdn.test",
             },
             "http://example.com,https://bar.com,https://cdn.test,https://foo.com",
+            ActiveStatus(),
+            id = "Multiple user-defined cors_origins with augmentation",
         ),
-        (
-            "Duplicated origins across config and augmentation",
+        pytest.param(
             {
                 "cors_origin": " https://foo.com , https://foo.com ",
                 "augment_cors_origin": True,
@@ -957,10 +953,12 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "https://foo.com",
             },
             "https://foo.com",
+            ActiveStatus(),
+            id = "Duplicated origins across cors_origin and augmentation",
         ),
     ],
 )
-def test_get_cors_origin_behavior(test_label, config, expected):
+def test_get_cors_origin_behavior(config, expected, status):
     """
     arrange: deploy charm with CORS-related config
     act: configure charm with varying CORS inputs
@@ -969,8 +967,6 @@ def test_get_cors_origin_behavior(test_label, config, expected):
     harness = helpers.start_harness(with_config=config)
     harness.container_pebble_ready(SERVICE_NAME)
 
+    assert harness.model.unit.status == status
     env = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()["services"][SERVICE_NAME]["environment"]
-    assert env["DISCOURSE_CORS_ORIGIN"] == expected, (
-        f"[{test_label}] Expected '{expected}', got '{env['DISCOURSE_CORS_ORIGIN']}'"
-    )
-    assert isinstance(harness.model.unit.status, ActiveStatus)
+    assert env["DISCOURSE_CORS_ORIGIN"] == expected
