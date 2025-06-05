@@ -60,7 +60,7 @@ juju integrate discourse-k8s nginx-ingress-integrator
 <!-- vale Canonical.000-US-spellcheck = NO -->
 <!-- prometheus_scrape is the name of the interface>
 _Interface_: [prometheus_scrape](https://charmhub.io/interfaces/prometheus_scrape-v0)
-<!-- vale Canonical.000-US-spellcheck = NO -->
+<!-- vale Canonical.000-US-spellcheck = YES -->
 
 _Supported charms_: [prometheus-k8s](https://charmhub.io/prometheus-k8s)
 
