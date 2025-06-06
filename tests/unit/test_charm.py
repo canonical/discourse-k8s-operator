@@ -845,6 +845,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
     harness.charm.on.upgrade_charm.emit()
     setup_and_activate.assert_called_once()
 
+
 @pytest.mark.parametrize(
     "config, expected, status",
     [
@@ -858,7 +859,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "*",
             ActiveStatus(),
-            id = "Wildcard disables augmentation",
+            id="Wildcard disables augmentation",
         ),
         pytest.param(
             {
@@ -869,8 +870,10 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
                 "s3_cdn_url": "https://cdn.test",
             },
             "*",
-            BlockedStatus('invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty'),
-            id = "Raise error when invalid CORS config",
+            BlockedStatus(
+                "invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty"
+            ),
+            id="Raise error when invalid CORS config",
         ),
         pytest.param(
             {
@@ -882,7 +885,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "https://example.com",
             ActiveStatus(),
-            id = "Augment only with external_hostname (HTTPS)",
+            id="Augment only with external_hostname (HTTPS)",
         ),
         pytest.param(
             {
@@ -894,7 +897,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "https://cdn.test",
             ActiveStatus(),
-            id = "Augment only with s3_cdn_url",
+            id="Augment only with s3_cdn_url",
         ),
         pytest.param(
             {
@@ -906,7 +909,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "http://example.com,https://cdn.test",
             ActiveStatus(),
-            id = "Augment with both external_hostname (HTTP) and s3_cdn_url",
+            id="Augment with both external_hostname (HTTP) and s3_cdn_url",
         ),
         pytest.param(
             {
@@ -918,7 +921,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "https://custom.origin",
             ActiveStatus(),
-            id = "User-defined cors_origin, no augmentation",
+            id="User-defined cors_origin, no augmentation",
         ),
         pytest.param(
             {
@@ -930,7 +933,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "https://cdn.test,https://custom.origin,https://example.com",
             ActiveStatus(),
-            id = "User-defined cors_origin with augmentation enabled",
+            id="User-defined cors_origin with augmentation enabled",
         ),
         pytest.param(
             {
@@ -942,7 +945,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "http://example.com,https://bar.com,https://cdn.test,https://foo.com",
             ActiveStatus(),
-            id = "Multiple user-defined cors_origins with augmentation",
+            id="Multiple user-defined cors_origins with augmentation",
         ),
         pytest.param(
             {
@@ -954,7 +957,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "https://foo.com",
             ActiveStatus(),
-            id = "Duplicated origins across cors_origin and augmentation",
+            id="Duplicated origins across cors_origin and augmentation",
         ),
     ],
 )
@@ -968,5 +971,7 @@ def test_get_cors_origin_behavior(config, expected, status):
     harness.container_pebble_ready(SERVICE_NAME)
 
     assert harness.model.unit.status == status
-    env = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()["services"][SERVICE_NAME]["environment"]
+    env = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()["services"][SERVICE_NAME][
+        "environment"
+    ]
     assert env["DISCOURSE_CORS_ORIGIN"] == expected

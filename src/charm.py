@@ -241,7 +241,7 @@ class DiscourseCharm(CharmBase):
             if self.config["external_hostname"]
             else self.app.name
         )
-    
+
     def _get_cors_origin(self) -> str:
         """Return the combined CORS origins from 'cors_origin' and, if enabled,
         'external_hostname' and 's3_cdn_url'. Skips augmentation if 'cors_origin' is '*'.
@@ -261,7 +261,7 @@ class DiscourseCharm(CharmBase):
         if user_value == "*":
             # No need to augment if all origins allowed
             return "*"
-        
+
         origins = set()
         if user_value:
             origins.update(o.strip() for o in user_value.split(",") if o.strip())
@@ -300,8 +300,14 @@ class DiscourseCharm(CharmBase):
         """
         errors = []
 
-        if self.config.get("enable_cors") and self.config.get("cors_origin") == "" and not self.config.get("augment_cors_origin"):
-            errors.append("invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty")
+        if (
+            self.config.get("enable_cors")
+            and self.config.get("cors_origin") == ""
+            and not self.config.get("augment_cors_origin")
+        ):
+            errors.append(
+                "invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty"
+            )
 
         if self.config["throttle_level"] not in THROTTLE_LEVELS:
             errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")
