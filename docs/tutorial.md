@@ -123,6 +123,13 @@ Then you need to integrate the charm with Nginx Ingress Integrator:
 juju integrate discourse-k8s nginx-ingress-integrator
 ```
 
+### Validate workload is reachable
+
+To validate that you can successfully reach the deployed workload, run the following command:
+```
+curl http://discourse-k8s --resolve discourse-k8s:80:127.0.0.1
+```
+
 ### Create an admin user and log in
 
 To create an admin user, use the `create-user` action:
@@ -134,7 +141,7 @@ The command will return the password of the created user. Discourse will be depl
 If you are following the tutorial in your local machine, modify your `/etc/hosts` file so that it points to `127.0.0.1`:
 
 ```
-echo 127.0.0.1 discourse-k8s >> /etc/hosts
+echo "127.0.0.1 discourse-k8s" | sudo tee -a /etc/hosts
 ```
 
 After that, visit `http://discourse-k8s` to reach Discourse, using the credentials returned from the `create-user` action to login.
