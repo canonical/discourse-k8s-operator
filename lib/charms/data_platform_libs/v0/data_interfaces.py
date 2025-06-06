@@ -16,9 +16,9 @@ r"""Library to manage the relation for the data-platform products.
 
 This library contains the Requires and Provides classes for handling the relation
 between an application and multiple managed application supported by the data-team:
-MySQL, Postgresql, MongoDB, Redis, and Kafka.
+MySQL, PostgreSQL, MongoDB, Redis, and Kafka.
 
-### Database (MySQL, Postgresql, MongoDB, and Redis)
+### Database (MySQL, PostgreSQL, MongoDB, and Redis)
 
 #### Requires Charm
 This library is a uniform interface to a selection of common database

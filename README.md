@@ -2,10 +2,11 @@
 [![Publish to edge](https://github.com/canonical/discourse-k8s-operator/actions/workflows/publish_charm.yaml/badge.svg)](https://github.com/canonical/discourse-k8s-operator/actions/workflows/publish_charm.yaml)
 [![Promote charm](https://github.com/canonical/discourse-k8s-operator/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/discourse-k8s-operator/actions/workflows/promote_charm.yaml)
 [![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
-
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+<!-- "Operator" is part of the name -->
 # Discourse Operator
-
-A juju charm deploying and managing Discourse on Kubernetes. Discourse is the
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
+A Juju charm deploying and managing Discourse on Kubernetes. Discourse is the
 100% open source discussion platform. Use it as a mailing list, discussion
 forum or long-form chat room.
 
@@ -42,7 +43,7 @@ This charm can be integrated with other Juju charms and services:
 
   - [Redis](https://charmhub.io/redis-k8s): Redis is an open source (BSD licensed), in-memory data structure store, used as a database, cache and message broker.
   - [Saml](https://charmhub.io/saml-integrator): SAML is an open standard used for authentication.
-  - [Postgresql](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system.
+  - [PostgreSQL](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system.
 
 For a full list of integrations, see the [Charmhub documentation](https://charmhub.io/discourse-k8s/integrations).
 

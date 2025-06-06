@@ -17,7 +17,7 @@ NAME                            READY   STATUS    RESTARTS   AGE
 discourse-k8s-0                 2/2     Running   0          65m
 ```
 
-This shows there are 2 containers - the one named above, as well as a container for the charm code itself.
+This shows there are two containers - the one named above, as well as a container for the charm code itself.
 
 And if you run `kubectl describe pod discourse-k8s-0`, all the containers will have as Command ```/charm/bin/pebble```. That's because Pebble is responsible for the processes startup as explained above.
 
@@ -88,6 +88,8 @@ This is done by publishing a resource to Charmhub as described in the [Juju SDK 
 
 ## Integrations
 
+This section provides information about the integrations.
+
 ### Ingress
 
 The Discourse charm also supports being integrated with [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#what-is-ingress) by using [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator/).
@@ -103,7 +105,7 @@ PostgreSQL is an open-source object-relational database used by Discourse to sto
 Redis is an open-source in-memory data structure store used as a cache backend. Copies of frequently accessed data are stored and used if satisfy the request. Otherwise, the application will handle it. This configuration helps to reduce the number of queries and improve response latency.
 
 ### Grafana
-Grafana is an open-source visualization tools that allows to query, visualize, alert on, and visualize metrics from mixed datasources in configurable dashboards for observability. This charms is shipped with its own Grafana dashboard and supports integration with the [Grafana Operator](https://charmhub.io/grafana-k8s) to simplify observability.
+Grafana is an open-source visualization tools that allows to query, visualize, alert on, and visualize metrics from mixed data sources in configurable dashboards for observability. This charms is shipped with its own Grafana dashboard and supports integration with the [Grafana Operator](https://charmhub.io/grafana-k8s) to simplify observability.
 
 ### Loki
 Loki is an open-source fully-featured logging system. This charms is shipped with support for the [Loki Operator](https://charmhub.io/loki-k8s) to collect the generated logs.
@@ -120,8 +122,11 @@ For this charm, the following events are observed:
 1. [<container name>_pebble_ready](https://juju.is/docs/sdk/container-name-pebble-ready-event): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
 2. [config_changed](https://juju.is/docs/sdk/config-changed-event): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
 3. [add_admin_user_action](https://charmhub.io/discourse-k8s/actions): fired when add-admin-user action is executed. Action: add an admin user with the provided email and password.
+<!-- vale Canonical.400-Enforce-inclusive-terms = NO -->
+<!-- master refers to the main database -->
 4. [database_relation_joined](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation joins. Action: initialize the database and enable the appropriate extensions.
 5. [master_changed](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation change. Action: update the database connection string configuration and emit config_changed event.
+<!-- vale Canonical.400-Enforce-inclusive-terms = YES -->
 6. [redis_relation_updated](https://github.com/canonical/redis-k8s-operator): Redis Operator custom event for when the relation details have been updated. Action: wait for the integrations and restart the containers.
 
 ## Charm code overview
