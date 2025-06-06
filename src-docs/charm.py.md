@@ -5,7 +5,7 @@
 # <kbd>module</kbd> `charm.py`
 Charm for Discourse on kubernetes. 
 
-**Global Variables**
+**Global variables**
 ---------------
 - **DEFAULT_RELATION_NAME**
 - **DATABASE_NAME**
