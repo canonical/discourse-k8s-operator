@@ -1,5 +1,7 @@
 # How to configure the hostname
 
+This guide provides instructions for configuring the external hostname of the Discourse charm.
+
 ### Prerequisites
 
 Deploy and relate [nginx-ingress-integrator](https://charmhub.io/nginx-ingress-integrator) charm.

@@ -1,17 +1,17 @@
 # Deploy the Discourse charm for the first time
 
+In this tutorial, we'll go through each step of the process to get a basic Discourse deployment.
+
 ## What you'll do
 
 - Deploy the Discourse charm
 - Integrate with nginx-ingress-integrator, postgresql-k8s and redis-k8s charms
 - Inspect the Kubernetes resources created
 
-In this tutorial, we'll go through each step of the process to get a basic Discourse deployment.
-
 ## Requirements
 - A working station, e.g., a laptop, with amd64 architecture.
 - Juju 3 installed and bootstrapped to a MicroK8s controller. You can accomplish this process by using a Multipass VM as outlined in this guide: [Set up / Tear down your test environment](https://juju.is/docs/juju/set-up--tear-down-your-test-environment)
-- NGINX Ingress Controller. If you're using [MicroK8s](https://microk8s.io/), this can be done by running the command `microk8s enable ingress`. For more details, see [Addon: Ingress](https://microk8s.io/docs/addon-ingress).
+- NGINX Ingress Controller. If you're using [MicroK8s](https://microk8s.io/), this can be done by running the command `microk8s enable ingress`. For more details, see [Add-on: Ingress](https://microk8s.io/docs/addon-ingress).
 
 For more information about how to install Juju, see [Get started with Juju](https://juju.is/docs/olm/get-started-with-juju).
 
@@ -54,7 +54,7 @@ Enable the required PostgreSQL extensions:
 juju config postgresql-k8s plugin_hstore_enable=True plugin_pg_trgm_enable=True
 ```
 
-### Integrate with the Redis k8s charm the PostgreSQL k8s charm
+### Integrate with the Redis k8s charm and the PostgreSQL k8s charm
 
 Integrate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
 ```
