@@ -871,7 +871,7 @@ def test_setup_and_activate_on_upgrade(monkeypatch: pytest.MonkeyPatch):
             },
             "*",
             BlockedStatus(
-                "invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty"
+                "invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"
             ),
             id="Raise error when invalid CORS config",
         ),
