@@ -258,7 +258,7 @@ class DiscourseCharm(CharmBase):
 
         origins = set()
         if user_value:
-            origins.update(o.strip() for o in user_value.split(",") if o.strip())
+            origins.update(s for s in (o.strip() for o in user_value.split(","))if s)
 
         if self.config.get("augment_cors_origin"):
             ext = self.config.get("external_hostname")
@@ -300,7 +300,7 @@ class DiscourseCharm(CharmBase):
             and not self.config.get("augment_cors_origin")
         ):
             errors.append(
-                "invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be none-empty"
+                "invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"
             )
 
         if self.config["throttle_level"] not in THROTTLE_LEVELS:
