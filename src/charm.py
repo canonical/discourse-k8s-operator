@@ -244,7 +244,7 @@ class DiscourseCharm(CharmBase):
 
     def _get_cors_origin(self) -> str:
         """Return the combined CORS origins.
-        
+
         Return the combined CORS origins from 'cors_origin' and, if enabled,
         'external_hostname' and 's3_cdn_url'. Skips augmentation if 'cors_origin' is '*'.
 
@@ -270,7 +270,7 @@ class DiscourseCharm(CharmBase):
             if cdn:
                 origins.add(cdn)
 
-        return ",".join(sorted(origins)).lower() if origins else ""
+        return ",".join(sorted(origins)) if origins else ""
 
     def _is_setup_completed(self) -> bool:
         """Check if the _set_up_discourse process has finished.
