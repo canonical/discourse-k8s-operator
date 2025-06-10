@@ -258,7 +258,7 @@ class DiscourseCharm(CharmBase):
 
         origins = set()
         if user_value:
-            origins.update(s for s in (o.strip() for o in user_value.split(","))if s)
+            origins.update(s for s in (o.strip() for o in user_value.split(",")) if s)
 
         if self.config.get("augment_cors_origin"):
             ext = self.config.get("external_hostname")
