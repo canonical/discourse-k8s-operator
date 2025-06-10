@@ -24,16 +24,16 @@ And if you run `kubectl describe pod discourse-k8s-0`, all the containers will h
 ## Charm architecture diagram
 
 ```mermaid
-C4Component
+C4Context
 title Component diagram for Discourse Charm
 
 Container_Boundary(discourse, "Discourse") {
-  Component(pebble, "Pebble", "", "Starts the Discourse server and app")
-  Component(unicorn-server, "Unicorn server", "", "Serves the Discourse application")
-  Component(charm, "Discourse App", "", "Discourse application")
+    Component(pebble, "Pebble", "", "Starts the Discourse server and app")
+    Component(unicorn-server, "Unicorn server", "", "Serves the Discourse application")
+    Component(charm, "Discourse App", "", "Discourse application")
 
-  Rel(pebble, unicorn-server, "")
-  Rel(unicorn-server, charm, "")
+    Rel(pebble, unicorn-server, "")
+    Rel(unicorn-server, charm, "")
 }
 ```
 
@@ -44,7 +44,7 @@ deployed on a Kubernetes cloud: the Discourse charm, the Redis charm, and the
 PostgreSQL charm.
 
 ```mermaid
-C4Container
+C4Context
 title Container diagram for Discourse deployment
 
 Container_Boundary(c1, "Discourse") {
