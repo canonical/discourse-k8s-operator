@@ -431,7 +431,7 @@ class DiscourseCharm(CharmBase):
             redis_port = int(relation_unit_data["port"])
         except (KeyError, ValueError) as exc:
             raise MissingRedisRelationDataError(
-                "Either 'leader-host' or 'hostname' and 'ports' are mandatory"
+                "Either 'leader-host' or 'hostname' and 'port' are mandatory"
             ) from exc
 
         logger.debug(
