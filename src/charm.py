@@ -79,6 +79,8 @@ SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 DATABASE_RELATION_NAME = "database"
 
+INVALID_CORS_MESSAGE = "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # noqa # pylint: disable=line-too-long
+
 
 class MissingRedisRelationDataError(Exception):
     """Custom exception to be raised in case of malformed/missing redis relation data."""
@@ -251,12 +253,12 @@ class DiscourseCharm(CharmBase):
         Returns:
             Comma-separated CORS origins string.
         """
-        user_value = self.config.get("cors_origin", "").strip()
+        user_value = str(self.config.get("cors_origin", "")).strip()
         if user_value == "*":
             # No need to augment if all origins allowed
             return "*"
 
-        origins = set()
+        origins: set[str] = set()
         if user_value:
             origins.update(s for s in (o.strip() for o in user_value.split(",")) if s)
 
@@ -266,7 +268,7 @@ class DiscourseCharm(CharmBase):
                 scheme = "https" if self.config.get("force_https") else "http"
                 origins.add(f"{scheme}://{ext}")
 
-            cdn = self.config.get("s3_cdn_url")
+            cdn = str(self.config.get("s3_cdn_url"))
             if cdn:
                 origins.add(cdn)
 
@@ -299,9 +301,7 @@ class DiscourseCharm(CharmBase):
             and self.config.get("cors_origin") == ""
             and not self.config.get("augment_cors_origin")
         ):
-            errors.append(
-                "invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"
-            )
+            errors.append(INVALID_CORS_MESSAGE)
 
         if self.config["throttle_level"] not in THROTTLE_LEVELS:
             errors.append(f"throttle_level must be one of: {' '.join(THROTTLE_LEVELS.keys())}")

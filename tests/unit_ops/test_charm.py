@@ -4,12 +4,10 @@
 """Discourse K8s operator charm unit tests."""
 
 import pytest
-
 from ops import testing
-from charm import DiscourseCharm
 from ops.model import ActiveStatus, BlockedStatus
 
-from charm import CONTAINER_NAME, SERVICE_NAME
+from charm import CONTAINER_NAME, INVALID_CORS_MESSAGE, SERVICE_NAME, DiscourseCharm
 
 
 @pytest.mark.parametrize(
@@ -36,9 +34,7 @@ from charm import CONTAINER_NAME, SERVICE_NAME
                 "s3_cdn_url": "https://cdn.test",
             },
             "*",
-            BlockedStatus(
-                "invalid CORS config. Either `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"
-            ),
+            BlockedStatus(INVALID_CORS_MESSAGE),
             id="Raise error when invalid CORS config",
         ),
         pytest.param(
@@ -127,24 +123,24 @@ from charm import CONTAINER_NAME, SERVICE_NAME
         ),
     ],
 )
-def test_get_cors_origin_behavior(config, expected_origin, expected_status, postgresql_relation, redis_relation):
+def test_get_cors_origin_behavior(config, expected_origin, expected_status, base_state):
     """
     arrange: deploy charm with CORS-related config
     act: configure charm with varying CORS inputs
     assert: DISCOURSE_CORS_ORIGIN matches expected result
     """
     ctx = testing.Context(DiscourseCharm)
-    container = testing.Container(name=CONTAINER_NAME, can_connect=True)
-    state_in = testing.State(
-        leader=True,
-        containers={container},
-        config=config,
-        relations=[postgresql_relation, redis_relation],
-    )
+
+    base_state["config"] = config
+
+    state_in = testing.State(**base_state)
+    container = state_in.get_container(CONTAINER_NAME)
 
     state_out = ctx.run(ctx.on.pebble_ready(container), state_in)
-    ## Or ctx.on.config_changed()
     plan_out = state_out.get_container(container.name).plan
 
     assert state_out.unit_status == expected_status
-    assert plan_out.services[SERVICE_NAME].environment["DISCOURSE_CORS_ORIGIN"] == expected_origin
+    if expected_status == ActiveStatus():  # plan is empty when in BlockedStatus
+        assert (
+            plan_out.services[SERVICE_NAME].environment["DISCOURSE_CORS_ORIGIN"] == expected_origin
+        )
