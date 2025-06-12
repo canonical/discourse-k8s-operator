@@ -10,19 +10,14 @@ from charm import CONTAINER_NAME, DATABASE_NAME
 
 
 @pytest.fixture(name="base_state")
-def base_state_fixture(discourse_config, discourse_container, postgresql_relation, redis_relation):
+def base_state_fixture(discourse_container, postgresql_relation, redis_relation):
     input_state = {
         "leader": True,
-        "config": discourse_config,
+        "config": {},
         "containers": {discourse_container},
         "relations": [postgresql_relation, redis_relation],
     }
     yield input_state
-
-
-@pytest.fixture(name="discourse_config")
-def discourse_config_fixture():
-    yield {}
 
 
 @pytest.fixture(name="discourse_container")
