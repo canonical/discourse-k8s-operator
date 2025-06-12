@@ -263,7 +263,7 @@ class DiscourseCharm(CharmBase):
             origins.update(s for s in (o.strip() for o in user_value.split(",")) if s)
 
         if self.config.get("augment_cors_origin"):
-            ext = self.config.get("external_hostname")
+            ext = self._get_external_hostname()
             if ext:
                 scheme = "https" if self.config.get("force_https") else "http"
                 origins.add(f"{scheme}://{ext}")

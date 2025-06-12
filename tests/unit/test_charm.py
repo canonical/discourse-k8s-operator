@@ -194,7 +194,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert "DISCOURSE_BACKUP_LOCATION" not in updated_plan_env
-    assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
+    assert "http://discourse-k8s" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
     assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
     assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
     assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
@@ -250,7 +250,7 @@ def test_on_config_changed_when_valid():
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert "s3" == updated_plan_env["DISCOURSE_BACKUP_LOCATION"]
-    assert "*" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
+    assert "https://discourse.local,s3.cdn" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
     assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
     assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
     assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]

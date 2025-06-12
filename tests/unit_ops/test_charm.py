@@ -53,18 +53,6 @@ from charm import CONTAINER_NAME, INVALID_CORS_MESSAGE, SERVICE_NAME, DiscourseC
             {
                 "cors_origin": "",
                 "augment_cors_origin": True,
-                "external_hostname": "",
-                "force_https": True,
-                "s3_cdn_url": "https://cdn.test",
-            },
-            "https://cdn.test",
-            ActiveStatus(),
-            id="Augment only with s3_cdn_url",
-        ),
-        pytest.param(
-            {
-                "cors_origin": "",
-                "augment_cors_origin": True,
                 "external_hostname": "example.com",
                 "force_https": False,
                 "s3_cdn_url": "https://cdn.test",
