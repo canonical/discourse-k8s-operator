@@ -97,10 +97,7 @@ def add_postgres_relation(harness):
         "username": "someuser",
     }
 
-    # get a relation ID for the test outside of __init__
-    harness.db_relation_id = (  # pylint: disable=attribute-defined-outside-init
-        harness.add_relation("database", "postgresql")
-    )
+    harness.db_relation_id = harness.add_relation("database", "postgresql")
     harness.add_relation_unit(harness.db_relation_id, "postgresql/0")
     harness.update_relation_data(
         harness.db_relation_id,
@@ -123,8 +120,6 @@ def add_redis_relation(harness, relation_data=None, app_data=None):
         app_data={"leader-host": "redis-host"} if app_data is None else app_data,
     )
     harness.add_relation_unit(redis_relation_id, "redis/0")
-    # We need to bypass protected access to inject the relation data
-    # pylint: disable=protected-access
     harness.update_relation_data(
         redis_relation_id,
         "redis/0",
