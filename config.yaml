@@ -1,10 +1,20 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 options:
+  augment_cors_origin:
+    type: boolean
+    description: |
+      Appends external_hostname (with http/https) and s3_cdn_url to the list of
+      allowed CORS origins. Has no effect if 'cors_origin' is "*". 
+      To rely only on automatic cors origins, set 'cors_origin' to an empty string.
+    default: true
   cors_origin:
     type: string
-    description: "Cors origin string to use, defaults to '*'."
-    default: "*"
+    description: |
+      Comma-separated list of allowed CORS origins. Defaults to "*", allowing all
+      origins. To restrict access, provide specific origins or set to an empty string
+      to rely solely on 'augment_cors_origin' if enabled.
+    default: ""
   developer_emails:
     type: string
     description: "Comma delimited list of email addresses that should have developer level access."

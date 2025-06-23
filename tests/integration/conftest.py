@@ -147,7 +147,6 @@ def app_fixture(
     pytestconfig: pytest.Config,
     charm_file: str,
 ):
-    # pylint: disable=too-many-locals
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
@@ -274,8 +273,8 @@ def admin_api_key_fixture(admin_credentials: types.Credentials, discourse_addres
         response = session.get(
             f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}
         )
-        # pylint doesn't see the "ok" member
-        assert response.ok, response.text  # pylint: disable=no-member
+
+        assert response.ok, response.text
         data = response.json()
         assert data["csrf"], data
         csrf = data["csrf"]
@@ -294,8 +293,8 @@ def admin_api_key_fixture(admin_credentials: types.Credentials, discourse_addres
                 "timezone": "Asia/Hong_Kong",
             },
         )
-        # pylint doesn't see the "ok" member
-        assert response.ok, response.text  # pylint: disable=no-member
+
+        assert response.ok, response.text
         assert "error" not in response.json()
         # Create global key
         response = session.post(
@@ -307,8 +306,8 @@ def admin_api_key_fixture(admin_credentials: types.Credentials, discourse_addres
             },
             json={"key": {"description": "admin-api-key", "username": None}},
         )
-        # pylint doesn't see the "ok" member
-        assert response.ok, response.text  # pylint: disable=no-member
+
+        assert response.ok, response.text
 
     data = response.json()
     assert data["key"]["key"], data

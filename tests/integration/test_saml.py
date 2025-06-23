@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.abort_on_fail
-def test_saml_login(  # pylint: disable=too-many-locals,too-many-arguments
+def test_saml_login(  # pylint: disable=too-many-locals
     juju: jubilant.Juju,
     app: types.App,
     requests_timeout: int,
