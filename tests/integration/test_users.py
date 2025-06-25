@@ -59,8 +59,8 @@ def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: st
         response = session.get(
             f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}, timeout=60
         )
-        # pylint doesn't see the "ok" member
-        assert response.ok, response.text  # pylint: disable=no-member
+
+        assert response.ok, response.text
         data = response.json()
         assert data["csrf"], data
         csrf = data["csrf"]
@@ -84,7 +84,7 @@ def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: st
             },
         )
 
-        assert response.ok, response.text  # pylint: disable=no-member
+        assert response.ok, response.text
         assert "error" not in response.json()
 
         assert not get_api_key(csrf), "This should fail as the user is not promoted"

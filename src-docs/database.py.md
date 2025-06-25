@@ -5,7 +5,7 @@
 # <kbd>module</kbd> `database.py`
 Provide the DatabaseObserver class to handle database relation and state. 
 
-**Global Variables**
+**Global variables**
 ---------------
 - **DATABASE_NAME**
 
