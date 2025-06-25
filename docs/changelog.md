@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-06-23
+
+- Add Discourse Service Health Grafana dashboard.
+
 ### 2025-04-09
 
 - Add how-to landing page.
