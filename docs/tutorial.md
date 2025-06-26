@@ -38,7 +38,7 @@ juju add-model discourse-tutorial
 
 ### Deploy the charms
 
-Discourse requires connections to PostgreSQL and Redis. For more information, see the [Charm Architecture](https://charmhub.io/discourse-k8s/docs/charm-architecture).
+Discourse requires connections to PostgreSQL and Redis. For more information, see the [Charm Integrations](https://charmhub.io/discourse-k8s/docs/reference-integrations).
 
 > NOTE: Discourse requires PostgreSQL extensions to be available in the relation.
 
