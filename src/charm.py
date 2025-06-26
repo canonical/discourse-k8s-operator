@@ -465,6 +465,7 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_DEVELOPER_EMAILS": self.config["developer_emails"],
             "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
             "DISCOURSE_HOSTNAME": self._get_external_hostname(),
+            "DISCOURSE_MAX_CATEGORY_NESTING": str(self.config["max_category_nesting"]),
             "DISCOURSE_REDIS_HOST": redis_relation_data[0],
             "DISCOURSE_REDIS_PORT": str(redis_relation_data[1]),
             "DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS": "0",
