@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-06-26
+
+- docs: Fix broken links in the tutorial.
+
 ### 2025-06-23
 
 - Add Discourse Service Health Grafana dashboard.
