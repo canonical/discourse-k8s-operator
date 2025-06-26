@@ -1,19 +1,18 @@
 {
   "annotations": {
     "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+        {
+          "builtIn": 1,
+          "datasource": "${prometheusds}",
+          "enable": false,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "limit": 100,
+          "name": "Annotations & Alerts",
+          "showIn": 0,
+          "type": "dashboard"
+        }
+      ]
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
@@ -23,7 +22,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "${prometheusds}",
       "description": "99% of HTTP requests were completed in the time displayed on the panel or less.",
       "fieldConfig": {
         "defaults": {
@@ -97,7 +96,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${prometheusds}",
           "editorMode": "code",
           "expr": "avg(discourse_http_duration_seconds{quantile=\"0.99\",action=\"latest\",controller=\"list\"})",
           "legendFormat": "HTTP",
@@ -109,7 +108,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "${prometheusds}",
       "description": "Total of errors (status code 4* or 5*)",
       "fieldConfig": {
         "defaults": {
@@ -186,7 +185,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${prometheusds}",
           "editorMode": "code",
           "expr": "sum(rate(discourse_http_requests{status=~\"^[45].*\"}[5m])) by (status, job)",
           "legendFormat": "{{status}}",
@@ -198,7 +197,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "${prometheusds}",
       "description": "Number of active requests",
       "fieldConfig": {
         "defaults": {
@@ -275,7 +274,7 @@
       },
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${prometheusds}",
           "editorMode": "code",
           "expr": "sum(discourse_active_app_reqs{}) by (job)",
           "legendFormat": "Active requests",
@@ -287,7 +286,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "${prometheusds}",
       "description": "V8 used memory and number of active threads",
       "fieldConfig": {
         "defaults": {
@@ -363,7 +362,7 @@
       "pluginVersion": "9.5.3",
       "targets": [
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${prometheusds}",
           "editorMode": "code",
           "exemplar": false,
           "expr": "sum(discourse_v8_used_heap_size)",
@@ -375,7 +374,7 @@
           "refId": "A"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": "${prometheusds}",
           "editorMode": "code",
           "expr": "sum(discourse_thread_count)",
           "hide": false,
