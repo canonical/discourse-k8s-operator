@@ -10,10 +10,10 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 
 ## Requirements
 - A working station, e.g., a laptop, with amd64 architecture.
-- Juju 3 installed and bootstrapped to a MicroK8s controller. You can accomplish this process by using a Multipass VM as outlined in this guide: [Set up / Tear down your test environment](https://juju.is/docs/juju/set-up--tear-down-your-test-environment)
+- Juju 3 installed and bootstrapped to a MicroK8s controller. You can accomplish this process by using a Multipass VM as outlined in this guide: [Set up / Tear down your test environment]([https://juju.is/docs/juju/set-up--tear-down-your-test-environment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/#set-up-your-deployment-local-testing-and-development))
 - NGINX Ingress Controller. If you're using [MicroK8s](https://microk8s.io/), this can be done by running the command `microk8s enable ingress`. For more details, see [Add-on: Ingress](https://microk8s.io/docs/addon-ingress).
 
-For more information about how to install Juju, see [Get started with Juju](https://juju.is/docs/olm/get-started-with-juju).
+For more information about how to install Juju, see [Get started with Juju]([https://juju.is/docs/olm/get-started-with-juju](https://documentation.ubuntu.com/juju/3.6/tutorial/)).
 
 :warning: When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
 VM IP in steps that assume you're running locally. To get the IP address of the
