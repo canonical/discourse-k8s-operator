@@ -37,7 +37,7 @@ options:
     default: false
   max_category_nesting:
     type: int
-    description: "Maximum category nesting allowed."
+    description: "Maximum category nesting allowed. Minimum is 2, maximum is 3."
     default: 2
   saml_sync_groups:
     type: string

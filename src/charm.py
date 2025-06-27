@@ -69,6 +69,7 @@ LOG_PATHS = [
     f"{DISCOURSE_PATH}/log/unicorn.stderr.log",
     f"{DISCOURSE_PATH}/log/unicorn.stdout.log",
 ]
+MAX_CATEGORY_NESTING_LEVELS = [2, 3]
 PROMETHEUS_PORT = 3000
 REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
 SCRIPT_PATH = "/srv/scripts"
@@ -311,7 +312,11 @@ class DiscourseCharm(CharmBase):
             and self.model.get_relation(DEFAULT_RELATION_NAME) is None
         ):
             errors.append("force_saml_login cannot be true without a saml relation")
-
+        if self.config["max_category_nesting"] not in MAX_CATEGORY_NESTING_LEVELS:
+            errors.append(
+                "max_category_nesting must be one of: "
+                f"{', '.join(map(str, MAX_CATEGORY_NESTING_LEVELS))}"
+            )
         if (
             self.config["saml_sync_groups"]
             and self.model.get_relation(DEFAULT_RELATION_NAME) is None
