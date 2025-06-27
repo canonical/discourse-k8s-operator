@@ -70,7 +70,7 @@ UpdateRelStyle(discourse_charm, postgresql_charm, $textColor="blue", $offsetX="2
 
 ## Containers
 
-Configuration files for the containers can be found in [the image directory of the charm repository](https://github.com/canonical/discourse-k8s-operator/tree/main/image).
+Configuration files for the workload can be found [here](https://github.com/canonical/discourse-k8s-operator/blob/main/config.yaml).
 
 ### Discourse
 
@@ -94,7 +94,7 @@ This section provides information about the integrations.
 
 The Discourse charm also supports being integrated with [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#what-is-ingress) by using [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator/).
 
-In this case, an existing Ingress controller is required. For more information, see [Adding the Ingress Relation to a Charm](https://charmhub.io/nginx-ingress-integrator/docs/adding-ingress-relation).
+In this case, an existing Ingress controller is required. For more information, see [Adding the Ingress Relation to a Charm](https://charmhub.io/nginx-ingress-integrator/docs/add-the-ingress-relation).
 
 ### PostgreSQL
 
@@ -119,8 +119,8 @@ Accordingly to the [Juju SDK](https://juju.is/docs/sdk/event): "an event is a da
 
 For this charm, the following events are observed:
 
-1. [<container name>_pebble_ready](https://juju.is/docs/sdk/container-name-pebble-ready-event): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
-2. [config_changed](https://juju.is/docs/sdk/config-changed-event): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
+1. [<container name>_pebble_ready](https://documentation.ubuntu.com/juju/3.6/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
+2. [config_changed](https://documentation.ubuntu.com/juju/3.6/reference/hook/#config-changed): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
 3. [add_admin_user_action](https://charmhub.io/discourse-k8s/actions): fired when add-admin-user action is executed. Action: add an admin user with the provided email and password.
 <!-- vale Canonical.400-Enforce-inclusive-terms = NO -->
 <!-- master refers to the main database -->
@@ -135,6 +135,6 @@ The `src/charm.py` is the default entry point for a charm and has the DiscourseC
 
 CharmBase is the base class from which all Charms are formed, defined by [Ops](https://juju.is/docs/sdk/ops) (Python framework for developing charms).
 
-See more information in [Charm](https://juju.is/docs/sdk/constructs#heading--charm).
+See more information in [Charm](https://documentation.ubuntu.com/juju/3.6/howto/manage-charms/#build-a-charm).
 
 The `__init__` method guarantees that the charm observes all events relevant to its operation and handles them.
