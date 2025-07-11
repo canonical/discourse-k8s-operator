@@ -201,6 +201,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
     assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
     assert "discourse-k8s" == updated_plan_env["DISCOURSE_HOSTNAME"]
+    assert "2" == updated_plan_env["DISCOURSE_MAX_CATEGORY_NESTING"]
     assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
     assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
     assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
@@ -258,6 +259,7 @@ def test_on_config_changed_when_valid():
     assert "user@foo.internal" == updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"]
     assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
     assert "discourse.local" == updated_plan_env["DISCOURSE_HOSTNAME"]
+    assert "2" == updated_plan_env["DISCOURSE_MAX_CATEGORY_NESTING"]
     assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
     assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
     assert updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"] is not None
