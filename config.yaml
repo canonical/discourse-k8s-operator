@@ -35,6 +35,10 @@ options:
     type: boolean
     description: "Force SAML login (full screen, no local database logins)."
     default: false
+  max_category_nesting:
+    type: int
+    description: "Maximum category nesting allowed. Minimum is 2, maximum is 3."
+    default: 2
   saml_sync_groups:
     type: string
     description: "Comma-separated list of groups to sync from SAML provider."
