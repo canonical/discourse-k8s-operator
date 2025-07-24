@@ -8,7 +8,7 @@
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 A Juju charm deploying and managing Discourse on Kubernetes. Discourse is the
 100% open source discussion platform. Use it as a mailing list, discussion
-forum or long-form chat room.
+forum or long-form chat room. JIRA INTEGRATION TEST PLEASE IGNORE
 
 Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling and more.
 For Charmed Discourse, this includes:
