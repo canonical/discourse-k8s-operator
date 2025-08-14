@@ -9,4 +9,4 @@ jobs:
     secrets: inherit
     with:
       self-hosted-runner: true
-      self-hosted-runner-label: "edge"
+      self-hosted-runner-label: "self-hosted-linux-arm64-noble-edge"

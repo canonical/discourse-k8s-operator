@@ -15,4 +15,4 @@ jobs:
       channel: 1.28-strict/stable
       modules: '["test_charm", "test_saml", "test_users", "test_db_migration"]'
       self-hosted-runner: true
-      self-hosted-runner-label: "edge"
+      self-hosted-runner-label: "self-hosted-linux-arm64-noble-edge"
