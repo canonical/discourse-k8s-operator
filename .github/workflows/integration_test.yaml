@@ -16,3 +16,5 @@ jobs:
       modules: '["test_charm", "test_saml", "test_users", "test_db_migration"]'
       self-hosted-runner: true
       self-hosted-runner-label: "self-hosted-linux-arm64-noble-edge"
+      self-hosted-runner-arch: arm64
+      self-hosted-runner-image: noble
