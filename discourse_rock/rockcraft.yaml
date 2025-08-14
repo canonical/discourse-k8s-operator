@@ -11,6 +11,8 @@ license: Apache-2.0
 version: "1.0"
 platforms:
   arm64:
+    build-on: [arm64]
+    build-for: [arm64]
 parts:
   tooling:
     plugin: nil
@@ -39,7 +41,7 @@ parts:
       - ubuntu-dev-tools
       - zlib1g-dev
     build-environment:
-      - ARCH: "x64"
+      - ARCH: "arm64"
       - NODE_VERSION: "18.18.2"
       - RAILS_ENV: "production"
       - RUBY_INSTALL_VERSION: "0.9.3"
