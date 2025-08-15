@@ -119,15 +119,15 @@ Accordingly to the [Juju SDK](https://juju.is/docs/sdk/event): "an event is a da
 
 For this charm, the following events are observed:
 
-1. [<container name>_pebble_ready](https://documentation.ubuntu.com/juju/3.6/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
-2. [config_changed](https://documentation.ubuntu.com/juju/3.6/reference/hook/#config-changed): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
-3. [add_admin_user_action](https://charmhub.io/discourse-k8s/actions): fired when add-admin-user action is executed. Action: add an admin user with the provided email and password.
+1. [`<container name>_pebble_ready`](https://documentation.ubuntu.com/juju/3.6/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
+2. [`config_changed`](https://documentation.ubuntu.com/juju/3.6/reference/hook/#config-changed): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
+3. [`add_admin_user_action`](https://charmhub.io/discourse-k8s/actions): fired when add-admin-user action is executed. Action: add an admin user with the provided email and password.
 <!-- vale Canonical.400-Enforce-inclusive-terms = NO -->
 <!-- master refers to the main database -->
-4. [database_relation_joined](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation joins. Action: initialize the database and enable the appropriate extensions.
-5. [master_changed](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation change. Action: update the database connection string configuration and emit config_changed event.
+4. [`database_relation_joined`](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation joins. Action: initialize the database and enable the appropriate extensions.
+5. [`master_changed`](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation change. Action: update the database connection string configuration and emit `config_changed` event.
 <!-- vale Canonical.400-Enforce-inclusive-terms = YES -->
-6. [redis_relation_updated](https://github.com/canonical/redis-k8s-operator): Redis Operator custom event for when the relation details have been updated. Action: wait for the integrations and restart the containers.
+6. [`redis_relation_updated`](https://github.com/canonical/redis-k8s-operator): Redis Operator custom event for when the relation details have been updated. Action: wait for the integrations and restart the containers.
 
 ## Charm code overview
 
