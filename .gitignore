@@ -11,3 +11,14 @@ env
 .pytest_cache
 .mypy_cache
 *.rock
+
+# Ignore Vale config and StylesPath *except* for our local directories.
+.vale/styles/*
+!.vale/styles/local
+!.vale/styles/config/
+
+.vale/styles/config/*
+!.vale/styles/config/vocabularies/
+
+.vale/styles/config/vocabularies/*
+!.vale/styles/config/vocabularies/local
