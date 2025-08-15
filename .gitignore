@@ -1,6 +1,6 @@
 *.charm
 *.swp
-.tox
+.tox/
 .coverage
 __pycache__
 build

@@ -5,7 +5,7 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 ## What you'll do
 
 - Deploy the Discourse charm
-- Integrate with nginx-ingress-integrator, postgresql-k8s and redis-k8s charms
+- Integrate with `nginx-ingress-integrator`, `postgresql-k8s` and `redis-k8s` charms
 - Inspect the Kubernetes resources created
 
 ## Requirements
