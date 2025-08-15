@@ -12,7 +12,8 @@ env
 .mypy_cache
 *.rock
 
-# Ignore Vale config and StylesPath *except* for our local directories.
+
+# BEGIN VALE WORKFLOW IGNORE
 .vale/styles/*
 !.vale/styles/local
 !.vale/styles/config/
@@ -22,3 +23,4 @@ env
 
 .vale/styles/config/vocabularies/*
 !.vale/styles/config/vocabularies/local
+# END VALE WORKFLOW IGNORE
