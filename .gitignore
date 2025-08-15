@@ -12,7 +12,6 @@ env
 .mypy_cache
 *.rock
 
-
 # BEGIN VALE WORKFLOW IGNORE
 .vale/styles/*
 !.vale/styles/local
