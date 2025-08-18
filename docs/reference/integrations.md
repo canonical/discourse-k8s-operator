@@ -6,7 +6,7 @@
 
 _Interface_: pgsql
 
-_Supported charms_: [PostgreSQL-k8s](https://charmhub.io/postgresql-k8s),
+_Supported charms_: [`postgresql-k8s`](https://charmhub.io/postgresql-k8s),
 [PostgreSQL](https://charmhub.io/postgresql)
 
 Database integration is a required relation for the Discourse charm to supply
