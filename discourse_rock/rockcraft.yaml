@@ -40,18 +40,19 @@ parts:
       - zlib1g-dev
     build-environment:
       - ARCH: "x64"
-      - NODE_VERSION: "18.18.2"
+      - NODE_VERSION: "22.9.0"
       - RAILS_ENV: "production"
-      - RUBY_INSTALL_VERSION: "0.9.3"
-      - RUBY_VERSION: "3.2.6"
-      - YARN_VERSION: "1.22.19"
+      - RUBY_INSTALL_VERSION: "0.10.1"
+      - RUBY_VERSION: "3.3.8"
+      - PNPM_VERSION: "9.15.0"
     override-build: |
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
       curl -Ls $node_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
-      yarn_uri="https://github.com/yarnpkg/yarn/releases/download/v${YARN_VERSION}/yarn-v${YARN_VERSION}.tar.gz"
-      curl -Ls $yarn_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
+      curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION=${PNPM_VERSION} SHELL=bash sh -
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global terser
+      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global uglify-js
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global svgo
+      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global pnpm@9
       ruby_install_uri="https://github.com/postmodern/ruby-install/releases/download/v${RUBY_INSTALL_VERSION}/ruby-install-${RUBY_INSTALL_VERSION}.tar.gz"
       curl -fLO $ruby_install_uri
       tar -xzvf ruby-install-${RUBY_INSTALL_VERSION}.tar.gz
@@ -64,7 +65,7 @@ parts:
     plugin: dump
     source: https://github.com/discourse/discourse.git
     source-depth: 1
-    source-tag: v3.5.0
+    source-tag: v3.4.7
     source-type: git
     override-build: |
       craftctl default
@@ -233,7 +234,7 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-chat-integration/Gemfile"
-      yarn install --immutable
+      /root/.local/share/pnpm/pnpm install
   discourse-precompile-assets:
     plugin: nil
     after: [apply-patches, setup]
