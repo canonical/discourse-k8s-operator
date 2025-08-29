@@ -12,6 +12,15 @@
       "# renovate: base:\\s+(?<depName>[^:]*):(?<currentValue>[^\\s@]*)(@(?<currentDigest>sha256:[0-9a-f]*))?"],
       "datasourceTemplate": "docker",
       "versioningTemplate": "ubuntu"
+    },
+    {
+      "fileMatch": ["(^|/)rockcraft.yaml$"],
+      "description": "Update discourse",
+      "matchStringsStrategy": "any",
+      "matchStrings": ["source:.*discourse\/discourse\.git.*\n.*source-depth: 1.*\n.*source-tag: (?<currentValue>.+)"],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "discourse/discourse",
+      "versioningTemplate": "semver-coerced"
     }
   ],
   "packageRules": [
@@ -27,5 +36,6 @@
       "matchUpdateTypes": ["major", "minor", "patch"],
       "enabled": false
     }
-  ]
+  ],
+  "ignoreDeps": ["pydantic"]
 }
