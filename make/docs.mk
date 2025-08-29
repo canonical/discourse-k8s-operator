@@ -6,7 +6,7 @@
 # ==============================================================================
 
 ##@ Documentation
-.PHONY: docs-check docs-clean vale-sync vale lychee vale-clean
+.PHONY: docs-check clean-docs vale-sync vale lychee vale-clean
 
 
 # Vale settings
@@ -23,7 +23,7 @@ HAS_LYCHEE			:= $(shell command -v lychee;)
 
 docs-check: vale lychee ## Run all documentation checks (vale and lychee).
 
-docs-clean: vale-clean ## Clean documentation-related artifacts.
+clean-docs: vale-clean ## Clean documentation-related artifacts.
 
 # ==============================================================================
 # Dependency Check Targets

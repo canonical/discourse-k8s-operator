@@ -5,28 +5,27 @@
 # Common Makefile - Generic logic, managed centrally.
 # ==============================================================================
 
-# Default the charm's version from Git if not set in the root Makefile.
-CHARM_VERSION ?= $(shell git describe --tags --always --dirty)
-
-# Default target
-all: help
-
-# Include all logical modules
+# --- Includes ---
+# Include all the modular workflow files.
 include $(MAKE_DIR)/help.mk
 include $(MAKE_DIR)/rock.mk
 include $(MAKE_DIR)/charm.mk
 include $(MAKE_DIR)/juju.mk
+include $(MAKE_DIR)/tox.mk
 include $(MAKE_DIR)/docs.mk
 
+# Default target when 'make' is called without arguments.
+all: help
+
+.PHONY: all build publish deploy clean test lint unit integration docs
+
 ##@ General
-.PHONY: all help build test publish deploy clean
+build: build-rock build-charm         		## Build all artifacts (ROCK and Charm).
+publish: publish-rock                 		## Publish all artifacts.
+deploy: deploy-charm                  		## Deploy the charm for local testing.
+clean: clean-rock clean-charm clean-docs    ## Clean up all build artifacts.
+test: tox-unit								## Run unit tests.
+lint: tox-lint docs-check					## Run all linters and documentation checks.	
+integration: tox-integration          		## Deploy the charm, then run integration tests.
 
-build: build-rock build-charm         ## Build all artifacts (ROCK and Charm).
-test: lint unit                       ## Run all static analysis and unit tests.
-publish: publish-rock                 ## Publish all artifacts.
-deploy: deploy-charm                  ## Deploy the charm for local testing.
-clean: clean-rock clean-charm         ## Clean up build artifacts.
 
-##@ Testing
-lint:                                 ## Run linters.
-	tox -e lint
