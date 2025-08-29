@@ -39,8 +39,7 @@ $(ROCK_DIR)/$(ROCK_DYNAMIC_ARTIFACT):
 	@cd $(ROCK_DIR) && $(ROCKCRAFT_PACK_CMD)
 	@mv $(ROCK_DIR)/$(ROCK_STATIC_ARTIFACT) $(ROCK_DIR)/$(ROCK_DYNAMIC_ARTIFACT)
 
-
-publish-rock: $(ROCK_DIR)/$(ROCK_DYNAMIC_ARTIFACT) ## Push the ROCK OCI image to the registry.
+publish-rock: $(ROCK_DIR)/$(ROCK_DYNAMIC_ARTIFACT) check-microk8s-registry ## Push the ROCK OCI image to the registry.
 	$(call msg,"--> Publishing ROCK: $(ROCK_IMAGE)")
 	@$(SKOPEO_COPY_CMD) oci-archive:$(ROCK_DIR)/$(ROCK_DYNAMIC_ARTIFACT) docker://$(ROCK_IMAGE)
 

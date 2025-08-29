@@ -3,6 +3,7 @@
 """Discourse integration tests fixtures."""
 
 import logging
+import os
 import pathlib
 import secrets
 import subprocess  # nosec B404
@@ -28,6 +29,48 @@ ENABLED_PLUGINS = [
     "chat_integration",
 ]
 
+rock_image = os.environ.get('ROCK_IMAGE')
+charm_file = os.environ.get('CHARM_FILE')
+
+@pytest.fixture(scope="module")
+def charm_file() -> str:
+    """
+    The path to the built charm file, read from the CHARM_FILE env var.
+    """
+    charm_path = os.environ.get("CHARM_FILE")
+    if not charm_path:
+        pytest.fail(
+            "Environment variable CHARM_FILE is not set. "
+            "Please run tests via 'make integration'."
+        )
+    return charm_path
+
+@pytest.fixture(scope="module")
+def charm_resources() -> dict[str, str]:
+    """
+    The OCI resources for the charm, read from env vars.
+    """
+    resource_name = os.environ.get("OCI_RESOURCE_NAME")
+    rock_image_uri = os.environ.get("ROCK_IMAGE")
+
+    if not resource_name or not rock_image_uri:
+        pytest.fail(
+            "Environment variables OCI_RESOURCE_NAME and/or ROCK_IMAGE are not set. "
+            "Please run tests via 'make integration'."
+        )
+
+    return {resource_name: rock_image_uri}
+
+@pytest.fixture(scope="module")
+def charm_base() -> str:
+    """The base to deploy the charm on, e.g., 'ubuntu@22.04'."""
+    base = os.environ.get("JUJU_DEPLOY_BASE")
+    if not base:
+        pytest.fail(
+            "Environment variable JUJU_DEPLOY_BASE is not set. "
+            "Please run tests via 'make integration'."
+        )
+    return base
 
 @pytest.fixture(scope="session")
 def metadata():
@@ -115,30 +158,6 @@ def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]
         show_debug_log(juju)
         return
 
-
-@pytest.fixture(scope="session")
-def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
-    """Pytest fixture that packs the charm and returns the filename, or --charm-file if set."""
-    charm_file = pytestconfig.getoption("--charm-file")
-    if charm_file:
-        yield charm_file
-        return
-
-    try:
-        subprocess.run(
-            ["charmcraft", "pack"], check=True, capture_output=True, text=True
-        )  # nosec B603, B607
-    except subprocess.CalledProcessError as exc:
-        raise OSError(f"Error packing charm: {exc}; Stderr:\n{exc.stderr}") from None
-
-    app_name = metadata["name"]
-    charm_path = pathlib.Path(__file__).parent.parent.parent
-    charms = [p.absolute() for p in charm_path.glob(f"{app_name}_*.charm")]
-    assert charms, f"{app_name} .charm file not found"
-    assert len(charms) == 1, f"{app_name} has more than one .charm file, unsure which to use"
-    yield str(charms[0])
-
-
 @pytest.fixture(scope="module", name="app")
 def app_fixture(
     juju: jubilant.Juju,
@@ -146,6 +165,8 @@ def app_fixture(
     app_config: Dict[str, str],
     pytestconfig: pytest.Config,
     charm_file: str,
+    charm_resources: Dict[str, str],
+    charm_base: str,
 ):
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
@@ -173,16 +194,12 @@ def app_fixture(
 
     juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
 
-    resources = {
-        "discourse-image": pytestconfig.getoption("--discourse-image"),
-    }
-
     juju.deploy(
         charm=charm_file,
         app=app_name,
-        resources=resources,
+        resources=charm_resources,
         config=app_config,
-        base="ubuntu@20.04",
+        base=charm_base,
     )
 
     juju.wait(lambda status: jubilant.all_waiting(status, app_name))
