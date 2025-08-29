@@ -1,13 +1,18 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
-# Minimal makefile for documentation
-#
+# ==============================================================================
+# Documentation specific logic
+# ==============================================================================
+
+##@ Documentation
+.PHONY: docs-check docs-clean vale-sync vale lychee vale-clean
+
 
 # Vale settings
-VALE_DIR ?= .vale
+VALE_DIR 			?= .vale
 PRAECEPTA_CONFIG 	?= .vale.ini
-DOCS_FILES 	?= docs/ README.md CONTRIBUTING.md
+DOCS_FILES 			?= docs/ README.md CONTRIBUTING.md
 
 HAS_VALE			:= $(shell command -v vale;)
 HAS_LYCHEE			:= $(shell command -v lychee;)
@@ -16,11 +21,9 @@ HAS_LYCHEE			:= $(shell command -v lychee;)
 # Docs Targets
 # ==============================================================================
 
-.PHONY: docs-check
-docs-check: vale lychee ## Run all Docs checks
+docs-check: vale lychee ## Run all documentation checks (vale and lychee).
 
-.PHONY: docs-clean
-docs-clean: vale-clean
+docs-clean: vale-clean ## Clean documentation-related artifacts.
 
 # ==============================================================================
 # Dependency Check Targets
@@ -45,12 +48,10 @@ endif
 # Main Vale Targets
 # ==============================================================================
 
-.PHONY: vale-sync
 vale-sync: ## Download and install external Vale configuration sources
 	$(call msg,--- Syncing Vale styles... ---)
 	@vale sync
 
-.PHONY: vale
 vale: .check-vale vale-sync ## Run Vale checks on docs
 	$(call msg,--- Running Vale checks on "$(DOCS_FILES)"... ---)
 	@vale --config=$(PRAECEPTA_CONFIG) $(DOCS_FILES)
@@ -59,7 +60,6 @@ vale: .check-vale vale-sync ## Run Vale checks on docs
 # Main Lychee Targets
 # ==============================================================================
 
-.PHONY: lychee
 lychee: .check-lychee ## Run Lychee checks on docs
 	$(call msg,--- Running lychee checks on "$(LYCHEE_DOCS_FILES)"... ---)
 	@lychee $(DOCS_FILES)
@@ -68,7 +68,6 @@ lychee: .check-lychee ## Run Lychee checks on docs
 # Helper Targets
 # ==============================================================================
 
-.PHONY: vale-clean
-vale-clean:
+vale-clean: ## Clean documentation-related artifacts.
 	$(call msg,--- Cleaning downloaded packages and ignored files from "$(VALE_DIR)"... ---)
 	@git clean -dfX $(VALE_DIR)
