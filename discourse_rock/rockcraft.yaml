@@ -9,10 +9,8 @@ base: ubuntu@22.04
 run-user: _daemon_  # UID/GID 584792
 license: Apache-2.0
 version: "1.0"
-platforms:
-  arm64:
-    build-on: [arm64]
-    build-for: [arm64]
+architectures:
+  - build-on: [arm64]
 parts:
   tooling:
     plugin: nil
