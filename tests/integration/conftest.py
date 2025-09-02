@@ -33,7 +33,7 @@ rock_image = os.environ.get('ROCK_IMAGE')
 charm_file = os.environ.get('CHARM_FILE')
 
 @pytest.fixture(scope="module")
-def charm_resources() -> dict[str, str]:
+def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
     """
     The OCI resources for the charm, read from option or env vars.
     """
@@ -41,7 +41,7 @@ def charm_resources() -> dict[str, str]:
     discourse_image = pytestconfig.getoption("--discourse-image")
     if discourse_image:
         return {
-            "discourse-image": pytestconfig.getoption("--discourse-image"),
+            "discourse-image": discourse_image,
         }   
 
     resource_name = os.environ.get("OCI_RESOURCE_NAME")

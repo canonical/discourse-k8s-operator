@@ -43,7 +43,7 @@ tox-unit: $(TOX) ## Run unit tests using tox.
 
 tox-integration: $(TOX) build-charm publish-rock ## Deploy the rock, build the charm, then run integration tests.
 	$(call msg,"--> Running tox environment: integration")
-	@$(INTEGRATION_TEST_ENV) -e integration -- $(TOX_INTEGRATION_ARGS)
+	@$(INTEGRATION_TEST_ENV) $(TOX) -e integration -- $(TOX_INTEGRATION_ARGS)
 
 # This pattern rule allows running any other tox environment.
 # Example: 'make tox-fmt' will run 'tox -e fmt'.

@@ -41,6 +41,10 @@ $(ROCK_DIR)/$(ROCK_DYNAMIC_ARTIFACT):
 
 publish-rock: $(ROCK_DIR)/$(ROCK_DYNAMIC_ARTIFACT) check-microk8s-registry ## Push the ROCK OCI image to the registry.
 	$(call msg,"--> Publishing ROCK: $(ROCK_IMAGE)")
+	@! skopeo inspect docker://$(ROCK_IMAGE) >/dev/null 2>&1 || { \
+		$(call msg,"Image $(ROCK_IMAGE) already exists in registry, skipping upload."); \
+		exit 0; \
+	}
 	@$(SKOPEO_COPY_CMD) oci-archive:$(ROCK_DIR)/$(ROCK_DYNAMIC_ARTIFACT) docker://$(ROCK_IMAGE)
 
 clean-rock: ## Remove ROCK artifacts.

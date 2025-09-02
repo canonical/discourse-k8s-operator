@@ -12,9 +12,9 @@ CYAN_COLOR=\033[0;36m
 YELLOW_COLOR=\033[0;93m
 RED_COLOR=\033[0;91m
 
-msg = printf '$(CYAN_COLOR)$(1)$(NO_COLOR)\n'
-warnmsg = printf '$(YELLOW_COLOR)Warning: $(1)$(NO_COLOR)\n'
-errmsg = printf '$(RED_COLOR)Error: $(1)$(NO_COLOR)\n' && exit 1
+msg = @printf '$(CYAN_COLOR)$(1)$(NO_COLOR)\n'
+warnmsg = @printf '$(YELLOW_COLOR)Warning: $(1)$(NO_COLOR)\n'
+errmsg = @printf '$(RED_COLOR)Error: $(1)$(NO_COLOR)\n' && exit 1
 
 
 ##@ Helpers

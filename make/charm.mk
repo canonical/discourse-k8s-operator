@@ -23,7 +23,7 @@ else
     $(call errmsg,"yq not found, cannot determine charm base. Filename may be incorrect.")
 endif
 
-CHARM_STATIC_ARTIFACT 	:= $(CHARM_NAME)_$(CHARM_BASE_STRING)_$(CHARM_PLATFORM).charm
+CHARM_STATIC_ARTIFACT 	:= $(CHARM_NAME)_$(CHARM_BASE_STRING)-$(CHARM_PLATFORM).charm
 CHARM_DYNAMIC_ARTIFACT 	:= $(CHARM_NAME)_$(CHARM_VERSION)_$(CHARM_BASE_STRING)_$(CHARM_PLATFORM).charm
 
 ##@ Charm
