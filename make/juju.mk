@@ -20,6 +20,14 @@ setup-juju-model: ## Create and configure the Juju model for development.
 
 check-microk8s-registry: ## Check if the MicroK8s registry addon is enabled.
 	@command -v microk8s >/dev/null || \
-		( $(call errmsg, "microk8s command not found. Is MicroK8s installed and in your PATH?") )
-	@microk8s status --wait-ready | grep "registry: enabled" > /dev/null || \
-		( $(call errmsg, "MicroK8s registry is not enabled. Please run 'microk8s enable registry'.") )
+		( $(call errmsg,"microk8s command not found. Is MicroK8s installed and in your PATH?") )
+	@command -v yq >/dev/null || \
+		( $(call errmsg,"yq command not found. Please install yq to parse MicroK8s YAML output.") )
+	@microk8s status --wait-ready --format=yaml | \
+		yq '.addons[] | select(.name=="registry") | .status' | grep -qx "enabled" || \
+		( $(call errmsg,"MicroK8s registry is not enabled. Please run 'microk8s enable registry'.") )
+
+print-path:
+	@echo $$PATH
+	@which charmcraft || echo "charmcraft not found"
+	@which microk8s || echo "microk8s not found"

@@ -10,9 +10,7 @@ CHARM_PLATFORM 			?= amd64
 # The index of the base in charmcraft.yaml to build
 CHARM_BASE_INDEX 		?= 0
 
-CHARM_STATIC_ARTIFACT 	:= $(CHARM_NAME)_$(CHARM_PLATFORM).charm
-
-CHARMCRAFT_PACK_CMD 	:= charmcraft pack --base-index=$(CHARM_BASE_INDEX)
+CHARMCRAFT_PACK_CMD 	:= charmcraft pack --bases-index=$(CHARM_BASE_INDEX)
 HAS_YQ := $(shell command -v yq)
 
 ifneq ($(HAS_YQ),)
