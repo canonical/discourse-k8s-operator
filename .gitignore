@@ -1,6 +1,6 @@
 *.charm
 *.swp
-.tox
+.tox/
 .coverage
 __pycache__
 build
@@ -11,3 +11,15 @@ env
 .pytest_cache
 .mypy_cache
 *.rock
+
+# BEGIN VALE WORKFLOW IGNORE
+.vale/styles/*
+!.vale/styles/local
+!.vale/styles/config/
+
+.vale/styles/config/*
+!.vale/styles/config/vocabularies/
+
+.vale/styles/config/vocabularies/*
+!.vale/styles/config/vocabularies/local
+# END VALE WORKFLOW IGNORE

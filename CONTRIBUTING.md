@@ -30,7 +30,7 @@ When contributing, you must abide by the
 This project uses [semantic versioning](https://semver.org/).
 
 Please ensure that any new feature, fix, or significant change is documented by
-adding an entry to the [CHANGELOG.md](link-to-changelog) file.
+adding an entry to the [CHANGELOG.md](https://charmhub.io/discourse-k8s/docs/changelog) file.
 
 To learn more about changelog best practices, visit [Keep a Changelog](https://keepachangelog.com/).
 
