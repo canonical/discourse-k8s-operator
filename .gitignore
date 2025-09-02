@@ -12,6 +12,7 @@ env
 .pytest_cache
 .mypy_cache
 *.rock
+version
 
 # BEGIN VALE WORKFLOW IGNORE
 .vale/styles/*
