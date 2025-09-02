@@ -26,6 +26,7 @@ deploy: deploy-charm                  		## Deploy the charm for local testing.
 clean: clean-rock clean-charm clean-docs    ## Clean up all build artifacts.
 test: tox-unit								## Run unit tests.
 lint: tox-lint docs-check					## Run all linters and documentation checks.	
+unit: tox-unit                    			## Run unit tests.
 integration: tox-integration          		## Deploy the charm, then run integration tests.
 
 

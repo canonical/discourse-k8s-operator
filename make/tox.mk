@@ -22,11 +22,11 @@ INTEGRATION_TEST_ENV ?= \
 	JUJU_DEPLOY_BASE=$(JUJU_DEPLOY_BASE)
 
 $(VENV_DIR):
-	$(call msg,"--> Creating Python virtual environment in $(VENV_DIR)...")
+	@$(call msg,"--> Creating Python virtual environment in $(VENV_DIR)...")
 	@python3 -m venv $(VENV_DIR)
 
 $(TOX): $(VENV_DIR)
-	$(call msg,"--> Installing tox in virtual environment...")
+	@$(call msg,"--> Installing tox in virtual environment...")
 	@$(VENV_PYTHON) -m pip install tox
 
 ##@ Testing
@@ -34,22 +34,22 @@ $(TOX): $(VENV_DIR)
 .PHONY: tox-lint tox-unit tox-integration
 
 tox-lint: $(TOX) ## Run linters using tox.
-	$(call msg,"--> Running tox environment: lint")
+	@$(call msg,"--> Running tox environment: lint")
 	@$(TOX) -e lint -- $(TOX_LINT_ARGS)
 
 tox-unit: $(TOX) ## Run unit tests using tox.
-	$(call msg,"--> Running tox environment: unit")
+	@$(call msg,"--> Running tox environment: unit")
 	@$(TOX) -e unit -- $(TOX_UNIT_ARGS)
 
 tox-integration: $(TOX) build-charm publish-rock ## Deploy the rock, build the charm, then run integration tests.
-	$(call msg,"--> Running tox environment: integration")
-	@$(INTEGRATION_TEST_ENV) $(TOX) -e integration -- $(TOX_INTEGRATION_ARGS)
+	@$(call msg,"--> Running tox environment: integration")
+	$(INTEGRATION_TEST_ENV) $(TOX) -e integration -- $(TOX_INTEGRATION_ARGS)
 
 # This pattern rule allows running any other tox environment.
 # Example: 'make tox-fmt' will run 'tox -e fmt'.
 .PHONY: tox-%
 tox-%: $(TOX)
 	$(eval ENV_UPPER := $(shell echo $* | tr 'a-z-' 'A-Z_'))
-	$(call msg,"--> Running tox environment: $*")
+	@$(call msg,"--> Running tox environment: $*")
 	@$(if $($(ENV_UPPER)_ARGS),$(call msg, "    using args from TOX_$(ENV_UPPER)_ARGS: '$($(ENV_UPPER)_ARGS)')"))
 	@$(TOX) -e $* -- $($(ENV_UPPER)_ARGS)

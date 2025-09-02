@@ -14,7 +14,7 @@ JUJU_LOGGING_CONFIG ?= "<root>=INFO;unit=DEBUG"
 .PHONY: setup-juju-model check-microk8s-registry
 
 setup-juju-model: ## Create and configure the Juju model for development.
-	$(call msg,"--> Setting up Juju model: $(JUJU_MODEL_NAME)...")
+	@$(call msg,"--> Setting up Juju model: $(JUJU_MODEL_NAME)...")
 	@juju models | grep -q "^$(JUJU_MODEL_NAME) " || juju add-model $(JUJU_MODEL_NAME)
 	@juju model-config -m $(JUJU_MODEL_NAME) logging-config=$(JUJU_LOGGING_CONFIG)
 

@@ -20,7 +20,7 @@ ifneq ($(HAS_YQ),)
     CHARM_BASE_STRING 	:= $(CHARM_BASE_NAME)-$(CHARM_BASE_CHANNEL)
 	JUJU_DEPLOY_BASE 	:= $(shell echo $(CHARM_BASE_STRING) | sed 's/-/@/')
 else
-    $(call errmsg,"yq not found, cannot determine charm base. Filename may be incorrect.")
+    @$(call errmsg,"yq not found, cannot determine charm base. Filename may be incorrect.")
 endif
 
 CHARM_STATIC_ARTIFACT 	:= $(CHARM_NAME)_$(CHARM_BASE_STRING)-$(CHARM_PLATFORM).charm
@@ -32,16 +32,16 @@ CHARM_DYNAMIC_ARTIFACT 	:= $(CHARM_NAME)_$(CHARM_VERSION)_$(CHARM_BASE_STRING)_$
 build-charm: $(CHARM_DYNAMIC_ARTIFACT) ## Build the charm if it's out of date.
 
 $(CHARM_DYNAMIC_ARTIFACT):
-	$(call msg,"--> Building Charm artifact: $(CHARM_DYNAMIC_ARTIFACT)...")
+	@$(call msg,"--> Building Charm artifact: $(CHARM_DYNAMIC_ARTIFACT)...")
 	@echo "$(CHARM_VERSION)" > version
 	@$(CHARMCRAFT_PACK_CMD)
 	@rm -f version
 	@mv $(CHARM_STATIC_ARTIFACT) $(CHARM_DYNAMIC_ARTIFACT)
 
 deploy-charm: $(CHARM_DYNAMIC_ARTIFACT) publish-rock setup-juju-model ## Build & publish artifacts, then deploy.
-	$(call msg,"--> Deploying Charm: $(CHARM_NAME) with ROCK resource: $(ROCK_IMAGE)")
+	@$(call msg,"--> Deploying Charm: $(CHARM_NAME) with ROCK resource: $(ROCK_IMAGE)")
 	@juju deploy -m $(JUJU_MODEL_NAME) ./$(CHARM_DYNAMIC_ARTIFACT) --resource $(OCI_RESOURCE_NAME)=$(ROCK_IMAGE)
 
 clean-charm: ## Remove charm artifacts.
-	$(call msg,"--> Cleaning charm artifacts...")
+	@$(call msg,"--> Cleaning charm artifacts...")
 	@rm -f *.charm $(CHARM_OVERRIDE_FILE)

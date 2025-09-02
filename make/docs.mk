@@ -32,14 +32,14 @@ clean-docs: vale-clean ## Clean documentation-related artifacts.
 .PHONY: .check-vale
 .check-vale:
 ifndef HAS_VALE
-	$(call errmsg,'vale' is not installed. Please install it first) \
+	@$(call errmsg,'vale' is not installed. Please install it first) \
 	exit 1;
 endif
 
 .PHONY: .check-lychee
 .check-lychee:
 ifndef HAS_LYCHEE
-	$(call errmsg,'lychee' is not installed. Please install it first) \
+	@$(call errmsg,'lychee' is not installed. Please install it first) \
 	exit 1;
 endif
 
@@ -49,11 +49,11 @@ endif
 # ==============================================================================
 
 vale-sync: ## Download and install external Vale configuration sources
-	$(call msg,--- Syncing Vale styles... ---)
+	@$(call msg,--- Syncing Vale styles... ---)
 	@vale sync
 
 vale: .check-vale vale-sync ## Run Vale checks on docs
-	$(call msg,--- Running Vale checks on "$(DOCS_FILES)"... ---)
+	@$(call msg,--- Running Vale checks on "$(DOCS_FILES)"... ---)
 	@vale --config=$(PRAECEPTA_CONFIG) $(DOCS_FILES)
 
 # ==============================================================================
@@ -61,7 +61,7 @@ vale: .check-vale vale-sync ## Run Vale checks on docs
 # ==============================================================================
 
 lychee: .check-lychee ## Run Lychee checks on docs
-	$(call msg,--- Running lychee checks on "$(LYCHEE_DOCS_FILES)"... ---)
+	@$(call msg,--- Running lychee checks on "$(LYCHEE_DOCS_FILES)"... ---)
 	@lychee $(DOCS_FILES)
 
 # ==============================================================================
@@ -69,5 +69,5 @@ lychee: .check-lychee ## Run Lychee checks on docs
 # ==============================================================================
 
 vale-clean: ## Clean documentation-related artifacts.
-	$(call msg,--- Cleaning downloaded packages and ignored files from "$(VALE_DIR)"... ---)
+	@$(call msg,--- Cleaning downloaded packages and ignored files from "$(VALE_DIR)"... ---)
 	@git clean -dfX $(VALE_DIR)
