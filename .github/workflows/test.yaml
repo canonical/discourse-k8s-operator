@@ -8,7 +8,4 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/test.yaml@main
     secrets: inherit
     with:
-      self-hosted-runner: true
-      self-hosted-runner-label: "self-hosted-linux-arm64-noble-edge"
-      self-hosted-runner-arch: arm64
-      self-hosted-runner-image: noble
+      self-hosted-runner: false
