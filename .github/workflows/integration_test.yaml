@@ -11,7 +11,7 @@ jobs:
       extra-arguments: -x --localstack-address 172.17.0.1 --model-arch=arm64
       pre-run-script: localstack-installation.sh
       trivy-image-config: "trivy.yaml"
-      juju-channel: 3.6/stable
+      juju-channel: 3.1/stable
       channel: 1.28-strict/stable
       modules: '["test_charm", "test_saml", "test_users", "test_db_migration"]'
       self-hosted-runner: true
