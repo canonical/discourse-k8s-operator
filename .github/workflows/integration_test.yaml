@@ -18,3 +18,4 @@ jobs:
       self-hosted-runner-label: "self-hosted-linux-arm64-noble-edge"
       self-hosted-runner-arch: arm64
       self-hosted-runner-image: noble
+      builder-runner-label: arm64
