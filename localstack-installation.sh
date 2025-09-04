@@ -2,6 +2,12 @@
 # Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 
+sudo apt install python3.12-venv -y
+VENV=$(PWD)/localstack-venv
+python3 -m venv $VENV
+
+export PATH=$VENV/bin:$PATH
+
 pip install pip --upgrade
 pip install pyopenssl --upgrade
 pip install 'localstack>=1.4.0,<2.0.0' # install LocalStack cli
