@@ -182,6 +182,7 @@ def test_create_category(
     response = requests.post(
         f"{discourse_address}/categories.json",
         headers={
+            "Content-Type": "application/json",
             "Api-Key": admin_api_key,
             "Api-Username": admin_credentials.username,
         },
