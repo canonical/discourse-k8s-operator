@@ -250,7 +250,7 @@ parts:
       su - postgres -c "psql -c \"CREATE DATABASE discourse;\"" || echo "Could not create database, maybe it already exists."
       su - postgres -c "psql -c \"CREATE USER discourse WITH PASSWORD 'discourse';\"" || echo "Could not create user, maybe it already exists."
       su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE discourse TO discourse;\""
-      PATH=$PATH:${CRAFT_PRIME}/usr/bin:${CRAFT_PRIME}/usr/local/bin RAILS_ENV=production DISCOURSE_DB_HOST=127.0.0.1 DISCOURSE_DB_PASSWORD=discourse SKIP_EMBER_CLI_COMPILE=1 bundle exec rake assets:precompile
+      PATH=$PATH:${CRAFT_PRIME}/usr/bin:${CRAFT_PRIME}/usr/local/bin RAILS_ENV=production DISCOURSE_DB_HOST=127.0.0.1 DISCOURSE_DB_PASSWORD=discourse bundle exec rake assets:precompile
       # Fix the symbolic links.
       find . -lname "${CRAFT_PRIME}/srv/discourse/*" -exec bash -c 'ln -snf "$(readlink "$1" | sed "s~${CRAFT_PRIME}~~")" "$1" ' sh {} \;
   perms:
