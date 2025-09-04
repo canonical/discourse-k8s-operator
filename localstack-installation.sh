@@ -4,7 +4,7 @@
 
 sudo apt install python3.12-venv -y
 VENV=$PWD/localstack-venv
-python3 -m venv $VENV
+python3 -m venv "$VENV"
 
 export PATH=$VENV/bin:$PATH
 
