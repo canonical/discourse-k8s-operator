@@ -32,7 +32,7 @@ ENABLED_PLUGINS = [
 @pytest.fixture(scope="session")
 def metadata():
     """Provides charm metadata."""
-    yield yaml.safe_load(pathlib.Path("./metadata.yaml").read_text(encoding="UTF-8"))
+    yield yaml.safe_load(pathlib.Path("./charmcraft.yaml").read_text(encoding="UTF-8"))
 
 
 @pytest.fixture(scope="session")
