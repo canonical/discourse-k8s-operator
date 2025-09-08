@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.abort_on_fail
-def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_file: str):
+def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_file: str, charm_resources: dict[str, str], charm_base: str):
     """
     arrange: preload postgres with a testing db that is created in Discourse v3.2.0
     act: deploy and integrate with Discourse v3.3.0 (latest)
@@ -97,8 +97,8 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
     juju.deploy(
         charm=charm_file,
         app=discourse_app_name,
-        resources={"discourse-image": pytestconfig.getoption("--discourse-image")},
-        base="ubuntu@20.04",
+        resources=charm_resources,
+        base=charm_base,
     )
     juju.wait(lambda status: status.apps[discourse_app_name].is_waiting)
 

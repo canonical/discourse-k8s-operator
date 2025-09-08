@@ -185,6 +185,7 @@ parts:
       - git
     after: [discourse, patches]
     override-stage: |
+      git -C srv/discourse/app apply patches/db_migrations.patch
       git -C srv/discourse/app apply patches/lp1903695.patch
       git -C srv/discourse/app apply patches/discourse-charm.patch
       git -C srv/discourse/app apply patches/sigterm.patch
@@ -193,7 +194,7 @@ parts:
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
       sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
     prime:
-      - srv/discourse/app/lib/tasks/discourse-charm.rake
+      - srv/discourse/app/**
   scripts:
     plugin: dump
     source: scripts
