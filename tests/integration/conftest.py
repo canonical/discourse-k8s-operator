@@ -28,8 +28,6 @@ ENABLED_PLUGINS = [
     "chat_integration",
 ]
 
-rock_image = os.environ.get('ROCK_IMAGE')
-
 
 @pytest.fixture(scope="module")
 def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
@@ -189,7 +187,7 @@ def app_fixture(
     charm_file: str,
     charm_resources: Dict[str, str],
     charm_base: str,
-):
+):  # pylint: disable=too-many-positional-arguments, too-many-arguments
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
