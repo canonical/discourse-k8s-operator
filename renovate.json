@@ -17,7 +17,7 @@
       "fileMatch": ["(^|/)rockcraft.yaml$"],
       "description": "Update discourse",
       "matchStringsStrategy": "any",
-      "matchStrings": ["source:.*discourse\/discourse\.git.*\n.*source-depth: 1.*\n.*source-tag: (?<currentValue>.+)"],
+      "matchStrings": ["source:.*discourse\/discourse\\.git.*\\n.*source-depth: 1.*\\n.*source-tag: (?<currentValue>.+)"],
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "discourse/discourse",
       "versioningTemplate": "semver-coerced"
