@@ -28,7 +28,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
         pg_app_name,
         channel="14/stable",
         base="ubuntu@22.04",
-        revision=300,
+        revision=495,
         trust=True,
         config={"profile": "testing"},
     )
@@ -67,7 +67,7 @@ def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_fi
         pg_app_name + "/0",
         "pg_restore -h localhost -U operator \
               --password -d discourse \
-              --no-owner --clean --if-exists ./testing_database.sql",
+              --no-comments --no-owner --no-privileges --clean --if-exists ./testing_database.sql",
         stdin=db_pass + "\n",
     )
 
