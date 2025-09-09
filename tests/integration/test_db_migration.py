@@ -12,7 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.mark.abort_on_fail
-def test_db_migration(juju: jubilant.Juju, pytestconfig: pytest.Config, charm_file: str, charm_resources: dict[str, str], charm_base: str):
+def test_db_migration(
+    juju: jubilant.Juju,
+        pytestconfig: pytest.Config,
+        charm_file: str,
+        charm_resources: dict[str, str],
+        charm_base: str):
     """
     arrange: preload postgres with a testing db that is created in Discourse v3.2.0
     act: deploy and integrate with Discourse v3.3.0 (latest)

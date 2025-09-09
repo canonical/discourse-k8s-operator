@@ -5,7 +5,6 @@
 import logging
 import os
 import pathlib
-import secrets
 import subprocess  # nosec B404
 from collections.abc import Generator
 from typing import Any, Dict, cast
@@ -30,7 +29,7 @@ ENABLED_PLUGINS = [
 ]
 
 rock_image = os.environ.get('ROCK_IMAGE')
-charm_file = os.environ.get('CHARM_FILE')
+
 
 @pytest.fixture(scope="module")
 def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
@@ -42,7 +41,7 @@ def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
     if discourse_image:
         return {
             "discourse-image": discourse_image,
-        }   
+        }
 
     resource_name = os.environ.get("OCI_RESOURCE_NAME")
     rock_image_uri = os.environ.get("ROCK_IMAGE")
@@ -55,6 +54,7 @@ def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
 
     return {resource_name: rock_image_uri}
 
+
 @pytest.fixture(scope="module")
 def charm_base() -> str:
     """The base to deploy the charm on"""
@@ -63,6 +63,7 @@ def charm_base() -> str:
         # Returning the default base to stay consistent with current behavior
         return "ubuntu@20.04"
     return base
+
 
 @pytest.fixture(scope="session")
 def metadata():
@@ -150,6 +151,7 @@ def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]
         show_debug_log(juju)
         return
 
+
 @pytest.fixture(scope="session")
 def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
     """Pytest fixture that packs the charm and returns the filename, or --charm-file if set."""
@@ -176,6 +178,7 @@ def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
     assert charms, f"{app_name} .charm file not found"
     assert len(charms) == 1, f"{app_name} has more than one .charm file, unsure which to use"
     yield str(charms[0])
+
 
 @pytest.fixture(scope="module", name="app")
 def app_fixture(
@@ -292,7 +295,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
 @pytest.fixture(scope="module", name="admin_credentials")
 def admin_credentials_fixture(juju: jubilant.Juju, app: types.App) -> types.Credentials:
     """Admin user credentials."""
-    email = f"system@test.internal"
+    email = "system@test.internal"
     task = juju.run(f"{app.name}/0", "create-user", {"email": email, "admin": True})
     password = task.results["password"]
     admin_credentials = types.Credentials(
