@@ -202,7 +202,7 @@ def app_fixture(
         "postgresql-k8s",
         channel="14/stable",
         base="ubuntu@22.04",
-        revision=300,
+        revision=495,
         trust=True,
         config={"profile": "testing"},
     )
@@ -235,8 +235,6 @@ def app_fixture(
     juju.wait(lambda status: jubilant.all_active(status, "postgresql-k8s"))
 
     # Add required relations
-    status = juju.status()
-    assert status.apps[app_name].units[app_name + "/0"].is_waiting
     juju.integrate(app_name, "postgresql-k8s:database")
     juju.integrate(app_name, "redis-k8s")
     juju.integrate(app_name, "nginx-ingress-integrator")

@@ -194,7 +194,11 @@ parts:
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
       sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
     prime:
-      - srv/discourse/app/**
+      - srv/discourse/app/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
+      - srv/discourse/app/lib/middleware/anonymous_cache.rb
+      - srv/discourse/app/lib/tasks/discourse-charm.rake
+      - srv/discourse/app/config/unicorn.conf.rb
+      - srv/discourse/app/config/environments/production.rb
   scripts:
     plugin: dump
     source: scripts
@@ -329,7 +333,7 @@ parts:
       - gsfonts
       - libheif1
     stage:
-      # Exclude duplicates — let base-deps own them
+      # Exclude duplicate dependencies — let `tooling` own them
       - -usr/bin/py3*
       - -usr/bin/pydoc3.10
       - -usr/lib/python3.10/*
