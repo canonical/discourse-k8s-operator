@@ -276,7 +276,7 @@ parts:
     plugin: autotools
     source: https://github.com/ImageMagick/ImageMagick.git
     source-type: git
-    source-tag: 7.1.1-36
+    source-tag: 7.1.2-3
     build-packages:
       - git
       - make
@@ -328,6 +328,15 @@ parts:
       - libltdl-dev
       - gsfonts
       - libheif1
+    stage:
+      # Exclude duplicates — let base-deps own them
+      - -usr/bin/py3*
+      - -usr/bin/pydoc3.10
+      - -usr/lib/python3.10/*
+      - -usr/share/python3/*
+      - -usr/lib/x86_64-linux-gnu/libcrypt.so*
+      - -usr/lib/x86_64-linux-gnu/libtirpc.so*
+      - -usr/lib/x86_64-linux-gnu/libz.so*
     override-build: |
       craftctl default
 
