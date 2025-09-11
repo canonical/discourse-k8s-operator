@@ -1,8 +1,8 @@
-diff --git a/db/post_migrate/20240212034010_drop_deprecated_columns.rb b/db/post_migrate/20240212034010_drop_deprecated_columns.rb
-index 0899da20..015fc6d5 100644
---- a/db/post_migrate/20240212034010_drop_deprecated_columns.rb
-+++ b/db/post_migrate/20240212034010_drop_deprecated_columns.rb
-@@ -19,6 +19,11 @@ class DropDeprecatedColumns < ActiveRecord::Migration[7.0]
+diff --git a/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb b/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
+index 6e4b4f7a08..54c76aeaf0 100644
+--- a/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
++++ b/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
+@@ -9,6 +9,11 @@ class DropOldNotificationIdColumns < ActiveRecord::Migration[7.1]
    }
  
    def up

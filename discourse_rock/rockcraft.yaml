@@ -40,18 +40,19 @@ parts:
       - zlib1g-dev
     build-environment:
       - ARCH: "x64"
-      - NODE_VERSION: "18.18.2"
+      - NODE_VERSION: "22.9.0"
       - RAILS_ENV: "production"
-      - RUBY_INSTALL_VERSION: "0.9.3"
-      - RUBY_VERSION: "3.2.6"
-      - YARN_VERSION: "1.22.19"
+      - RUBY_INSTALL_VERSION: "0.10.1"
+      - RUBY_VERSION: "3.3.8"
+      - PNPM_VERSION: "9.15.0"
     override-build: |
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
       curl -Ls $node_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
-      yarn_uri="https://github.com/yarnpkg/yarn/releases/download/v${YARN_VERSION}/yarn-v${YARN_VERSION}.tar.gz"
-      curl -Ls $yarn_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
+      curl -fsSL https://get.pnpm.io/install.sh | env PNPM_VERSION=${PNPM_VERSION} SHELL=bash sh -
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global terser
+      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global uglify-js
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global svgo
+      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global pnpm@9
       ruby_install_uri="https://github.com/postmodern/ruby-install/releases/download/v${RUBY_INSTALL_VERSION}/ruby-install-${RUBY_INSTALL_VERSION}.tar.gz"
       curl -fLO $ruby_install_uri
       tar -xzvf ruby-install-${RUBY_INSTALL_VERSION}.tar.gz
@@ -64,7 +65,7 @@ parts:
     plugin: dump
     source: https://github.com/discourse/discourse.git
     source-depth: 1
-    source-tag: v3.3.0
+    source-tag: v3.4.7
     source-type: git
     override-build: |
       craftctl default
@@ -125,7 +126,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-prometheus.git
-    source-commit: b1b899ca995783ef5eba90c35dbfc120a2949c38
+    source-commit: a1e0ba671e13ceb9541a4d62d3ff7d206393d438
     source-depth: 1
     override-build: |
       craftctl default
@@ -193,7 +194,11 @@ parts:
       sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
       sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
     prime:
+      - srv/discourse/app/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
+      - srv/discourse/app/lib/middleware/anonymous_cache.rb
       - srv/discourse/app/lib/tasks/discourse-charm.rake
+      - srv/discourse/app/config/unicorn.conf.rb
+      - srv/discourse/app/config/environments/production.rb
   scripts:
     plugin: dump
     source: scripts
@@ -234,7 +239,7 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-chat-integration/Gemfile"
-      yarn install --immutable
+      /root/.local/share/pnpm/pnpm install
   discourse-precompile-assets:
     plugin: nil
     after: [apply-patches, setup]
@@ -275,7 +280,7 @@ parts:
     plugin: autotools
     source: https://github.com/ImageMagick/ImageMagick.git
     source-type: git
-    source-tag: 7.1.1-36
+    source-tag: 7.1.2-3
     build-packages:
       - git
       - make
@@ -327,6 +332,15 @@ parts:
       - libltdl-dev
       - gsfonts
       - libheif1
+    stage:
+      # Exclude duplicate dependencies — let `tooling` own them
+      - -usr/bin/py3*
+      - -usr/bin/pydoc3.10
+      - -usr/lib/python3.10/*
+      - -usr/share/python3/*
+      - -usr/lib/x86_64-linux-gnu/libcrypt.so*
+      - -usr/lib/x86_64-linux-gnu/libtirpc.so*
+      - -usr/lib/x86_64-linux-gnu/libz.so*
     override-build: |
       craftctl default
 

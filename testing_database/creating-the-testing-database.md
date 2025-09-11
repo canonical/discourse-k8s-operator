@@ -33,3 +33,8 @@ Exit the container
 
 Copy the dump into local file system.
 ```juju scp --container postgresql postgresql-k8s/0:/srv/dump/testing_database.sql./testing_database.sql```
+
+
+## Final notes
+
+Make sure the db integration test is updated to match the `postgresql-k8s` revision used during the local database back.

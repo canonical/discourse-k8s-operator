@@ -1,7 +1,9 @@
+diff --git a/config/unicorn.conf.rb b/config/unicorn.conf.rb
+index fd2bf2ae0e..7e6429c544 100644
 --- a/config/unicorn.conf.rb
 +++ b/config/unicorn.conf.rb
 @@ -62,6 +62,15 @@ check_client_connection false
-
+ 
  initialized = false
  before_fork do |server, worker|
 +  Signal.trap 'TERM' do
@@ -15,10 +17,10 @@
 +
    unless initialized
      Discourse.preload_rails!
-
-@@ -299,6 +308,9 @@ before_fork do |server, worker|
+     Discourse.before_fork
+@@ -193,6 +202,9 @@ before_fork do |server, worker|
  end
-
+ 
  after_fork do |server, worker|
 +  Signal.trap 'TERM' do
 +    puts 'Unicorn worker intercepting TERM and doing nothing. Wait for master to sent QUIT'
