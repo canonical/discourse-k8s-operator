@@ -5,7 +5,6 @@
 import logging
 import os
 import pathlib
-import secrets
 import subprocess  # nosec B404
 from collections.abc import Generator
 from typing import Any, Dict, cast
@@ -292,7 +291,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
 @pytest.fixture(scope="module", name="admin_credentials")
 def admin_credentials_fixture(juju: jubilant.Juju, app: types.App) -> types.Credentials:
     """Admin user credentials."""
-    email = f"admin-user{secrets.randbits(32)}@test.internal"
+    email = "system@test.internal"
     task = juju.run(f"{app.name}/0", "create-user", {"email": email, "admin": True})
     password = task.results["password"]
     admin_credentials = types.Credentials(
