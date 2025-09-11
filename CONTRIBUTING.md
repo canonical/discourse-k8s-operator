@@ -104,127 +104,71 @@ To add signatures on your commits, follow the
 
 ## Develop
 
-To make contributions to this charm, you'll need a working [Juju development setup](https://www.google.com/search?q=https://juju.is/docs/sdk/dev-setup).
+To make contributions to this charm, you'll need a working
+[development setup](https://documentation.ubuntu.com/juju/latest/user/howto/manage-your-deployment/manage-your-deployment-environment/).
 
-First, clone the repository:
+The code for this charm can be downloaded as follows:
 
-```bash
-git clone https://github.com/canonical/discourse-k8s-operator.git
-cd discourse-k8s-operator
+```
+git clone https://github.com/canonical/discourse-k8s-operator
 ```
 
-### Local Development and Testing
-
-Our development workflow is managed by make. This provides a consistent set of commands for building, testing, and deploying the charm.
-
-To see all available commands, run:
-```bash
-make help
-```
-
-#### Building Artifacts
-
-You can build the ROCK OCI image and the charm artifact separately or together.
-
-- **Build everything:**  
-  ```bash
-  make build
-  ```
-
-- **Build only the ROCK:**  
-  ```bash
-  make build-rock
-  ```
-
-- **Build only the charm:**  
-  ```bash
-  make build-charm
-  ```
-
-#### Running Tox Environments
-
-You can also run tox test environments individually.
-
-- **Run common tests:**  
-  ```bash
-  make lint  
-  make unit
-  ```
-
-- **Run any other tox environment:** You can run any environment from tox.ini by prefixing it with `tox-`.  
-  ```bash
-  make tox-fmt  
-  make tox-static
-  ```
-
-#### Deploying the Charm
-
-Before deploying for the first time, you need to set up your Juju model.
-
-* **Set up the model (run once):**  
-  ```bash
-  make setup-juju-model
-  ```
-
-* **Deploy the latest local build:** This command will automatically build and publish the necessary artifacts before deploying.  
-  ```bash
-  make deploy
-  ```
-
-#### Running Integration Tests
-
-The most involved workflow is running the integration tests, which build and deploy the charm to a live Juju model before running the test suite.
-
-You can run the full suite with a single command:
+You can create an environment for development with `python3-venv`:
 
 ```bash
-make integration
+sudo apt install python3-venv
+python3 -m venv venv
+source venv/bin/activate
+pip install tox
 ```
 
-You can also customize the run by providing variables. For example, to test a specific version and run only a single test function:
+Install `tox` inside the virtual environment for testing.
+
+### Test
+
+This project uses `tox` for managing test environments. There are some pre-configured environments
+that can be used for linting and formatting code when you're preparing contributions to the charm:
+
+* ``tox``: Executes all of the basic checks and tests (``lint``, ``unit``, ``static``, and ``coverage-report``).
+* ``tox -e fmt``: Runs formatting using ``black`` and ``isort``.
+* ``tox -e lint``: Runs a range of static code analysis to check the code.
+* ``tox -e static``: Runs other checks such as ``bandit`` for security issues.
+
+### Build the rock and charm
+
+Use [Rockcraft](https://documentation.ubuntu.com/rockcraft/en/latest/) to create an
+OCI image for the Discourse app, and then upload the image to a MicroK8s registry,
+which stores OCI archives so they can be downloaded and deployed.
+
+Enable the MicroK8s registry:
 
 ```bash
-CHARM_VERSION="rev211-rc1" TOX_INTEGRATION_ARGS="-k test_active" make tox-integration
+microk8s enable registry
 ```
 
-Let's break down what this command does:
-
-- **CHARM_VERSION="rev211-rc1"**: By default, the charm version is automatically generated from the current Git state (git describe) to ensure every build is traceable and unique. This override gives you manual control to "tag" a build with a specific identifier, such as a release candidate version, for targeted testing.  
-- **TOX_INTEGRATION_ARGS="-k test_active"**: This passes the argument -k test_active through tox directly to pytest. This tells pytest to only run tests whose names contain "test_active".  
-- **make tox-integration**: This is the core command that orchestrates the entire process:  
-  1. Builds the ROCK OCI image.  
-  2. Builds the charm artifact with the specified CHARM_VERSION.  
-  3. Pushes the ROCK image to the local registry.  
-  4. Deploys the charm to your Juju model.  
-  5. Finally, runs the integration test suite via tox, applying your custom TOX_INTEGRATION_ARGS.
-
-
-#### Debugging Integration test code
-
-You can also easily debug integration test code by specifying the appropriate `TOX_CMD_PREFIX` environment variable for your IDE debugging setup.
-
-For example, given the following default VSCode `launch.json` configuration:
-
-```json
-{
-    "name": "Python Debugger: Remote Attach",
-    "type": "debugpy",
-    "request": "attach",
-    "connect": {
-        "host": "localhost",
-        "port": 5678
-    },
-    "pathMappings": [
-        {
-            "localRoot": "${workspaceFolder}",
-            "remoteRoot": "."
-        }
-    ]
-},
-```
-
-The following command will launch the integration tests, wait for the debugger to attach and then proceed with the test:
+The following commands pack the OCI image and push it into
+the MicroK8s registry:
 
 ```bash
-TOX_CMD_PREFIX="python -m debugpy --listen 5678 --wait-for-client -m" make tox-integration
+cd [project_dir]/discourse_rock
+rockcraft pack
+skopeo --insecure-policy copy --dest-tls-verify=false oci-archive:discourse_1.0_amd64.rock docker://localhost:32000/discourse:latest
+```
+
+Build the charm in this git repository using:
+
+```shell
+charmcraft pack
+```
+
+### Deploy
+
+```bash
+# Create a model
+juju add-model charm-dev
+# Enable DEBUG logging
+juju model-config logging-config="<root>=INFO;unit=DEBUG"
+# Deploy the charm (assuming you're on amd64)
+juju deploy ./discourse-k8s_ubuntu-20.04-amd64.charm \
+  --resource discourse-image=localhost:32000/discourse:latest \
 ```
