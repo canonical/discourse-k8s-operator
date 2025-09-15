@@ -1,27 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "automerge": true,
   "extends": [
     "config:base"
   ],
-  "regexManagers": [
-    {
-      "fileMatch": ["(^|/)rockcraft.yaml$"],
-      "description": "Update base image references",
-      "matchStringsStrategy": "any",
-      "matchStrings": ["# renovate: build-base:\\s+(?<depName>[^:]*):(?<currentValue>[^\\s@]*)(@(?<currentDigest>sha256:[0-9a-f]*))?",
-      "# renovate: base:\\s+(?<depName>[^:]*):(?<currentValue>[^\\s@]*)(@(?<currentDigest>sha256:[0-9a-f]*))?"],
-      "datasourceTemplate": "docker",
-      "versioningTemplate": "ubuntu"
-    },
-    {
-      "fileMatch": ["(^|/)rockcraft.yaml$"],
-      "description": "Update discourse",
-      "matchStringsStrategy": "any",
-      "matchStrings": ["source:.*discourse\/discourse\.git.*\n.*source-depth: 1.*\n.*source-tag: (?<currentValue>.+)"],
-      "datasourceTemplate": "github-tags",
-      "depNameTemplate": "discourse/discourse",
-      "versioningTemplate": "semver-coerced"
-    }
+  "ignoreDeps": [
+    "pydantic"
   ],
   "packageRules": [
     {
@@ -32,10 +16,43 @@
       "pinDigests": true
     },
     {
-      "matchFiles": ["rockcraft.yaml"],
-      "matchUpdateTypes": ["major", "minor", "patch"],
-      "enabled": false
+      "enabled": false,
+      "matchFiles": [
+        "rockcraft.yaml"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor",
+        "patch"
+      ]
     }
   ],
-  "ignoreDeps": ["pydantic"]
+  "regexManagers": [
+    {
+      "datasourceTemplate": "docker",
+      "description": "Update base image references",
+      "fileMatch": [
+        "(^|/)rockcraft.yaml$"
+      ],
+      "matchStrings": [
+        "# renovate: build-base:\\s+(?<depName>[^:]*):(?<currentValue>[^\\s@]*)(@(?<currentDigest>sha256:[0-9a-f]*))?",
+        "# renovate: base:\\s+(?<depName>[^:]*):(?<currentValue>[^\\s@]*)(@(?<currentDigest>sha256:[0-9a-f]*))?"
+      ],
+      "matchStringsStrategy": "any",
+      "versioningTemplate": "ubuntu"
+    },
+    {
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "discourse/discourse",
+      "description": "Update discourse",
+      "fileMatch": [
+        "(^|/)rockcraft.yaml$"
+      ],
+      "matchStrings": [
+        "source:.*discourse/discourse\\.git.*\\n.*source-depth: 1.*\\n.*source-tag: (?<currentValue>.+)"
+      ],
+      "matchStringsStrategy": "any",
+      "versioningTemplate": "semver-coerced"
+    }
+  ]
 }
