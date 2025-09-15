@@ -9,5 +9,3 @@ jobs:
   docs-checks:
     uses: canonical/operator-workflows/.github/workflows/docs.yaml@temporarly-disable-link-checker
     secrets: inherit
-    with:
-      linkcheck-clear-cache: true
