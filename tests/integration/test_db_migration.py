@@ -33,7 +33,6 @@ def test_db_migration(
         pg_app_name,
         channel="14/stable",
         base="ubuntu@22.04",
-        revision=495,
         trust=True,
         config={"profile": "testing"},
     )
