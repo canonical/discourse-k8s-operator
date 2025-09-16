@@ -11,3 +11,4 @@ Makefile
 .github/
 .tox/
 *__pycache__*
+*.rock

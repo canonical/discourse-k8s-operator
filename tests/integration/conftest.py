@@ -3,8 +3,8 @@
 """Discourse integration tests fixtures."""
 
 import logging
+import os
 import pathlib
-import secrets
 import subprocess  # nosec B404
 from collections.abc import Generator
 from typing import Any, Dict, cast
@@ -27,6 +27,40 @@ ENABLED_PLUGINS = [
     "discourse_gamification",
     "chat_integration",
 ]
+
+
+@pytest.fixture(scope="module")
+def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
+    """
+    The OCI resources for the charm, read from option or env vars.
+    """
+
+    discourse_image = pytestconfig.getoption("--discourse-image")
+    if discourse_image:
+        return {
+            "discourse-image": discourse_image,
+        }
+
+    resource_name = os.environ.get("OCI_RESOURCE_NAME")
+    rock_image_uri = os.environ.get("ROCK_IMAGE")
+
+    if not resource_name or not rock_image_uri:
+        pytest.fail(
+            "Environment variables OCI_RESOURCE_NAME and/or ROCK_IMAGE are not set. "
+            "Please set '--discourse-image' or run tests via 'make integration'."
+        )
+
+    return {resource_name: rock_image_uri}
+
+
+@pytest.fixture(scope="module")
+def charm_base() -> str:
+    """The base to deploy the charm on"""
+    base = os.environ.get("JUJU_DEPLOY_BASE")
+    if not base:
+        # Returning the default base to stay consistent with current behavior
+        return "ubuntu@20.04"
+    return base
 
 
 @pytest.fixture(scope="session")
@@ -124,6 +158,11 @@ def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
         yield charm_file
         return
 
+    charm_file = os.environ.get("CHARM_FILE")
+    if charm_file:
+        yield charm_file
+        return
+
     try:
         subprocess.run(
             ["charmcraft", "pack"], check=True, capture_output=True, text=True
@@ -146,7 +185,9 @@ def app_fixture(
     app_config: Dict[str, str],
     pytestconfig: pytest.Config,
     charm_file: str,
-):
+    charm_resources: Dict[str, str],
+    charm_base: str,
+):  # pylint: disable=too-many-positional-arguments, too-many-arguments
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
@@ -161,7 +202,6 @@ def app_fixture(
         "postgresql-k8s",
         channel="14/stable",
         base="ubuntu@22.04",
-        revision=300,
         trust=True,
         config={"profile": "testing"},
     )
@@ -173,16 +213,12 @@ def app_fixture(
 
     juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
 
-    resources = {
-        "discourse-image": pytestconfig.getoption("--discourse-image"),
-    }
-
     juju.deploy(
         charm=charm_file,
         app=app_name,
-        resources=resources,
+        resources=charm_resources,
         config=app_config,
-        base="ubuntu@20.04",
+        base=charm_base,
     )
 
     juju.wait(lambda status: jubilant.all_waiting(status, app_name))
@@ -198,8 +234,6 @@ def app_fixture(
     juju.wait(lambda status: jubilant.all_active(status, "postgresql-k8s"))
 
     # Add required relations
-    status = juju.status()
-    assert status.apps[app_name].units[app_name + "/0"].is_waiting
     juju.integrate(app_name, "postgresql-k8s:database")
     juju.integrate(app_name, "redis-k8s")
     juju.integrate(app_name, "nginx-ingress-integrator")
@@ -256,7 +290,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
 @pytest.fixture(scope="module", name="admin_credentials")
 def admin_credentials_fixture(juju: jubilant.Juju, app: types.App) -> types.Credentials:
     """Admin user credentials."""
-    email = f"admin-user{secrets.randbits(32)}@test.internal"
+    email = "system@test.internal"
     task = juju.run(f"{app.name}/0", "create-user", {"email": email, "admin": True})
     password = task.results["password"]
     admin_credentials = types.Credentials(

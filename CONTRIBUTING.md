@@ -172,4 +172,3 @@ juju model-config logging-config="<root>=INFO;unit=DEBUG"
 juju deploy ./discourse-k8s_ubuntu-20.04-amd64.charm \
   --resource discourse-image=localhost:32000/discourse:latest \
 ```
-
