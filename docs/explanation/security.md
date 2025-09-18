@@ -24,7 +24,7 @@ The Discourse database or the media files can be lost or corrupted for various r
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
 <!-- DOS is an acronym -->
-## Denial-of-service(DOS) attacks
+## Denial-of-service (DOS) attacks
 <!-- vale Canonical.007-Headings-sentence-case = YES-->
 
 Malicious attackers can overwhelm the Discourse traffic with DOS attacks, making the application unresponsive to legitimate users.
