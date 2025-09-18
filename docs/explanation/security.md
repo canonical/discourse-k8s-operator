@@ -8,7 +8,7 @@ Outdated software components, such as plugins or the upstream workload, can intr
 
 ### Best practices
 
-- Regularly update the charm revision to include latest charm components. Updates include the security fixes from the dependencies and the workloads as the charm dependencies are regularly updated.
+- Regularly [update the charm](../how-to/upgrade.md) revision to include latest charm components. Updates include the security fixes from the dependencies and the workloads as the charm dependencies are regularly updated.
 - Regularly update Juju to latest version to include security fixes.
 - Deploy observability, like the Canonical Observability Stack, to detect any unusual behaviors.
 
