@@ -4,7 +4,7 @@ This document explains the possible security risks in the Discourse charm and be
 
 ## Outdated software
 
-Outdated software components, such as plugins, or the upstream workload, can introduce exploitable security vulnerabilities.
+Outdated software components, such as plugins or the upstream workload, can introduce exploitable security vulnerabilities.
 
 ### Best practices
 
