@@ -5,7 +5,7 @@ on:
 
 jobs:
   unit-tests:
-    uses: canonical/operator-workflows/.github/workflows/test.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/test.yaml@ISD-4247-remove-inclusive-check
     secrets: inherit
     with:
       self-hosted-runner: true
