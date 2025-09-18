@@ -46,7 +46,7 @@ If Discourse serves HTTP, the traffic between Discourse and the clients will be 
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
 <!-- CORS is an acronym -->
-## Cross-origin requests(CORS)
+## Cross-origin requests (CORS)
 <!-- vale Canonical.007-Headings-sentence-case = YES-->
 
 Discourse can be configured to enable or disable CORS through the [`enable_cors`](https://charmhub.io/discourse-k8s/configurations#enable_cors) configuration option. If enabled unnecessarily or [`cors_origin`](https://charmhub.io/discourse-k8s/configurations#cors_origin) is configured too broadly, a malicious attacker can interact with Discourse on behalf of legitimate users.
