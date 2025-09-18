@@ -53,5 +53,5 @@ Discourse can be configured to enable or disable CORS through the [`enable_cors`
 
 ### Best practices
 
-- Only set `enable_cors` if you require Single Sign-On(SSO) or another trusted cross-domain integration.
+- Only set `enable_cors` if you require Single Sign-On (SSO) or another trusted cross-domain integration.
 - Only allow trusted origins by configuring the [`cors_origin`](https://charmhub.io/discourse-k8s/configurations#cors_origin) and [`augment_cors_origin`](https://charmhub.io/discourse-k8s/configurations#augment_cors_origin) options. Do not set `cors_origin` to `*` as this allows all origins.
