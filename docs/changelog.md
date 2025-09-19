@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-09-18
+
+- docs: Add security documentation.
+
 ### 2025-06-26
 
 - docs: Fix broken links in the tutorial.
