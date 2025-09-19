@@ -1,4 +1,7 @@
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+<!-- "Operator" is part of the name -->
 # Discourse Operator
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 A [Juju](https://juju.is/) [charm](https://documentation.ubuntu.com/juju/3.6/reference/charm/) deploying and managing Discourse on Kubernetes.
 
 Discourse is an open-source software application used to create customer-friendly and community-friendly discussion platforms, 
@@ -58,5 +61,4 @@ fixes and constructive feedback.
   1. [Plugins](reference/plugins.md)
 1. [Explanation](explanation)
   1. [Charm architecture](explanation/charm-architecture.md)
-  1. [Security](explanation/security.md)
 1. [Changelog](changelog.md)
