@@ -4,9 +4,11 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 
 ## What you'll do
 
-- Deploy the Discourse charm
-- Integrate with `nginx-ingress-integrator`, `postgresql-k8s` and `redis-k8s` charms
-- Inspect the Kubernetes resources created
+1. Deploy the Discourse charm
+2. Integrate with `nginx-ingress-integrator`, `postgresql-k8s` and `redis-k8s` charms
+3. Inspect the Kubernetes resources created
+4. Create an admin user and log in
+5. Clean up the environment
 
 ## Requirements
 - A working station, e.g., a laptop, with amd64 architecture.
@@ -159,3 +161,18 @@ If you used Multipass, to remove the Multipass instance you created for this tut
 multipass delete --purge my-juju-vm
 ```
 Finally, remove the `127.0.0.1 discourse-k8s` line from the `/etc/hosts` file.
+
+## Next steps
+
+You achieved a basic deployment of the Discourse charm. If you want to go farther in your deployment
+or learn more about the charm, check out these pages:
+
+- Perform basic operations with your deployment like
+  [configuring S3](https://charmhub.io/discourse-k8s/docs/how-to-configure-s3)
+  or [SMTP](https://charmhub.io/discourse-k8s/docs/how-to-configure-smtp).
+- Make your deployment more secure by [configuring SAML](https://charmhub.io/discourse-k8s/docs/how-to-configure-saml),
+  and learn more about the charm's security in
+  [Security overview](https://charmhub.io/discourse-k8s/docs/explanation-security).
+- Learn more about the available [relation endpoints](https://charmhub.io/discourse-k8s/docs/reference-integrations)
+  for the Discourse charm.
+
