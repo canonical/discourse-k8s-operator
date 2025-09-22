@@ -164,7 +164,7 @@ Finally, remove the `127.0.0.1 discourse-k8s` line from the `/etc/hosts` file.
 
 ## Next steps
 
-You achieved a basic deployment of the Discourse charm. If you want to go farther in your deployment
+You achieved a basic deployment of the Discourse charm. If you want to go further in your deployment
 or learn more about the charm, check out these pages:
 
 - Perform basic operations with your deployment like
