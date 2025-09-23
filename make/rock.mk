@@ -13,7 +13,7 @@ HAS_YQ := $(shell command -v yq)
 ifneq ($(HAS_YQ),)
     ROCK_VERSION_BASE := $(shell yq '.version // "1.0"' $(ROCK_DIR)/rockcraft.yaml)
 else
-    @$(call errmsg,"yq not found, cannot determine rock base. Filename may be incorrect.")
+    $(error yq not found, cannot determine rock base. Filename may be incorrect)
 endif
 
 ROCK_PLATFORM ?= amd64
