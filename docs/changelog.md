@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-09-22
+
+- docs: Update tutorial based on user feedback.
+
 ### 2025-09-18
 
 - docs: Add security documentation.
