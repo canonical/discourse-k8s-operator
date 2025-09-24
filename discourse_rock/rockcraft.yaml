@@ -87,14 +87,6 @@ parts:
     source: bundler
     organize:
       "*": srv/discourse/app/.bundle/
-  discourse-solved:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-solved.git
-    source-commit: dc1ef92be23332a54854751a23b9029463584845
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-solved/
   discourse-markdown-note:
     plugin: dump
     after: [discourse, bundler-config]
@@ -133,46 +125,6 @@ parts:
       grep -e ^gem plugin.rb >> Gemfile
     organize:
       "*": srv/discourse/app/plugins/discourse-prometheus/
-  discourse-data-explorer:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-data-explorer.git
-    source-commit: 2d0dc39767f0c68d333f113c550731a5546c3137
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-data-explorer/
-  discourse-templates:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-templates.git
-    source-commit: 2cacb5e5d33d447191e80a29c01973f84c40dc83
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-templates/
-  discourse-calendar:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-calendar.git
-    source-commit: 908ad614bc412f831f929ca726a4bda0b9ccaab6
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-calendar/
-  discourse-gamification:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-gamification.git
-    source-commit: 4abb818a6b511878885bb594593dd35e76e1fc08
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-gamification/
-  discourse-chat-integration:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-chat-integration.git
-    source-commit: e19808d4ad3f7d16cd9b93f315ca586f694e6288
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-chat-integration/
   patches:
     plugin: dump
     after: [discourse]
@@ -210,16 +162,10 @@ parts:
       - apply-patches
       - bundler-config
       - discourse
-      - discourse-calendar
-      - discourse-data-explorer
-      - discourse-gamification
       - discourse-markdown-note
       - discourse-mermaid-theme-component
       - discourse-prometheus
       - discourse-saml
-      - discourse-solved
-      - discourse-templates
-      - discourse-chat-integration
       - patches
       - scripts
       - tooling
@@ -231,14 +177,8 @@ parts:
       cd srv/discourse/app
       gem install -n "bin" bundler -v 2.5.3
       bin/bundle install
-      bin/bundle install --gemfile="plugins/discourse-calendar/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-gamification/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-chat-integration/Gemfile"
       /root/.local/share/pnpm/pnpm install
   discourse-precompile-assets:
     plugin: nil
