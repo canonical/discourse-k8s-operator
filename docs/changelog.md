@@ -3,6 +3,7 @@
 ### 2025-09-24
 
 - docs: Add how-to landing page to Contents section.
+- chore: Remove src-docs and update PR template.
 
 ### 2025-09-22
 
