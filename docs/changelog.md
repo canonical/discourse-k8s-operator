@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-09-24
+
+- docs: Add how-to landing page to Contents section.
+
 ### 2025-09-22
 
 - docs: Update tutorial based on user feedback.
