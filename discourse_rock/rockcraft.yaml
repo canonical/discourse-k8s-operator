@@ -248,7 +248,6 @@ parts:
       bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-chat-integration/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-signatures/Gemfile"
       /root/.local/share/pnpm/pnpm install
   discourse-precompile-assets:
     plugin: nil
