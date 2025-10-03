@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-10-03
+
+- Add Discourse Signatures plugin to the rock.
+
 ### 2025-09-18
 
 - docs: Add security documentation.
