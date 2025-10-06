@@ -173,6 +173,14 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-chat-integration/
+  discourse-signatures:
+    plugin: dump
+    after: [discourse, bundler-config]
+    source: https://github.com/discourse/discourse-signatures.git
+    source-commit: 46f0eec457a4f01a60566eb31f2c0f16b83ddc01
+    source-depth: 1
+    organize:
+      "*": srv/discourse/app/plugins/discourse-signatures/
   patches:
     plugin: dump
     after: [discourse]
@@ -217,6 +225,7 @@ parts:
       - discourse-mermaid-theme-component
       - discourse-prometheus
       - discourse-saml
+      - discourse-signatures
       - discourse-solved
       - discourse-templates
       - discourse-chat-integration
