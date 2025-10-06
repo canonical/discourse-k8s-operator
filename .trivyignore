@@ -22,6 +22,7 @@ GHSA-hw46-3hmr-x9xv
 CVE-2025-27610
 CVE-2025-43857 # net-imap
 CVE-2025-46727 # rack
+CVE-2025-59343 # rack
 # Python setuptools
 CVE-2024-6345
 # Nodejs
