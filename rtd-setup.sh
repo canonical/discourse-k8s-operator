@@ -50,8 +50,8 @@ info "Copying Sphinx files and GitHub workflow..."
 #cp -r "$TMP_DIR"/docs/.sphinx/* docs/.sphinx/
 #cp "$TMP_DIR"/docs/.gitignore docs/
 #cp "$TMP_DIR"/docs/Makefile docs/
-#cp "$TMP_DIR"/docs/conf.py docs/
-#cp "$TMP_DIR"/docs/requirements.txt docs/
+cp "$TMP_DIR"/docs/conf.py docs/
+cp "$TMP_DIR"/docs/requirements.txt docs/
 
 # 3. Handle custom wordlist migration
 # TESTED, WORKING
@@ -100,23 +100,53 @@ info "Copying Sphinx files and GitHub workflow..."
 #MATRIX_NEW_LINK='https:\/\/matrix.to\/#\/#charmhub-charmdev:ubuntu.com'
 #sed -i "s/$MATRIX_OG_LINK/$MATRIX_NEW_LINK/g" "docs/conf.py"
 
-# todo: look into getting user input to replace project, project_page, github_url, html_theme_options
-# NOT TESTED
+# 5. optional user input to replace project, project_page, github_url, html_theme_options
+# TESTED, WORKING
 #ask "Update project-specific variables in conf.py? (y/n)"
 #read -r response
 #if [[ "$response" =~ ^[Yy]$ ]]; then
-#  ask "Enter name of project (e.g. 'WordPress charm'): "
-#  read -r response
+#  read -p "Enter name of project (e.g. 'WordPress charm'): " project_name
 #  info "Updating variable 'project'..."
-#  #PROJECT_OG='project = "Documentation starter pack"'
-#  #PROJECT_NEW='project = "$response"'
-#  #sed -i "s/$MM_OG_LINK/$MM_NEW_LINK/g" "docs/conf.py"
+#  PROJECT_OG='project = "Documentation starter pack"'
+#  PROJECT_NEW='project = "'$project_name'"'
+#  sed -i "s/$PROJECT_OG/$PROJECT_NEW/g" "docs/conf.py"
 #  info "'project' updated."
+
+#  read -p "Enter name of product_page (e.g. 'charmhub.io/wordpress-k8s'): " product_page
+#  info "Updating variable 'product_page'..."
+#  PRODUCT_PAGE_OG='"product_page": "documentation.ubuntu.com",'
+#  PRODUCT_PAGE_NEW='"product_page": "'$product_page'",'
+#  sed -i "s=$PRODUCT_PAGE_OG=$PRODUCT_PAGE_NEW=g" "docs/conf.py"
+#  info "'product_page' updated."
+
+#  read -p "Enter name of github_url (e.g. 'https://github.com/canonical/wordpress-k8s-operator'): " github_url
+#  info "Updating variable 'github_url'..."
+#  GITHUB_URL_OG='"github_url": "https://github.com/canonical/sphinx-docs-starter-pack",'
+#  GITHUB_URL_NEW='"github_url": "'$github_url'",'
+#  sed -i "s=$GITHUB_URL_OG=$GITHUB_URL_NEW=g" "docs/conf.py"
+#  info "Enabling edit button and updating 'source_edit_link'..."
+#  HTML_THEME_OPTION_OG='# html_theme_options = {'
+#  HTML_THEME_OPTION_NEW='html_theme_options = {'
+#  sed -i "s/$HTML_THEME_OPTION_OG/$HTML_THEME_OPTION_NEW/g" "docs/conf.py"
+#  SOURCE_EDIT_LINK_OG="# 'source_edit_link': 'https://github.com/canonical/sphinx-docs-starter-pack',"
+#  SOURCE_EDIT_LINK_NEW='"source_edit_link": "'$github_url'",'
+#  sed -i "s=$SOURCE_EDIT_LINK_OG=$SOURCE_EDIT_LINK_NEW=g" "docs/conf.py"
+#  CLOSING_BRACKET_OG='# }'
+#  CLOSING_BRACKET_NEW='}'
+#  sed -i "s=$CLOSING_BRACKET_OG=$CLOSING_BRACKET_NEW=g" "docs/conf.py"
+#  info "'github_url' and 'source_edit_link' updated."
 #fi
 
-# 5. Add Mermaid extension to project
+# 6. Add Mermaid extension to project
+# TESTED, NOT WORKING
+info "Adding Mermaid extension to project..."
+EXTENSION_OG='extensions = ['
+EXTENSION_NEW='extensions = [ "sphinxcontrib.mermaid",'
+sed -i "s/$EXTENSION_OG/$EXTENSION_NEW/g" "docs/conf.py"
+echo -e "sphinxcontrib-mermaid" >> "docs/requirements.txt"
+info "Adding Mermaid extension to conf.py and requirements.txt"
 
-# 6. Add index.md files in all subdirectories
+# 7. Add index.md files in all subdirectories
 # TESTED, NOT WORKING COMPLETELY
 # Issue: extra whitespace in toctree that causes errors in the build
 #info "Checking for index.md files in all subdirectories..."
@@ -143,9 +173,9 @@ info "Copying Sphinx files and GitHub workflow..."
 #    fi
 #done
 
-# 7. refactor index.md overview page Contents -> toctree
+# 8. refactor index.md overview page Contents -> toctree
 
-# 6. Final cleanup and instructions
+# 9. Final cleanup and instructions
 info "Cleaning up temporary files..."
 rm -rf "$TMP_DIR"
 
