@@ -172,12 +172,16 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #      fi
 #    fi
 #done
+# 7a. Add metadescriptions to these files???
 
 # 8. refactor index.md overview page Contents -> toctree
+# 9. RTD cookie banner
+# 10. Add target headers to all files??
+# 11. Add intersphinx mapping for Juju docs into conf.py
 
-# 9. Final cleanup and instructions
+# 10. Final cleanup and instructions
 info "Cleaning up temporary files..."
 rm -rf "$TMP_DIR"
 
-#success "Vale workflow has been bootstrapped!"
-#echo "Please review the changes and run 'git add .' to commit them."
+#success "RTD project has been set up!"
+#echo "Please review the changes with 'make run' and run 'git add .' to commit them."
