@@ -36,12 +36,12 @@ fi
 success "Running on branch '$CURRENT_BRANCH'. Proceeding..."
 
 # 1. Clone the template
-info "Cloning Vale workflow template from $TEMPLATE_REPO..."
+info "Cloning $TEMPLATE_REPO..."
 git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 
 # 2. Copy over the core, non-conflicting files
 # TESTED, WORKING
-info "Copying Sphinx files and GitHub workflow..."
+#info "Copying Sphinx files and GitHub workflow..."
 #mkdir -p .github/workflows
 #mkdir -p docs/.sphinx
 #rm "$TMP_DIR"/.github/workflows/test-starter-pack.yml
@@ -50,8 +50,8 @@ info "Copying Sphinx files and GitHub workflow..."
 #cp -r "$TMP_DIR"/docs/.sphinx/* docs/.sphinx/
 #cp "$TMP_DIR"/docs/.gitignore docs/
 #cp "$TMP_DIR"/docs/Makefile docs/
-cp "$TMP_DIR"/docs/conf.py docs/
-cp "$TMP_DIR"/docs/requirements.txt docs/
+#cp "$TMP_DIR"/docs/conf.py docs/
+#cp "$TMP_DIR"/docs/requirements.txt docs/
 
 # 3. Handle custom wordlist migration
 # TESTED, WORKING
@@ -110,14 +110,14 @@ cp "$TMP_DIR"/docs/requirements.txt docs/
 #  PROJECT_OG='project = "Documentation starter pack"'
 #  PROJECT_NEW='project = "'$project_name'"'
 #  sed -i "s/$PROJECT_OG/$PROJECT_NEW/g" "docs/conf.py"
-#  info "'project' updated."
+#  success "'project' updated."
 
 #  read -p "Enter name of product_page (e.g. 'charmhub.io/wordpress-k8s'): " product_page
 #  info "Updating variable 'product_page'..."
 #  PRODUCT_PAGE_OG='"product_page": "documentation.ubuntu.com",'
 #  PRODUCT_PAGE_NEW='"product_page": "'$product_page'",'
 #  sed -i "s=$PRODUCT_PAGE_OG=$PRODUCT_PAGE_NEW=g" "docs/conf.py"
-#  info "'product_page' updated."
+#  success "'product_page' updated."
 
 #  read -p "Enter name of github_url (e.g. 'https://github.com/canonical/wordpress-k8s-operator'): " github_url
 #  info "Updating variable 'github_url'..."
@@ -134,21 +134,18 @@ cp "$TMP_DIR"/docs/requirements.txt docs/
 #  CLOSING_BRACKET_OG='# }'
 #  CLOSING_BRACKET_NEW='}'
 #  sed -i "s=$CLOSING_BRACKET_OG=$CLOSING_BRACKET_NEW=g" "docs/conf.py"
-#  info "'github_url' and 'source_edit_link' updated."
+#  success "'github_url' and 'source_edit_link' updated."
 #fi
 
 # 6. Add Mermaid extension to project
-# TESTED, NOT WORKING
-info "Adding Mermaid extension to project..."
-EXTENSION_OG='extensions = ['
-EXTENSION_NEW='extensions = [ "sphinxcontrib.mermaid",'
-sed -i "s/$EXTENSION_OG/$EXTENSION_NEW/g" "docs/conf.py"
-echo -e "sphinxcontrib-mermaid" >> "docs/requirements.txt"
-info "Adding Mermaid extension to conf.py and requirements.txt"
+# TESTED, WORKING
+#info "Adding Mermaid extension to project..."
+#echo -e "sphinxcontrib-mermaid" >> "docs/requirements.txt"
+#sed -i '/extensions = \[/a \    "sphinxcontrib.mermaid",' "docs/conf.py"
+#success "Added Mermaid extension to conf.py and requirements.txt"
 
 # 7. Add index.md files in all subdirectories
-# TESTED, NOT WORKING COMPLETELY
-# Issue: extra whitespace in toctree that causes errors in the build
+# TESTED, WORKING
 #info "Checking for index.md files in all subdirectories..."
 # 6a. Get a list of all subdirectories
 #subdirectories=$(find "docs/" -type d -mindepth 1)
@@ -163,12 +160,15 @@ info "Adding Mermaid extension to conf.py and requirements.txt"
 #        info "Creating index.md in $subdir..."
 #        files=$(ls -p "$subdir")
 #        touch "$subdir/index.md"
-#        text="# $subdir
+#text="# $subdir 
 #
-#        \`\`\`{toctree}
-#        $files
-#        \`\`\`"
+#\`\`\`{toctree}
+#$files
+#\`\`\`"
 #        echo "$text" > "$subdir/index.md"
+#        success "Created index.md file in $subdir."
+#      else
+#        success "Checked for index.md file in $subdir. Remember to create this file later!!"
 #      fi
 #    fi
 #done
