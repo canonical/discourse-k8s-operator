@@ -1,5 +1,14 @@
 # Changelog
 
+### 2025-10-03
+
+- Add Discourse Signatures plugin to the rock.
+
+### 2025-09-24
+
+- docs: Add how-to landing page to Contents section.
+- chore: Remove src-docs and update PR template.
+
 ### 2025-09-22
 
 - docs: Update tutorial based on user feedback.

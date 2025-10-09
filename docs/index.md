@@ -44,6 +44,7 @@ fixes and constructive feedback.
 
 1. [Tutorial](tutorial.md)
 1. [How To](how-to)
+  1. [Overview](how-to/landing-page.md)
   1. [Configure the hostname](how-to/configure-hostname.md)
   1. [Configure the container](how-to/configure-container.md)
   1. [Access the Rails console](how-to/access--the-rails-console.md)
