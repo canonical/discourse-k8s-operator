@@ -204,7 +204,7 @@ def app_fixture(
         base="ubuntu@22.04",
         trust=True,
         config={
-            "profile": "testing"
+            "profile": "testing",
             "plugin_vector_enable": True
         },
     )
