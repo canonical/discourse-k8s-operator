@@ -175,4 +175,3 @@ or learn more about the charm, check out these pages:
   [Security overview](https://charmhub.io/discourse-k8s/docs/explanation-security).
 - Learn more about the available [relation endpoints](https://charmhub.io/discourse-k8s/docs/reference-integrations)
   for the Discourse charm.
-
