@@ -180,6 +180,7 @@ parts:
       - libssl-dev
     override-prime: |
       cd srv/discourse/app
+      rm -rf plugin/discourse-ai
       gem install -n "bin" bundler -v 2.5.3
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"

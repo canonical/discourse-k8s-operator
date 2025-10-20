@@ -34,7 +34,6 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingSta
 from ops.pebble import ExecError, ExecProcess, Plan
 
 from database import DatabaseHandler
-from database_client import DatabaseClient
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +97,6 @@ class DiscourseCharm(CharmBase):
         super().__init__(*args)
 
         self._database = DatabaseHandler(self, DATABASE_RELATION_NAME)
-        self._database_client = DatabaseClient(self._database.get_relation_data())
 
         self.framework.observe(
             self._database.database.on.database_created, self._on_database_created
@@ -659,27 +657,8 @@ class DiscourseCharm(CharmBase):
             logger.exception("S3 migration failed with code %d.", cmd_err.exit_code)
             raise
 
-    def _take_pgvector_ownership(self) -> None:
-        container = self.unit.get_container(CONTAINER_NAME)
-        if not self._are_relations_ready() or not container.can_connect():
-            logger.info("Not ready to take pgvector ownership")
-            return
-        self.model.unit.status = MaintenanceStatus("Taking pgvector extension ownership")
-        logger.info("Taking pgvector extension ownership")
-        try:
-            if not self._database_client.check_pgvector_installed():
-                logger.info("pgvector extension not installed, skipping taking ownership")
-                self.model.unit.status = BlockedStatus(
-                    "pgvector extension not installed in PostgresDB"
-                )
-                return
-            self._database_client.change_pgvector_ownership()
-        except ExecError as cmd_err:
-            logger.exception("Taking pgvector ownership failed with code %d.", cmd_err.exit_code)
-            raise
-
     def _set_up_discourse(self) -> None:
-        """Run database operations and discourse migrations, and recompile assets.
+        """Run migrations and recompile assets.
 
         Args:
             event: Event triggering the handler.
@@ -692,8 +671,6 @@ class DiscourseCharm(CharmBase):
             "Relations are ready and can connect to container, attempting to set up discourse."
         )
         try:
-            logger.info("Discourse setup: about to change pgvector extension ownership")
-            self._take_pgvector_ownership()
             logger.info("Discourse setup: about to execute migrations")
             self._execute_migrations()
             logger.info("Discourse setup: about to mark the discourse setup process as complete")
