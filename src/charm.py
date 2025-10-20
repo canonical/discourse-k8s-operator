@@ -658,7 +658,7 @@ class DiscourseCharm(CharmBase):
             raise
 
     def _set_up_discourse(self) -> None:
-        """Run migrations and recompile assets.
+        """Run Discourse migrations and recompile assets.
 
         Args:
             event: Event triggering the handler.
