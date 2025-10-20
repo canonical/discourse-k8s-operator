@@ -203,7 +203,7 @@ def app_fixture(
         channel="14/stable",
         base="ubuntu@22.04",
         trust=True,
-        config={"profile": "testing", "plugin_vector_enable": True},
+        config={"profile": "testing"},
     )
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
     juju.wait(
