@@ -147,11 +147,12 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 # 7. Add index.md files in all subdirectories
 # TESTED, WORKING
 #info "Checking for index.md files in all subdirectories..."
-# 6a. Get a list of all subdirectories
-#subdirectories=$(find "docs/" -type d -mindepth 1)
-# 6b. Check whether index.md file already exists
-# 6b-1. If file exists, then skip
-# 6b-2. If no file, then create one 
+# 7a. Get a list of all subdirectories
+#subdirectories=$(find "docs/" -mindepth 1 -type d)
+# 7b. Check whether index.md file already exists
+# 7b-1. If file exists, then skip
+# 7b-2. If no file, then create one 
+# 7c. Add metadescriptions to these files (fill in the details later)
 #for subdir in $subdirectories; do
 #    if [ ! -f "$subdir/index.md" ]; then
 #      info "No index.md file found in $subdir. Create one? (y/n)"
@@ -160,21 +161,30 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #        info "Creating index.md in $subdir..."
 #        files=$(ls -p "$subdir")
 #        touch "$subdir/index.md"
-#text="# $subdir 
+#text="---
+#myst:
+#  html_meta:
+#    \"description lang=en\": \"TBD\"
+#---
+#
+#($subdir\_index)=
+#
+#Description TBD
 #
 #\`\`\`{toctree}
 #$files
 #\`\`\`"
 #        echo "$text" > "$subdir/index.md"
-#        success "Created index.md file in $subdir."
+#        success "Created index.md file in $subdir. Remember to fill in the meta-description!!"
 #      else
 #        success "Checked for index.md file in $subdir. Remember to create this file later!!"
 #      fi
 #    fi
 #done
-# 7a. Add metadescriptions to these files???
 
 # 8. refactor index.md overview page Contents -> toctree
+
+
 # 9. RTD cookie banner
 # 10. Add target headers to all files??
 # 11. Add intersphinx mapping for Juju docs into conf.py
