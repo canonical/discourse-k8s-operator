@@ -183,7 +183,20 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #done
 
 # 8. refactor index.md overview page Contents -> toctree
-
+# IN PROGRESS, NOT WORKING
+#info "Updating the Contents section of the home page..."
+#contents_line_num=$(awk '/# Contents/{print NR; exit}' docs/index.md)
+#sed -i "$contents_line_num,$ d" "docs/index.md"
+#subdirectories=$(find "docs/" -mindepth 1 -type d)
+# CURRENT ISSUES:
+# 1) 'docs' needs to be stripped out of subdirectories
+# 2) '/index' needs to be added to ALL subdirectories
+# 3) any non-index pages in docs/ needs to be added to the toctree
+#index_toctree="\`\`\`{toctree}
+#$subdirectories/index
+#\`\`\`"
+#echo "$index_toctree" >> "docs/index.md"
+#success "Contents section of the home page has been refactored!"
 
 # 9. RTD cookie banner
 # 10. Add target headers to all files??
