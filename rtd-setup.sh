@@ -144,7 +144,7 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #sed -i '/extensions = \[/a \    "sphinxcontrib.mermaid",' "docs/conf.py"
 #success "Added Mermaid extension to conf.py and requirements.txt"
 
-# 7. Add index.md files in all subdirectories
+# 7. Add initial index.md files in all subdirectories
 # TESTED, WORKING
 #info "Checking for index.md files in all subdirectories..."
 # 7a. Get a list of all subdirectories
@@ -167,6 +167,8 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #    \"description lang=en\": \"TBD\"
 #---
 #
+## $subdir
+#
 #($subdir\_index)=
 #
 #Description TBD
@@ -183,17 +185,17 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #done
 
 # 8. refactor index.md overview page Contents -> toctree
-# IN PROGRESS, NOT WORKING
+# TESTED, WORKING
 #info "Updating the Contents section of the home page..."
 #contents_line_num=$(awk '/# Contents/{print NR; exit}' docs/index.md)
 #sed -i "$contents_line_num,$ d" "docs/index.md"
-#subdirectories=$(find "docs/" -mindepth 1 -type d)
-# CURRENT ISSUES:
-# 1) 'docs' needs to be stripped out of subdirectories
-# 2) '/index' needs to be added to ALL subdirectories
-# 3) any non-index pages in docs/ needs to be added to the toctree
+#subdirectories=$(find docs/*/index.md)
+#stripped_subdir=$(echo "$subdirectories" | cut -c 6-)
+#other_files=$(find docs/*.md -not -wholename 'docs/index.md')
+#stripped_other_files=$(echo "$other_files" | cut -c 6-)
 #index_toctree="\`\`\`{toctree}
-#$subdirectories/index
+#$stripped_subdir
+#$stripped_other_files
 #\`\`\`"
 #echo "$index_toctree" >> "docs/index.md"
 #success "Contents section of the home page has been refactored!"
@@ -202,7 +204,7 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 # 10. Add target headers to all files??
 # 11. Add intersphinx mapping for Juju docs into conf.py
 
-# 10. Final cleanup and instructions
+# 12. Final cleanup and instructions
 info "Cleaning up temporary files..."
 rm -rf "$TMP_DIR"
 
