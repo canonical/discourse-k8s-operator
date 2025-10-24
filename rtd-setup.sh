@@ -201,6 +201,35 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #success "Contents section of the home page has been refactored!"
 
 # 9. RTD cookie banner
+# TESTED, NOT WORKING
+# 9a. Create directories in project
+#mkdir docs/_static docs/_templates
+#mkdir docs/_static/js
+# 9b. Clone the cookie banner repo and copy the files
+#RTD_COOKIE_REPO="https://github.com/canonical/RTD-cookie-banner-integration.git"
+#info "Cloning $RTD_COOKIE_REPO..."
+#git clone --depth 1 "$RTD_COOKIE_REPO" "$TMP_DIR" &>/dev/null
+#info "Copying files from $RTD_COOKIE_REPO..."
+#cp "$TMP_DIR"/bundle.js docs/_static/js
+#cp "$TMP_DIR"/cookie-banner.css docs/_static
+#cp "$TMP_DIR"/header.html docs/_templates
+#cp "$TMP_DIR"/footer.html docs/_templates
+# 9c. uncomment html_static_path and templates_path in conf.py
+#info "Updating conf.py to detect the cookie banner..."
+#HTML_STATIC_OG_LINE='#html_static_path = ["_static"]'
+#HTML_STATIC_NEW_LINE='html_static_path = ["_static"]'
+#sed -i "s/$HTML_STATIC_OG_LINE/$HTML_STATIC_NEW_LINE/g" "docs/conf.py"
+#TEMPLATES_OG_LINE='#templates_path = ["_templates"]'
+#TEMPLATES_NEW_LINE='templates_path = ["_templates"]'
+#sed -i "s/$TEMPLATES_OG_LINE/$TEMPLATES_NEW_LINE/g" "docs/conf.py"
+# 9d. uncomment and fill html_css_files and html_js_files in conf.py
+#HTML_CSS_OG_LINE='#html_css_files = []'
+#HTML_CSS_NEW_LINE="html_css_files = ['cookie-banner.css']"
+#sed -i "s/$HTML_CSS_OG_LINE/$HTML_CSS_NEW_LINE/g" "docs/conf.py"
+#HTML_JS_OG_LINE='#html_js_files = []'
+#HTML_JS_NEW_LINE="html_js_files = ['js/bundle.js']"
+#sed -i "s/$HTML_CSS_OG_LINE/$HTML_CSS_NEW_LINE/g" "docs/conf.py"
+
 # 10. Add target headers to all files??
 # 11. Add intersphinx mapping for Juju docs into conf.py
 
