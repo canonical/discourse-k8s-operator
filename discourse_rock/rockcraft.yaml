@@ -81,6 +81,8 @@ parts:
       "*.*": srv/discourse/app/
       "*": srv/discourse/app/
       ".*": srv/discourse/app/
+    prime:
+      - -srv/discourse/app/plugins/discourse-ai
   bundler-config:
     plugin: dump
     after: [discourse]
@@ -180,7 +182,6 @@ parts:
       - libssl-dev
     override-prime: |
       cd srv/discourse/app
-      rm -rf plugins/discourse-ai
       gem install -n "bin" bundler -v 2.5.3
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
