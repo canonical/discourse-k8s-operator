@@ -7,10 +7,6 @@ set -e
 TEMPLATE_REPO="https://github.com/canonical/sphinx-docs-starter-pack.git"
 TMP_DIR=$(mktemp -d)
 
-# Markers for the gitignore block
-GITIGNORE_START_MARKER="# BEGIN VALE WORKFLOW IGNORE"
-GITIGNORE_END_MARKER="# END VALE WORKFLOW IGNORE"
-
 # --- Helper Functions for User-Friendly Output ---
 info() { echo -e "\033[34mINFO\033[0m: $1"; }
 ask() { echo -e "\033[33mACTION\033[0m: $1"; }
@@ -50,7 +46,7 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #cp -r "$TMP_DIR"/docs/.sphinx/* docs/.sphinx/
 #cp "$TMP_DIR"/docs/.gitignore docs/
 #cp "$TMP_DIR"/docs/Makefile docs/
-#cp "$TMP_DIR"/docs/conf.py docs/
+cp "$TMP_DIR"/docs/conf.py docs/
 #cp "$TMP_DIR"/docs/requirements.txt docs/
 
 # 3. Handle custom wordlist migration
@@ -99,6 +95,8 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #MATRIX_OG_LINK='https:\/\/matrix.to\/#\/#documentation:ubuntu.com'
 #MATRIX_NEW_LINK='https:\/\/matrix.to\/#\/#charmhub-charmdev:ubuntu.com'
 #sed -i "s/$MATRIX_OG_LINK/$MATRIX_NEW_LINK/g" "docs/conf.py"
+
+# 4a. Add intersphinx mapping for Juju docs into conf.py
 
 # 5. optional user input to replace project, project_page, github_url, html_theme_options
 # TESTED, WORKING
@@ -167,9 +165,9 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #    \"description lang=en\": \"TBD\"
 #---
 #
-## $subdir
-#
 #($subdir\_index)=
+#
+## $subdir
 #
 #Description TBD
 #
@@ -201,41 +199,53 @@ git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 #success "Contents section of the home page has been refactored!"
 
 # 9. RTD cookie banner
-# TESTED, NOT WORKING
+# TESTED, WORKING 
 # 9a. Create directories in project
 #mkdir docs/_static docs/_templates
 #mkdir docs/_static/js
 # 9b. Clone the cookie banner repo and copy the files
 #RTD_COOKIE_REPO="https://github.com/canonical/RTD-cookie-banner-integration.git"
 #info "Cloning $RTD_COOKIE_REPO..."
-#git clone --depth 1 "$RTD_COOKIE_REPO" "$TMP_DIR" &>/dev/null
+#mkdir tmp
+#git clone --depth 1 "$RTD_COOKIE_REPO" tmp
 #info "Copying files from $RTD_COOKIE_REPO..."
-#cp "$TMP_DIR"/bundle.js docs/_static/js
-#cp "$TMP_DIR"/cookie-banner.css docs/_static
-#cp "$TMP_DIR"/header.html docs/_templates
-#cp "$TMP_DIR"/footer.html docs/_templates
+#cp tmp/bundle.js docs/_static/js/
+#cp tmp/cookie-banner.css docs/_static
+#cp tmp/header.html docs/_templates
+#cp tmp/footer.html docs/_templates
 # 9c. uncomment html_static_path and templates_path in conf.py
 #info "Updating conf.py to detect the cookie banner..."
-#HTML_STATIC_OG_LINE='#html_static_path = ["_static"]'
-#HTML_STATIC_NEW_LINE='html_static_path = ["_static"]'
+#HTML_STATIC_OG_LINE='#html_static_path'
+#HTML_STATIC_NEW_LINE='html_static_path'
 #sed -i "s/$HTML_STATIC_OG_LINE/$HTML_STATIC_NEW_LINE/g" "docs/conf.py"
-#TEMPLATES_OG_LINE='#templates_path = ["_templates"]'
-#TEMPLATES_NEW_LINE='templates_path = ["_templates"]'
+#TEMPLATES_OG_LINE='#templates_path'
+#TEMPLATES_NEW_LINE='templates_path'
 #sed -i "s/$TEMPLATES_OG_LINE/$TEMPLATES_NEW_LINE/g" "docs/conf.py"
 # 9d. uncomment and fill html_css_files and html_js_files in conf.py
-#HTML_CSS_OG_LINE='#html_css_files = []'
-#HTML_CSS_NEW_LINE="html_css_files = ['cookie-banner.css']"
+#HTML_CSS_OG_LINE="# html_css_files = \[\]"
+#HTML_CSS_NEW_LINE="html_css_files = \['cookie-banner.css'\]"
 #sed -i "s/$HTML_CSS_OG_LINE/$HTML_CSS_NEW_LINE/g" "docs/conf.py"
-#HTML_JS_OG_LINE='#html_js_files = []'
-#HTML_JS_NEW_LINE="html_js_files = ['js/bundle.js']"
-#sed -i "s/$HTML_CSS_OG_LINE/$HTML_CSS_NEW_LINE/g" "docs/conf.py"
+#HTML_JS_OG_LINE="# html_js_files = \[\]"
+#HTML_JS_NEW_LINE="html_js_files = \['js\/bundle.js'\]"
+#sed -i "s/$HTML_JS_OG_LINE/$HTML_JS_NEW_LINE/g" "docs/conf.py"
+#success "RTD banner set up!"
 
 # 10. Add target headers to all files??
-# 11. Add intersphinx mapping for Juju docs into conf.py
+# first, need a list of all the MD files in the project
+# then need to remove the index files if I've already added the headers there
+# then need to create the targets in the correct form
+# strip docs from the name, strip .md from the end 
+# replace '/' with '_'
+# then add the target to the front of all files (how to do that??)
 
-# 12. Final cleanup and instructions
+
+# 11. Final cleanup and instructions
 info "Cleaning up temporary files..."
 rm -rf "$TMP_DIR"
+rm -rf tmp
 
 #success "RTD project has been set up!"
+# echo "Here's a list of other things you should do before opening a PR:"
+# echo "[ ] "
+
 #echo "Please review the changes with 'make run' and run 'git add .' to commit them."
