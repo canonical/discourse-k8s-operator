@@ -36,216 +36,236 @@ info "Cloning $TEMPLATE_REPO..."
 git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 
 # 2. Copy over the core, non-conflicting files
-# TESTED, WORKING
-#info "Copying Sphinx files and GitHub workflow..."
-#mkdir -p .github/workflows
-#mkdir -p docs/.sphinx
-#rm "$TMP_DIR"/.github/workflows/test-starter-pack.yml
-#cp "$TMP_DIR"/.github/workflows/* .github/workflows/
-#cp "$TMP_DIR"/.readthedocs.yaml .
-#cp -r "$TMP_DIR"/docs/.sphinx/* docs/.sphinx/
-#cp "$TMP_DIR"/docs/.gitignore docs/
-#cp "$TMP_DIR"/docs/Makefile docs/
+info "Copying Sphinx files and GitHub workflow..."
+mkdir -p .github/workflows
+mkdir -p docs/.sphinx
+rm "$TMP_DIR"/.github/workflows/test-starter-pack.yml
+cp "$TMP_DIR"/.github/workflows/* .github/workflows/
+cp "$TMP_DIR"/.readthedocs.yaml .
+cp -r "$TMP_DIR"/docs/.sphinx/* docs/.sphinx/
+cp "$TMP_DIR"/docs/.gitignore docs/
+cp "$TMP_DIR"/docs/Makefile docs/
 cp "$TMP_DIR"/docs/conf.py docs/
-#cp "$TMP_DIR"/docs/requirements.txt docs/
+cp "$TMP_DIR"/docs/requirements.txt docs/
 
 # 3. Handle custom wordlist migration
-# TESTED, WORKING
-#if [ -f ".custom_wordlist.txt" ]; then
-#  ask "Found '.custom_wordlist.txt'. Do you want to add it to the RTD project? (y/n)"
-#  read -r response
-#  if [[ "$response" =~ ^[Yy]$ ]]; then
-#    info "Migrating words from .custom_wordlist.txt..."
-#    cat ".custom_wordlist.txt" >> "docs/.custom_wordlist.txt"
-#    ask "Wordlist migrated. Would you like to remove the old '.custom_wordlist.txt' file? (y/n)"
-#    read -r del_response
-#    if [[ "$del_response" =~ ^[Yy]$ ]]; then
-#        rm ".custom_wordlist.txt"
-#        info "Removed .custom_wordlist.txt."
-#    fi
-#  fi
-#fi
+if [ -f ".custom_wordlist.txt" ]; then
+  ask "Found '.custom_wordlist.txt'. Do you want to add it to the RTD project? (y/n)"
+  read -r response
+  if [[ "$response" =~ ^[Yy]$ ]]; then
+    info "Migrating words from .custom_wordlist.txt..."
+    cat ".custom_wordlist.txt" >> "docs/.custom_wordlist.txt"
+    ask "Wordlist migrated. Would you like to remove the old '.custom_wordlist.txt' file? (y/n)"
+    read -r del_response
+    if [[ "$del_response" =~ ^[Yy]$ ]]; then
+        rm ".custom_wordlist.txt"
+        info "Removed .custom_wordlist.txt."
+    fi
+  fi
+fi
 
 # Conditionally copy accept.txt
-#if [ -f ".vale/styles/config/vocabularies/local/accept.txt" ]; then
-#    ask "Local 'accept.txt' found. Do you want to add it to the RTD project? (y/n)"
-#    read -r response
-#    if [[ "$response" =~ ^[Yy]$ ]]; then
-#      info "Migrating words from local accept.txt..."
-#      cat ".vale/styles/config/vocabularies/local/accept.txt" >> "docs/.custom_wordlist.txt"
-#      info "Wordlist migrated."
-#    fi
-#fi
+if [ -f ".vale/styles/config/vocabularies/local/accept.txt" ]; then
+    ask "Local 'accept.txt' found. Do you want to add it to the RTD project? (y/n)"
+    read -r response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+      info "Migrating words from local accept.txt..."
+      cat ".vale/styles/config/vocabularies/local/accept.txt" >> "docs/.custom_wordlist.txt"
+      info "Wordlist migrated."
+    fi
+fi
 
 # If no custom wordlist in the project, then create blank one
-#if [ ! -f ".custom_wordlist.txt" ] || [ ! -f ".vale/styles/config/vocabularies/local/accept.txt" ]; then
-#    info "No local wordlist found. Creating a blank one..."
-#    touch docs/.custom_wordlist.txt
-#fi
+if [ ! -f ".custom_wordlist.txt" ] || [ ! -f ".vale/styles/config/vocabularies/local/accept.txt" ]; then
+    info "No local wordlist found. Creating a blank one..."
+    touch docs/.custom_wordlist.txt
+fi
 
 # 4. Update conf.py for links/names
-#info "Updating conf.py to use team-specific links..."
-# TESTED, WORKING
-#DISCOURSE_OG_LINK='discourse.ubuntu.com'
-#DISCOURSE_NEW_LINK='discourse.charmhub.io'
-#sed -i "s/$DISCOURSE_OG_LINK/$DISCOURSE_NEW_LINK/g" "docs/conf.py"
-#MM_OG_LINK='https:\/\/chat.canonical.com\/canonical\/channels\/documentation'
-#MM_NEW_LINK=''
-#sed -i "s/$MM_OG_LINK/$MM_NEW_LINK/g" "docs/conf.py"
-#MATRIX_OG_LINK='https:\/\/matrix.to\/#\/#documentation:ubuntu.com'
-#MATRIX_NEW_LINK='https:\/\/matrix.to\/#\/#charmhub-charmdev:ubuntu.com'
-#sed -i "s/$MATRIX_OG_LINK/$MATRIX_NEW_LINK/g" "docs/conf.py"
-
-# 4a. Add intersphinx mapping for Juju docs into conf.py
+info "Updating conf.py to use team-specific links..."
+DISCOURSE_OG_LINK='discourse.ubuntu.com'
+DISCOURSE_NEW_LINK='discourse.charmhub.io'
+sed -i "s/$DISCOURSE_OG_LINK/$DISCOURSE_NEW_LINK/g" "docs/conf.py"
+MM_OG_LINK='https:\/\/chat.canonical.com\/canonical\/channels\/documentation'
+MM_NEW_LINK=''
+sed -i "s/$MM_OG_LINK/$MM_NEW_LINK/g" "docs/conf.py"
+MATRIX_OG_LINK='https:\/\/matrix.to\/#\/#documentation:ubuntu.com'
+MATRIX_NEW_LINK='https:\/\/matrix.to\/#\/#charmhub-charmdev:ubuntu.com'
+sed -i "s/$MATRIX_OG_LINK/$MATRIX_NEW_LINK/g" "docs/conf.py"
+sed -i "/intersphinx\_mapping = {/a \    'juju': \(\"https:\/\/documentation.ubuntu.com\/juju\/3.6\/\", None\)," "docs/conf.py"
 
 # 5. optional user input to replace project, project_page, github_url, html_theme_options
-# TESTED, WORKING
-#ask "Update project-specific variables in conf.py? (y/n)"
-#read -r response
-#if [[ "$response" =~ ^[Yy]$ ]]; then
-#  read -p "Enter name of project (e.g. 'WordPress charm'): " project_name
-#  info "Updating variable 'project'..."
-#  PROJECT_OG='project = "Documentation starter pack"'
-#  PROJECT_NEW='project = "'$project_name'"'
-#  sed -i "s/$PROJECT_OG/$PROJECT_NEW/g" "docs/conf.py"
-#  success "'project' updated."
+ask "Update project-specific variables in conf.py? (y/n)"
+read -r response
+if [[ "$response" =~ ^[Yy]$ ]]; then
+  read -p "Enter name of project (e.g. 'WordPress charm'): " project_name
+  info "Updating variable 'project'..."
+  PROJECT_OG='project = "Documentation starter pack"'
+  PROJECT_NEW='project = "'$project_name'"'
+  sed -i "s/$PROJECT_OG/$PROJECT_NEW/g" "docs/conf.py"
+  success "'project' updated."
 
-#  read -p "Enter name of product_page (e.g. 'charmhub.io/wordpress-k8s'): " product_page
-#  info "Updating variable 'product_page'..."
-#  PRODUCT_PAGE_OG='"product_page": "documentation.ubuntu.com",'
-#  PRODUCT_PAGE_NEW='"product_page": "'$product_page'",'
-#  sed -i "s=$PRODUCT_PAGE_OG=$PRODUCT_PAGE_NEW=g" "docs/conf.py"
-#  success "'product_page' updated."
+  read -p "Enter name of product_page (e.g. 'charmhub.io/wordpress-k8s'): " product_page
+  info "Updating variable 'product_page'..."
+  PRODUCT_PAGE_OG='"product_page": "documentation.ubuntu.com",'
+  PRODUCT_PAGE_NEW='"product_page": "'$product_page'",'
+  sed -i "s=$PRODUCT_PAGE_OG=$PRODUCT_PAGE_NEW=g" "docs/conf.py"
+  success "'product_page' updated."
 
-#  read -p "Enter name of github_url (e.g. 'https://github.com/canonical/wordpress-k8s-operator'): " github_url
-#  info "Updating variable 'github_url'..."
-#  GITHUB_URL_OG='"github_url": "https://github.com/canonical/sphinx-docs-starter-pack",'
-#  GITHUB_URL_NEW='"github_url": "'$github_url'",'
-#  sed -i "s=$GITHUB_URL_OG=$GITHUB_URL_NEW=g" "docs/conf.py"
-#  info "Enabling edit button and updating 'source_edit_link'..."
-#  HTML_THEME_OPTION_OG='# html_theme_options = {'
-#  HTML_THEME_OPTION_NEW='html_theme_options = {'
-#  sed -i "s/$HTML_THEME_OPTION_OG/$HTML_THEME_OPTION_NEW/g" "docs/conf.py"
-#  SOURCE_EDIT_LINK_OG="# 'source_edit_link': 'https://github.com/canonical/sphinx-docs-starter-pack',"
-#  SOURCE_EDIT_LINK_NEW='"source_edit_link": "'$github_url'",'
-#  sed -i "s=$SOURCE_EDIT_LINK_OG=$SOURCE_EDIT_LINK_NEW=g" "docs/conf.py"
-#  CLOSING_BRACKET_OG='# }'
-#  CLOSING_BRACKET_NEW='}'
-#  sed -i "s=$CLOSING_BRACKET_OG=$CLOSING_BRACKET_NEW=g" "docs/conf.py"
-#  success "'github_url' and 'source_edit_link' updated."
-#fi
+  read -p "Enter name of github_url (e.g. 'https://github.com/canonical/wordpress-k8s-operator'): " github_url
+  info "Updating variable 'github_url'..."
+  GITHUB_URL_OG='"github_url": "https://github.com/canonical/sphinx-docs-starter-pack",'
+  GITHUB_URL_NEW='"github_url": "'$github_url'",'
+  sed -i "s=$GITHUB_URL_OG=$GITHUB_URL_NEW=g" "docs/conf.py"
+  info "Enabling edit button and updating 'source_edit_link'..."
+  HTML_THEME_OPTION_OG='# html_theme_options = {'
+  HTML_THEME_OPTION_NEW='html_theme_options = {'
+  sed -i "s/$HTML_THEME_OPTION_OG/$HTML_THEME_OPTION_NEW/g" "docs/conf.py"
+  SOURCE_EDIT_LINK_OG="# 'source_edit_link': 'https://github.com/canonical/sphinx-docs-starter-pack',"
+  SOURCE_EDIT_LINK_NEW='"source_edit_link": "'$github_url'",'
+  sed -i "s=$SOURCE_EDIT_LINK_OG=$SOURCE_EDIT_LINK_NEW=g" "docs/conf.py"
+  CLOSING_BRACKET_OG='# }'
+  CLOSING_BRACKET_NEW='}'
+  sed -i "s=$CLOSING_BRACKET_OG=$CLOSING_BRACKET_NEW=g" "docs/conf.py"
+  success "'github_url' and 'source_edit_link' updated."
+fi
 
 # 6. Add Mermaid extension to project
-# TESTED, WORKING
-#info "Adding Mermaid extension to project..."
-#echo -e "sphinxcontrib-mermaid" >> "docs/requirements.txt"
-#sed -i '/extensions = \[/a \    "sphinxcontrib.mermaid",' "docs/conf.py"
-#success "Added Mermaid extension to conf.py and requirements.txt"
+info "Adding Mermaid extension to project..."
+echo -e "sphinxcontrib-mermaid" >> "docs/requirements.txt"
+sed -i '/extensions = \[/a \    "sphinxcontrib.mermaid",' "docs/conf.py"
+success "Added Mermaid extension to conf.py and requirements.txt"
 
 # 7. Add initial index.md files in all subdirectories
-# TESTED, WORKING
-#info "Checking for index.md files in all subdirectories..."
+info "Checking for index.md files in all subdirectories..."
 # 7a. Get a list of all subdirectories
-#subdirectories=$(find "docs/" -mindepth 1 -type d)
+subdirectories=$(find "docs/" -mindepth 1 -type d -not -path "docs/.sphinx" -not -path "docs/.sphinx/*")
 # 7b. Check whether index.md file already exists
 # 7b-1. If file exists, then skip
 # 7b-2. If no file, then create one 
 # 7c. Add metadescriptions to these files (fill in the details later)
-#for subdir in $subdirectories; do
-#    if [ ! -f "$subdir/index.md" ]; then
-#      info "No index.md file found in $subdir. Create one? (y/n)"
-#      read -r response
-#      if [[ "$response" =~ ^[Yy]$ ]]; then
-#        info "Creating index.md in $subdir..."
-#        files=$(ls -p "$subdir")
-#        touch "$subdir/index.md"
-#text="---
-#myst:
-#  html_meta:
-#    \"description lang=en\": \"TBD\"
-#---
-#
-#($subdir\_index)=
-#
-## $subdir
-#
-#Description TBD
-#
-#\`\`\`{toctree}
-#$files
-#\`\`\`"
-#        echo "$text" > "$subdir/index.md"
-#        success "Created index.md file in $subdir. Remember to fill in the meta-description!!"
-#      else
-#        success "Checked for index.md file in $subdir. Remember to create this file later!!"
-#      fi
-#    fi
-#done
+for subdir in $subdirectories; do
+    if [ ! -f "$subdir/index.md" ]; then
+      info "No index.md file found in $subdir. Create one? (y/n)"
+      read -r response
+      if [[ "$response" =~ ^[Yy]$ ]]; then
+        info "Creating index.md in $subdir..."
+        files=$(ls -p "$subdir")
 
-# 8. refactor index.md overview page Contents -> toctree
-# TESTED, WORKING
-#info "Updating the Contents section of the home page..."
-#contents_line_num=$(awk '/# Contents/{print NR; exit}' docs/index.md)
-#sed -i "$contents_line_num,$ d" "docs/index.md"
-#subdirectories=$(find docs/*/index.md)
-#stripped_subdir=$(echo "$subdirectories" | cut -c 6-)
-#other_files=$(find docs/*.md -not -wholename 'docs/index.md')
-#stripped_other_files=$(echo "$other_files" | cut -c 6-)
-#index_toctree="\`\`\`{toctree}
-#$stripped_subdir
-#$stripped_other_files
-#\`\`\`"
-#echo "$index_toctree" >> "docs/index.md"
-#success "Contents section of the home page has been refactored!"
+        stripped_subdir_file=$(echo "$subdir" | cut -c 6-)
+        # replace '/' and '-' with '_'
+        replaced_file=$(echo "${stripped_subdir_file//[-\/]/_}")
+        # create the target
+        target="($replaced_file)="
+
+        touch "$subdir/index.md"
+text="---
+myst:
+  html_meta:
+    \"description lang=en\": \"TBD\"
+---
+
+$target
+
+# $subdir
+
+Description TBD
+
+\`\`\`{toctree}
+$files
+\`\`\`"
+        echo "$text" > "$subdir/index.md"
+        success "Created index.md file in $subdir. Remember to fill in the meta-description!!"
+      else
+        success "Checked for index.md file in $subdir. Remember to create this file later!!"
+      fi
+    fi
+done
+
+# 8. refactor index.md overview page 
+# 8a. Add metadata description to front
+metadata_text="---\n
+myst:\n
+  html_meta:\n
+    \"description lang=en\": \"TBD\"\n
+---\n
+"
+echo -e $metadata_text | cat - docs/index.md > temp && mv temp docs/index.md
+# 8b. Contents -> toctree
+info "Updating the Contents section of the home page..."
+contents_line_num=$(awk '/# Contents/{print NR; exit}' docs/index.md)
+sed -i "$contents_line_num,$ d" "docs/index.md"
+subdirectories=$(find docs/*/index.md)
+stripped_subdir=$(echo "$subdirectories" | cut -c 6-)
+other_files=$(find docs/*.md -not -wholename 'docs/index.md')
+stripped_other_files=$(echo "$other_files" | cut -c 6-)
+index_toctree="\`\`\`{toctree}
+$stripped_subdir
+$stripped_other_files
+\`\`\`"
+echo "$index_toctree" >> "docs/index.md"
+success "Contents section of the home page has been refactored!"
 
 # 9. RTD cookie banner
-# TESTED, WORKING 
 # 9a. Create directories in project
-#mkdir docs/_static docs/_templates
-#mkdir docs/_static/js
+info "Setting up the analytics banner..."
+mkdir docs/_static docs/_templates
+mkdir docs/_static/js
 # 9b. Clone the cookie banner repo and copy the files
-#RTD_COOKIE_REPO="https://github.com/canonical/RTD-cookie-banner-integration.git"
-#info "Cloning $RTD_COOKIE_REPO..."
-#mkdir tmp
-#git clone --depth 1 "$RTD_COOKIE_REPO" tmp
-#info "Copying files from $RTD_COOKIE_REPO..."
-#cp tmp/bundle.js docs/_static/js/
-#cp tmp/cookie-banner.css docs/_static
-#cp tmp/header.html docs/_templates
-#cp tmp/footer.html docs/_templates
+RTD_COOKIE_REPO="https://github.com/canonical/RTD-cookie-banner-integration.git"
+info "Cloning $RTD_COOKIE_REPO..."
+mkdir tmp
+git clone --depth 1 "$RTD_COOKIE_REPO" tmp
+info "Copying files from $RTD_COOKIE_REPO..."
+cp tmp/bundle.js docs/_static/js/
+cp tmp/cookie-banner.css docs/_static
+cp tmp/header.html docs/_templates
+cp tmp/footer.html docs/_templates
 # 9c. uncomment html_static_path and templates_path in conf.py
-#info "Updating conf.py to detect the cookie banner..."
-#HTML_STATIC_OG_LINE='#html_static_path'
-#HTML_STATIC_NEW_LINE='html_static_path'
-#sed -i "s/$HTML_STATIC_OG_LINE/$HTML_STATIC_NEW_LINE/g" "docs/conf.py"
-#TEMPLATES_OG_LINE='#templates_path'
-#TEMPLATES_NEW_LINE='templates_path'
-#sed -i "s/$TEMPLATES_OG_LINE/$TEMPLATES_NEW_LINE/g" "docs/conf.py"
+info "Updating conf.py to detect the cookie banner..."
+HTML_STATIC_OG_LINE='#html_static_path'
+HTML_STATIC_NEW_LINE='html_static_path'
+sed -i "s/$HTML_STATIC_OG_LINE/$HTML_STATIC_NEW_LINE/g" "docs/conf.py"
+TEMPLATES_OG_LINE='#templates_path'
+TEMPLATES_NEW_LINE='templates_path'
+sed -i "s/$TEMPLATES_OG_LINE/$TEMPLATES_NEW_LINE/g" "docs/conf.py"
 # 9d. uncomment and fill html_css_files and html_js_files in conf.py
-#HTML_CSS_OG_LINE="# html_css_files = \[\]"
-#HTML_CSS_NEW_LINE="html_css_files = \['cookie-banner.css'\]"
-#sed -i "s/$HTML_CSS_OG_LINE/$HTML_CSS_NEW_LINE/g" "docs/conf.py"
-#HTML_JS_OG_LINE="# html_js_files = \[\]"
-#HTML_JS_NEW_LINE="html_js_files = \['js\/bundle.js'\]"
-#sed -i "s/$HTML_JS_OG_LINE/$HTML_JS_NEW_LINE/g" "docs/conf.py"
-#success "RTD banner set up!"
+HTML_CSS_OG_LINE="# html_css_files = \[\]"
+HTML_CSS_NEW_LINE="html_css_files = \['cookie-banner.css'\]"
+sed -i "s/$HTML_CSS_OG_LINE/$HTML_CSS_NEW_LINE/g" "docs/conf.py"
+HTML_JS_OG_LINE="# html_js_files = \[\]"
+HTML_JS_NEW_LINE="html_js_files = \['js\/bundle.js'\]"
+sed -i "s/$HTML_JS_OG_LINE/$HTML_JS_NEW_LINE/g" "docs/conf.py"
+success "RTD banner set up!"
 
 # 10. Add target headers to all files??
+info "Adding reference targets to all files..."
 # first, need a list of all the MD files in the project
-# then need to remove the index files if I've already added the headers there
+list_of_files=$(find docs/*.md docs/*/*.md -not -wholename "docs/*/index.md" -not -wholename "docs/index.md")
 # then need to create the targets in the correct form
-# strip docs from the name, strip .md from the end 
-# replace '/' with '_'
-# then add the target to the front of all files (how to do that??)
-
+for file in $list_of_files; do
+    # strip docs from the name, strip .md from the end 
+    stripped_docs_dir_file=$(echo "$file" | cut -c 6-)
+    stripped_filename_file=$(echo "${stripped_docs_dir_file:0:${#stripped_docs_dir_file}-3}")
+    # replace '/' and '-' with '_'
+    replaced_file=$(echo "${stripped_filename_file//[-\/]/_}")
+    # create the target
+    target="($replaced_file)=
+\n
+"
+    # then add the target to the front of all files (how to do that??)
+    echo -e $target | cat - $file > temp && mv temp $file
+done
+success "Added targets to all files!"
 
 # 11. Final cleanup and instructions
 info "Cleaning up temporary files..."
 rm -rf "$TMP_DIR"
 rm -rf tmp
 
-#success "RTD project has been set up!"
-# echo "Here's a list of other things you should do before opening a PR:"
-# echo "[ ] "
-
-#echo "Please review the changes with 'make run' and run 'git add .' to commit them."
+success "RTD project has been set up!"
+echo "Please review the changes with 'make run' and run 'git add .' to commit them."
+echo "Here's a list of other things you should do before opening a PR:"
+echo " [ ] Update Charmhub links to use new targets"
+echo " [ ] Replace Charmhub links to other projects with RTD intersphinx links (if applicable)"
+echo " [ ] Update Mermaid diagrams and admonition blocks"
