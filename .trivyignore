@@ -87,3 +87,5 @@ CVE-2024-27407
 CVE-2025-47907
 # redis-tools
 CVE-2025-49844
+# playwright
+CVE-2025-59288
