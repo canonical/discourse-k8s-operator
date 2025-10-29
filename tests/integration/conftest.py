@@ -200,7 +200,8 @@ def app_fixture(
 
     juju.deploy(
         "postgresql-k8s",
-        channel="14/stable",
+        channel="14/edge",
+        revision=684,
         base="ubuntu@22.04",
         trust=True,
         config={"profile": "testing"},
