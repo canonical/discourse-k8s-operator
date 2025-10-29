@@ -53,12 +53,20 @@ if [ -f ".github/workflows/docs_rtd.yaml" ]; then
 else
   info "Did not find the RTD-specific workflows. Copying from operator-workflows..."
   mkdir -p .github/workflows
-  OPERATOR_WORKFLOWS_REPO="https://github.com/canonical/operator-workflows.git"
-  mkdir -p tmp
-  git clone --depth 1 "$OPERATOR_WORKFLOWS_REPO" tmp
-  cp tmp/.github/workflows/docs_rtd.yaml .github/workflows/
-  rm -rf tmp
-  success "Copied the workflow!"
+  text="name: RTD workflows
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  rtd-docs-checks:
+    uses: canonical/operator-workflows/.github/workflows/docs_rtd.yaml@main
+    secrets: inherit
+"
+  echo "$text" > ".github/workflows/docs_rtd.yaml"
+  success "Created the workflow!"
 fi
 
 # 4. Handle custom wordlist migration
