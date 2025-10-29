@@ -36,11 +36,9 @@ info "Cloning $TEMPLATE_REPO..."
 git clone --depth 1 "$TEMPLATE_REPO" "$TMP_DIR" &>/dev/null
 
 # 2. Copy over the core, non-conflicting files
-info "Copying Sphinx files and GitHub workflow..."
-mkdir -p .github/workflows
+info "Copying Sphinx and RTD files..."
 mkdir -p docs/.sphinx
-rm "$TMP_DIR"/.github/workflows/test-starter-pack.yml
-cp "$TMP_DIR"/.github/workflows/* .github/workflows/
+cp "$TMP_DIR"/.github/workflows/cla-check.yml .github/workflows/
 cp "$TMP_DIR"/.readthedocs.yaml .
 cp -r "$TMP_DIR"/docs/.sphinx/* docs/.sphinx/
 cp "$TMP_DIR"/docs/.gitignore docs/
@@ -48,7 +46,22 @@ cp "$TMP_DIR"/docs/Makefile docs/
 cp "$TMP_DIR"/docs/conf.py docs/
 cp "$TMP_DIR"/docs/requirements.txt docs/
 
-# 3. Handle custom wordlist migration
+# 3. GitHub workflows
+info "Checking for the RTD-specific workflows..."
+if [ -f ".github/workflows/docs_rtd.yaml" ]; then
+  success "Found the workflow! No need to do anything!"
+else
+  info "Did not find the RTD-specific workflows. Copying from operator-workflows..."
+  mkdir -p .github/workflows
+  OPERATOR_WORKFLOWS_REPO="https://github.com/canonical/operator-workflows.git"
+  mkdir -p tmp
+  git clone --depth 1 "$OPERATOR_WORKFLOWS_REPO" tmp
+  cp tmp/.github/workflows/docs_rtd.yaml .github/workflows/
+  rm -rf tmp
+  success "Copied the workflow!"
+fi
+
+# 4. Handle custom wordlist migration
 if [ -f ".custom_wordlist.txt" ]; then
   ask "Found '.custom_wordlist.txt'. Do you want to add it to the RTD project? (y/n)"
   read -r response
@@ -81,7 +94,7 @@ if [ ! -f ".custom_wordlist.txt" ] || [ ! -f ".vale/styles/config/vocabularies/l
     touch docs/.custom_wordlist.txt
 fi
 
-# 4. Update conf.py for links/names
+# 5. Update conf.py for links/names
 info "Updating conf.py to use team-specific links..."
 DISCOURSE_OG_LINK='discourse.ubuntu.com'
 DISCOURSE_NEW_LINK='discourse.charmhub.io'
@@ -94,7 +107,7 @@ MATRIX_NEW_LINK='https:\/\/matrix.to\/#\/#charmhub-charmdev:ubuntu.com'
 sed -i "s/$MATRIX_OG_LINK/$MATRIX_NEW_LINK/g" "docs/conf.py"
 sed -i "/intersphinx\_mapping = {/a \    'juju': \(\"https:\/\/documentation.ubuntu.com\/juju\/3.6\/\", None\)," "docs/conf.py"
 
-# 5. optional user input to replace project, project_page, github_url, html_theme_options
+# 6. optional user input to replace project, project_page, github_url, html_theme_options
 ask "Update project-specific variables in conf.py? (y/n)"
 read -r response
 if [[ "$response" =~ ^[Yy]$ ]]; then
@@ -130,35 +143,30 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
   success "'github_url' and 'source_edit_link' updated."
 fi
 
-# 6. Add Mermaid extension to project
+# 7. Add Mermaid extension to project
 info "Adding Mermaid extension to project..."
 echo -e "sphinxcontrib-mermaid" >> "docs/requirements.txt"
 sed -i '/extensions = \[/a \    "sphinxcontrib.mermaid",' "docs/conf.py"
 success "Added Mermaid extension to conf.py and requirements.txt"
 
-# 7. Add initial index.md files in all subdirectories
+# 8. Add initial index.md files in all subdirectories
 info "Checking for index.md files in all subdirectories..."
-# 7a. Get a list of all subdirectories
+# 8a. Get a list of all subdirectories
 subdirectories=$(find "docs/" -mindepth 1 -type d -not -path "docs/.sphinx" -not -path "docs/.sphinx/*")
-# 7b. Check whether index.md file already exists
-# 7b-1. If file exists, then skip
-# 7b-2. If no file, then create one 
-# 7c. Add metadescriptions to these files (fill in the details later)
+# 8b. Check whether index.md file already exists. Create if it doesn't exist.
+# 8c. Add metadescriptions to these files (fill in the details later)
 for subdir in $subdirectories; do
     if [ ! -f "$subdir/index.md" ]; then
-      info "No index.md file found in $subdir. Create one? (y/n)"
-      read -r response
-      if [[ "$response" =~ ^[Yy]$ ]]; then
-        info "Creating index.md in $subdir..."
-        files=$(ls -p "$subdir")
+      info "No index.md file found in $subdir. Creating one..."
 
-        stripped_subdir_file=$(echo "$subdir" | cut -c 6-)
-        # replace '/' and '-' with '_'
-        replaced_file=$(echo "${stripped_subdir_file//[-\/]/_}")
-        # create the target
-        target="($replaced_file)="
+      files=$(ls -p "$subdir")
+      stripped_subdir_file=$(echo "$subdir" | cut -c 6-)
+      # replace '/' and '-' with '_'
+      replaced_file=$(echo "${stripped_subdir_file//[-\/]/_}")
+      # create the target
+      target="($replaced_file)="
 
-        touch "$subdir/index.md"
+      touch "$subdir/index.md"
 text="---
 myst:
   html_meta:
@@ -175,15 +183,12 @@ Description TBD
 $files
 \`\`\`"
         echo "$text" > "$subdir/index.md"
-        success "Created index.md file in $subdir. Remember to fill in the meta-description!!"
-      else
-        success "Checked for index.md file in $subdir. Remember to create this file later!!"
-      fi
+        success "Created index.md file in $subdir!"
     fi
 done
 
-# 8. refactor index.md overview page 
-# 8a. Add metadata description to front
+# 9. refactor index.md overview page 
+# 9a. Add metadata description to front
 metadata_text="---\n
 myst:\n
   html_meta:\n
@@ -191,7 +196,7 @@ myst:\n
 ---\n
 "
 echo -e $metadata_text | cat - docs/index.md > temp && mv temp docs/index.md
-# 8b. Contents -> toctree
+# 9b. Contents -> toctree
 info "Updating the Contents section of the home page..."
 contents_line_num=$(awk '/# Contents/{print NR; exit}' docs/index.md)
 sed -i "$contents_line_num,$ d" "docs/index.md"
@@ -206,12 +211,12 @@ $stripped_other_files
 echo "$index_toctree" >> "docs/index.md"
 success "Contents section of the home page has been refactored!"
 
-# 9. RTD cookie banner
-# 9a. Create directories in project
+# 10. RTD cookie banner
+# 10a. Create directories in project
 info "Setting up the analytics banner..."
-mkdir docs/_static docs/_templates
-mkdir docs/_static/js
-# 9b. Clone the cookie banner repo and copy the files
+mkdir -p docs/_static docs/_templates
+mkdir -p docs/_static/js
+# 10b. Clone the cookie banner repo and copy the files
 RTD_COOKIE_REPO="https://github.com/canonical/RTD-cookie-banner-integration.git"
 info "Cloning $RTD_COOKIE_REPO..."
 mkdir tmp
@@ -221,7 +226,7 @@ cp tmp/bundle.js docs/_static/js/
 cp tmp/cookie-banner.css docs/_static
 cp tmp/header.html docs/_templates
 cp tmp/footer.html docs/_templates
-# 9c. uncomment html_static_path and templates_path in conf.py
+# 10c. uncomment html_static_path and templates_path in conf.py
 info "Updating conf.py to detect the cookie banner..."
 HTML_STATIC_OG_LINE='#html_static_path'
 HTML_STATIC_NEW_LINE='html_static_path'
@@ -229,7 +234,7 @@ sed -i "s/$HTML_STATIC_OG_LINE/$HTML_STATIC_NEW_LINE/g" "docs/conf.py"
 TEMPLATES_OG_LINE='#templates_path'
 TEMPLATES_NEW_LINE='templates_path'
 sed -i "s/$TEMPLATES_OG_LINE/$TEMPLATES_NEW_LINE/g" "docs/conf.py"
-# 9d. uncomment and fill html_css_files and html_js_files in conf.py
+# 10d. uncomment and fill html_css_files and html_js_files in conf.py
 HTML_CSS_OG_LINE="# html_css_files = \[\]"
 HTML_CSS_NEW_LINE="html_css_files = \['cookie-banner.css'\]"
 sed -i "s/$HTML_CSS_OG_LINE/$HTML_CSS_NEW_LINE/g" "docs/conf.py"
@@ -238,11 +243,11 @@ HTML_JS_NEW_LINE="html_js_files = \['js\/bundle.js'\]"
 sed -i "s/$HTML_JS_OG_LINE/$HTML_JS_NEW_LINE/g" "docs/conf.py"
 success "RTD banner set up!"
 
-# 10. Add target headers to all files??
+# 11. Add target headers to all files
 info "Adding reference targets to all files..."
-# first, need a list of all the MD files in the project
+# 11a. Get list of all the MD files in the project
 list_of_files=$(find docs/*.md docs/*/*.md -not -wholename "docs/*/index.md" -not -wholename "docs/index.md")
-# then need to create the targets in the correct form
+# 11b. Create the targets in the correct form
 for file in $list_of_files; do
     # strip docs from the name, strip .md from the end 
     stripped_docs_dir_file=$(echo "$file" | cut -c 6-)
@@ -253,12 +258,12 @@ for file in $list_of_files; do
     target="($replaced_file)=
 \n
 "
-    # then add the target to the front of all files (how to do that??)
+    # then add the target to the front of all files
     echo -e $target | cat - $file > temp && mv temp $file
 done
 success "Added targets to all files!"
 
-# 11. Final cleanup and instructions
+# 12. Final cleanup and instructions
 info "Cleaning up temporary files..."
 rm -rf "$TMP_DIR"
 rm -rf tmp
@@ -267,5 +272,6 @@ success "RTD project has been set up!"
 echo "Please review the changes with 'make run' and run 'git add .' to commit them."
 echo "Here's a list of other things you should do before opening a PR:"
 echo " [ ] Update Charmhub links to use new targets"
+echo " [ ] Update the landing pages' titles, descriptions, and SEO metadescriptions"
 echo " [ ] Replace Charmhub links to other projects with RTD intersphinx links (if applicable)"
 echo " [ ] Update Mermaid diagrams and admonition blocks"
