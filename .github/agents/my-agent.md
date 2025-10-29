@@ -1,6 +1,6 @@
 ---
 name: Reviewer - Tests
-description:
+description: making sure tests coverage is good.
 ---
 
 # My Agent
