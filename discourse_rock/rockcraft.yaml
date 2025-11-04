@@ -69,14 +69,14 @@ parts:
     source-type: git
     override-build: |
       craftctl default
-      mkdir -p log
-      mkdir -p public/backups/default
-      mkdir -p public/uploads/default
-      mkdir -p srv/discourse/app/bin
-      mkdir -p srv/discourse/app/vendor/bundle
-      mkdir -p tmp/backups/default
-      touch log/production.log
-      touch log/unicorn-stderr.log
+      mkdir -p $CRAFT_PART_INSTALL/log
+      mkdir -p $CRAFT_PART_INSTALL/public/backups/default
+      mkdir -p $CRAFT_PART_INSTALL/public/uploads/default
+      mkdir -p $CRAFT_PART_INSTALL/srv/discourse/app/bin
+      mkdir -p $CRAFT_PART_INSTALL/srv/discourse/app/vendor/bundle
+      mkdir -p $CRAFT_PART_INSTALL/tmp/backups/default
+      touch $CRAFT_PART_INSTALL/log/production.log
+      touch $CRAFT_PART_INSTALL/log/unicorn-stderr.log
     organize:
       "*.*": srv/discourse/app/
       "*": srv/discourse/app/
