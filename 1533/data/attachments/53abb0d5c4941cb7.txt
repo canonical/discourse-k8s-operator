@@ -1,0 +1,2 @@
+[32mINFO    [0m jubilant:_juju.py:228 cli: juju status --model testing --format json
+[32mINFO    [0m jubilant:_juju.py:228 cli: juju exec --model testing --format json --unit discourse-k8s/0 --wait 60s -- '/usr/bin/curl -m 30 http://localhost:3000/metrics'
