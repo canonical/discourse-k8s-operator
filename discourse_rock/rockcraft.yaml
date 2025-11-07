@@ -44,7 +44,7 @@ parts:
       - RAILS_ENV: "production"
       - RUBY_INSTALL_VERSION: "0.10.1"
       - RUBY_VERSION: "3.3.8"
-      - PNPM_VERSION: "9.15.5"
+      - PNPM_VERSION: "9.15.0"
     override-build: |
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
       curl -Ls $node_uri | tar xzf - -C $CRAFT_OVERLAY/ --skip-old-files --no-same-owner --strip-components=1
