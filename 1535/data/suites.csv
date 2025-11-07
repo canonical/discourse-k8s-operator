@@ -1,0 +1,61 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"
+    arrange: A discourse application and an admin user
+    act: If an admin user creates a category
+    assert: A category should be created normally.
+    ","100","test_create_category","tests.integration","2025-11-07","passed","2025-11-07","","test_charm","",""
+"Check that the charm is active.
+    Assume that the charm has already been built and is running.
+    ","276","test_active","tests.integration","2025-11-07","passed","2025-11-07","","test_charm","",""
+"
+    arrange: preload postgres with a testing db that is created in Discourse v3.2.0
+    act: deploy and integrate with Discourse v3.3.0 (latest)
+    assert: discourse is active/idle
+
+    Discourse must be active idle, it might create migration errors related to
+    not being able to delete some columns because of triggers. This is fixed
+    with a patch but this patch only works for Discourse v3.2.0 and we might
+    need to create a new patch for the new version of Discourse.
+    ","266909","test_db_migration","tests.integration","2025-11-07","passed","2025-11-07","","test_db_migration","",""
+"
+    arrange: given charm in its initial state
+    act: when the metrics endpoint is scraped
+    assert: the response is 200 (HTTP OK)
+    ","625","test_prom_exporter_is_up","tests.integration","2025-11-07","passed","2025-11-07","","test_charm","",""
+"
+    arrange: A discourse application
+    act: Promote a user to admin
+    assert: User cannot access the admin API before being promoted
+    ","19023","test_promote_user","tests.integration","2025-11-07","passed","2025-11-07","","test_users","",""
+"
+    arrange: A discourse application
+    act: Access a page that does not exist
+    assert: A compiled asset should be served.
+    ","338","test_serve_compiled_assets","tests.integration","2025-11-07","passed","2025-11-07","","test_charm","",""
+"
+    arrange: A discourse application
+    act: Remove some of its relations
+    assert: It should have the correct status
+    ","117547","test_relations","tests.integration","2025-11-07","passed","2025-11-07","","test_charm","",""
+"Check discourse servers the registration page.","298","test_setup_discourse","tests.integration","2025-11-07","passed","2025-11-07","","test_charm","",""
+"Check that the bootstrap page is reachable
+    with the charm configured with an S3 target
+    Assume that the charm has already been built and is running.
+    This test requires a localstack deployed
+    ","34406","test_s3_conf","tests.integration","2025-11-07","passed","2025-11-07","","test_charm","",""
+"
+    arrange: A discourse application with three units
+    act: Refresh the application (upgrade)
+    assert: The application upgrades and over all the upgrade, the application replies
+      correctly through the ingress.
+    ","0","test_upgrade","tests.integration","2025-11-07","skipped","2025-11-07","","test_charm","",""
+"
+    arrange: A discourse application
+    act: Create a user
+    assert: User is created, and re-creating the same user should fail
+    ","19367","test_create_user","tests.integration","2025-11-07","passed","2025-11-07","","test_users","",""
+"
+    arrange: after discourse charm has been deployed, with all required relation established.
+    act: add an admin user and enable force-https mode.
+    assert: user can login discourse using SAML Authentication.
+    ","12265","test_saml_login","tests.integration","2025-11-07","passed","2025-11-07","","test_saml","",""
