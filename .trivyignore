@@ -38,8 +38,3 @@ CVE-2025-61723
 CVE-2025-61724
 # playwright
 CVE-2025-59288
-# Ignore Discourse and Ruby test keys (false positives)
-AsymmetricPrivateKey-/srv/discourse/app/spec/requests/user_api_keys_controller_spec.rb
-AsymmetricPrivateKey-/srv/discourse/app/spec/system/login_spec.rb
-AsymmetricPrivateKey-/usr/local/src/ruby-3.3.8/spec/bundler/support/builders.rb
-

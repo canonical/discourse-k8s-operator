@@ -1,3 +1,11 @@
 timeout: 20m
 scan:
   offline-scan: true
+secret:
+  allow-rules:
+    - id: skip-test-private-keys
+      description: Skip private keys in Discourse test files
+      paths:
+        - /srv/discourse/app/spec/requests/user_api_keys_controller_spec.rb
+        - /srv/discourse/app/spec/system/login_spec.rb
+        - /usr/local/src/ruby-3.3.8/spec/bundler/support/builders.rb
