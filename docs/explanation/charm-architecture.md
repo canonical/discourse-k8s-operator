@@ -78,11 +78,11 @@ Discourse is a Ruby on Rails application deployed on top of the [Unicorn server]
 
 The server is started in HTTP mode (port `3000`) serving all the content. Alongside it there's a standalone process running the [Prometheus Exporter Plugin for Discourse](https://github.com/discourse/discourse-prometheus) (port `9394`).
 
-The workload that this container is running is defined in the [Discourse Rockfile in the charm repository](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse_rock/rockcraft.yaml).
+The workload that this container is running is defined in the [Discourse rock file in the charm repository](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse_rock/rockcraft.yaml).
 
 ## OCI images
 
-The OCI image is built using [Rockcraft](https://canonical-rockcraft.readthedocs-hosted.com) and defined in the [Rockfile](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse_rock/rockcraft.yaml) in the charm repository. It is then published to [Charmhub](https://charmhub.io/), the official repository for charms.
+The OCI image is built using [Rockcraft](https://canonical-rockcraft.readthedocs-hosted.com) and defined in the [rock file](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse_rock/rockcraft.yaml) in the charm repository. It is then published to [Charmhub](https://charmhub.io/), the official repository for charms.
 
 This is done by publishing a resource to Charmhub as described in the [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
 

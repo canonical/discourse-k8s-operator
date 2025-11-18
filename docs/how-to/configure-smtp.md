@@ -6,7 +6,7 @@ Set `smtp_address`to the SMTP server IP or hostname, `smtp_port` for the SMTP se
 
 If authentication is needed, `smtp_authentication` will need to be set to the appropriate authentication method, valid values are `none`, `login`, `plain`, `cram_md5`. The credentials can be set with `smtp_username`and `smtp_password`.
 
-You can enable/disable SMTP over TLS with the `smtp_force_tls` option and handle starttls with `smtp_enable_start_tls`.  
+You can enable/disable SMTP over TLS with the `smtp_force_tls` option and handle `starttls` with `smtp_enable_start_tls`.  
 If needed, the verification of the SSL certs can be turned on and off with `smtp_openssl_verify_mode`.
 
 For more details on the configuration options and their default values see the [configuration reference](https://charmhub.io/discourse-k8s/configure).
