@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status.
-set -e
+set -xe
 
 # --- Configuration ---
 TEMPLATE_REPO="https://github.com/canonical/sphinx-docs-starter-pack.git"
@@ -53,7 +53,7 @@ if [ -f ".github/workflows/docs_rtd.yaml" ]; then
 else
   info "Did not find the RTD-specific workflows. Copying from operator-workflows..."
   mkdir -p .github/workflows
-  text="name: RTD workflows
+  text='name: RTD workflows
 
 on:
   push:
@@ -64,40 +64,32 @@ jobs:
   rtd-docs-checks:
     uses: canonical/operator-workflows/.github/workflows/docs_rtd.yaml@main
     secrets: inherit
-"
+'
   echo "$text" > ".github/workflows/docs_rtd.yaml"
   success "Created the workflow!"
 fi
 
 # 4. Handle custom wordlist migration
 if [ -f ".custom_wordlist.txt" ]; then
-  ask "Found '.custom_wordlist.txt'. Do you want to add it to the RTD project? (y/n)"
-  read -r response
-  if [[ "$response" =~ ^[Yy]$ ]]; then
-    info "Migrating words from .custom_wordlist.txt..."
-    cat ".custom_wordlist.txt" >> "docs/.custom_wordlist.txt"
-    ask "Wordlist migrated. Would you like to remove the old '.custom_wordlist.txt' file? (y/n)"
-    read -r del_response
-    if [[ "$del_response" =~ ^[Yy]$ ]]; then
-        rm ".custom_wordlist.txt"
-        info "Removed .custom_wordlist.txt."
-    fi
+  info "Found '.custom_wordlist.txt'. Adding to the RTD project..."
+  cat ".custom_wordlist.txt" >> "docs/.custom_wordlist.txt"
+  ask "Wordlist migrated. Would you like to remove the old '.custom_wordlist.txt' file? (y/n)"
+  read -r del_response
+  if [[ "$del_response" =~ ^[Yy]$ ]]; then
+      rm ".custom_wordlist.txt"
+      info "Removed .custom_wordlist.txt."
   fi
 fi
 
 # Conditionally copy accept.txt
 if [ -f ".vale/styles/config/vocabularies/local/accept.txt" ]; then
-    ask "Local 'accept.txt' found. Do you want to add it to the RTD project? (y/n)"
-    read -r response
-    if [[ "$response" =~ ^[Yy]$ ]]; then
-      info "Migrating words from local accept.txt..."
-      cat ".vale/styles/config/vocabularies/local/accept.txt" >> "docs/.custom_wordlist.txt"
-      info "Wordlist migrated."
-    fi
+    info "Local 'accept.txt' found. Migrating to the RTD project..."
+    cat ".vale/styles/config/vocabularies/local/accept.txt" >> "docs/.custom_wordlist.txt"
+    success "Wordlist migrated."
 fi
 
 # If no custom wordlist in the project, then create blank one
-if [ ! -f ".custom_wordlist.txt" ] || [ ! -f ".vale/styles/config/vocabularies/local/accept.txt" ]; then
+if [ -f ".custom_wordlist.txt" ] && [ -f ".vale/styles/config/vocabularies/local/accept.txt" ]; then
     info "No local wordlist found. Creating a blank one..."
     touch docs/.custom_wordlist.txt
 fi
@@ -110,34 +102,34 @@ sed -i "s/$DISCOURSE_OG_LINK/$DISCOURSE_NEW_LINK/g" "docs/conf.py"
 MM_OG_LINK='https:\/\/chat.canonical.com\/canonical\/channels\/documentation'
 MM_NEW_LINK=''
 sed -i "s/$MM_OG_LINK/$MM_NEW_LINK/g" "docs/conf.py"
-MATRIX_OG_LINK='https:\/\/matrix.to\/#\/#documentation:ubuntu.com'
-MATRIX_NEW_LINK='https:\/\/matrix.to\/#\/#charmhub-charmdev:ubuntu.com'
-sed -i "s/$MATRIX_OG_LINK/$MATRIX_NEW_LINK/g" "docs/conf.py"
+MATRIX_OG_LINK='https://matrix.to/#/#documentation:ubuntu.com'
+MATRIX_NEW_LINK='https://matrix.to/#/#charmhub-charmdev:ubuntu.com'
+sed -i "s|$MATRIX_OG_LINK|$MATRIX_NEW_LINK|g" "docs/conf.py"
 sed -i "/intersphinx\_mapping = {/a \    'juju': \(\"https:\/\/documentation.ubuntu.com\/juju\/3.6\/\", None\)," "docs/conf.py"
 
 # 6. optional user input to replace project, project_page, github_url, html_theme_options
 ask "Update project-specific variables in conf.py? (y/n)"
 read -r response
 if [[ "$response" =~ ^[Yy]$ ]]; then
-  read -p "Enter name of project (e.g. 'WordPress charm'): " project_name
+  read -rp "Enter name of project (e.g. 'WordPress charm'): " project_name
   info "Updating variable 'project'..."
   PROJECT_OG='project = "Documentation starter pack"'
   PROJECT_NEW='project = "'$project_name'"'
   sed -i "s/$PROJECT_OG/$PROJECT_NEW/g" "docs/conf.py"
   success "'project' updated."
 
-  read -p "Enter name of product_page (e.g. 'charmhub.io/wordpress-k8s'): " product_page
+  read -rp "Enter name of product_page (e.g. 'charmhub.io/wordpress-k8s'): " product_page
   info "Updating variable 'product_page'..."
   PRODUCT_PAGE_OG='"product_page": "documentation.ubuntu.com",'
   PRODUCT_PAGE_NEW='"product_page": "'$product_page'",'
   sed -i "s=$PRODUCT_PAGE_OG=$PRODUCT_PAGE_NEW=g" "docs/conf.py"
   success "'product_page' updated."
 
-  read -p "Enter name of github_url (e.g. 'https://github.com/canonical/wordpress-k8s-operator'): " github_url
+  read -rp "Enter name of github_url (e.g. 'https://github.com/canonical/wordpress-k8s-operator'): " github_url
   info "Updating variable 'github_url'..."
   GITHUB_URL_OG='"github_url": "https://github.com/canonical/sphinx-docs-starter-pack",'
   GITHUB_URL_NEW='"github_url": "'$github_url'",'
-  sed -i "s=$GITHUB_URL_OG=$GITHUB_URL_NEW=g" "docs/conf.py"
+  sed -i "s|$GITHUB_URL_OG|$GITHUB_URL_NEW|g" "docs/conf.py"
   info "Enabling edit button and updating 'source_edit_link'..."
   HTML_THEME_OPTION_OG='# html_theme_options = {'
   HTML_THEME_OPTION_NEW='html_theme_options = {'
@@ -160,17 +152,17 @@ success "Added Mermaid extension to conf.py and requirements.txt"
 # 8. Add initial index.md files in all subdirectories
 info "Checking for index.md files in all subdirectories..."
 # 8a. Get a list of all subdirectories
-subdirectories=$(find "docs/" -mindepth 1 -type d -not -path "docs/.sphinx" -not -path "docs/.sphinx/*")
 # 8b. Check whether index.md file already exists. Create if it doesn't exist.
 # 8c. Add metadescriptions to these files (fill in the details later)
-for subdir in $subdirectories; do
+dirs=$(find "docs/" -mindepth 1 -type d -not -path "docs/.sphinx" -not -path "docs/.sphinx/*")
+printf "%s\n" "$dirs" | while read -r subdir; do
     if [ ! -f "$subdir/index.md" ]; then
       info "No index.md file found in $subdir. Creating one..."
 
       files=$(ls -p "$subdir")
       stripped_subdir_file=$(echo "$subdir" | cut -c 6-)
-      # replace '/' and '-' with '_'
-      replaced_file=$(echo "${stripped_subdir_file//[-\/]/_}")
+      # replace '/' and ' ' and '-' with '_'
+      replaced_file="${stripped_subdir_file//[-\/\ ]/_}"
       # create the target
       target="($replaced_file)="
 
@@ -188,6 +180,7 @@ $target
 Description TBD
 
 \`\`\`{toctree}
+:maxdepth: 1
 $files
 \`\`\`"
         echo "$text" > "$subdir/index.md"
@@ -197,13 +190,12 @@ done
 
 # 9. refactor index.md overview page 
 # 9a. Add metadata description to front
-metadata_text="---\n
-myst:\n
-  html_meta:\n
-    \"description lang=en\": \"TBD\"\n
----\n
-"
-echo -e $metadata_text | cat - docs/index.md > temp && mv temp docs/index.md
+metadata_text='---
+myst:
+  html_meta:
+    "description lang=en": "TBD"
+---'
+echo -e "$metadata_text" | cat - docs/index.md > temp && mv temp docs/index.md
 # 9b. Contents -> toctree
 info "Updating the Contents section of the home page..."
 contents_line_num=$(awk '/# Contents/{print NR; exit}' docs/index.md)
@@ -213,6 +205,7 @@ stripped_subdir=$(echo "$subdirectories" | cut -c 6-)
 other_files=$(find docs/*.md -not -wholename 'docs/index.md')
 stripped_other_files=$(echo "$other_files" | cut -c 6-)
 index_toctree="\`\`\`{toctree}
+:hidden:
 $stripped_subdir
 $stripped_other_files
 \`\`\`"
@@ -254,20 +247,18 @@ success "RTD banner set up!"
 # 11. Add target headers to all files
 info "Adding reference targets to all files..."
 # 11a. Get list of all the MD files in the project
-list_of_files=$(find docs/*.md docs/*/*.md -not -wholename "docs/*/index.md" -not -wholename "docs/index.md")
 # 11b. Create the targets in the correct form
-for file in $list_of_files; do
+docfiles=$(find docs/*.md docs/*/*.md -not -wholename "docs/*/index.md" -not -wholename "docs/index.md")
+printf "%s\n" "$docfiles" | while read -r file; do
     # strip docs from the name, strip .md from the end 
     stripped_docs_dir_file=$(echo "$file" | cut -c 6-)
-    stripped_filename_file=$(echo "${stripped_docs_dir_file:0:${#stripped_docs_dir_file}-3}")
-    # replace '/' and '-' with '_'
-    replaced_file=$(echo "${stripped_filename_file//[-\/]/_}")
+    stripped_filename_file="${stripped_docs_dir_file:0:${#stripped_docs_dir_file}-3}"
+    # replace '/' and ' ' and '-' with '_'
+    replaced_file="${stripped_filename_file//[-\/\ ]/_}"
     # create the target
-    target="($replaced_file)=
-\n
-"
+    target="($replaced_file)=\n"
     # then add the target to the front of all files
-    echo -e $target | cat - $file > temp && mv temp $file
+    echo -e "$target" | cat - "$file" > temp && mv temp "$file"
 done
 success "Added targets to all files!"
 
@@ -277,9 +268,10 @@ rm -rf "$TMP_DIR"
 rm -rf tmp
 
 success "RTD project has been set up!"
-echo "Please review the changes with 'make run' and run 'git add .' to commit them."
-echo "Here's a list of other things you should do before opening a PR:"
-echo " [ ] Update Charmhub links to use new targets"
-echo " [ ] Update the landing pages' titles, descriptions, and SEO metadescriptions"
-echo " [ ] Replace Charmhub links to other projects with RTD intersphinx links (if applicable)"
-echo " [ ] Update Mermaid diagrams and admonition blocks"
+info "Please review the changes with 'make run' and run 'git add .' to commit them."
+info "Here's a list of other things you should do before opening a PR:"
+info " [ ] Update Charmhub links to use new targets"
+info " [ ] Update the landing pages' titles, descriptions, and SEO metadescriptions"
+info " [ ] Replace Charmhub links to other projects with RTD intersphinx links (if applicable)"
+info " [ ] Update Mermaid diagrams and admonition blocks"
+
