@@ -1,0 +1,1 @@
+[32mINFO    [0m jubilant:_juju.py:228 cli: juju run --model testing --format json discourse-k8s/0 create-user --params /home/ubuntu/snap/juju/common/tmpytvalo_2
