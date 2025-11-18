@@ -1,13 +1,3 @@
 timeout: 20m
 scan:
   offline-scan: true
-allow-rules:
-  - id: skip-user-api-keys-spec
-    description: Skip private keys in user_api_keys_controller_spec
-    path: /srv/discourse/app/spec/requests/user_api_keys_controller_spec.rb
-  - id: skip-login-spec
-    description: Skip private keys in login_spec
-    path: /srv/discourse/app/spec/system/login_spec.rb
-  - id: skip-ruby-builders
-    description: Skip private keys in Ruby builders spec
-    path: /usr/local/src/ruby-3.3.8/spec/bundler/support/builders.rb
