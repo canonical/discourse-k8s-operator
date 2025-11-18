@@ -3,9 +3,12 @@ scan:
   offline-scan: true
 secret:
   allow-rules:
-    - id: skip-test-private-keys
-      description: Skip private keys in Discourse test files
-      paths:
-        - /srv/discourse/app/spec/requests/user_api_keys_controller_spec.rb
-        - /srv/discourse/app/spec/system/login_spec.rb
-        - /usr/local/src/ruby-3.3.8/spec/bundler/support/builders.rb
+    - id: skip-user-api-keys-spec
+      description: Skip private keys in user_api_keys_controller_spec
+      path: /srv/discourse/app/spec/requests/user_api_keys_controller_spec.rb
+    - id: skip-login-spec
+      description: Skip private keys in login_spec
+      path: /srv/discourse/app/spec/system/login_spec.rb
+    - id: skip-ruby-builders
+      description: Skip private keys in Ruby builders spec
+      path: /usr/local/src/ruby-3.3.8/spec/bundler/support/builders.rb
