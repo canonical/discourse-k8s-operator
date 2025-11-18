@@ -20,7 +20,6 @@ from . import types
 logger = logging.getLogger(__name__)
 
 ENABLED_PLUGINS = [
-    "solved",
     "saml",
     "calendar",
     "data_explorer",
