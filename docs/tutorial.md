@@ -4,21 +4,32 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 
 ## What you'll need
 
-> Tip: You can get a working setup by using a Multipass VM as outlined in the
-[Set up your test environment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/#set-up-your-deployment-local-testing-and-development) guide.
-When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
-VM IP in steps that assume you're running locally. To get the IP address of the
-Multipass instance run ```multipass info my-juju-vm```.
-
 You will need a working station, e.g., a laptop, with AMD64 architecture. Your working station
 should have at least 4 CPUs, 8 GB of RAM, and 50 GB of disk space.
 
-This tutorial requires the following software to be installed on your working station:
+> Tip: You can use Multipass to create an isolated environment by running:
+> ```
+> multipass launch 24.04 --name discourse-tutorial --cpus 4 --memory 8G --disk 50G
+> ```
+> When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
+> VM IP in steps that assume you're running locally. To get the IP address of the
+> Multipass instance run ```multipass info discourse-tutorial```.
+
+This tutorial requires the following software to be installed on your working station
+(either locally or in the Multipass VM):
 
 - Juju 3
-- MicroK8s 1.28
+- MicroK8s 1.33
 
-For more information about how to install Juju, see [Get started with Juju](https://documentation.ubuntu.com/juju/3.6/tutorial/).
+Use [Concierge](https://github.com/canonical/concierge) to set up Juju and MicroK8s:
+
+```
+sudo snap install --classic concierge
+sudo concierge prepare -p microk8s
+```
+
+This first command installs Concierge, and the second command uses Concierge to install
+and configure Juju and MicroK8s.
 
 MicroK8s must have an NGINX ingress controller enabled. Complete this requirement by running:
 
@@ -28,7 +39,11 @@ microk8s enable ingress
 
 For more details, see [Add-on: Ingress](https://microk8s.io/docs/addon-ingress).
 
-Finally, Juju must be bootstrapped to a MicroK8s controller. You can achieve this by running: 
+For this tutorial, Juju must be bootstrapped to a MicroK8s controller. Concierge should
+complete this step for you, and you can verify by checking for `msg="Bootstrapped Juju" provider=microk8s`
+in the terminal output and by running `juju controllers`.
+
+If Concierge did not perform the bootstrap, run:
 
 ```
 juju bootstrap microk8s tutorial-controller
