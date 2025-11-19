@@ -193,7 +193,7 @@ juju destroy-model discourse-tutorial --destroy-storage
 ```
 If you used Multipass, to remove the Multipass instance you created for this tutorial, use the following command.
 ```
-multipass delete --purge my-juju-vm
+multipass delete --purge discourse-tutorial-vm
 ```
 Finally, remove the `127.0.0.1 discourse-k8s` line from the `/etc/hosts` file.
 
