@@ -20,7 +20,7 @@ This tutorial requires the following software to be installed on your working st
 
 For more information about how to install Juju, see [Get started with Juju](https://documentation.ubuntu.com/juju/3.6/tutorial/).
 
-MicroK8s must have an NGINX ingress controller enabled. You can achieve this by running:
+MicroK8s must have an NGINX ingress controller enabled. Complete this requirement by running:
 
 ```
 microk8s enable ingress
