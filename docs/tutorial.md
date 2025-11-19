@@ -9,7 +9,7 @@ should have at least 4 CPUs, 8 GB of RAM, and 50 GB of disk space.
 
 > Tip: You can use Multipass to create an isolated environment by running:
 > ```
-> multipass launch 24.04 --name discourse-tutorial-vm --cpus 4 --memory 8G --disk 50G
+> multipass launch 24.04 --name charm-tutorial-vm --cpus 4 --memory 8G --disk 50G
 > ```
 > When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
 > VM IP in steps that assume you're running locally. To get the IP address of the
@@ -62,7 +62,7 @@ juju bootstrap microk8s tutorial-controller
 
 To be able to work inside the Multipass VM first you need to log in with the following command:
 ```
-multipass shell discourse-tutorial-vm
+multipass shell charm-tutorial-vm
 ```
 
 ### Add a Juju model for the tutorial
@@ -193,7 +193,7 @@ juju destroy-model discourse-tutorial --destroy-storage
 ```
 If you used Multipass, to remove the Multipass instance you created for this tutorial, use the following command.
 ```
-multipass delete --purge discourse-tutorial-vm
+multipass delete --purge charm-tutorial-vm
 ```
 Finally, remove the `127.0.0.1 discourse-k8s` line from the `/etc/hosts` file.
 
