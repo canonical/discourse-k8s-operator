@@ -9,11 +9,11 @@ should have at least 4 CPUs, 8 GB of RAM, and 50 GB of disk space.
 
 > Tip: You can use Multipass to create an isolated environment by running:
 > ```
-> multipass launch 24.04 --name discourse-tutorial --cpus 4 --memory 8G --disk 50G
+> multipass launch 24.04 --name discourse-tutorial-vm --cpus 4 --memory 8G --disk 50G
 > ```
 > When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
 > VM IP in steps that assume you're running locally. To get the IP address of the
-> Multipass instance run ```multipass info discourse-tutorial```.
+> Multipass instance run ```multipass info discourse-tutorial-vm```.
 
 This tutorial requires the following software to be installed on your working station
 (either locally or in the Multipass VM):
@@ -62,7 +62,7 @@ juju bootstrap microk8s tutorial-controller
 
 To be able to work inside the Multipass VM first you need to log in with the following command:
 ```
-multipass shell my-juju-vm
+multipass shell discourse-tutorial-vm
 ```
 
 ### Add a Juju model for the tutorial
