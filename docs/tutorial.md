@@ -5,7 +5,7 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 ## What you'll need
 
 You will need a working station, e.g., a laptop, with AMD64 architecture. Your working station
-should have at least 4 CPUs, 8 GB of RAM, and 50 GB of disk space.
+should have at least 4 CPU cores, 8 GB of RAM, and 50 GB of disk space.
 
 > Tip: You can use Multipass to create an isolated environment by running:
 > ```
