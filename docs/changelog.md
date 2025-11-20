@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-11-19
+
+- docs: Update requirements section of the tutorial based on UX research.
+
 ### 2025-10-03
 
 - Add Discourse Signatures plugin to the rock.
