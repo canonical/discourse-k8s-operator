@@ -15,3 +15,10 @@ parts:
     build-packages: [cargo, rustc, pkg-config, libffi-dev, libssl-dev]
     charm-python-packages: [setuptools, pip]  # https://discourse.charmhub.io/t/install-or-update-python-packages-before-packing-a-charm/5158
     charm-binary-python-packages: [cosl]  # https://github.com/canonical/charmcraft/issues/1269
+    overide-build: |
+      snap install rustup --classic
+      rustup --version
+      rustup set profile minimal
+      rustup default 1.90.0
+      craftctl default
+
