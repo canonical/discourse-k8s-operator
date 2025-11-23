@@ -59,7 +59,7 @@ def charm_base() -> str:
     base = os.environ.get("JUJU_DEPLOY_BASE")
     if not base:
         # Returning the default base to stay consistent with current behavior
-        return "ubuntu@20.04"
+        return "ubuntu@22.04"
     return base
 
 
@@ -211,7 +211,7 @@ def app_fixture(
         timeout=20 * 60,
     )
 
-    juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
+    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True)
 
     juju.deploy(
         charm=charm_file,
