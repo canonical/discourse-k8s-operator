@@ -1,0 +1,199 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+skipsdist = true
+skip_missing_interpreters = true
+envlist = [ "lint", "unit", "static", "coverage-report" ]
+requires = [ "tox>=4.21" ]
+no_package = true
+
+[env_run_base]
+passenv = [
+  "PYTHONPATH",
+  "CHARM_BUILD_DIR",
+  "MODEL_SETTINGS",
+  "CHARM_FILE",
+  "ROCK_IMAGE",
+  "OCI_RESOURCE_NAME",
+  "JUJU_DEPLOY_BASE",
+  "TOX_CMD_PREFIX",
+]
+runner = "uv-venv-lock-runner"
+
+[env_run_base.setenv]
+PYTHONPATH = "{toxinidir}:{toxinidir}/lib:{[vars]src_path}"
+PYTHONBREAKPOINT = "ipdb.set_trace"
+PY_COLORS = "1"
+
+[env.fmt]
+description = "Apply coding style standards to code"
+commands = [
+  [
+    "ruff",
+    "check",
+    "--fix",
+    "--select",
+    "I",
+    { replace = "ref", of = [
+      "vars",
+      "all_path",
+    ], extend = true },
+  ],
+  [
+    "ruff",
+    "format",
+    { replace = "ref", of = [
+      "vars",
+      "all_path",
+    ], extend = true },
+  ],
+]
+dependency_groups = [ "fmt" ]
+
+[env.lint]
+description = "Check code against coding style standards"
+commands = [
+  [
+    "codespell",
+    "{toxinidir}",
+  ],
+  [
+    "ruff",
+    "format",
+    "--check",
+    "--diff",
+    { replace = "ref", of = [
+      "vars",
+      "all_path",
+    ], extend = true },
+  ],
+  [
+    "ruff",
+    "check",
+    { replace = "ref", of = [
+      "vars",
+      "all_path",
+    ], extend = true },
+  ],
+  [
+    "mypy",
+    { replace = "ref", of = [
+      "vars",
+      "all_path",
+    ], extend = true },
+  ],
+]
+dependency_groups = [ "lint" ]
+
+[env.unit]
+description = "Run unit tests"
+commands = [
+  [
+    "coverage",
+    "run",
+    "--source={[vars]src_path}",
+    "-m",
+    "pytest",
+    "--ignore={[vars]tst_path}integration",
+    "-v",
+    "--tb",
+    "native",
+    "-s",
+    { replace = "posargs", extend = "true" },
+  ],
+  [
+    "coverage",
+    "report",
+  ],
+]
+dependency_groups = [ "unit" ]
+
+[env.coverage-report]
+description = "Create test coverage report"
+commands = [ [ "coverage", "report" ] ]
+dependency_groups = [ "coverage-report" ]
+
+[env.static]
+description = "Run static analysis tests"
+commands = [ [ "bandit", "-c", "{toxinidir}/pyproject.toml", "-r", "{[vars]src_path}", "{[vars]tst_path}" ] ]
+dependency_groups = [ "static" ]
+
+[env.integration]
+description = "Run integration tests"
+commands = [
+  [
+    "{env:TOX_CMD_PREFIX:}",
+    "pytest",
+    "-v",
+    "--tb",
+    "native",
+    "--ignore={[vars]tst_path}unit",
+    "--ignore={[vars]tst_path}unit_harness",
+    "--log-cli-level=INFO",
+    "-s",
+    { replace = "posargs", extend = "true" },
+  ],
+]
+dependency_groups = [ "integration" ]
+
+[env.lint-docs]
+skip_install = true
+allowlist_externals = [ "curl", "tar", "chmod", "echo", "sh", "{envtmpdir}/lychee" ]
+commands_pre = [
+  [
+    "echo",
+    "Download URL: {env:DOWNLOAD_URL}",
+  ],
+  [
+    "curl",
+    "-L",
+    "{env:DOWNLOAD_URL}",
+    "-o",
+    "{envtmpdir}/lychee.tar.gz",
+  ],
+  [
+    "sh",
+    "-c",
+    "echo '{env:EXPECTED_SHA256}  {envtmpdir}/lychee.tar.gz' | sha256sum -c -",
+  ],
+  [
+    "tar",
+    "-xzf",
+    "{envtmpdir}/lychee.tar.gz",
+    "-C",
+    "{envtmpdir}",
+  ],
+  [
+    "chmod",
+    "+x",
+    "{envtmpdir}/lychee",
+  ],
+]
+commands = [ [ "{envtmpdir}/lychee", "--max-concurrency", "2", "README.md", "{[vars]docs_path}" ] ]
+
+[env.lint-docs.setenv]
+LYCHEE_VERSION = "0.19.1"
+EXPECTED_SHA256 = "537bcfbb0f3bf997f4cbdab259cc5500f2804b69614140ac3edebb4de94b3574"
+DOWNLOAD_URL = "https://github.com/lycheeverse/lychee/releases/download/lychee-v{env:LYCHEE_VERSION}/lychee-x86_64-unknown-linux-gnu.tar.gz"
+
+[env.lint-fix]
+description = "Apply coding style standards to code"
+commands = [
+  [
+    "ruff",
+    "check",
+    "--fix",
+    "--fix-only",
+    { replace = "ref", of = [
+      "vars",
+      "all_path",
+    ], extend = true },
+  ],
+]
+dependency_groups = [ "lint" ]
+
+[vars]
+src_path = "{toxinidir}/src/"
+tst_path = "{toxinidir}/tests/"
+docs_path = "{toxinidir}/docs"
+all_path = [ "{toxinidir}/src/", "{toxinidir}/tests/" ]

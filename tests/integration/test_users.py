@@ -39,7 +39,6 @@ def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: st
     act: Promote a user to admin
     assert: User cannot access the admin API before being promoted
     """
-
     with requests.session() as session:
 
         def get_api_key(csrf_token: str) -> bool:

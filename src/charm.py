@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 """Charm for Discourse on kubernetes."""
+
 import base64
 import hashlib
 import logging
@@ -80,7 +81,9 @@ SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 DATABASE_RELATION_NAME = "database"
 
-INVALID_CORS_MESSAGE = "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # noqa # pylint: disable=line-too-long
+INVALID_CORS_MESSAGE = (
+    "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # pylint: disable=line-too-long
+)
 
 
 class MissingRedisRelationDataError(Exception):
