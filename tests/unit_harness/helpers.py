@@ -89,7 +89,6 @@ def add_postgres_relation(harness):
 
     Returns: the same harness instance with an added relation
     """
-
     relation_data = {
         "database": DATABASE_NAME,
         "endpoints": "dbhost:5432,dbhost-2:5432",
