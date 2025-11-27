@@ -51,9 +51,7 @@ def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: st
                 },
                 json={"key": {"description": "admin-api-key", "username": None}},
             )
-            if response.json().get("key") is None:
-                return False
-            return True
+            return response.json().get("key") is not None
 
         response = session.get(
             f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}, timeout=60

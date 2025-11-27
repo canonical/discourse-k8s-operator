@@ -31,9 +31,7 @@ ENABLED_PLUGINS = [
 
 @pytest.fixture(scope="module")
 def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
-    """
-    The OCI resources for the charm, read from option or env vars.
-    """
+    """The OCI resources for the charm, read from option or env vars."""
     discourse_image = pytestconfig.getoption("--discourse-image")
     if discourse_image:
         return {

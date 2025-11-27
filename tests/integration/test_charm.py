@@ -126,7 +126,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | 
 
     # Check the bucket has been created
     response = s3_client.list_buckets()
-    bucket_list = [*map(lambda a: a["Name"], response["Buckets"])]
+    bucket_list = [bucket["Name"] for bucket in response["Buckets"]]
 
     assert s3_conf["bucket"] in bucket_list
 
