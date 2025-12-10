@@ -21,7 +21,7 @@ backups (see [how to configure S3](./configure-s3.md)). If  `s3_backup_bucket` i
 the backups will be placed in one of the workload containers,
 in the path `/srv/discourse/app/public/backups/`. This will make HA deployments work incorrectly.
 Besides, it will be necessary to get the backup files and put them in a more secure place,
-using Discourse admin interface or [juju scp](https://juju.is/docs/juju/juju-scp).
+using Discourse admin interface or [`juju scp`](https://juju.is/docs/juju/juju-scp).
 
 A backup can be made by a site administrator using the web interface. See
 [Create, download, and restore a backup of your Discourse database](https://meta.discourse.org/t/create-download-and-restore-a-backup-of-your-discourse-database/122710/1)
