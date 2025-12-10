@@ -40,7 +40,7 @@ parts:
       - zlib1g-dev
     build-environment:
       - ARCH: "x64"
-      - NODE_VERSION: "22.9.0"
+      - NODE_VERSION: "22.12.0"
       - RAILS_ENV: "production"
       - RUBY_INSTALL_VERSION: "0.10.1"
       - RUBY_VERSION: "3.3.8"
@@ -65,7 +65,7 @@ parts:
     plugin: dump
     source: https://github.com/discourse/discourse.git
     source-depth: 1
-    source-tag: v3.4.7
+    source-tag: v3.5.0
     source-type: git
     override-build: |
       craftctl default
@@ -81,20 +81,14 @@ parts:
       "*.*": srv/discourse/app/
       "*": srv/discourse/app/
       ".*": srv/discourse/app/
+    prime:
+      - -srv/discourse/app/plugins/discourse-ai
   bundler-config:
     plugin: dump
     after: [discourse]
     source: bundler
     organize:
       "*": srv/discourse/app/.bundle/
-  discourse-solved:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-solved.git
-    source-commit: 5450a5ef4e2ae35185320fc6af9678621026e148
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-solved/
   discourse-markdown-note:
     plugin: dump
     after: [discourse, bundler-config]
@@ -107,7 +101,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-mermaid-theme-component.git
-    source-commit: d972e13829c41f1f9e7afc6ed88114eae4ceacd9
+    source-commit: 09382316a5b9579d32a8d3ed34863ef1a6d76980
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-mermaid-theme-component/
@@ -115,7 +109,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-saml.git
-    source-commit: 8a6584428e3502daabca477f4b993ddbc274280d
+    source-commit: 3d1b2a212d0b10abf2ee2a6cfdc9865cd2311e69
     source-depth: 1
     override-build: |
       craftctl default
@@ -133,51 +127,11 @@ parts:
       grep -e ^gem plugin.rb >> Gemfile
     organize:
       "*": srv/discourse/app/plugins/discourse-prometheus/
-  discourse-data-explorer:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-data-explorer.git
-    source-commit: 2ba204a1de2638a7959e588b88f3b6c7fcf7a70f
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-data-explorer/
-  discourse-templates:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-templates.git
-    source-commit: 2ee4963af359a4b60a077894356a3fbbaeb99397
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-templates/
-  discourse-calendar:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-calendar.git
-    source-commit: fdf3ad927744a9dbb826cc46e489cca8ad469044
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-calendar/
-  discourse-gamification:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-gamification.git
-    source-commit: 1db5217be8bdf83facd266b590bee1b66b0d2140
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-gamification/
-  discourse-chat-integration:
-    plugin: dump
-    after: [discourse, bundler-config]
-    source: https://github.com/discourse/discourse-chat-integration.git
-    source-commit: 29ad813cd04812786780e1706cbc043810dea7d8
-    source-depth: 1
-    organize:
-      "*": srv/discourse/app/plugins/discourse-chat-integration/
   discourse-signatures:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-signatures.git
-    source-commit: 46f0eec457a4f01a60566eb31f2c0f16b83ddc01
+    source-commit: 7d6b0623ec27e986182b2e245bfaf886b7faecb1
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-signatures/
@@ -197,12 +151,8 @@ parts:
       git -C srv/discourse/app apply patches/lp1903695.patch
       git -C srv/discourse/app apply patches/discourse-charm.patch
       git -C srv/discourse/app apply patches/sigterm.patch
-      # The following is a fix for UglifierJS assets compilation
-      # https://github.com/lautis/uglifier/issues/127#issuecomment-352224986
-      sed -i 's/config.assets.js_compressor = :uglifier/config.assets.js_compressor = Uglifier.new(:harmony => true)/g' srv/discourse/app/config/environments/production.rb
-      sed -i '1s/^/require "uglifier"\n/' srv/discourse/app/config/environments/production.rb
     prime:
-      - srv/discourse/app/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
+      - srv/discourse/app/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb
       - srv/discourse/app/lib/middleware/anonymous_cache.rb
       - srv/discourse/app/lib/tasks/discourse-charm.rake
       - srv/discourse/app/config/unicorn.conf.rb
@@ -218,17 +168,11 @@ parts:
       - apply-patches
       - bundler-config
       - discourse
-      - discourse-calendar
-      - discourse-data-explorer
-      - discourse-gamification
       - discourse-markdown-note
       - discourse-mermaid-theme-component
       - discourse-prometheus
       - discourse-saml
       - discourse-signatures
-      - discourse-solved
-      - discourse-templates
-      - discourse-chat-integration
       - patches
       - scripts
       - tooling
@@ -240,14 +184,8 @@ parts:
       cd srv/discourse/app
       gem install -n "bin" bundler -v 2.5.3
       bin/bundle install
-      bin/bundle install --gemfile="plugins/discourse-calendar/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-data-explorer/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-gamification/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-solved/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-templates/Gemfile"
-      bin/bundle install --gemfile="plugins/discourse-chat-integration/Gemfile"
       /root/.local/share/pnpm/pnpm install
   discourse-precompile-assets:
     plugin: nil
