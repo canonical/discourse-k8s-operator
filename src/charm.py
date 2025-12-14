@@ -18,7 +18,12 @@ from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseEndpointsChangedEvent,
 )
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
-from charms.hydra.v0.oauth import ClientConfig, OauthProviderConfig, OAuthRequirer
+from charms.hydra.v0.oauth import (
+    ClientConfig,
+    ClientConfigError,
+    OauthProviderConfig,
+    OAuthRequirer,
+)
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
 from charms.nginx_ingress_integrator.v0.nginx_route import require_nginx_route
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
@@ -150,6 +155,9 @@ class DiscourseCharm(CharmBase):
         self.framework.observe(
             self.on[OAUTH_RELATION_NAME].relation_created, self._on_oauth_relation_changed
         )
+        self.framework.observe(
+            self.on[OAUTH_RELATION_NAME].relation_broken, self._on_oauth_relation_broken
+        )
 
     def _generate_client_config(self) -> None:
         """Generate OAuth client configuration.
@@ -159,7 +167,7 @@ class DiscourseCharm(CharmBase):
         """
         if self.model.get_relation(OAUTH_RELATION_NAME):
             self.client_config = ClientConfig(
-                redirect_uri=f"https://{self._get_external_hostname()}/auth/hydra/callback",
+                redirect_uri=f"https://{self._get_external_hostname()}/auth/oidc/callback",
                 scope="openid email",
                 grant_types=["authorization_code"],
                 token_endpoint_auth_method="client_secret_basic",
@@ -178,12 +186,17 @@ class DiscourseCharm(CharmBase):
             return
         try:
             self.client_config.validate()
-        except ValueError as e:
+        except ClientConfigError as e:
             # Block charm
-            self.model.unit.status = BlockedStatus("Invalid OAuth client configuration")
-            logger.error(f"Invalid OAuth client config: {e}")
+            self.model.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
+            logger.error("Invalid OAuth client config: %s", e)
             return
         self._oauth.update_client_config(self.client_config)
+        self._setup_and_activate()  # Reconfigure pod to apply OIDC settings
+
+    def _on_oauth_relation_broken(self, _: RelationBrokenEvent) -> None:
+        """Handle the breaking of the oauth relation."""
+        self._generate_client_config()
         self._setup_and_activate()  # Reconfigure pod to apply OIDC settings
 
     def _get_oidc_env(self) -> typing.Dict[str, typing.Any]:
@@ -193,30 +206,26 @@ class DiscourseCharm(CharmBase):
         Returns:
             Dictionary with all the OIDC environment settings.
         """
-        print("GETTING OIDC ENV")
-        logger.info("GETTING OIDC ENV")
-        print(self.client_config)
-        logger.info(f"Client config: {self.client_config}")
         if self.client_config is None:
             return {}
         provider_info: OauthProviderConfig | None = self._oauth.get_provider_info()
-        print(provider_info)
-        logger.info(f"Provider info: {provider_info}")
         if not provider_info:
             return {}
         try:
             self.client_config.validate()
-        except ValueError as e:
+        except ClientConfigError as e:
             # Block charm
-            self.model.unit.status = BlockedStatus("Invalid OAuth client configuration")
-            logger.error(f"Invalid OAuth client config: {e}")
+            self.model.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
+            logger.error("Invalid OAuth client config: %s", e)
             return {}
         oidc_env = {
             "DISCOURSE_OPENID_CONNECT_ENABLED": "true",
-            "DISCOURSE_OPENID_CONNECT_DISCOVERY_DOCUMENT": f"{provider_info.issuer_url}/.well-known/openid-configuration",
+            "DISCOURSE_OPENID_CONNECT_DISCOVERY_DOCUMENT": f"{provider_info.issuer_url}"
+            "/.well-known/openid-configuration",
             "DISCOURSE_OPENID_CONNECT_CLIENT_ID": provider_info.client_id,
             "DISCOURSE_OPENID_CONNECT_CLIENT_SECRET": provider_info.client_secret,
             "DISCOURSE_OPENID_CONNECT_AUTHORIZE_SCOPE": "openid email",
+            "DISCOURSE_OPENID_CONNECT_MATCH_BY_EMAIL": "true",
         }
         return oidc_env
 
@@ -412,6 +421,14 @@ class DiscourseCharm(CharmBase):
             and not self.config["force_https"]
         ):
             errors.append("A saml relation cannot be specified without 'force_https' being true")
+
+        if (
+            self.model.get_relation(OAUTH_RELATION_NAME) is not None
+            and not self.config["force_https"]
+        ):
+            errors.append(
+                "An oauth relation cannot be established without 'force_https' being true"
+            )
 
         if self.config.get("s3_enabled"):
             errors.extend(

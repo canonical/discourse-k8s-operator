@@ -7,7 +7,13 @@ import pytest
 from ops import testing
 from ops.model import ActiveStatus, BlockedStatus
 
-from charm import CONTAINER_NAME, INVALID_CORS_MESSAGE, SERVICE_NAME, DiscourseCharm
+from charm import (
+    CONTAINER_NAME,
+    INVALID_CORS_MESSAGE,
+    OAUTH_RELATION_NAME,
+    SERVICE_NAME,
+    DiscourseCharm,
+)
 
 
 @pytest.mark.parametrize(
@@ -144,3 +150,86 @@ def test_get_cors_origin_behavior(config, expected_origin, expected_status, base
         assert (
             plan_out.services[SERVICE_NAME].environment["DISCOURSE_CORS_ORIGIN"] == expected_origin
         )
+
+
+@pytest.mark.parametrize(
+    "config, expected_status",
+    [
+        pytest.param(
+            {"external_hostname": "discourse.example.com", "force_https": True},
+            ActiveStatus(),
+            id="Valid config",
+        ),
+        pytest.param(
+            {"external_hostname": "discourse.example.com", "force_https": False},
+            BlockedStatus(
+                "An oauth relation cannot be established without 'force_https' being true"
+            ),
+            id="Missing force_https",
+        ),
+        pytest.param(
+            {"force_https": False},
+            BlockedStatus(
+                "Invalid OAuth client config: Invalid URL https://discourse-k8s/auth/oidc/callback"
+            ),
+            id="external_hostname not set",
+        ),
+    ],
+)
+def test_oauth_integration(base_state, config, expected_status):
+    """
+    arrange: deploy charm and add oauth relation with provider data.
+    act: trigger pebble ready or relation changed.
+    assert: charm configures OIDC environment variables in the container.
+    """
+    ctx = testing.Context(DiscourseCharm)
+
+    # Define the relation
+    oauth_relation = testing.Relation(
+        endpoint=OAUTH_RELATION_NAME,
+        interface="oauth",
+        remote_app_data={
+            "issuer_url": "https://auth.example.com",
+            "authorization_endpoint": "https://auth.example.com/auth",
+            "token_endpoint": "https://auth.example.com/token",
+            "introspection_endpoint": "https://auth.example.com/introspect",
+            "userinfo_endpoint": "https://auth.example.com/userinfo",
+            "jwks_endpoint": "https://auth.example.com/jwks",
+            "scope": "openid email",
+            "client_id": "my-client-id",
+            "client_secret": "my-super-secret",
+        },
+    )
+
+    base_state["relations"].append(oauth_relation)
+    base_state["config"] = config
+
+    state_in = testing.State(**base_state)
+
+    # Run the charm
+    state_out = ctx.run(ctx.on.relation_joined(oauth_relation), state_in)
+
+    assert state_out.unit_status == expected_status
+    if expected_status == ActiveStatus():
+        # Check if OIDC env vars are set in the plan
+        plan = state_out.get_container(CONTAINER_NAME).plan
+        env = plan.services[SERVICE_NAME].environment
+
+        assert env["DISCOURSE_OPENID_CONNECT_ENABLED"] == "true"
+        assert (
+            env["DISCOURSE_OPENID_CONNECT_DISCOVERY_DOCUMENT"]
+            == "https://auth.example.com/.well-known/openid-configuration"
+        )
+        assert env["DISCOURSE_OPENID_CONNECT_CLIENT_ID"] == "my-client-id"
+        assert env["DISCOURSE_OPENID_CONNECT_CLIENT_SECRET"] == "my-super-secret"
+        assert env["DISCOURSE_OPENID_CONNECT_AUTHORIZE_SCOPE"] == "openid email"
+
+        # Also check if the charm sent its client config
+        relation = next(r for r in state_out.relations if r.id == oauth_relation.id)
+        assert (
+            relation.local_app_data["redirect_uri"]
+            == "https://discourse.example.com/auth/oidc/callback"
+        )
+        assert relation.local_app_data["scope"] == "openid email"
+        assert relation.local_app_data["grant_types"] == '["authorization_code"]'
+        assert relation.local_app_data["token_endpoint_auth_method"] == "client_secret_basic"
