@@ -46,3 +46,5 @@ CONTAINER_APP_USERNAME = "_daemon_"
 SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 DATABASE_RELATION_NAME = "database"
+OAUTH_RELATION_NAME = "oauth"
+OAUTH_SCOPE = "openid email"

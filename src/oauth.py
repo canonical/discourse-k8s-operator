@@ -16,9 +16,9 @@ from ops.charm import RelationBrokenEvent, RelationChangedEvent
 from ops.framework import Object
 from ops.model import BlockedStatus
 
-logger = logging.getLogger(__name__)
+from constants import OAUTH_RELATION_NAME, OAUTH_SCOPE
 
-OAUTH_RELATION_NAME = "oauth"
+logger = logging.getLogger(__name__)
 
 
 class DiscourseOAuth(Object):
@@ -83,7 +83,7 @@ class DiscourseOAuth(Object):
         if self.charm.model.get_relation(OAUTH_RELATION_NAME):
             self.client_config = ClientConfig(
                 redirect_uri=f"https://{self._external_hostname_callback()}/auth/oidc/callback",
-                scope="openid email",
+                scope=OAUTH_SCOPE,
                 grant_types=["authorization_code"],
                 token_endpoint_auth_method="client_secret_basic",
             )
@@ -115,7 +115,7 @@ class DiscourseOAuth(Object):
             "/.well-known/openid-configuration",
             "DISCOURSE_OPENID_CONNECT_CLIENT_ID": provider_info.client_id,
             "DISCOURSE_OPENID_CONNECT_CLIENT_SECRET": provider_info.client_secret,
-            "DISCOURSE_OPENID_CONNECT_AUTHORIZE_SCOPE": "openid email",
+            "DISCOURSE_OPENID_CONNECT_AUTHORIZE_SCOPE": OAUTH_SCOPE,
             "DISCOURSE_OPENID_CONNECT_MATCH_BY_EMAIL": "true",
         }
         return oidc_env
