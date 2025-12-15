@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-12-15
+
+- Add `oauth` relation, which provides necessary config to the charm to operate OIDC for Discourse.
+
 ### 2025-11-19
 
 - docs: Update requirements section of the tutorial based on UX research.
