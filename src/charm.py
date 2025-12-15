@@ -10,7 +10,7 @@ import os.path
 import secrets
 import string
 import typing
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 
 import ops
 from charms.data_platform_libs.v0.data_interfaces import (
@@ -18,12 +18,6 @@ from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseEndpointsChangedEvent,
 )
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
-from charms.hydra.v0.oauth import (
-    ClientConfig,
-    ClientConfigError,
-    OauthProviderConfig,
-    OAuthRequirer,
-)
 from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
 from charms.nginx_ingress_integrator.v0.nginx_route import require_nginx_route
 from charms.prometheus_k8s.v0.prometheus_scrape import MetricsEndpointProvider
@@ -34,58 +28,32 @@ from charms.saml_integrator.v0.saml import (
     SamlDataAvailableEvent,
     SamlRequires,
 )
-from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent, RelationChangedEvent
+from ops.charm import ActionEvent, CharmBase, HookEvent, RelationBrokenEvent
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.pebble import ExecError, ExecProcess, Plan
 
+from constants import (
+    CONTAINER_APP_USERNAME,
+    CONTAINER_NAME,
+    DATABASE_RELATION_NAME,
+    DISCOURSE_PATH,
+    LOG_PATHS,
+    MAX_CATEGORY_NESTING_LEVELS,
+    PROMETHEUS_PORT,
+    REQUIRED_S3_SETTINGS,
+    SCRIPT_PATH,
+    SERVICE_NAME,
+    SERVICE_PORT,
+    SETUP_COMPLETED_FLAG_FILE,
+    THROTTLE_LEVELS,
+)
 from database import DatabaseHandler
+from oauth import OAUTH_RELATION_NAME, DiscourseOAuth
 
 logger = logging.getLogger(__name__)
 
 S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
-
-DATABASE_NAME = "discourse"
-DISCOURSE_PATH = "/srv/discourse/app"
-THROTTLE_LEVELS: typing.Dict = defaultdict(dict)
-THROTTLE_LEVELS["none"] = {
-    "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
-    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-}
-THROTTLE_LEVELS["permissive"] = {
-    "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "1000",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "100",
-    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "3000",
-    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "400",
-    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-    "DISCOURSE_MAX_USER_API_REQS_PER_DAY": "30000",
-    "DISCOURSE_MAX_ADMIN_API_REQS_PER_KEY_PER_MINUTE": "3000",
-}
-THROTTLE_LEVELS["strict"] = {
-    "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "200",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "50",
-    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "100",
-    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "200",
-    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-}
-LOG_PATHS = [
-    f"{DISCOURSE_PATH}/log/production.log",
-    f"{DISCOURSE_PATH}/log/unicorn.stderr.log",
-    f"{DISCOURSE_PATH}/log/unicorn.stdout.log",
-]
-MAX_CATEGORY_NESTING_LEVELS = [2, 3]
-PROMETHEUS_PORT = 3000
-REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
-SCRIPT_PATH = "/srv/scripts"
-SERVICE_NAME = "discourse"
-CONTAINER_NAME = "discourse"
-CONTAINER_APP_USERNAME = "_daemon_"
-SERVICE_PORT = 3000
-SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
-DATABASE_RELATION_NAME = "database"
-OAUTH_RELATION_NAME = "oauth"
 
 INVALID_CORS_MESSAGE = "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # noqa # pylint: disable=line-too-long
 
@@ -97,6 +65,9 @@ class MissingRedisRelationDataError(Exception):
 class DiscourseCharm(CharmBase):
     """Charm for Discourse on kubernetes."""
 
+    # pylint: disable=too-many-instance-attributes
+    # All attributes are necessary for the charm functionality
+
     on = RedisRelationCharmEvents()
 
     def __init__(self, *args):
@@ -104,9 +75,7 @@ class DiscourseCharm(CharmBase):
         super().__init__(*args)
 
         self._database = DatabaseHandler(self, DATABASE_RELATION_NAME)
-        self._oauth = OAuthRequirer(self, relation_name=OAUTH_RELATION_NAME)
-        self.client_config: ClientConfig | None = None
-        self._generate_client_config()
+        self._oauth = DiscourseOAuth(self, self._get_external_hostname, self._setup_and_activate)
 
         self.framework.observe(
             self._database.database.on.database_created, self._on_database_created
@@ -144,19 +113,6 @@ class DiscourseCharm(CharmBase):
 
         self.restart_manager = RollingOpsManager(
             charm=self, relation="restart", callback=self._on_rolling_restart
-        )
-
-        self.framework.observe(
-            self.on[OAUTH_RELATION_NAME].relation_changed, self._on_oauth_relation_changed
-        )
-        self.framework.observe(
-            self.on[OAUTH_RELATION_NAME].relation_joined, self._on_oauth_relation_changed
-        )
-        self.framework.observe(
-            self.on[OAUTH_RELATION_NAME].relation_created, self._on_oauth_relation_changed
-        )
-        self.framework.observe(
-            self.on[OAUTH_RELATION_NAME].relation_broken, self._on_oauth_relation_broken
         )
 
     def _on_start(self, _: ops.StartEvent) -> None:
@@ -238,30 +194,6 @@ class DiscourseCharm(CharmBase):
         """
         self._setup_and_activate()
 
-    def _on_oauth_relation_changed(self, _: RelationChangedEvent) -> None:
-        """Handle oauth relation changed event.
-
-        Args:
-            event: Event triggering the oauth relation changed event handler.
-        """
-        self._generate_client_config()
-        if not self.client_config:
-            return
-        try:
-            self.client_config.validate()
-        except ClientConfigError as e:
-            # Block charm
-            self.model.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
-            logger.error("Invalid OAuth client config: %s", e)
-            return
-        self._oauth.update_client_config(self.client_config)
-        self._setup_and_activate()  # Reconfigure pod to apply OIDC settings
-
-    def _on_oauth_relation_broken(self, _: RelationBrokenEvent) -> None:
-        """Handle the breaking of the oauth relation."""
-        self._generate_client_config()
-        self._setup_and_activate()  # Reconfigure pod to apply OIDC settings
-
     def _setup_and_activate(self) -> None:
         """Set up discourse, configure the pod and eventually activate the charm."""
         if not self._is_setup_completed():
@@ -291,22 +223,6 @@ class DiscourseCharm(CharmBase):
             if self.config["external_hostname"]
             else self.app.name
         )
-
-    def _generate_client_config(self) -> None:
-        """Generate OAuth client configuration.
-
-        Returns:
-            Generated ClientConfig object.
-        """
-        if self.model.get_relation(OAUTH_RELATION_NAME):
-            self.client_config = ClientConfig(
-                redirect_uri=f"https://{self._get_external_hostname()}/auth/oidc/callback",
-                scope="openid email",
-                grant_types=["authorization_code"],
-                token_endpoint_auth_method="client_secret_basic",
-            )
-        else:
-            self.client_config = None
 
     def _get_cors_origin(self) -> str:
         """Return the combined CORS origins.
@@ -455,36 +371,6 @@ class DiscourseCharm(CharmBase):
 
         return saml_config
 
-    def _get_oidc_env(self) -> typing.Dict[str, typing.Any]:
-        """
-        Get the list of OIDC-related environment variables from the OAuth relation.
-
-        Returns:
-            Dictionary with all the OIDC environment settings.
-        """
-        if self.client_config is None:
-            return {}
-        provider_info: OauthProviderConfig | None = self._oauth.get_provider_info()
-        if not provider_info:
-            return {}
-        try:
-            self.client_config.validate()
-        except ClientConfigError as e:
-            # Block charm
-            self.model.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
-            logger.error("Invalid OAuth client config: %s", e)
-            return {}
-        oidc_env = {
-            "DISCOURSE_OPENID_CONNECT_ENABLED": "true",
-            "DISCOURSE_OPENID_CONNECT_DISCOVERY_DOCUMENT": f"{provider_info.issuer_url}"
-            "/.well-known/openid-configuration",
-            "DISCOURSE_OPENID_CONNECT_CLIENT_ID": provider_info.client_id,
-            "DISCOURSE_OPENID_CONNECT_CLIENT_SECRET": provider_info.client_secret,
-            "DISCOURSE_OPENID_CONNECT_AUTHORIZE_SCOPE": "openid email",
-            "DISCOURSE_OPENID_CONNECT_MATCH_BY_EMAIL": "true",
-        }
-        return oidc_env
-
     def _get_s3_env(self) -> typing.Dict[str, typing.Any]:
         """Get the list of S3-related environment variables from charm's configuration.
 
@@ -590,7 +476,7 @@ class DiscourseCharm(CharmBase):
         }
         pod_config.update(self._get_saml_config())
         #
-        pod_config.update(self._get_oidc_env())
+        pod_config.update(self._oauth.get_oidc_env())
 
         if self.config.get("s3_enabled"):
             pod_config.update(self._get_s3_env())

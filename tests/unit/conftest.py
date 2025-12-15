@@ -6,7 +6,8 @@
 import pytest
 from ops import testing
 
-from charm import CONTAINER_NAME, DATABASE_NAME
+from charm import CONTAINER_NAME
+from constants import DATABASE_NAME
 
 
 @pytest.fixture(name="base_state")
