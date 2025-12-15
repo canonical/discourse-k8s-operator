@@ -159,76 +159,6 @@ class DiscourseCharm(CharmBase):
             self.on[OAUTH_RELATION_NAME].relation_broken, self._on_oauth_relation_broken
         )
 
-    def _generate_client_config(self) -> None:
-        """Generate OAuth client configuration.
-
-        Returns:
-            Generated ClientConfig object.
-        """
-        if self.model.get_relation(OAUTH_RELATION_NAME):
-            self.client_config = ClientConfig(
-                redirect_uri=f"https://{self._get_external_hostname()}/auth/oidc/callback",
-                scope="openid email",
-                grant_types=["authorization_code"],
-                token_endpoint_auth_method="client_secret_basic",
-            )
-        else:
-            self.client_config = None
-
-    def _on_oauth_relation_changed(self, _: RelationChangedEvent) -> None:
-        """Handle oauth relation changed event.
-
-        Args:
-            event: Event triggering the oauth relation changed event handler.
-        """
-        self._generate_client_config()
-        if not self.client_config:
-            return
-        try:
-            self.client_config.validate()
-        except ClientConfigError as e:
-            # Block charm
-            self.model.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
-            logger.error("Invalid OAuth client config: %s", e)
-            return
-        self._oauth.update_client_config(self.client_config)
-        self._setup_and_activate()  # Reconfigure pod to apply OIDC settings
-
-    def _on_oauth_relation_broken(self, _: RelationBrokenEvent) -> None:
-        """Handle the breaking of the oauth relation."""
-        self._generate_client_config()
-        self._setup_and_activate()  # Reconfigure pod to apply OIDC settings
-
-    def _get_oidc_env(self) -> typing.Dict[str, typing.Any]:
-        """
-        Get the list of OIDC-related environment variables from the OAuth relation.
-
-        Returns:
-            Dictionary with all the OIDC environment settings.
-        """
-        if self.client_config is None:
-            return {}
-        provider_info: OauthProviderConfig | None = self._oauth.get_provider_info()
-        if not provider_info:
-            return {}
-        try:
-            self.client_config.validate()
-        except ClientConfigError as e:
-            # Block charm
-            self.model.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
-            logger.error("Invalid OAuth client config: %s", e)
-            return {}
-        oidc_env = {
-            "DISCOURSE_OPENID_CONNECT_ENABLED": "true",
-            "DISCOURSE_OPENID_CONNECT_DISCOVERY_DOCUMENT": f"{provider_info.issuer_url}"
-            "/.well-known/openid-configuration",
-            "DISCOURSE_OPENID_CONNECT_CLIENT_ID": provider_info.client_id,
-            "DISCOURSE_OPENID_CONNECT_CLIENT_SECRET": provider_info.client_secret,
-            "DISCOURSE_OPENID_CONNECT_AUTHORIZE_SCOPE": "openid email",
-            "DISCOURSE_OPENID_CONNECT_MATCH_BY_EMAIL": "true",
-        }
-        return oidc_env
-
     def _on_start(self, _: ops.StartEvent) -> None:
         """Handle start event.
 
@@ -308,6 +238,30 @@ class DiscourseCharm(CharmBase):
         """
         self._setup_and_activate()
 
+    def _on_oauth_relation_changed(self, _: RelationChangedEvent) -> None:
+        """Handle oauth relation changed event.
+
+        Args:
+            event: Event triggering the oauth relation changed event handler.
+        """
+        self._generate_client_config()
+        if not self.client_config:
+            return
+        try:
+            self.client_config.validate()
+        except ClientConfigError as e:
+            # Block charm
+            self.model.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
+            logger.error("Invalid OAuth client config: %s", e)
+            return
+        self._oauth.update_client_config(self.client_config)
+        self._setup_and_activate()  # Reconfigure pod to apply OIDC settings
+
+    def _on_oauth_relation_broken(self, _: RelationBrokenEvent) -> None:
+        """Handle the breaking of the oauth relation."""
+        self._generate_client_config()
+        self._setup_and_activate()  # Reconfigure pod to apply OIDC settings
+
     def _setup_and_activate(self) -> None:
         """Set up discourse, configure the pod and eventually activate the charm."""
         if not self._is_setup_completed():
@@ -337,6 +291,22 @@ class DiscourseCharm(CharmBase):
             if self.config["external_hostname"]
             else self.app.name
         )
+
+    def _generate_client_config(self) -> None:
+        """Generate OAuth client configuration.
+
+        Returns:
+            Generated ClientConfig object.
+        """
+        if self.model.get_relation(OAUTH_RELATION_NAME):
+            self.client_config = ClientConfig(
+                redirect_uri=f"https://{self._get_external_hostname()}/auth/oidc/callback",
+                scope="openid email",
+                grant_types=["authorization_code"],
+                token_endpoint_auth_method="client_secret_basic",
+            )
+        else:
+            self.client_config = None
 
     def _get_cors_origin(self) -> str:
         """Return the combined CORS origins.
@@ -484,6 +454,36 @@ class DiscourseCharm(CharmBase):
             saml_config["DISCOURSE_SAML_SYNC_GROUPS_LIST"] = "|".join(saml_sync_groups)
 
         return saml_config
+
+    def _get_oidc_env(self) -> typing.Dict[str, typing.Any]:
+        """
+        Get the list of OIDC-related environment variables from the OAuth relation.
+
+        Returns:
+            Dictionary with all the OIDC environment settings.
+        """
+        if self.client_config is None:
+            return {}
+        provider_info: OauthProviderConfig | None = self._oauth.get_provider_info()
+        if not provider_info:
+            return {}
+        try:
+            self.client_config.validate()
+        except ClientConfigError as e:
+            # Block charm
+            self.model.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
+            logger.error("Invalid OAuth client config: %s", e)
+            return {}
+        oidc_env = {
+            "DISCOURSE_OPENID_CONNECT_ENABLED": "true",
+            "DISCOURSE_OPENID_CONNECT_DISCOVERY_DOCUMENT": f"{provider_info.issuer_url}"
+            "/.well-known/openid-configuration",
+            "DISCOURSE_OPENID_CONNECT_CLIENT_ID": provider_info.client_id,
+            "DISCOURSE_OPENID_CONNECT_CLIENT_SECRET": provider_info.client_secret,
+            "DISCOURSE_OPENID_CONNECT_AUTHORIZE_SCOPE": "openid email",
+            "DISCOURSE_OPENID_CONNECT_MATCH_BY_EMAIL": "true",
+        }
+        return oidc_env
 
     def _get_s3_env(self) -> typing.Dict[str, typing.Any]:
         """Get the list of S3-related environment variables from charm's configuration.
