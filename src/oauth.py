@@ -16,6 +16,7 @@ from ops.charm import RelationBrokenEvent, RelationChangedEvent
 from ops.framework import Object
 from ops.model import BlockedStatus
 
+from charm import DiscourseCharm
 from constants import OAUTH_RELATION_NAME, OAUTH_SCOPE
 
 logger = logging.getLogger(__name__)
@@ -27,20 +28,14 @@ class OAuthObserver(Object):
     def __init__(
         self,
         charm,
-        external_hostname_callback: typing.Callable[[], str],
-        setup_and_activate_callback: typing.Callable[[], None],
     ):
         """Initialize OAuth integration.
 
         Args:
             charm: The charm object.
-            external_hostname_callback: Callback to get the external hostname.
-            setup_and_activate_callback: Callback to setup and activate Discourse.
         """
         super().__init__(charm, OAUTH_RELATION_NAME)
-        self.charm = charm
-        self._external_hostname_callback = external_hostname_callback
-        self._setup_and_activate_callback = setup_and_activate_callback
+        self.charm: DiscourseCharm = charm
         self._oauth = OAuthRequirer(self.charm, relation_name=OAUTH_RELATION_NAME)
         self.client_config: ClientConfig | None = None
         self._generate_client_config()
@@ -67,22 +62,24 @@ class OAuthObserver(Object):
             self.client_config.validate()
         except ClientConfigError as e:
             # Block charm
-            self.charm.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
+            self.charm.unit.status = BlockedStatus(
+                f"Invalid OAuth client config, check the logs for more info."
+            )
             logger.error("Invalid OAuth client config: %s", e)
             return
         self._oauth.update_client_config(self.client_config)
-        self._setup_and_activate_callback()
+        self.charm._setup_and_activate()
 
     def _on_oauth_relation_broken(self, _: RelationBrokenEvent) -> None:
         """Handle the breaking of the oauth relation."""
         self._generate_client_config()
-        self._setup_and_activate_callback()
+        self.charm._setup_and_activate()
 
     def _generate_client_config(self) -> None:
         """Generate OAuth client configuration."""
         if self.charm.model.get_relation(OAUTH_RELATION_NAME):
             self.client_config = ClientConfig(
-                redirect_uri=f"https://{self._external_hostname_callback()}/auth/oidc/callback",
+                redirect_uri=f"https://{self.charm._get_external_hostname()}/auth/oidc/callback",
                 scope=OAUTH_SCOPE,
                 grant_types=["authorization_code"],
                 token_endpoint_auth_method="client_secret_basic",  # nosec B106: Not a password
@@ -112,7 +109,9 @@ class OAuthObserver(Object):
             self.client_config.validate()
         except ClientConfigError as e:
             # Block charm
-            self.charm.unit.status = BlockedStatus(f"Invalid OAuth client config: {e}")
+            self.charm.unit.status = BlockedStatus(
+                f"Invalid OAuth client config, check the logs for more info."
+            )
             logger.error("Invalid OAuth client config: %s", e)
             return {}
         oidc_env = {

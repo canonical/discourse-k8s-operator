@@ -76,7 +76,7 @@ class DiscourseCharm(CharmBase):
         super().__init__(*args)
 
         self._database = DatabaseHandler(self, DATABASE_RELATION_NAME)
-        self._oauth = OAuthObserver(self, self._get_external_hostname, self._setup_and_activate)
+        self._oauth = OAuthObserver(self)
 
         self.framework.observe(
             self._database.database.on.database_created, self._on_database_created
