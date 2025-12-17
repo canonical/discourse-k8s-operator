@@ -16,7 +16,6 @@ from ops.charm import RelationBrokenEvent, RelationChangedEvent
 from ops.framework import Object
 from ops.model import BlockedStatus
 
-from charm import DiscourseCharm
 from constants import OAUTH_RELATION_NAME, OAUTH_SCOPE
 
 logger = logging.getLogger(__name__)
@@ -35,7 +34,7 @@ class OAuthObserver(Object):
             charm: The charm object.
         """
         super().__init__(charm, OAUTH_RELATION_NAME)
-        self.charm: DiscourseCharm = charm
+        self.charm = charm
         self._oauth = OAuthRequirer(self.charm, relation_name=OAUTH_RELATION_NAME)
         self.client_config: ClientConfig | None = None
         self._generate_client_config()
