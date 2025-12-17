@@ -168,10 +168,8 @@ def test_get_cors_origin_behavior(config, expected_origin, expected_status, base
             id="Missing force_https",
         ),
         pytest.param(
-            {"force_https": False},
-            BlockedStatus(
-                "Invalid OAuth client config: Invalid URL https://discourse-k8s/auth/oidc/callback"
-            ),
+            {"force_https": True},
+            BlockedStatus("Invalid OAuth client config, check the logs for more info."),
             id="external_hostname not set",
         ),
     ],

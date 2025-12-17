@@ -27,6 +27,8 @@ class OAuthObserver(Object):
     def __init__(
         self,
         charm,
+        setup_and_activate_callback: typing.Callable[[], None],
+        external_hostname_callback: typing.Callable[[], str],
     ):
         """Initialize OAuth integration.
 
@@ -36,6 +38,8 @@ class OAuthObserver(Object):
         super().__init__(charm, OAUTH_RELATION_NAME)
         self.charm = charm
         self._oauth = OAuthRequirer(self.charm, relation_name=OAUTH_RELATION_NAME)
+        self._setup_and_activate_callback = setup_and_activate_callback
+        self._external_hostname_callback = external_hostname_callback
         self.client_config: ClientConfig | None = None
         self._generate_client_config()
 
@@ -62,23 +66,23 @@ class OAuthObserver(Object):
         except ClientConfigError as e:
             # Block charm
             self.charm.unit.status = BlockedStatus(
-                f"Invalid OAuth client config, check the logs for more info."
+                "Invalid OAuth client config, check the logs for more info."
             )
             logger.error("Invalid OAuth client config: %s", e)
             return
         self._oauth.update_client_config(self.client_config)
-        self.charm._setup_and_activate()
+        self._setup_and_activate_callback()
 
     def _on_oauth_relation_broken(self, _: RelationBrokenEvent) -> None:
         """Handle the breaking of the oauth relation."""
         self._generate_client_config()
-        self.charm._setup_and_activate()
+        self._setup_and_activate_callback()
 
     def _generate_client_config(self) -> None:
         """Generate OAuth client configuration."""
         if self.charm.model.get_relation(OAUTH_RELATION_NAME):
             self.client_config = ClientConfig(
-                redirect_uri=f"https://{self.charm._get_external_hostname()}/auth/oidc/callback",
+                redirect_uri=f"https://{self._external_hostname_callback()}/auth/oidc/callback",
                 scope=OAUTH_SCOPE,
                 grant_types=["authorization_code"],
                 token_endpoint_auth_method="client_secret_basic",  # nosec B106: Not a password
@@ -112,7 +116,7 @@ class OAuthObserver(Object):
             # i.e. not satisfying the regex URL from oauth library.
             # Other cases should not happen as the values are provided by the charm
             self.charm.unit.status = BlockedStatus(
-                f"Invalid OAuth client config, check the logs for more info."
+                "Invalid OAuth client config, check the logs for more info."
             )
             logger.error("Invalid OAuth client config: %s", e)
             return {}
