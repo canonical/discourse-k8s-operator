@@ -1,5 +1,9 @@
 # Changelog
 
+## 2025-12-17
+
+- Moved charm-architecture.md from Explanation to Reference category.
+
 ### 2025-11-19
 
 - docs: Update requirements section of the tutorial based on UX research.
