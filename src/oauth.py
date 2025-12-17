@@ -108,7 +108,10 @@ class OAuthObserver(Object):
         try:
             self.client_config.validate()
         except ClientConfigError as e:
-            # Block charm
+            # Block charm if the client config is invalid
+            # Client config should only fail if the external hostname is invalid,
+            # i.e. not satisfying the regex URL from oauth library.
+            # Other cases should not happen as the values are provided by the charm
             self.charm.unit.status = BlockedStatus(
                 f"Invalid OAuth client config, check the logs for more info."
             )
