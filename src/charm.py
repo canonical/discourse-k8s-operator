@@ -476,7 +476,7 @@ class DiscourseCharm(CharmBase):
             "UNICORN_SIDEKIQ_MAX_RSS": str(self.config["sidekiq_max_memory"]),
         }
         pod_config.update(self._get_saml_config())
-        #
+        # Add OIDC env vars if oauth relation is established
         pod_config.update(self._oauth.get_oidc_env())
 
         if self.config.get("s3_enabled"):
