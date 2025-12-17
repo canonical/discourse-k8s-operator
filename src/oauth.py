@@ -21,7 +21,7 @@ from constants import OAUTH_RELATION_NAME, OAUTH_SCOPE
 logger = logging.getLogger(__name__)
 
 
-class DiscourseOAuth(Object):
+class OAuthObserver(Object):
     """OAuth integration for Discourse."""
 
     def __init__(
@@ -85,7 +85,7 @@ class DiscourseOAuth(Object):
                 redirect_uri=f"https://{self._external_hostname_callback()}/auth/oidc/callback",
                 scope=OAUTH_SCOPE,
                 grant_types=["authorization_code"],
-                token_endpoint_auth_method="client_secret_basic",
+                token_endpoint_auth_method="client_secret_basic",  # nosec B106: Not a password
             )
         else:
             self.client_config = None
@@ -93,6 +93,12 @@ class DiscourseOAuth(Object):
     def get_oidc_env(self) -> typing.Dict[str, typing.Any]:
         """
         Get the list of OIDC-related environment variables from the OAuth relation.
+
+        If the oauth relation is not established, self.client_config will be None,
+        and no env vars will be passed to Discourse.
+
+        Similarly, if the relation is broken, Discourse will not be provided these env vars
+        and unset the existing ones, effectively disabling OIDC.
 
         Returns:
             Dictionary with all the OIDC environment settings.

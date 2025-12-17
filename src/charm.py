@@ -40,6 +40,7 @@ from constants import (
     DISCOURSE_PATH,
     LOG_PATHS,
     MAX_CATEGORY_NESTING_LEVELS,
+    OAUTH_RELATION_NAME,
     PROMETHEUS_PORT,
     REQUIRED_S3_SETTINGS,
     SCRIPT_PATH,
@@ -49,7 +50,7 @@ from constants import (
     THROTTLE_LEVELS,
 )
 from database import DatabaseHandler
-from oauth import OAUTH_RELATION_NAME, DiscourseOAuth
+from oauth import OAuthObserver
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ class DiscourseCharm(CharmBase):
         super().__init__(*args)
 
         self._database = DatabaseHandler(self, DATABASE_RELATION_NAME)
-        self._oauth = DiscourseOAuth(self, self._get_external_hostname, self._setup_and_activate)
+        self._oauth = OAuthObserver(self, self._get_external_hostname, self._setup_and_activate)
 
         self.framework.observe(
             self._database.database.on.database_created, self._on_database_created
