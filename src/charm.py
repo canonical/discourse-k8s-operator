@@ -10,7 +10,7 @@ import os.path
 import secrets
 import string
 import typing
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 
 import ops
 from charms.data_platform_libs.v0.data_interfaces import (
@@ -33,52 +33,28 @@ from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from ops.pebble import ExecError, ExecProcess, Plan
 
+from constants import (
+    CONTAINER_APP_USERNAME,
+    CONTAINER_NAME,
+    DATABASE_RELATION_NAME,
+    DISCOURSE_PATH,
+    LOG_PATHS,
+    MAX_CATEGORY_NESTING_LEVELS,
+    OAUTH_RELATION_NAME,
+    PROMETHEUS_PORT,
+    REQUIRED_S3_SETTINGS,
+    SCRIPT_PATH,
+    SERVICE_NAME,
+    SERVICE_PORT,
+    SETUP_COMPLETED_FLAG_FILE,
+    THROTTLE_LEVELS,
+)
 from database import DatabaseHandler
+from oauth_observer import OAuthObserver
 
 logger = logging.getLogger(__name__)
 
 S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
-
-DATABASE_NAME = "discourse"
-DISCOURSE_PATH = "/srv/discourse/app"
-THROTTLE_LEVELS: typing.Dict = defaultdict(dict)
-THROTTLE_LEVELS["none"] = {
-    "DISCOURSE_MAX_REQS_PER_IP_MODE": "none",
-    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-}
-THROTTLE_LEVELS["permissive"] = {
-    "DISCOURSE_MAX_REQS_PER_IP_MODE": "warn+block",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "1000",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "100",
-    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "3000",
-    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "400",
-    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-    "DISCOURSE_MAX_USER_API_REQS_PER_DAY": "30000",
-    "DISCOURSE_MAX_ADMIN_API_REQS_PER_KEY_PER_MINUTE": "3000",
-}
-THROTTLE_LEVELS["strict"] = {
-    "DISCOURSE_MAX_REQS_PER_IP_MODE": "block",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_MINUTE": "200",
-    "DISCOURSE_MAX_REQS_PER_IP_PER_10_SECONDS": "50",
-    "DISCOURSE_MAX_USER_API_REQS_PER_MINUTE": "100",
-    "DISCOURSE_MAX_ASSET_REQS_PER_IP_PER_10_SECONDS": "200",
-    "DISCOURSE_MAX_REQS_RATE_LIMIT_ON_PRIVATE": "false",
-}
-LOG_PATHS = [
-    f"{DISCOURSE_PATH}/log/production.log",
-    f"{DISCOURSE_PATH}/log/unicorn.stderr.log",
-    f"{DISCOURSE_PATH}/log/unicorn.stdout.log",
-]
-MAX_CATEGORY_NESTING_LEVELS = [2, 3]
-PROMETHEUS_PORT = 3000
-REQUIRED_S3_SETTINGS = ["s3_access_key_id", "s3_bucket", "s3_region", "s3_secret_access_key"]
-SCRIPT_PATH = "/srv/scripts"
-SERVICE_NAME = "discourse"
-CONTAINER_NAME = "discourse"
-CONTAINER_APP_USERNAME = "_daemon_"
-SERVICE_PORT = 3000
-SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
-DATABASE_RELATION_NAME = "database"
 
 INVALID_CORS_MESSAGE = "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # noqa # pylint: disable=line-too-long
 
@@ -90,6 +66,9 @@ class MissingRedisRelationDataError(Exception):
 class DiscourseCharm(CharmBase):
     """Charm for Discourse on kubernetes."""
 
+    # pylint: disable=too-many-instance-attributes
+    # All attributes are necessary for the charm functionality
+
     on = RedisRelationCharmEvents()
 
     def __init__(self, *args):
@@ -97,6 +76,7 @@ class DiscourseCharm(CharmBase):
         super().__init__(*args)
 
         self._database = DatabaseHandler(self, DATABASE_RELATION_NAME)
+        self._oauth = OAuthObserver(self, self._setup_and_activate, self._get_external_hostname)
 
         self.framework.observe(
             self._database.database.on.database_created, self._on_database_created
@@ -329,6 +309,14 @@ class DiscourseCharm(CharmBase):
         ):
             errors.append("A saml relation cannot be specified without 'force_https' being true")
 
+        if (
+            self.model.get_relation(OAUTH_RELATION_NAME) is not None
+            and not self.config["force_https"]
+        ):
+            errors.append(
+                "An oauth relation cannot be established without 'force_https' being true"
+            )
+
         if self.config.get("s3_enabled"):
             errors.extend(
                 f"'s3_enabled' requires '{s3_config}'"
@@ -488,6 +476,8 @@ class DiscourseCharm(CharmBase):
             "UNICORN_SIDEKIQ_MAX_RSS": str(self.config["sidekiq_max_memory"]),
         }
         pod_config.update(self._get_saml_config())
+        # Add OIDC env vars if oauth relation is established
+        pod_config.update(self._oauth.get_oidc_env())
 
         if self.config.get("s3_enabled"):
             pod_config.update(self._get_s3_env())

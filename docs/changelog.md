@@ -1,5 +1,9 @@
 # Changelog
 
+### 2025-12-19
+
+- Add `oauth` relation, which provides necessary config to the charm to operate OIDC for Discourse.
+
 ## 2025-12-17
 
 - Moved charm-architecture.md from Explanation to Reference category.

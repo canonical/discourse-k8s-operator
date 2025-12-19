@@ -13,7 +13,8 @@ import ops
 import pytest
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 
-from charm import CONTAINER_NAME, DATABASE_NAME, DISCOURSE_PATH, SERVICE_NAME
+from charm import CONTAINER_NAME, DISCOURSE_PATH, SERVICE_NAME
+from constants import DATABASE_NAME
 from tests.unit_harness import helpers
 
 
