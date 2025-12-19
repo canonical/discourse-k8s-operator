@@ -50,7 +50,7 @@ from constants import (
     THROTTLE_LEVELS,
 )
 from database import DatabaseHandler
-from oauth import OAuthObserver
+from oauth_observer import OAuthObserver
 
 logger = logging.getLogger(__name__)
 
