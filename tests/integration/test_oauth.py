@@ -36,7 +36,9 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
         class AnyCharm(AnyCharmBase):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                self.framework.observe(self.on["oauth"].relation_changed, self._on_relation_changed)
+                self.framework.observe(
+                    self.on["oauth"].relation_changed, self._on_relation_changed
+                )
 
             def _on_relation_changed(self, event):
                 if event.relation.app:
