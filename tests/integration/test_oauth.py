@@ -66,13 +66,13 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
 
     juju.deploy(
         "any-charm",
-        application_name=any_app_name,
+        app=any_app_name,
         channel="beta",
         config={"src-overwrite": json.dumps(any_charm_src_overwrite), "python-packages": "ops"},
     )
 
     juju.config(app.name, {"force_https": True, "external_hostname": "test.discourse.com"})
 
-    juju.integrate(app.name, any_app_name)
+    juju.integrate(app.name, f"{any_app_name}:oauth")
 
-    juju.wait(lambda status: jubilant.all_active(status, app.name, any_app_name))
+    juju.wait(jubilant.all_active)
