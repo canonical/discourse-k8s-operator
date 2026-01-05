@@ -56,8 +56,6 @@ else
   text='name: RTD workflows
 
 on:
-  push:
-    branches: ["main"]
   pull_request:
 
 jobs:
