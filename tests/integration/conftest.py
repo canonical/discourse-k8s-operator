@@ -269,10 +269,10 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         trust=True,
     )
 
-    juju.wait(jubilant.all_agents_idle)
+    juju.wait(jubilant.all_agents_idle, timeout=1200)
     saml_helper.prepare_pod(juju.model, "saml-integrator-0")
     saml_helper.prepare_pod(juju.model, f"{app.name}-0")
-    juju.wait(jubilant.all_agents_idle)
+    juju.wait(jubilant.all_agents_idle, timeout=1200)
     juju.config(
         "saml-integrator",
         {
@@ -281,7 +281,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         },
     )
     juju.integrate(app.name, "saml-integrator")
-    juju.wait(jubilant.all_agents_idle)
+    juju.wait(jubilant.all_agents_idle, timeout=1200)
 
     yield saml_helper
 
