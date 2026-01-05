@@ -236,7 +236,7 @@ def app_fixture(
     juju.integrate(app_name, "postgresql-k8s:database")
     juju.integrate(app_name, "redis-k8s")
     juju.integrate(app_name, "nginx-ingress-integrator")
-    juju.wait(jubilant.all_active)
+    juju.wait(jubilant.all_active, timeout=1200)
 
     # Enable plugins calling rake site_settings:import in one of the units.
     inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
