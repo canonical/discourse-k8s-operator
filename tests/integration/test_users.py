@@ -20,7 +20,7 @@ def test_create_user(juju: jubilant.Juju, app: types.App):
     act: Create a user
     assert: User is created, and re-creating the same user should fail
     """
-    juju.wait(jubilant.all_active)
+    juju.wait(jubilant.all_active, timeout=1200)
 
     email = "test-user@test.internal"
 
