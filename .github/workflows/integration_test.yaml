@@ -2,10 +2,13 @@ name: Integration tests
 
 on:
   pull_request:
+  schedule:
+  - cron: "0 15 * * SAT"
 
 jobs:
   integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    uses: 
+      canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
       extra-arguments: -x --localstack-address 172.17.0.1
@@ -16,3 +19,8 @@ jobs:
       modules: '["test_charm", "test_saml", "test_users", "test_db_migration"]'
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
+  allure-report:
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
+    needs:
+    - integration-tests
+    uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main

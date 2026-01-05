@@ -1,16 +1,16 @@
-diff --git a/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb b/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
-index 6e4b4f7a08..54c76aeaf0 100644
---- a/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
-+++ b/db/post_migrate/20240829140226_drop_old_notification_id_columns.rb
-@@ -9,6 +9,11 @@ class DropOldNotificationIdColumns < ActiveRecord::Migration[7.1]
-   }
- 
+diff --git a/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb b/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb
+index a0e6237aa0..ce6b728163 100644
+--- a/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb
++++ b/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb
+@@ -3,6 +3,11 @@
+ # TODO: Remove this after the Discourse 3.5 release
+ class MigrateSidekiqJobs < ActiveRecord::Migration[7.2]
    def up
 +    execute <<~SQL
 +      DROP TRIGGER IF EXISTS invites_user_id_readonly ON invites;
 +      DROP TRIGGER IF EXISTS invites_redeemed_at_readonly ON invites;
 +      DROP TRIGGER IF EXISTS user_api_keys_scopes_readonly ON user_api_keys;
 +    SQL
-     DROPPED_COLUMNS.each { |table, columns| Migration::ColumnDropper.execute_drop(table, columns) }
+     SidekiqMigration.call
    end
  

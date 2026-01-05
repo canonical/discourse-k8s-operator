@@ -4,7 +4,7 @@
 <!-- The headings are relation endpoints, makes sense they are lowercase as in metadata.yaml-->
 ### db
 
-_Interface_: pgsql
+_Interface_: `pgsql`
 
 _Supported charms_: [`postgresql-k8s`](https://charmhub.io/postgresql-k8s),
 [PostgreSQL](https://charmhub.io/postgresql)
@@ -19,7 +19,7 @@ juju integrate discourse-k8s postgresql-k8s
 
 ### grafana-dashboard
 
-_Interface_: grafana-dashboard
+_Interface_: `grafana-dashboard`
 
 _Supported charms_: [grafana-k8s](https://charmhub.io/grafana-k8s)
 
@@ -41,7 +41,7 @@ juju integrate discourse-k8s grafana-dashboard`
 
 ### ingress
 
-_Interface_: ingress
+_Interface_: `ingress`
 
 _Supported charms_: [nginx-ingress-integrator](https://charmhub.io/nginx-ingress-integrator),
 [traefik](https://charmhub.io/traefik-k8s)
@@ -76,7 +76,7 @@ juju integrate discourse-k8s prometheus-k8s
 ### redis
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
-_Interface_: redis  
+_Interface_: `redis`
 
 _Supported charms_: [redis-k8s](https://charmhub.io/redis-k8s)
 

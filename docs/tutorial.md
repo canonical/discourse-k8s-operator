@@ -2,6 +2,53 @@
 
 In this tutorial, we'll go through each step of the process to get a basic Discourse deployment.
 
+## What you'll need
+
+You will need a working station, e.g., a laptop, with AMD64 architecture. Your working station
+should have at least 4 CPU cores, 8 GB of RAM, and 50 GB of disk space.
+
+> Tip: You can use Multipass to create an isolated environment by running:
+> ```
+> multipass launch 24.04 --name charm-tutorial-vm --cpus 4 --memory 8G --disk 50G
+> ```
+> When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
+> VM IP in steps that assume you're running locally. To get the IP address of the
+> Multipass instance run ```multipass info discourse-tutorial-vm```.
+
+This tutorial requires the following software to be installed on your working station
+(either locally or in the Multipass VM):
+
+- Juju 3
+- MicroK8s 1.33
+
+Use [Concierge](https://github.com/canonical/concierge) to set up Juju and MicroK8s:
+
+```
+sudo snap install --classic concierge
+sudo concierge prepare -p microk8s
+```
+
+This first command installs Concierge, and the second command uses Concierge to install
+and configure Juju and MicroK8s.
+
+MicroK8s must have an NGINX ingress controller enabled. Complete this requirement by running:
+
+```
+microk8s enable ingress
+```
+
+For more details, see [Add-on: Ingress](https://microk8s.io/docs/addon-ingress).
+
+For this tutorial, Juju must be bootstrapped to a MicroK8s controller. Concierge should
+complete this step for you, and you can verify by checking for `msg="Bootstrapped Juju" provider=microk8s`
+in the terminal output and by running `juju controllers`.
+
+If Concierge did not perform the bootstrap, run:
+
+```
+juju bootstrap microk8s tutorial-controller
+```
+
 ## What you'll do
 
 1. Deploy the Discourse charm
@@ -10,24 +57,12 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 4. Create an admin user and log in
 5. Clean up the environment
 
-## Requirements
-- A working station, e.g., a laptop, with amd64 architecture.
-- Juju 3 installed and bootstrapped to a MicroK8s controller. You can accomplish this process by using a Multipass VM as outlined in this guide: [Set up / Tear down your test environment](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-deployment/#set-up-your-deployment-local-testing-and-development)
-- NGINX Ingress Controller. If you're using [MicroK8s](https://microk8s.io/), this can be done by running the command `microk8s enable ingress`. For more details, see [Add-on: Ingress](https://microk8s.io/docs/addon-ingress).
-
-For more information about how to install Juju, see [Get started with Juju](https://documentation.ubuntu.com/juju/3.6/tutorial/).
-
-:warning: When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
-VM IP in steps that assume you're running locally. To get the IP address of the
-Multipass instance run ```multipass info my-juju-vm```.
-## Steps
-
 ### Shell into the Multipass VM
 > NOTE: If you're working locally, you don't need to do this step.
 
 To be able to work inside the Multipass VM first you need to log in with the following command:
 ```
-multipass shell my-juju-vm
+multipass shell charm-tutorial-vm
 ```
 
 ### Add a Juju model for the tutorial
@@ -158,7 +193,7 @@ juju destroy-model discourse-tutorial --destroy-storage
 ```
 If you used Multipass, to remove the Multipass instance you created for this tutorial, use the following command.
 ```
-multipass delete --purge my-juju-vm
+multipass delete --purge charm-tutorial-vm
 ```
 Finally, remove the `127.0.0.1 discourse-k8s` line from the `/etc/hosts` file.
 
