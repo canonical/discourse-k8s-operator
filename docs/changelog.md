@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-01-06
+
+- Change Discourse to use new tag versioning.
+
 ## 2025-12-17
 
 - Moved charm-architecture.md from Explanation to Reference category.
