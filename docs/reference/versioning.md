@@ -10,7 +10,7 @@ The Discourse charm has transitioned from semantic versioning to calendar-based 
 
 The Discourse charm previously followed semantic versioning (SemVer) format `MAJOR.MINOR.PATCH`, with the final release using this format being version 3.5.3 published as revision 227.
 
-### Current Versioning (Calendar-based)
+### Current versioning (calendar-based)
 
 **New Format:** `YYYY.MM.PATCH-BRANCH`
 
