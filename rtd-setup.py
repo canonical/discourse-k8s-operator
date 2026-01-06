@@ -178,6 +178,24 @@ def update_conf_py_links():
     conf_py.write_text(content)
 
 
+def update_linkcheck_ignore():
+    """Add Matrix URL to linkcheck_ignore in conf.py."""
+    print("INFO: Adding Matrix URL to linkcheck_ignore...")
+    
+    conf_py = Path("docs/conf.py")
+    content = conf_py.read_text()
+    
+    # Add Matrix URL to linkcheck_ignore at the beginning of the list
+    content = re.sub(
+        r'(linkcheck_ignore = \[)',
+        r'\1\n    "https://matrix.to/#/#charmhub-charmdev:ubuntu.com",',
+        content
+    )
+    
+    conf_py.write_text(content)
+    print("SUCCESS: Matrix URL added to linkcheck_ignore.")
+
+
 def get_charm_metadata():
     """
     Extract charm metadata from charmcraft.yaml or metadata.yaml.
@@ -267,10 +285,6 @@ def validate_github_url(url):
 
 def update_project_variables():
     """Optionally update project-specific variables in conf.py."""
-    response = input("ACTION: Update project-specific variables in conf.py? (y/n) ")
-    
-    if not re.match(r'^[Yy]$', response):
-        return
     
     conf_py = Path("docs/conf.py")
     content = conf_py.read_text()
@@ -329,7 +343,7 @@ def update_project_variables():
 
 
 def add_mermaid_extension():
-    """Add Mermaid extension to project."""
+    """Add Mermaid extension to project and update mermaid blocks to MyST syntax."""
     print("INFO: Adding Mermaid extension to project...")
     
     # Add to requirements.txt
@@ -348,6 +362,46 @@ def add_mermaid_extension():
     conf_py.write_text(content)
     
     print("SUCCESS: Added Mermaid extension to conf.py and requirements.txt")
+    
+    # Update mermaid blocks in markdown files
+    print("INFO: Searching for mermaid blocks in markdown files...")
+    
+    docs_dir = Path("docs")
+    sphinx_dir = docs_dir / ".sphinx"
+    build_dir = docs_dir / "_build"
+    
+    # Find all .md files recursively, excluding .sphinx and _build
+    md_files = []
+    for md_file in docs_dir.rglob("*.md"):
+        # Skip files in .sphinx or _build directories
+        if str(md_file).startswith(str(sphinx_dir)) or str(md_file).startswith(str(build_dir)):
+            continue
+        md_files.append(md_file)
+    
+    # Track modified files
+    modified_files = []
+    
+    # Process each markdown file
+    for md_file in md_files:
+        content = md_file.read_text()
+        original_content = content
+        
+        # Replace ```mermaid (with or without trailing space) with ```{mermaid}
+        # Use re.sub to replace both patterns
+        content = re.sub(r'```mermaid\s*\n', '```{mermaid}\n', content)
+        
+        # Check if file was modified
+        if content != original_content:
+            md_file.write_text(content)
+            modified_files.append(str(md_file))
+    
+    # Report results
+    if modified_files:
+        print("SUCCESS: Updated mermaid blocks in the following files:")
+        for file_path in modified_files:
+            print(f"  - {file_path}")
+    else:
+        print("INFO: No mermaid blocks were found or updated.")
 
 
 def create_subdirectory_index_files():
@@ -566,25 +620,28 @@ def main():
         # Step 5: Update conf.py links
         update_conf_py_links()
         
-        # Step 6: Optional project variables
+        # Step 6: Update linkcheck_ignore
+        update_linkcheck_ignore()
+        
+        # Step 7: Optional project variables
         update_project_variables()
         
-        # Step 7: Add Mermaid extension
+        # Step 8: Add Mermaid extension
         add_mermaid_extension()
         
-        # Step 8: Create subdirectory index files
+        # Step 9: Create subdirectory index files
         create_subdirectory_index_files()
         
-        # Step 9: Refactor main index
+        # Step 10: Refactor main index
         refactor_main_index()
         
-        # Step 10: RTD cookie banner
+        # Step 11: RTD cookie banner
         setup_rtd_cookie_banner(tmp_path)
         
-        # Step 11: Add reference targets
+        # Step 12: Add reference targets
         add_reference_targets()
     
-    # Step 12: Final instructions
+    # Step 13: Final instructions
     print("INFO: Cleaning up temporary files...")
     print_final_instructions()
 
