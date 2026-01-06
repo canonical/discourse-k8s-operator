@@ -1,5 +1,9 @@
 # Changelog
 
+## 2025-01-06
+
+- docs: Fixed errors raised by Vale.
+
 ## 2025-12-17
 
 - Moved charm-architecture.md from Explanation to Reference category.
