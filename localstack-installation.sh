@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2025 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 sudo apt install python3.12-venv -y
