@@ -4,7 +4,7 @@
 
 The Discourse charm has transitioned from semantic versioning to calendar-based versioning to align with the upstream Discourse project's new versioning strategy.
 
-### Historical Versioning (Semantic Versioning)
+### Historical versioning (semantic versioning)
 
 **Last Release:** [Revision 227](https://github.com/canonical/discourse-k8s-operator/releases/tag/rev227) - Version 3.5.3
 
