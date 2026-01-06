@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2025 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Discourse integration tests."""
 
@@ -10,6 +10,7 @@ import pytest
 import requests
 
 from . import types
+from .conftest import JUJU_WAIT_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ def test_create_user(juju: jubilant.Juju, app: types.App):
     act: Create a user
     assert: User is created, and re-creating the same user should fail
     """
-    juju.wait(jubilant.all_active)
+    juju.wait(jubilant.all_active, timeout=JUJU_WAIT_TIMEOUT)
 
     email = "test-user@test.internal"
 
