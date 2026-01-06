@@ -61,5 +61,6 @@ fixes and constructive feedback.
   1. [Integrations](reference/integrations.md)
   1. [Plugins](reference/plugins.md)
   1. [External Access](reference/external-access.md)
+  1. [Versioning](reference/versioning.md)
 1. [Explanation](explanation)
   1. [Security](explanation/security.md)

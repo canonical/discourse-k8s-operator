@@ -1,7 +1,5 @@
 # Versioning
 
-## Discourse Charm Versioning Strategy
-
 The Discourse charm has transitioned from semantic versioning to calendar-based versioning to align with the upstream Discourse project's new versioning strategy.
 
 ### Historical versioning (semantic versioning)
@@ -23,7 +21,7 @@ Starting with releases after revision 227, the Discourse charm follows the new c
 
 **Example:** `2025.12.0-latest`
 
-The Discourse charm will track the `-latest` branch of the upstream Discourse releases, providing the most current stable version within each monthly release cycle.
+The Discourse charm will track the `-latest` branch of the upstream Discourse releases, providing the most current stable version within each monthly release cycle.Co
 
 ## Reference
 
