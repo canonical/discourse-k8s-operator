@@ -135,28 +135,6 @@ parts:
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-signatures/
-  patches:
-    plugin: dump
-    after: [discourse]
-    source: patches
-    organize:
-      "*": srv/discourse/app/patches/
-  apply-patches:
-    plugin: nil
-    build-packages:
-      - git
-    after: [discourse, patches]
-    override-stage: |
-      git -C srv/discourse/app apply patches/db_migrations.patch
-      git -C srv/discourse/app apply patches/lp1903695.patch
-      git -C srv/discourse/app apply patches/discourse-charm.patch
-      git -C srv/discourse/app apply patches/sigterm.patch
-    prime:
-      - srv/discourse/app/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb
-      - srv/discourse/app/lib/middleware/anonymous_cache.rb
-      - srv/discourse/app/lib/tasks/discourse-charm.rake
-      - srv/discourse/app/config/unicorn.conf.rb
-      - srv/discourse/app/config/environments/production.rb
   scripts:
     plugin: dump
     source: scripts
@@ -165,7 +143,6 @@ parts:
   setup:
     plugin: nil
     after:
-      - apply-patches
       - bundler-config
       - discourse
       - discourse-markdown-note
@@ -173,7 +150,6 @@ parts:
       - discourse-prometheus
       - discourse-saml
       - discourse-signatures
-      - patches
       - scripts
       - tooling
     build-packages:
@@ -189,7 +165,7 @@ parts:
       /root/.local/share/pnpm/pnpm install
   discourse-precompile-assets:
     plugin: nil
-    after: [apply-patches, setup]
+    after: [setup]
     build-packages:
       - redis-tools
       - postgresql-all
