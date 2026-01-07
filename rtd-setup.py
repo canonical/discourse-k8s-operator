@@ -593,7 +593,7 @@ def print_final_instructions():
     print("INFO:  [ ] Update Charmhub links to use new targets")
     print("INFO:  [ ] Update the landing pages' titles, descriptions, and SEO metadescriptions")
     print("INFO:  [ ] Replace Charmhub links to other projects with RTD intersphinx links (if applicable)")
-    print("INFO:  [ ] Update Mermaid diagrams and admonition blocks")
+    print("INFO:  [ ] Update admonition blocks to use MyST Markdown")
 
 
 def main():
