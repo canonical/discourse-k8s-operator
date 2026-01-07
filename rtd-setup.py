@@ -2,9 +2,12 @@
 """
 Script to set up a Read The Docs (RTD) Sphinx documentation project for a Canonical charm repository.
 
-This script clones a template repository and configures it for the specific project, handling
-migration of existing documentation files, adding Mermaid diagram support, cookie banners, and
-creating proper index files with MyST Markdown metadata.
+This script clones the starter pack repository and configures it for the specific project, handling
+migration of existing documentation files, adding Mermaid diagram support, cookie banners for
+analytics tracking, and creating proper index files with MyST Markdown metadata descriptions.
+
+This script assumes that all the documentation resides in the `docs` folder, and that you're
+running the script in the root of the repository.
 """
 
 import re
@@ -100,7 +103,7 @@ def setup_github_workflows():
     if workflow_file.exists():
         print("SUCCESS: Found the workflow! No need to do anything!")
     else:
-        print("INFO: Did not find the RTD-specific workflows. Copying from operator-workflows...")
+        print("INFO: Did not find the RTD-specific workflows. Creating the workflow file...")
         workflow_file.parent.mkdir(parents=True, exist_ok=True)
         
         workflow_content = """name: RTD workflows
@@ -284,7 +287,7 @@ def validate_github_url(url):
 
 
 def update_project_variables():
-    """Optionally update project-specific variables in conf.py."""
+    """Update project-specific variables in conf.py."""
     
     conf_py = Path("docs/conf.py")
     content = conf_py.read_text()
@@ -292,7 +295,7 @@ def update_project_variables():
     # Get metadata from YAML files
     metadata = get_charm_metadata()
     
-    # Update project name (still requires user input)
+    # Update project name (requires user input)
     project_name = input("Enter name of project (e.g. 'WordPress charm'): ")
     print("INFO: Updating variable 'project'...")
     content = content.replace(
@@ -363,8 +366,8 @@ def add_mermaid_extension():
     
     print("SUCCESS: Added Mermaid extension to conf.py and requirements.txt")
     
-    # Update mermaid blocks in markdown files
-    print("INFO: Searching for mermaid blocks in markdown files...")
+    # Update mermaid blocks
+    print("INFO: Searching for mermaid blocks in Markdown files...")
     
     docs_dir = Path("docs")
     sphinx_dir = docs_dir / ".sphinx"
@@ -381,7 +384,7 @@ def add_mermaid_extension():
     # Track modified files
     modified_files = []
     
-    # Process each markdown file
+    # Process each Markdown file
     for md_file in md_files:
         content = md_file.read_text()
         original_content = content
@@ -397,11 +400,11 @@ def add_mermaid_extension():
     
     # Report results
     if modified_files:
-        print("SUCCESS: Updated mermaid blocks in the following files:")
+        print("SUCCESS: Updated Mermaid blocks in the following files:")
         for file_path in modified_files:
             print(f"  - {file_path}")
     else:
-        print("INFO: No mermaid blocks were found or updated.")
+        print("INFO: No Mermaid blocks were found or updated.")
 
 
 def create_subdirectory_index_files():
@@ -555,7 +558,7 @@ def setup_rtd_cookie_banner(tmp_dir: Path):
 
 
 def add_reference_targets():
-    """Add target headers to all markdown files."""
+    """Add target headers to all Markdown files."""
     print("INFO: Adding reference targets to all files...")
     
     docs_dir = Path("docs")
