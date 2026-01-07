@@ -1,8 +1,11 @@
 # Changelog
-
-### 2025-12-19
+### 2026-01-07
 
 - Add `oauth` relation, which provides necessary config to the charm to operate OIDC for Discourse.
+
+## 2025-01-06
+
+- docs: Fixed errors raised by Vale.
 
 ## 2025-12-17
 

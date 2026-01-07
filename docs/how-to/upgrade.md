@@ -35,7 +35,7 @@ Note also that the following configuration options have been dropped, so manual 
 juju deploy redis-k8s --channel latest/edge
 juju relate discourse-k8s redis-k8s
 ```
-* `tls_secret_name`: Providing the TLS secret via the charm configuration is not supported anymore. The secret must be provided now using the [Nginx Ingress Integrator charm](https://charmhub.io/nginx-ingress-integrator) using the `tls-secret-name` option. See above for an example.
+* `tls_secret_name`: Providing the TLS secret with the charm configuration is not supported anymore. The secret must be provided now using the [Nginx Ingress Integrator charm](https://charmhub.io/nginx-ingress-integrator) using the `tls-secret-name` option. See above for an example.
 
 Given that the image is now packed and released as a charm resource, the following configuration options have been dropped too:
 * `discourse_image`
