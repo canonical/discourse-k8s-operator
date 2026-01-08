@@ -65,7 +65,7 @@ parts:
     plugin: dump
     source: https://github.com/discourse/discourse.git
     source-depth: 1
-    source-tag: v3.5.3
+    source-tag: v2025.12.0-latest
     source-type: git
     override-build: |
       craftctl default
@@ -173,7 +173,6 @@ parts:
       - discourse-prometheus
       - discourse-saml
       - discourse-signatures
-      - patches
       - scripts
       - tooling
     build-packages:
@@ -182,7 +181,7 @@ parts:
       - libssl-dev
     override-prime: |
       cd srv/discourse/app
-      gem install -n "bin" bundler -v 2.5.3
+      gem install -n "bin" bundler -v 2.6.4
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"

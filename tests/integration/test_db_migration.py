@@ -8,6 +8,8 @@ import logging
 import jubilant
 import pytest
 
+from .conftest import JUJU_WAIT_TIMEOUT
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +38,7 @@ def test_db_migration(
         trust=True,
         config={"profile": "testing"},
     )
-    juju.wait(lambda status: status.apps[pg_app_name].is_active, timeout=20 * 60)
+    juju.wait(lambda status: status.apps[pg_app_name].is_active, timeout=JUJU_WAIT_TIMEOUT)
     juju.config(
         pg_app_name,
         {

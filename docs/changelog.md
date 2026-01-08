@@ -7,6 +7,7 @@
 ## 2025-01-06
 
 - docs: Fixed errors raised by Vale.
+- Change Discourse to use new tag versioning.
 
 ## 2025-12-17
 

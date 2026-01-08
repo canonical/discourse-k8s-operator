@@ -52,7 +52,7 @@
         "source:.*discourse/discourse\\.git.*\\n.*source-depth: 1.*\\n.*source-tag: (?<currentValue>.+)"
       ],
       "matchStringsStrategy": "any",
-      "versioningTemplate": "semver-coerced"
+      "versioningTemplate": "regex:^v?(?<major>\\d{4})\\.(?<minor>\\d{2})\\.(?<patch>\\d+)-latest$"
     }
   ]
 }
