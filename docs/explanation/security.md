@@ -31,8 +31,12 @@ Malicious attackers can overwhelm the Discourse traffic with DOS attacks, making
 
 ### Best practices
 
-- Deploy an ingress that can limit the number of requests per users. For example, [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator) charm supports limiting the requests per second through [`limit-rps`](https://charmhub.io/nginx-ingress-integrator/configurations#limit-rps) configuration and features an allow list through [`limit-whitelist`](https://charmhub.io/nginx-ingress-integrator/configurations#limit-whitelist) configuration. 
+<!-- vale Canonical.025a-latinisms-with-english-equivalents = NO -->
+
+- Deploy an ingress that can limit the number of requests from users. For example, [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator) charm supports limiting the requests per second through [`limit-rps`](https://charmhub.io/nginx-ingress-integrator/configurations#limit-rps) configuration and features an allow list through [`limit-whitelist`](https://charmhub.io/nginx-ingress-integrator/configurations#limit-whitelist) configuration. 
 - Set the throttle level directly from Discourse charm through the [`throttle-level`](https://charmhub.io/discourse-k8s/configurations#throttle_level) configuration by setting it to `permissive` or `strict`.
+
+<!-- vale Canonical.025a-latinisms-with-english-equivalents = YES -->
 
 ## Unencrypted traffic
 

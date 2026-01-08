@@ -51,6 +51,9 @@ requires:
     limit: 1
   logging:
     interface: loki_push_api
+  oauth:
+    interface: oauth
+    limit: 1
   saml:
     interface: saml
     limit: 1
