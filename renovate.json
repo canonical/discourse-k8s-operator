@@ -53,20 +53,6 @@
       ],
       "matchStringsStrategy": "any",
       "versioningTemplate": "regex:^v?(?<major>\\d{4})\\.(?<minor>\\d{2})\\.(?<patch>\\d+)-latest$"
-    },
-    {
-      "datasourceTemplate": "github-tags",
-      "depNameTemplate": "discourse/discourse",
-      "description": "Update discourse",
-      "fileMatch": [
-        "(^|/)rockcraft.yaml$"
-      ],
-      "matchStrings": [
-        ".*bundler -v (?<currentValue>.+)"
-      ],
-      "matchStringsStrategy": "any",
-      "versioningTemplate": "regex:^v?(?<major>\\d{4})\\.(?<minor>\\d{2})\\.(?<patch>\\d+)-latest$",
-      "extractVersion": "^v(?<version>.*)$"
     }
   ]
 }

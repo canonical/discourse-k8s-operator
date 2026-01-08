@@ -158,7 +158,7 @@ parts:
       - libssl-dev
     override-prime: |
       cd srv/discourse/app
-      gem install -n "bin" bundler -v 2025.12.0-latest
+      gem install -n "bin" bundler -v 2.6.4
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
