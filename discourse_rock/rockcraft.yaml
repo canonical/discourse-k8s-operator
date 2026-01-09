@@ -65,7 +65,7 @@ parts:
     plugin: dump
     source: https://github.com/discourse/discourse.git
     source-depth: 1
-    source-tag: v2025.12.0-latest
+    source-tag: v2026.1.0-latest
     source-type: git
     override-build: |
       craftctl default
