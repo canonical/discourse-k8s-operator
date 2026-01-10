@@ -1,0 +1,3 @@
+[32mINFO    [0m jubilant:_juju.py:228 cli: juju status --model testing --format json
+[32mINFO    [0m jubilant:_juju.py:228 cli: juju run --model testing --format json discourse-k8s/0 create-user --params /home/ubuntu/snap/juju/common/tmp5750l4hi
+[32mINFO    [0m jubilant:_juju.py:228 cli: juju run --model testing --format json discourse-k8s/0 promote-user --params /home/ubuntu/snap/juju/common/tmpmbvz_omv
