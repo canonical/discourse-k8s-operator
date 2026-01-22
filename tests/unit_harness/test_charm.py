@@ -139,7 +139,7 @@ def test_on_config_changed_when_s3_and_no_bucket_invalid():
             "s3_enabled": True,
             "s3_endpoint": "s3.endpoint",
             "s3_region": "the-infinite-and-beyond",
-            "s3_secret_access_key": "s|kI0ure_k3Y",
+            "s3_secret_access_key": "s|kI0ure_k3Y",  # nosec B105
         }
     )
     assert harness.model.unit.status == BlockedStatus("'s3_enabled' requires 's3_bucket'")
@@ -182,7 +182,7 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
             "s3_enabled": True,
             "s3_endpoint": "s3.endpoint",
             "s3_region": "the-infinite-and-beyond",
-            "s3_secret_access_key": "s|kI0ure_k3Y",
+            "s3_secret_access_key": "s|kI0ure_k3Y",  # nosec B105
         }
     )
     harness.container_pebble_ready(SERVICE_NAME)
@@ -232,7 +232,7 @@ def test_on_config_changed_when_valid():
             "saml_sync_groups": "group1",
             "smtp_address": "smtp.internal",
             "smtp_domain": "foo.internal",
-            "smtp_password": "OBV10USLYF4K3",
+            "smtp_password": "OBV10USLYF4K3",  # nosec B105
             "smtp_username": "apikey",
             "s3_access_key_id": "3|33+",
             "s3_backup_bucket": "back-bucket",
@@ -241,7 +241,7 @@ def test_on_config_changed_when_valid():
             "s3_enabled": True,
             "s3_endpoint": "s3.endpoint",
             "s3_region": "the-infinite-and-beyond",
-            "s3_secret_access_key": "s|kI0ure_k3Y",
+            "s3_secret_access_key": "s|kI0ure_k3Y",  # nosec B105
             "force_https": True,
         },
         saml_fields=(True, "https://login.ubuntu.com", "fingerprint"),
@@ -691,7 +691,7 @@ def test_start_when_not_leader():
             {
                 "database": DATABASE_NAME,
                 "endpoints": "dbhost:5432,dbhost-2:5432",
-                "password": "",
+                "password": "",  # nosec B105
                 "username": "someuser",
             },
             False,
