@@ -189,13 +189,13 @@ def test_oauth_integration(base_state, config, expected_status):
         remote_app_data={
             "issuer_url": "https://auth.example.com",
             "authorization_endpoint": "https://auth.example.com/auth",
-            "token_endpoint": "https://auth.example.com/token",
+            "token_endpoint": "https://auth.example.com/token",  # nosec B105
             "introspection_endpoint": "https://auth.example.com/introspect",
             "userinfo_endpoint": "https://auth.example.com/userinfo",
             "jwks_endpoint": "https://auth.example.com/jwks",
             "scope": "openid email",
             "client_id": "my-client-id",
-            "client_secret": "my-super-secret",
+            "client_secret": "my-super-secret",  # nosec B105
         },
     )
 

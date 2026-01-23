@@ -3,6 +3,7 @@
 # See LICENSE file for licensing details.
 
 """Charm for Discourse on kubernetes."""
+
 import base64
 import hashlib
 import logging
