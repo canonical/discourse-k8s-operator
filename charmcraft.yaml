@@ -16,3 +16,6 @@ parts:
     plugin: uv
     build-snaps:
     - astral-uv
+charm-libs:
+  - lib: hydra.oauth
+    version: "0"

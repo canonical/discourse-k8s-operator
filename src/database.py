@@ -1,4 +1,4 @@
-# Copyright 2025 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Provide the DatabaseObserver class to handle database relation and state."""
@@ -40,7 +40,7 @@ class DatabaseHandler(Object):
         """
         default = {
             "POSTGRES_USER": "",
-            "POSTGRES_PASSWORD": "",
+            "POSTGRES_PASSWORD": "",  # nosec B105
             "POSTGRES_HOST": "",
             "POSTGRES_PORT": "",
             "POSTGRES_DB": "",

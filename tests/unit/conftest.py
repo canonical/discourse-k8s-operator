@@ -1,4 +1,4 @@
-# Copyright 2025 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 
 """Discourse K8s operator charm fixtures."""
@@ -6,7 +6,8 @@
 import pytest
 from ops import testing
 
-from charm import CONTAINER_NAME, DATABASE_NAME
+from charm import CONTAINER_NAME
+from constants import DATABASE_NAME
 
 
 @pytest.fixture(name="base_state")

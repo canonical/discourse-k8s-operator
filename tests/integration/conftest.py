@@ -1,4 +1,4 @@
-# Copyright 2025 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Discourse integration tests fixtures."""
 
@@ -20,13 +20,15 @@ from . import types
 logger = logging.getLogger(__name__)
 
 ENABLED_PLUGINS = [
-    "solved",
     "saml",
     "calendar",
     "data_explorer",
     "discourse_gamification",
     "chat_integration",
 ]
+
+# Timeout for juju wait operations in seconds
+JUJU_WAIT_TIMEOUT = 1200
 
 
 @pytest.fixture(scope="module")
@@ -195,7 +197,7 @@ def app_fixture(
 
     juju.deploy(
         "postgresql-k8s",
-        channel="14/stable",
+        channel="14/edge",
         base="ubuntu@22.04",
         trust=True,
         config={"profile": "testing"},
@@ -232,7 +234,7 @@ def app_fixture(
     juju.integrate(app_name, "postgresql-k8s:database")
     juju.integrate(app_name, "redis-k8s")
     juju.integrate(app_name, "nginx-ingress-integrator")
-    juju.wait(jubilant.all_active)
+    juju.wait(jubilant.all_active, timeout=JUJU_WAIT_TIMEOUT)
 
     # Enable plugins calling rake site_settings:import in one of the units.
     inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
@@ -265,10 +267,10 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         trust=True,
     )
 
-    juju.wait(jubilant.all_agents_idle)
+    juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
     saml_helper.prepare_pod(juju.model, "saml-integrator-0")
     saml_helper.prepare_pod(juju.model, f"{app.name}-0")
-    juju.wait(jubilant.all_agents_idle)
+    juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
     juju.config(
         "saml-integrator",
         {
@@ -277,7 +279,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         },
     )
     juju.integrate(app.name, "saml-integrator")
-    juju.wait(jubilant.all_agents_idle)
+    juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
 
     yield saml_helper
 

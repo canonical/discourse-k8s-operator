@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2025 Canonical Ltd.
+# Copyright 2026 Canonical Ltd.
 # See LICENSE file for licensing details.
 """Discourse integration tests."""
 
@@ -144,7 +144,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | 
             # The final URL is computed by discourse, we need to pass the main URL
             "s3_endpoint": "",
             "s3_bucket": "",
-            "s3_secret_access_key": "",
+            "s3_secret_access_key": "",  # nosec B105
             "s3_access_key_id": "",
             # Default localstack region
             "s3_region": "",
