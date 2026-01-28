@@ -108,12 +108,12 @@ def test_on_config_changed_when_no_cors():
     assert: it will get to blocked status waiting for it.
     """
     harness = helpers.start_harness(with_config={"cors_origin": ""})
-    assert (
-        harness.charm._database.get_relation_data() is not None
-    ), "database name should be set after relation joined"
-    assert (
-        harness.charm._database.get_relation_data().get("POSTGRES_DB") == DATABASE_NAME
-    ), "database name should be set after relation joined"
+    assert harness.charm._database.get_relation_data() is not None, (
+        "database name should be set after relation joined"
+    )
+    assert harness.charm._database.get_relation_data().get("POSTGRES_DB") == DATABASE_NAME, (
+        "database name should be set after relation joined"
+    )
 
 
 def test_on_config_changed_when_throttle_mode_invalid():
@@ -195,24 +195,24 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert "DISCOURSE_BACKUP_LOCATION" not in updated_plan_env
-    assert "http://discourse-k8s" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
-    assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
-    assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
-    assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
-    assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
+    assert updated_plan_env["DISCOURSE_CORS_ORIGIN"] == "http://discourse-k8s"
+    assert updated_plan_env["DISCOURSE_DB_HOST"] == "dbhost"
+    assert updated_plan_env["DISCOURSE_DB_NAME"] == DATABASE_NAME
+    assert updated_plan_env["DISCOURSE_DB_PASSWORD"] == "somepasswd"
+    assert updated_plan_env["DISCOURSE_DB_USERNAME"] == "someuser"
     assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
-    assert "discourse-k8s" == updated_plan_env["DISCOURSE_HOSTNAME"]
-    assert "2" == updated_plan_env["DISCOURSE_MAX_CATEGORY_NESTING"]
-    assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
-    assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
+    assert updated_plan_env["DISCOURSE_HOSTNAME"] == "discourse-k8s"
+    assert updated_plan_env["DISCOURSE_MAX_CATEGORY_NESTING"] == "2"
+    assert updated_plan_env["DISCOURSE_REDIS_HOST"] == "redis-host"
+    assert updated_plan_env["DISCOURSE_REDIS_PORT"] == "1010"
     assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
-    assert "3|33+" == updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"]
+    assert updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"] == "3|33+"
     assert "DISCOURSE_S3_BACKUP_BUCKET" not in updated_plan_env
     assert "DISCOURSE_S3_CDN_URL" not in updated_plan_env
-    assert "who-s-a-good-bucket?" == updated_plan_env["DISCOURSE_S3_BUCKET"]
-    assert "s3.endpoint" == updated_plan_env["DISCOURSE_S3_ENDPOINT"]
-    assert "the-infinite-and-beyond" == updated_plan_env["DISCOURSE_S3_REGION"]
-    assert "s|kI0ure_k3Y" == updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"]
+    assert updated_plan_env["DISCOURSE_S3_BUCKET"] == "who-s-a-good-bucket?"
+    assert updated_plan_env["DISCOURSE_S3_ENDPOINT"] == "s3.endpoint"
+    assert updated_plan_env["DISCOURSE_S3_REGION"] == "the-infinite-and-beyond"
+    assert updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"] == "s|kI0ure_k3Y"
     assert updated_plan_env["DISCOURSE_USE_S3"]
 
 
@@ -251,39 +251,39 @@ def test_on_config_changed_when_valid():
 
     updated_plan = harness.get_container_pebble_plan(SERVICE_NAME).to_dict()
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
-    assert "s3" == updated_plan_env["DISCOURSE_BACKUP_LOCATION"]
-    assert "https://discourse.local,s3.cdn" == updated_plan_env["DISCOURSE_CORS_ORIGIN"]
-    assert "dbhost" == updated_plan_env["DISCOURSE_DB_HOST"]
-    assert DATABASE_NAME == updated_plan_env["DISCOURSE_DB_NAME"]
-    assert "somepasswd" == updated_plan_env["DISCOURSE_DB_PASSWORD"]
-    assert "someuser" == updated_plan_env["DISCOURSE_DB_USERNAME"]
-    assert "user@foo.internal" == updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"]
+    assert updated_plan_env["DISCOURSE_BACKUP_LOCATION"] == "s3"
+    assert updated_plan_env["DISCOURSE_CORS_ORIGIN"] == "https://discourse.local,s3.cdn"
+    assert updated_plan_env["DISCOURSE_DB_HOST"] == "dbhost"
+    assert updated_plan_env["DISCOURSE_DB_NAME"] == DATABASE_NAME
+    assert updated_plan_env["DISCOURSE_DB_PASSWORD"] == "somepasswd"
+    assert updated_plan_env["DISCOURSE_DB_USERNAME"] == "someuser"
+    assert updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"] == "user@foo.internal"
     assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
-    assert "discourse.local" == updated_plan_env["DISCOURSE_HOSTNAME"]
-    assert "2" == updated_plan_env["DISCOURSE_MAX_CATEGORY_NESTING"]
-    assert "redis-host" == updated_plan_env["DISCOURSE_REDIS_HOST"]
-    assert "1010" == updated_plan_env["DISCOURSE_REDIS_PORT"]
+    assert updated_plan_env["DISCOURSE_HOSTNAME"] == "discourse.local"
+    assert updated_plan_env["DISCOURSE_MAX_CATEGORY_NESTING"] == "2"
+    assert updated_plan_env["DISCOURSE_REDIS_HOST"] == "redis-host"
+    assert updated_plan_env["DISCOURSE_REDIS_PORT"] == "1010"
     assert updated_plan_env["DISCOURSE_SAML_CERT_FINGERPRINT"] is not None
-    assert "true" == updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"]
-    assert "https://login.ubuntu.com/+saml" == updated_plan_env["DISCOURSE_SAML_TARGET_URL"]
-    assert "false" == updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"]
-    assert "true" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"]
-    assert "group1" == updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"]
+    assert updated_plan_env["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] == "true"
+    assert updated_plan_env["DISCOURSE_SAML_TARGET_URL"] == "https://login.ubuntu.com/+saml"
+    assert updated_plan_env["DISCOURSE_SAML_GROUPS_FULLSYNC"] == "false"
+    assert updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS"] == "true"
+    assert updated_plan_env["DISCOURSE_SAML_SYNC_GROUPS_LIST"] == "group1"
     assert updated_plan_env["DISCOURSE_SERVE_STATIC_ASSETS"]
-    assert "3|33+" == updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"]
-    assert "back-bucket" == updated_plan_env["DISCOURSE_S3_BACKUP_BUCKET"]
-    assert "s3.cdn" == updated_plan_env["DISCOURSE_S3_CDN_URL"]
-    assert "who-s-a-good-bucket?" == updated_plan_env["DISCOURSE_S3_BUCKET"]
-    assert "s3.endpoint" == updated_plan_env["DISCOURSE_S3_ENDPOINT"]
-    assert "the-infinite-and-beyond" == updated_plan_env["DISCOURSE_S3_REGION"]
-    assert "s|kI0ure_k3Y" == updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"]
-    assert "smtp.internal" == updated_plan_env["DISCOURSE_SMTP_ADDRESS"]
-    assert "none" == updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"]
-    assert "foo.internal" == updated_plan_env["DISCOURSE_SMTP_DOMAIN"]
-    assert "none" == updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"]
-    assert "OBV10USLYF4K3" == updated_plan_env["DISCOURSE_SMTP_PASSWORD"]
-    assert "587" == updated_plan_env["DISCOURSE_SMTP_PORT"]
-    assert "apikey" == updated_plan_env["DISCOURSE_SMTP_USER_NAME"]
+    assert updated_plan_env["DISCOURSE_S3_ACCESS_KEY_ID"] == "3|33+"
+    assert updated_plan_env["DISCOURSE_S3_BACKUP_BUCKET"] == "back-bucket"
+    assert updated_plan_env["DISCOURSE_S3_CDN_URL"] == "s3.cdn"
+    assert updated_plan_env["DISCOURSE_S3_BUCKET"] == "who-s-a-good-bucket?"
+    assert updated_plan_env["DISCOURSE_S3_ENDPOINT"] == "s3.endpoint"
+    assert updated_plan_env["DISCOURSE_S3_REGION"] == "the-infinite-and-beyond"
+    assert updated_plan_env["DISCOURSE_S3_SECRET_ACCESS_KEY"] == "s|kI0ure_k3Y"
+    assert updated_plan_env["DISCOURSE_SMTP_ADDRESS"] == "smtp.internal"
+    assert updated_plan_env["DISCOURSE_SMTP_AUTHENTICATION"] == "none"
+    assert updated_plan_env["DISCOURSE_SMTP_DOMAIN"] == "foo.internal"
+    assert updated_plan_env["DISCOURSE_SMTP_OPENSSL_VERIFY_MODE"] == "none"
+    assert updated_plan_env["DISCOURSE_SMTP_PASSWORD"] == "OBV10USLYF4K3"
+    assert updated_plan_env["DISCOURSE_SMTP_PORT"] == "587"
+    assert updated_plan_env["DISCOURSE_SMTP_USER_NAME"] == "apikey"
     assert updated_plan_env["DISCOURSE_USE_S3"]
     assert updated_plan_env["FORCE_S3_UPLOADS"]
 
@@ -303,12 +303,12 @@ def test_db_relation():
         "postgresql",
     )
 
-    assert (
-        db_relation_data.get("database") == DATABASE_NAME
-    ), "database name should be set after relation joined"
-    assert (
-        harness.charm._database.get_relation_data().get("POSTGRES_DB") == DATABASE_NAME
-    ), "database name should be set after relation joined"
+    assert db_relation_data.get("database") == DATABASE_NAME, (
+        "database name should be set after relation joined"
+    )
+    assert harness.charm._database.get_relation_data().get("POSTGRES_DB") == DATABASE_NAME, (
+        "database name should be set after relation joined"
+    )
 
 
 def test_promote_user_success():
