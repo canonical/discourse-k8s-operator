@@ -57,7 +57,9 @@ logger = logging.getLogger(__name__)
 
 S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
-INVALID_CORS_MESSAGE = "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # noqa # pylint: disable=line-too-long
+INVALID_CORS_MESSAGE = (
+    "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # pylint: disable=line-too-long
+)
 
 
 class MissingRedisRelationDataError(Exception):
