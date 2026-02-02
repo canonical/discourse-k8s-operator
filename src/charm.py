@@ -57,7 +57,9 @@ logger = logging.getLogger(__name__)
 
 S3Info = namedtuple("S3Info", ["enabled", "region", "bucket", "endpoint"])
 
-INVALID_CORS_MESSAGE = "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # noqa # pylint: disable=line-too-long
+INVALID_CORS_MESSAGE = (
+    "invalid CORS config, `augment_cors_origin` must be enabled or `cors_origin` must be non-empty"  # pylint: disable=line-too-long
+)
 
 
 class MissingRedisRelationDataError(Exception):
@@ -341,18 +343,18 @@ class DiscourseCharm(CharmBase):
 
         saml_config = {}
 
-        sso_redirect_endpoint = [
+        sso_redirect_endpoint = next(
             e
             for e in relation_data.endpoints
             if e.name == "SingleSignOnService"
             and e.binding == "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
-        ][0]
+        )
 
         saml_config["DISCOURSE_SAML_TARGET_URL"] = str(sso_redirect_endpoint.url)
         certificate = relation_data.certificates[0]
         # discourse needs SHA1 fingerprint
         saml_config["DISCOURSE_SAML_CERT_FINGERPRINT"] = (
-            hashlib.sha1(base64.b64decode(certificate)).digest().hex(":").upper()  # nosec
+            hashlib.sha1(base64.b64decode(certificate)).digest().hex(":").upper()  # noqa: S324  # nosec
         )
 
         saml_config["DISCOURSE_SAML_FULL_SCREEN_LOGIN"] = (
@@ -698,14 +700,10 @@ class DiscourseCharm(CharmBase):
         ):
             current_env = current_plan.services[SERVICE_NAME].environment
             previous_s3_info = S3Info(
-                current_env["DISCOURSE_USE_S3"] if "DISCOURSE_USE_S3" in current_env else "",
-                current_env["DISCOURSE_S3_REGION"] if "DISCOURSE_S3_REGION" in current_env else "",
-                current_env["DISCOURSE_S3_BUCKET"] if "DISCOURSE_S3_BUCKET" in current_env else "",
-                (
-                    current_env["DISCOURSE_S3_ENDPOINT"]
-                    if "DISCOURSE_S3_ENDPOINT" in current_env
-                    else ""
-                ),
+                current_env.get("DISCOURSE_USE_S3", ""),
+                current_env.get("DISCOURSE_S3_REGION", ""),
+                current_env.get("DISCOURSE_S3_BUCKET", ""),
+                current_env.get("DISCOURSE_S3_ENDPOINT", ""),
             )
         if self.model.unit.is_leader() and self._should_run_s3_migration(
             current_plan, previous_s3_info
@@ -855,10 +853,13 @@ class DiscourseCharm(CharmBase):
             event.fail(f"Failed to make user with email {email}: {ex.stdout}")  # type: ignore
             return
 
-        if not event.params.get("admin") and event.params.get("active"):
-            if not self._activate_user(email):
-                event.fail(f"Could not find user {email} to activate")
-                return
+        if (
+            not event.params.get("admin")
+            and event.params.get("active")
+            and not self._activate_user(email)
+        ):
+            event.fail(f"Could not find user {email} to activate")
+            return
 
         event.set_results({"user": email, "password": password})
 

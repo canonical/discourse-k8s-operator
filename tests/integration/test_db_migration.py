@@ -90,9 +90,9 @@ def test_db_migration(
               -c 'SELECT git_version FROM schema_migration_details LIMIT 1;'",
         stdin=db_pass + "\n",
     )
-    assert (
-        "5bbdc8a813caf55ab3147ac65b5ffafb5e0aab90" in latest_git_version
-    ), "Discourse v3.3.0 git version does not match with the database version"
+    assert "5bbdc8a813caf55ab3147ac65b5ffafb5e0aab90" in latest_git_version, (
+        "Discourse v3.3.0 git version does not match with the database version"
+    )
 
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
     juju.wait(lambda status: status.apps["redis-k8s"].is_active)

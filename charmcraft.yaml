@@ -1,4 +1,4 @@
-# Copyright 2026 Canonical Ltd.
+# Copyright 2025 Canonical Ltd.
 # See LICENSE file for licensing details.
 # Learn more about charmcraft.yaml configuration at:
 # https://juju.is/docs/sdk/charmcraft-config
@@ -12,13 +12,10 @@ bases:
       channel: "20.04"
 parts:
   charm:
-    build-packages: [cargo, rustc, pkg-config, libffi-dev, libssl-dev]
-    charm-python-packages: [setuptools, pip]  # https://discourse.charmhub.io/t/install-or-update-python-packages-before-packing-a-charm/5158
-    charm-binary-python-packages: [cosl]  # https://github.com/canonical/charmcraft/issues/1269
-    build-snaps: [rustup]
-    override-build: |
-      rustup default stable
-      craftctl default
+    source: .
+    plugin: uv
+    build-snaps:
+    - astral-uv
 charm-libs:
   - lib: hydra.oauth
     version: "0"

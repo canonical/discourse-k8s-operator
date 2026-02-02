@@ -34,6 +34,8 @@ class OAuthObserver(Object):
 
         Args:
             charm: The charm object.
+            setup_and_activate_callback: Callback to run setup and activation.
+            external_hostname_callback: Callback to get the external hostname.
         """
         super().__init__(charm, OAUTH_RELATION_NAME)
         self.charm = charm
@@ -85,14 +87,13 @@ class OAuthObserver(Object):
                 redirect_uri=f"https://{self._external_hostname_callback()}/auth/oidc/callback",
                 scope=OAUTH_SCOPE,
                 grant_types=["authorization_code"],
-                token_endpoint_auth_method="client_secret_basic",  # nosec B106: Not a password
+                token_endpoint_auth_method="client_secret_basic",  # nosec # noqa: S106
             )
         else:
             self.client_config = None
 
     def get_oidc_env(self) -> typing.Dict[str, typing.Any]:
-        """
-        Get the list of OIDC-related environment variables from the OAuth relation.
+        """Get the list of OIDC-related environment variables from the OAuth relation.
 
         If the oauth relation is not established, self.client_config will be None,
         and no env vars will be passed to Discourse.

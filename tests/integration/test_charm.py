@@ -81,7 +81,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | 
 
     # Discourse S3 client uses subdomain bucket routing,
     # I need to inject subdomain in the DNS (not needed if everything runs localhost)
-    s3_domain = f'{s3_conf["bucket"]}.s3.{s3_conf["domain"]}'
+    s3_domain = f"{s3_conf['bucket']}.s3.{s3_conf['domain']}"
     juju.exec(
         f'echo "{s3_conf["ip_address"]}  {s3_domain}" >> /etc/hosts',
         unit=app.name + "/0",
@@ -126,7 +126,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | 
 
     # Check the bucket has been created
     response = s3_client.list_buckets()
-    bucket_list = [*map(lambda a: a["Name"], response["Buckets"])]
+    bucket_list = [bucket["Name"] for bucket in response["Buckets"]]
 
     assert s3_conf["bucket"] in bucket_list
 
@@ -283,7 +283,6 @@ def test_upgrade(
     assert: The application upgrades and over all the upgrade, the application replies
       correctly through the ingress.
     """
-
     juju.add_unit(app.name, num_units=2)
     juju.wait(jubilant.all_active)
 

@@ -33,10 +33,7 @@ JUJU_WAIT_TIMEOUT = 1200
 
 @pytest.fixture(scope="module")
 def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
-    """
-    The OCI resources for the charm, read from option or env vars.
-    """
-
+    """The OCI resources for the charm, read from option or env vars."""
     discourse_image = pytestconfig.getoption("--discourse-image")
     if discourse_image:
         return {
@@ -166,9 +163,7 @@ def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
         return
 
     try:
-        subprocess.run(
-            ["charmcraft", "pack"], check=True, capture_output=True, text=True
-        )  # nosec B603, B607
+        subprocess.run(["charmcraft", "pack"], check=True, capture_output=True, text=True)  # nosec B603, B607
     except subprocess.CalledProcessError as exc:
         raise OSError(f"Error packing charm: {exc}; Stderr:\n{exc.stderr}") from None
 
