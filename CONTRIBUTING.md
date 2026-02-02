@@ -163,7 +163,7 @@ The following commands pack the OCI image and push it into
 the MicroK8s registry:
 
 ```bash
-cd <project_dir>
+cd <project_dir>/discourse_rock
 rockcraft pack
 skopeo --insecure-policy copy --dest-tls-verify=false oci-archive:<rock-name>.rock docker://localhost:32000/<app-name>:latest
 ```
