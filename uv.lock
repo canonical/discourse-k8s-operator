@@ -1344,7 +1344,7 @@ integration = [
     { name = "boto3" },
     { name = "bs4" },
     { name = "debugpy" },
-    { name = "jubilant", specifier = "==1" },
+    { name = "jubilant", specifier = "==1.7.0" },
     { name = "protobuf", specifier = "==3.20.3" },
     { name = "psycopg2-binary" },
     { name = "pytest" },
@@ -1355,7 +1355,7 @@ lint = [
     { name = "boto3" },
     { name = "bs4" },
     { name = "codespell" },
-    { name = "jubilant", specifier = "==1" },
+    { name = "jubilant", specifier = "==1.7.0" },
     { name = "mypy" },
     { name = "pep8-naming" },
     { name = "psycopg2-binary" },
@@ -1844,14 +1844,14 @@ wheels = [
 
 [[package]]
 name = "jubilant"
-version = "1.0.0"
+version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/af/70/4745c0bd7df074cb8b6eb8cbd16a17fabd09ebd3a5a1485da89d2d22886e/jubilant-1.0.0.tar.gz", hash = "sha256:86a9d61f539e76333fe4734e7915377591648f5c5133fc118e7519c6cfd44dba", size = 24079, upload-time = "2025-04-29T21:23:21.257Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/0b/275edac8b57b0aac34f84073997660ebf536f97d2fa0d85a2cc3321047b6/jubilant-1.7.0.tar.gz", hash = "sha256:46b7c29a4f3336ab16d77d88418dbf8c9d0746e3f80ef42ee4c2d103eff79650", size = 32455, upload-time = "2026-01-29T02:40:10.335Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/07/6bf3bc21635b7a161ce93e15acc3ad83817235d0ad617de74bf68514dd05/jubilant-1.0.0-py3-none-any.whl", hash = "sha256:38ee9676c185b41f1bda998640f65b50ef64b0b89e43b90188a67a7b34602cab", size = 23248, upload-time = "2025-04-29T21:23:19.726Z" },
+    { url = "https://files.pythonhosted.org/packages/86/d5/5b95ae9ab5abf283e33c802d286045abda7d826396ba417d5d3a20201b24/jubilant-1.7.0-py3-none-any.whl", hash = "sha256:1dcd70eb10299a95ae9fab405a3ce5f01a15513776b7f8eb4cf7b02808c93cdf", size = 33396, upload-time = "2026-01-29T02:40:09.222Z" },
 ]
 
 [[package]]
