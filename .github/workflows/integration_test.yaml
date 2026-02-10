@@ -21,6 +21,7 @@ jobs:
       self-hosted-runner-label: "edge"
       with-uv: true
       python-version: "3.10"
+      series: '["noble"]'
   allure-report:
     if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:
