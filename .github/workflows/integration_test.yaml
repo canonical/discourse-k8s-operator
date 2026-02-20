@@ -20,6 +20,7 @@ jobs:
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
       with-uv: true
+      tmate-debug: true
   allure-report:
     if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:

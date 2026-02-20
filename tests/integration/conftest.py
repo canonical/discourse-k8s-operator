@@ -207,6 +207,7 @@ def app_fixture(
         lambda status: jubilant.all_active(status, "postgresql-k8s", "redis-k8s"),
         timeout=20 * 60,
     )
+    assert False
 
     juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
 
