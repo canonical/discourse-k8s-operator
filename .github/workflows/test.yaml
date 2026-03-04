@@ -11,3 +11,4 @@ jobs:
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
       with-uv: true
+      python-version: "3.10"
