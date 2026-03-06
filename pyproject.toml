@@ -18,7 +18,7 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "cosl==1.4",
+  "cosl==1.6.0",
   "jsonschema==4.23.0",
   "ops==2.23.1",
   "pydantic==2.10.6",
