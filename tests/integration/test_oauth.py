@@ -24,8 +24,7 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
     """
     any_app_name = "any-oauth"
     any_charm_src_overwrite = {
-        "any_charm.py": textwrap.dedent(
-            """\
+        "any_charm.py": textwrap.dedent("""\
         from any_charm_base import AnyCharmBase
         from ops.model import ActiveStatus
         import json
@@ -60,8 +59,7 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
                 }
                 event.relation.data[self.app].update(relation_data)
                 self.unit.status = ActiveStatus()
-        """
-        ),
+        """),
     }
 
     juju.deploy(

@@ -1,0 +1,132 @@
+# Copyright 2025 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+no_package = true
+skip_missing_interpreters = true
+env_list = [ "lint", "unit", "static", "coverage-report" ]
+
+requires = [ "tox>=4.22", "tox-uv>=1.29.0" ]
+
+[env_run_base]
+pass_env = [
+  "PYTHONPATH",
+  "CHARM_BUILD_DIR",
+  "MODEL_SETTINGS",
+  "CHARM_FILE",
+  "ROCK_IMAGE",
+  "OCI_RESOURCE_NAME",
+  "JUJU_DEPLOY_BASE",
+  "TOX_CMD_PREFIX",
+]
+runner = "uv-venv-lock-runner"
+
+[env_run_base.set_env]
+PYTHONPATH = "{tox_root}{:}{tox_root}{/}lib{:}{tox_root}{/}{[vars]src_path}"
+PYTHONBREAKPOINT = "ipdb.set_trace"
+PY_COLORS = "1"
+
+[env.fmt]
+description = "Apply coding style standards to code"
+commands = [
+  [ "ruff", "check", "--fix", "--select", "I", { replace = "ref", of = [ "vars", "all_path" ], extend = true } ],
+  [ "ruff", "format", { replace = "ref", of = [ "vars", "all_path" ], extend = true } ],
+]
+dependency_groups = [ "fmt" ]
+
+[env.lint]
+description = "Check code against coding style standards"
+commands = [
+  [ "codespell", "{tox_root}" ],
+  [ "ruff", "format", "--check", "--diff", { replace = "ref", of = [ "vars", "all_path" ], extend = true } ],
+  [ "ruff", "check", { replace = "ref", of = [ "vars", "all_path" ], extend = true } ],
+  [ "mypy", { replace = "ref", of = [ "vars", "all_path" ], extend = true } ],
+]
+dependency_groups = [ "lint" ]
+
+[env.unit]
+description = "Run unit tests"
+commands = [
+  [
+    "coverage",
+    "run",
+    "--source={[vars]src_path}",
+    "-m",
+    "pytest",
+    "--ignore={[vars]tst_path}{/}integration",
+    "-v",
+    "--tb",
+    "native",
+    "-s",
+    { replace = "posargs", extend = true },
+  ],
+  [ "coverage", "report" ],
+]
+dependency_groups = [ "unit" ]
+
+[env.coverage-report]
+description = "Create test coverage report"
+commands = [ [ "coverage", "report" ] ]
+dependency_groups = [ "coverage-report" ]
+
+[env.static]
+description = "Run static analysis tests"
+commands = [ [ "bandit", "-c", "{tox_root}{/}pyproject.toml", "-r", "{[vars]src_path}", "{[vars]tst_path}" ] ]
+dependency_groups = [ "static" ]
+
+[env.integration]
+description = "Run integration tests"
+commands = [
+  [
+    "pytest",
+    "-v",
+    "--tb",
+    "native",
+    "--ignore={[vars]tst_path}{/}unit",
+    "--ignore={[vars]tst_path}{/}unit_harness",
+    "--log-cli-level=INFO",
+    "-s",
+    { replace = "posargs", extend = true },
+  ],
+]
+dependency_groups = [ "integration" ]
+
+[env.lint-docs]
+description = "Check documentation links"
+package = "skip"
+runner = "uv-venv-runner"
+
+allowlist_externals = [ "curl", "tar", "chmod", "echo", "sh", "{envtmpdir}{/}lychee" ]
+
+commands_pre = [
+  [ "echo", "Download URL: {[vars]lychee_download_url}" ],
+  [ "curl", "-L", "{[vars]lychee_download_url}", "-o", "{envtmpdir}{/}lychee.tar.gz" ],
+  [ "sh", "-c", "echo '{[vars]lychee_sha256}  {envtmpdir}{/}lychee.tar.gz' | sha256sum -c -" ],
+  [ "tar", "-xzf", "{envtmpdir}{/}lychee.tar.gz", "-C", "{envtmpdir}" ],
+  [ "chmod", "+x", "{envtmpdir}{/}lychee" ],
+]
+commands = [ [ "{envtmpdir}{/}lychee", "--max-concurrency", "2", "README.md", "{[vars]docs_path}" ] ]
+
+[env.lint-fix]
+description = "Apply coding style standards to code"
+commands = [
+  [
+    "ruff",
+    "check",
+    "--fix",
+    "--fix-only",
+    { replace = "ref", of = [
+      "vars",
+      "all_path",
+    ], extend = true },
+  ],
+]
+dependency_groups = [ "lint" ]
+
+[vars]
+src_path = "src"
+tst_path = "tests"
+docs_path = "docs"
+all_path = [ "src", "tests" ]
+lychee_version = "0.19.1"
+lychee_sha256 = "537bcfbb0f3bf997f4cbdab259cc5500f2804b69614140ac3edebb4de94b3574"
+lychee_download_url = "https://github.com/lycheeverse/lychee/releases/download/lychee-v{[vars]lychee_version}/lychee-x86_64-unknown-linux-gnu.tar.gz"

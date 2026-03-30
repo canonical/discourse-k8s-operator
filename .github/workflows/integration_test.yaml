@@ -7,8 +7,7 @@ on:
 
 jobs:
   integration-tests:
-    uses: 
-      canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
       extra-arguments: -x --localstack-address 172.17.0.1
@@ -20,6 +19,7 @@ jobs:
       modules: '["test_charm", "test_saml", "test_users", "test_db_migration"]'
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
+      with-uv: true
   allure-report:
     if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:

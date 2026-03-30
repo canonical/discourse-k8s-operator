@@ -20,6 +20,7 @@ class DatabaseHandler(Object):
 
         Args:
             charm: The parent charm to attach the observer to.
+            relation_name: The name of the database relation.
         """
         super().__init__(charm, "database-observer")
         self._charm = charm
@@ -39,7 +40,7 @@ class DatabaseHandler(Object):
         """
         default = {
             "POSTGRES_USER": "",
-            "POSTGRES_PASSWORD": "",
+            "POSTGRES_PASSWORD": "",  # nosec B105
             "POSTGRES_HOST": "",
             "POSTGRES_PORT": "",
             "POSTGRES_DB": "",
