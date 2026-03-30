@@ -10,15 +10,15 @@ export PATH=$VENV/bin:$PATH
 
 pip install pip --upgrade
 pip install pyopenssl --upgrade
-pip install 'localstack>=1.4.0,<2.0.0' 'plux==1.13.0' # install LocalStack cli
-docker pull localstack/localstack # Make sure to pull the latest version of the image
+
+# renovate: datasource=pypi depName=localstack
+LOCALSTACK_CLI_VERSION="4.9.2"
+# renovate: datasource=docker depName=localstack/localstack
+LOCALSTACK_IMAGE_VERSION="4.9.2"
+pip install "localstack==${LOCALSTACK_CLI_VERSION}"
+docker pull "localstack/localstack:${LOCALSTACK_IMAGE_VERSION}"
 EDGE_BIND_HOST=0.0.0.0 localstack start -d # Start LocalStack in the background (binding to all host ip)
 echo "Waiting for LocalStack startup..."
-# `localstack wait` (CLI 1.4.0) streams Docker logs looking for the exact string
-# "Ready." (localstack/constants.py:READY_MARKER_OUTPUT). The current
-# localstack/localstack:latest image is 3.x/4.x and no longer outputs that
-# marker, so the log stream hits EOF in ~3 s and the CLI raises "Error: timeout"
-# regardless of the -t value. Use a direct HTTP health-check loop instead.
-timeout 120 bash -c 'until curl -sf http://localhost:4566/_localstack/health 2>/dev/null | grep -q "running\|\"health\""; do sleep 2; done'
+localstack wait -t 60
 echo "Startup complete"
 
