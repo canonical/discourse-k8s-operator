@@ -19,6 +19,6 @@ pip install "localstack==${LOCALSTACK_CLI_VERSION}"
 docker pull "localstack/localstack:${LOCALSTACK_IMAGE_VERSION}"
 EDGE_BIND_HOST=0.0.0.0 localstack start -d # Start LocalStack in the background (binding to all host ip)
 echo "Waiting for LocalStack startup..."
-localstack wait -t 60
+localstack wait -t 180
 echo "Startup complete"
 
