@@ -65,18 +65,11 @@ timeout 120 bash -c \
     "until curl --max-time 5 -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
 echo "radosgw ready"
 
-# Pre-create the test bucket.  radosgw does not auto-create buckets on first access.
-pip3 install --quiet boto3
-python3 - <<EOF
-import boto3
-
-s3 = boto3.client(
-    "s3",
-    region_name="us-east-1",
-    aws_access_key_id="${S3_ACCESS_KEY}",
-    aws_secret_access_key="${S3_SECRET_KEY}",
-    endpoint_url="http://${HOST_IP}",
-)
-s3.create_bucket(Bucket="${S3_BUCKET}")
-print(f"Bucket '${S3_BUCKET}' created")
-EOF
+# Pre-create the test bucket via the S3 REST API using curl's built-in AWS
+# signature support (--aws-sigv4, available in curl 7.75+ / Ubuntu 22.04+).
+# This avoids any Python package dependency in the pre-run script.
+echo "Creating bucket ${S3_BUCKET}..."
+curl -sf -X PUT "http://${HOST_IP}/${S3_BUCKET}" \
+    --aws-sigv4 "aws:amz:us-east-1:s3" \
+    --user "${S3_ACCESS_KEY}:${S3_SECRET_KEY}"
+echo "Bucket '${S3_BUCKET}' created"
