@@ -3,12 +3,21 @@ name: Tests
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      self-hosted-runner:
+        description: 'Use self-hosted runner'
+        required: false
+        default: 'true'
+      self-hosted-runner-label:
+        description: 'Label of the self-hosted runner to use'
+        required: false
+        default: 'edge'
 
 jobs:
   unit-tests:
     uses: canonical/operator-workflows/.github/workflows/test.yaml@main
     secrets: inherit
     with:
-      self-hosted-runner: true
-      self-hosted-runner-label: "local-multipass"
+      self-hosted-runner: ${{ github.event_name == 'pull_request' && true || github.event.inputs.self-hosted-runner == 'true' }}
+      self-hosted-runner-label: "${{ github.event_name == 'pull_request' && 'edge' || github.event.inputs.self-hosted-runner-label }}"
       with-uv: true

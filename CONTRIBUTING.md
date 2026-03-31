@@ -147,7 +147,7 @@ that can be used for linting and formatting code when you're preparing contribut
 * ``tox -e unit``: Runs the unit tests.
 * ``tox -e integration``: Runs the integration tests.
 
-### Running CI locally
+### Running workflows locally
 
 Most workflows can be run locally by registering a
 [Multipass](https://multipass.run/) VM as a temporary GitHub self-hosted runner.
@@ -171,6 +171,15 @@ multipass launch 24.04 \
   --cpus 4 \
   --memory 16G \
   --disk 60G
+```
+
+Then install packages that GitHub-hosted runners provide but a minimal Ubuntu
+image omits:
+
+```bash
+multipass exec ci-runner -- sudo apt-get install -y \
+  python3-pip python3-venv \
+  make unzip shellcheck
 ```
 
 #### 2. Register the VM as a self-hosted runner
@@ -209,14 +218,40 @@ want to run. For example, in `.github/workflows/integration_test.yaml`:
 +      self-hosted-runner-label: "local-multipass"
 ```
 
-#### 4. Start the runner and trigger the workflow
+#### 4. Start the runner
+
+Install the runner as a systemd service so it starts automatically when the VM
+boots and survives shell disconnections:
 
 ```bash
-# Start the runner in the background
-multipass exec ci-runner -- bash -c 'cd ~/actions-runner && nohup ./run.sh &> ~/runner.log &'
+multipass exec ci-runner -- bash -c \
+  'cd ~/actions-runner && sudo ./svc.sh install ubuntu && sudo ./svc.sh start'
 ```
 
-The workflow triggers on `pull_request`. Open a draft PR on your branch to kick
+If you prefer to run it manually (or the service is not installed), start it in
+the background:
+
+```bash
+multipass exec ci-runner -- bash -c \
+  'cd ~/actions-runner && nohup ./run.sh &>> ~/runner.log &'
+```
+
+Verify the runner is connected before triggering a workflow:
+
+```bash
+multipass exec ci-runner -- tail -5 ~/runner.log
+# Should show: Listening for Jobs
+```
+
+#### Trigger the workflow
+
+If the workflow triggers on `workflow_dispatch`. Trigger it via the github cli with:
+
+```bash
+gh workflow run WORKFLOW_FILE_NAME --ref YOUR_TARGET_BRANCH -f self-hosted-runner-label=local-multipass
+```
+
+If workflow triggers on `pull_request`. Open a draft PR on your branch to kick
 it off:
 
 ```bash
