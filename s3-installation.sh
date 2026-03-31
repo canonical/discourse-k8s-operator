@@ -16,16 +16,43 @@ S3_ACCESS_KEY="my-lovely-key"
 S3_SECRET_KEY="this-is-very-secret"
 S3_BUCKET="tests"
 
+# Determine the host IP reachable from K8s pods (same IP as --s3-address).
+HOST_IP=$(ip -4 route get 2.2.2.2 | awk 'NR==1{print $7}')
+echo "S3 host IP: ${HOST_IP}"
+
 sudo snap install microceph
 sudo microceph cluster bootstrap
-sudo microceph disk add loop,4G,1
 
-# Configure virtual-hosted routing BEFORE enabling RGW so the daemon starts
-# with the right setting.  Requests to {bucket}.s3.localhost.localstack.cloud
-# are then routed to the correct bucket without any path-style workarounds.
-sudo microceph.ceph config set client.rgw rgw_dns_name s3.localhost.localstack.cloud
+# Three 1 GB loop disks (matching the Kyuubi reference setup).
+# MicroCeph needs at least one OSD before it will mark the cluster HEALTH_OK.
+sudo microceph disk add loop,1G,3
+
+# Wait for the Ceph cluster to reach a usable health state before issuing any
+# admin commands.  Without this gate, radosgw-admin hangs indefinitely because
+# the monitors are not yet ready to serve requests.
+echo "Waiting for Ceph cluster health..."
+timeout 180 bash -c \
+    'until sudo microceph.ceph health 2>/dev/null | grep -qE "^HEALTH_OK|^HEALTH_WARN"; do sleep 3; done'
+echo "Ceph cluster healthy"
 
 sudo microceph enable rgw
+
+# Wait for the radosgw HTTP listener to be up before configuring it.
+# 403 = RGW is running but request is unauthenticated — that is fine.
+echo "Waiting for radosgw HTTP..."
+timeout 120 bash -c \
+    "until curl -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
+echo "radosgw HTTP ready"
+
+# Configure virtual-hosted routing.  Setting this after RGW is running requires
+# a restart; microceph picks up ceph config changes on restart.
+sudo microceph.ceph config set client.rgw rgw_dns_name s3.localhost.localstack.cloud
+sudo snap restart microceph.radosgw
+
+# Wait for radosgw to come back after restart.
+timeout 60 bash -c \
+    "until curl -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
+echo "radosgw restarted and ready"
 
 # Create CI user with credentials expected by generate_s3_config() in tests.
 sudo microceph.radosgw-admin user create \
@@ -34,21 +61,10 @@ sudo microceph.radosgw-admin user create \
     --access-key "${S3_ACCESS_KEY}" \
     --secret-key "${S3_SECRET_KEY}"
 
-# Determine the host IP reachable from K8s pods (same IP as --s3-address).
-HOST_IP=$(ip -4 route get 2.2.2.2 | awk 'NR==1{print $7}')
-echo "S3 host IP: ${HOST_IP}"
-
-# Wait for radosgw to respond (403 = running but unauthenticated; that is fine).
-echo "Waiting for radosgw to be ready..."
-timeout 120 bash -c \
-    "until curl -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
-echo "radosgw ready"
-
-# Pre-create the test bucket using boto3 (available via pip, no extra snap needed).
-# Unlike LocalStack, radosgw does not auto-create buckets on first access.
+# Pre-create the test bucket.  radosgw does not auto-create buckets on first access.
 pip3 install --quiet boto3
 python3 - <<EOF
-import boto3, sys
+import boto3
 
 s3 = boto3.client(
     "s3",
