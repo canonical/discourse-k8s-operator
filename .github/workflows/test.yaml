@@ -2,6 +2,7 @@ name: Tests
 
 on:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   unit-tests:
@@ -9,5 +10,5 @@ jobs:
     secrets: inherit
     with:
       self-hosted-runner: true
-      self-hosted-runner-label: "edge"
+      self-hosted-runner-label: "local-multipass"
       with-uv: true

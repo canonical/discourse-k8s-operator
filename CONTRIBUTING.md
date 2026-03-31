@@ -147,6 +147,100 @@ that can be used for linting and formatting code when you're preparing contribut
 * ``tox -e unit``: Runs the unit tests.
 * ``tox -e integration``: Runs the integration tests.
 
+### Running CI locally
+
+Most workflows can be run locally by registering a
+[Multipass](https://multipass.run/) VM as a temporary GitHub self-hosted runner.
+The workflow executes exactly as it does in real CI — dependencies like MicroK8s
+and Juju are installed by the workflow itself.
+
+> **Note:** The docs workflow (`docs.yaml`) cannot be run this way. The upstream
+> reusable workflow hardcodes `runs-on: ubuntu-latest`, which always routes to
+> GitHub-hosted runners. Docs checks run automatically on every push and pull
+> request, so there is no need to run them locally.
+>
+> **Note:** Unit tests (`tox -e lint`, `tox -e unit`, `tox -e static`) have no
+> infrastructure dependencies and are faster to run directly on your host machine
+> as described in the [Test](#test) section above.
+
+#### 1. Create the Multipass VM
+
+```bash
+multipass launch 24.04 \
+  --name ci-runner \
+  --cpus 4 \
+  --memory 16G \
+  --disk 60G
+```
+
+#### 2. Register the VM as a self-hosted runner
+
+```bash
+# Get a one-time registration token
+RUNNER_TOKEN=$(gh api \
+  repos/canonical/discourse-k8s-operator/actions/runners/registration-token \
+  --method POST --jq .token)
+
+multipass exec ci-runner -- bash -c "
+  mkdir -p ~/actions-runner && cd ~/actions-runner
+  ARCH=\$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/')
+  RUNNER_VERSION=\$(curl -s https://api.github.com/repos/actions/runner/releases/latest \
+    | grep tag_name | cut -d'\"' -f4 | sed 's/v//')
+  curl -sL https://github.com/actions/runner/releases/download/v\${RUNNER_VERSION}/actions-runner-linux-\${ARCH}-\${RUNNER_VERSION}.tar.gz \
+    | tar xz
+  ./config.sh \
+    --url https://github.com/canonical/discourse-k8s-operator \
+    --token $RUNNER_TOKEN \
+    --name ci-runner-local \
+    --labels self-hosted,\${ARCH},local-multipass,noble \
+    --replace \
+    --unattended
+"
+```
+
+#### 3. Temporarily change the runner label
+
+The workflow routes jobs using all of `[self-hosted, <arch>, <label>, noble]` — every
+label must match your runner. Change `self-hosted-runner-label` in the workflow you
+want to run. For example, in `.github/workflows/integration_test.yaml`:
+
+```diff
+-      self-hosted-runner-label: "edge"
++      self-hosted-runner-label: "local-multipass"
+```
+
+#### 4. Start the runner and trigger the workflow
+
+```bash
+# Start the runner in the background
+multipass exec ci-runner -- bash -c 'cd ~/actions-runner && nohup ./run.sh &> ~/runner.log &'
+```
+
+The workflow triggers on `pull_request`. Open a draft PR on your branch to kick
+it off:
+
+```bash
+gh pr create --draft --title "WIP: testing locally" --body ""
+# Or if a PR is already open, a plain push is enough:
+git push
+```
+
+Watch progress at `https://github.com/canonical/discourse-k8s-operator/actions`.
+
+#### 5. Clean up when done
+
+```bash
+# Remove the runner registration
+REMOVE_TOKEN=$(gh api \
+  repos/canonical/discourse-k8s-operator/actions/runners/registration-token \
+  --method POST --jq .token)
+multipass exec ci-runner -- bash -c \
+  "cd ~/actions-runner && ./config.sh remove --token $REMOVE_TOKEN"
+
+# Revert the label change
+git checkout .github/workflows/integration_test.yaml
+```
+
 ### Build the rock and charm
 
 Use [Rockcraft](https://documentation.ubuntu.com/rockcraft/stable/) to create an
