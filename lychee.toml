@@ -1,1 +1,0 @@
-remap = ["/t/discourse-(.*) https://discourse.charmhub.io/t/discourse-$1"]
