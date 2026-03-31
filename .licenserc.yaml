@@ -36,4 +36,5 @@ header:
   - 'discourse_rock/patches/**'
   - 'lib/**'
   - 'uv.lock'
+  - '.lycheeignore'
   comment: on-failure
