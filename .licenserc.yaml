@@ -37,4 +37,5 @@ header:
   - 'lib/**'
   - 'uv.lock'
   - '.lycheeignore'
+  - 'lychee.toml'
   comment: on-failure
