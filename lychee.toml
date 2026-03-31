@@ -1,1 +1,1 @@
-base_url = "https://discourse.charmhub.io"
+remap = ["/t/discourse-(.*) https://discourse.charmhub.io/t/discourse-$1"]
