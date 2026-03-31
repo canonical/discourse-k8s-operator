@@ -35,11 +35,14 @@ docker pull "localstack/localstack:${LOCALSTACK_IMAGE_VERSION}"
 # Remove any leftover container from a previous run on the same runner
 docker rm -f localstack-main 2>/dev/null || true
 
-# EDGE_BIND_HOST=0.0.0.0 ensures the gateway binds to all interfaces so
-# K8s pods can reach LocalStack at 172.17.0.1:4566.
+# GATEWAY_LISTEN=0.0.0.0:4566 tells the CLI to bind the Docker port to all
+# interfaces, making LocalStack reachable from K8s pods at 172.17.0.1:4566.
+# In LocalStack 4.x the CLI reads GATEWAY_LISTEN for its port-mapping config;
+# EDGE_BIND_HOST is only forwarded to the container as an env var and has no
+# effect on the Docker port binding.
 IMAGE_NAME="localstack/localstack:${LOCALSTACK_IMAGE_VERSION}" \
 SERVICES=s3 \
-EDGE_BIND_HOST=0.0.0.0 \
+GATEWAY_LISTEN=0.0.0.0:4566 \
     localstack start -d
 
 echo "Waiting for LocalStack to be ready..."
