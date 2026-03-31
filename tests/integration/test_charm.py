@@ -120,7 +120,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, s3_address: str | None):
         s3_conf["region"],
         aws_access_key_id=s3_conf["credentials"]["access-key"],
         aws_secret_access_key=s3_conf["credentials"]["secret-key"],
-        endpoint_url=f"http://{s3_address}",
+        endpoint_url=f"http://{s3_address}:7480",
         use_ssl=False,
         config=s3_client_config,
     )
@@ -164,8 +164,8 @@ def generate_s3_config(s3_address: str) -> Dict:
         "bucket": "tests",
         "region": "us-east-1",
         "ip_address": s3_address,
-        # radosgw listens on port 80 (default); no port suffix required.
-        "endpoint": "http://s3.localhost.localstack.cloud",
+        # radosgw runs on port 7480 to avoid conflict with microk8s nginx ingress on port 80.
+        "endpoint": "http://s3.localhost.localstack.cloud:7480",
     }
 
 

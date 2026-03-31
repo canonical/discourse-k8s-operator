@@ -10,10 +10,6 @@ S3_ACCESS_KEY="my-lovely-key"
 S3_SECRET_KEY="this-is-very-secret"
 S3_BUCKET="tests"
 
-# Host IP reachable from K8s pods — passed to tests as --s3-address.
-HOST_IP=$(ip -4 route get 2.2.2.2 | awk 'NR==1{print $7}')
-echo "S3 host IP: ${HOST_IP}"
-
 sudo snap install microceph
 sudo microceph cluster bootstrap
 sudo microceph disk add loop,1G,3
@@ -23,7 +19,7 @@ timeout 180 bash -c \
     'until sudo microceph.ceph health 2>/dev/null | grep -qE "^HEALTH_OK|^HEALTH_WARN"; do sleep 3; done'
 echo "Ceph cluster healthy"
 
-# Set before enabling RGW so the daemon reads it at startup.
+# Set before enabling RGW so the daemon reads it from the Ceph config DB at startup.
 sudo microceph.ceph config set client.rgw rgw_dns_name s3.localhost.localstack.cloud
 
 sudo microceph enable rgw
@@ -41,15 +37,21 @@ sudo microceph.radosgw-admin user create \
     --access-key "${S3_ACCESS_KEY}" \
     --secret-key "${S3_SECRET_KEY}"
 
+# microceph generates radosgw.conf with port=80 hardcoded; patch it to 7480 so
+# radosgw does not conflict with the microk8s nginx ingress controller which
+# binds to host port 80 with hostNetwork=true.
+sudo sed -i 's/beast port=80/beast port=7480/' /var/snap/microceph/current/conf/radosgw.conf
+sudo snap restart microceph.rgw
+
 # 403 = running but unauthenticated; --max-time prevents curl hanging on a
 # slow-to-respond listener.
 echo "Waiting for radosgw HTTP..."
 timeout 120 bash -c \
-    "until curl --max-time 5 -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
+    "until curl --max-time 5 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7480 | grep -qE '^(200|403)'; do sleep 2; done"
 echo "radosgw ready"
 
 echo "Creating bucket ${S3_BUCKET}..."
-curl -sf -X PUT "http://${HOST_IP}/${S3_BUCKET}" \
+curl -sf -X PUT "http://127.0.0.1:7480/${S3_BUCKET}" \
     --aws-sigv4 "aws:amz:us-east-1:s3" \
     --user "${S3_ACCESS_KEY}:${S3_SECRET_KEY}"
 echo "Bucket '${S3_BUCKET}' created"
