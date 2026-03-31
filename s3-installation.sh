@@ -19,9 +19,6 @@ timeout 180 bash -c \
     'until sudo microceph.ceph health 2>/dev/null | grep -qE "^HEALTH_OK|^HEALTH_WARN"; do sleep 3; done'
 echo "Ceph cluster healthy"
 
-# Set before enabling RGW so the daemon reads it from the Ceph config DB at startup.
-sudo microceph.ceph config set client.rgw rgw_dns_name s3.localhost.localstack.cloud
-
 sudo microceph enable rgw
 
 # Use ceph status (not HTTP) as the readiness gate — radosgw-admin talks to
@@ -37,10 +34,15 @@ sudo microceph.radosgw-admin user create \
     --access-key "${S3_ACCESS_KEY}" \
     --secret-key "${S3_SECRET_KEY}"
 
-# microceph generates radosgw.conf with port=80 hardcoded; patch it to 7480 so
-# radosgw does not conflict with the microk8s nginx ingress controller which
-# binds to host port 80 with hostNetwork=true.
-sudo sed -i 's/beast port=80/beast port=7480/' /var/snap/microceph/current/conf/radosgw.conf
+# microceph generates radosgw.conf with port=80 hardcoded; patch it to 7480 to
+# avoid conflict with microk8s nginx ingress (hostNetwork=true, takes port 80).
+# Also inject rgw_dns_name directly — the ceph config DB key "client.rgw" does
+# not match the daemon name "client.radosgw.gateway", so the DB value is never
+# read; the conf file is the only reliable place for this setting.
+sudo sed -i \
+    -e 's/beast port=80/beast port=7480/' \
+    -e '/rgw frontends/a rgw dns name = s3.localhost.localstack.cloud' \
+    /var/snap/microceph/current/conf/radosgw.conf
 sudo snap restart microceph.rgw
 
 # 403 = running but unauthenticated; --max-time prevents curl hanging on a
