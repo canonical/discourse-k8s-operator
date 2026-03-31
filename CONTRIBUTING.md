@@ -181,6 +181,10 @@ multipass exec ci-runner -- sudo apt-get install -y \
   python3-pip python3-venv \
   make unzip shellcheck
 
+# Match GitHub-hosted runner behaviour: ubuntu user owns /usr/local/bin
+# (required for actions that build and install Go binaries there, e.g. license-eye)
+multipass exec ci-runner -- sudo chown ubuntu /usr/local/bin
+
 # Extend the runner's PATH so pip-installed tools (~/.local/bin) and
 # Go-built tools (~/go/bin, used by e.g. the license-headers check) are found
 multipass exec ci-runner -- bash -c '
