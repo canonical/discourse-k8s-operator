@@ -275,7 +275,16 @@ Watch progress at `https://github.com/canonical/discourse-k8s-operator/actions`.
 #### Clean up when done
 
 ```bash
-# Remove the runner registration
+# Stop the runner process (or service if installed)
+multipass exec ci-runner -- bash -c '
+  if sudo systemctl list-units --type=service | grep -q actions.runner; then
+    sudo systemctl stop actions.runner.*
+  else
+    kill $(pgrep -f Runner.Listener)
+  fi
+'
+
+# Unregister from GitHub
 REMOVE_TOKEN=$(gh api \
   repos/canonical/discourse-k8s-operator/actions/runners/registration-token \
   --method POST --jq .token)
