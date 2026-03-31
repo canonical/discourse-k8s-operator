@@ -163,7 +163,7 @@ and Juju are installed by the workflow itself.
 > infrastructure dependencies and are faster to run directly on your host machine
 > as described in the [Test](#test) section above.
 
-#### Create the multipass instance
+#### Create the instance
 
 ```bash
 multipass launch 24.04 \
@@ -174,7 +174,7 @@ multipass launch 24.04 \
 ```
 
 Then install packages that GitHub-hosted runners provide but a minimal Ubuntu
-image omits, and extend the runner's PATH to include pip and Go user bin dirs:
+image omits, and extend the runner's PATH to include pip and Go user bin directories:
 
 ```bash
 multipass exec ci-runner -- sudo apt-get install -y \
@@ -214,17 +214,6 @@ multipass exec ci-runner -- bash -c "
 "
 ```
 
-#### Temporarily change the runner label
-
-The workflow routes jobs using all of `[self-hosted, <arch>, <label>, noble]` — every
-label must match your runner. Change `self-hosted-runner-label` in the workflow you
-want to run. For example, in `.github/workflows/integration_test.yaml`:
-
-```diff
--      self-hosted-runner-label: "edge"
-+      self-hosted-runner-label: "local-multipass"
-```
-
 #### Start the runner
 
 Install the runner as a `systemd` service so it starts automatically when the VM
@@ -250,10 +239,20 @@ multipass exec ci-runner -- tail -5 ~/runner.log
 # Should show: Listening for Jobs
 ```
 
+#### Temporarily change the runner label
+
+The workflow routes jobs using all of `[self-hosted, <arch>, <label>, noble]` — every
+label must match your runner. Change `self-hosted-runner-label` in the workflow you
+want to run. For example, in `.github/workflows/integration_test.yaml`:
+
+```diff
+-      self-hosted-runner-label: "edge"
++      self-hosted-runner-label: "local-multipass"
+```
+
 #### Trigger the workflow
 
-If the workflow triggers on `workflow_dispatch`. Trigger it with the Github cli with:
-
+If the workflow triggers on `workflow_dispatch`. Trigger it with this command:
 ```bash
 gh workflow run WORKFLOW_FILE_NAME --ref YOUR_TARGET_BRANCH -f self-hosted-runner-label=local-multipass
 ```
