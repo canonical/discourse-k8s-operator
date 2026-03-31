@@ -35,6 +35,11 @@ timeout 180 bash -c \
     'until sudo microceph.ceph health 2>/dev/null | grep -qE "^HEALTH_OK|^HEALTH_WARN"; do sleep 3; done'
 echo "Ceph cluster healthy"
 
+# Set virtual-hosted routing config BEFORE enabling RGW so the daemon reads it
+# at startup.  ceph config set writes to the cluster config store; the value is
+# available to any service that starts after this point.
+sudo microceph.ceph config set client.rgw rgw_dns_name s3.localhost.localstack.cloud
+
 sudo microceph enable rgw
 
 # Wait for radosgw to register with the Ceph cluster monitors — this is the
@@ -52,13 +57,9 @@ sudo microceph.radosgw-admin user create \
     --access-key "${S3_ACCESS_KEY}" \
     --secret-key "${S3_SECRET_KEY}"
 
-# Configure virtual-hosted routing and restart the daemon to apply it.
-sudo microceph.ceph config set client.rgw rgw_dns_name s3.localhost.localstack.cloud
-sudo snap restart microceph.radosgw
-
-# Wait for the HTTP listener to come back after restart.  Use --max-time to
-# prevent curl from hanging when radosgw accepts the connection but is not yet
-# sending responses (which blocked the loop in the previous iteration).
+# Wait for the HTTP listener to be serving (403 = running, unauthenticated).
+# Use --max-time to prevent curl from hanging when the daemon accepts connections
+# but has not yet started sending responses.
 echo "Waiting for radosgw HTTP..."
 timeout 120 bash -c \
     "until curl --max-time 5 -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
