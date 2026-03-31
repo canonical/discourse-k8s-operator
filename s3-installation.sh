@@ -37,29 +37,32 @@ echo "Ceph cluster healthy"
 
 sudo microceph enable rgw
 
-# Wait for the radosgw HTTP listener to be up before configuring it.
-# 403 = RGW is running but request is unauthenticated — that is fine.
-echo "Waiting for radosgw HTTP..."
+# Wait for radosgw to register with the Ceph cluster monitors — this is the
+# reliable readiness signal for admin operations.  HTTP port 80 may come up
+# later; `ceph status` tracks the daemon registration, not the HTTP listener.
+echo "Waiting for radosgw to register with cluster..."
 timeout 120 bash -c \
-    "until curl -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
-echo "radosgw HTTP ready"
+    'until sudo microceph.ceph status 2>/dev/null | grep -q "rgw:"; do sleep 3; done'
+echo "radosgw registered"
 
-# Configure virtual-hosted routing.  Setting this after RGW is running requires
-# a restart; microceph picks up ceph config changes on restart.
-sudo microceph.ceph config set client.rgw rgw_dns_name s3.localhost.localstack.cloud
-sudo snap restart microceph.radosgw
-
-# Wait for radosgw to come back after restart.
-timeout 60 bash -c \
-    "until curl -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
-echo "radosgw restarted and ready"
-
-# Create CI user with credentials expected by generate_s3_config() in tests.
+# Create CI user.  Safe to run now that the Ceph monitors report radosgw up.
 sudo microceph.radosgw-admin user create \
     --uid ci-user \
     --display-name "CI User" \
     --access-key "${S3_ACCESS_KEY}" \
     --secret-key "${S3_SECRET_KEY}"
+
+# Configure virtual-hosted routing and restart the daemon to apply it.
+sudo microceph.ceph config set client.rgw rgw_dns_name s3.localhost.localstack.cloud
+sudo snap restart microceph.radosgw
+
+# Wait for the HTTP listener to come back after restart.  Use --max-time to
+# prevent curl from hanging when radosgw accepts the connection but is not yet
+# sending responses (which blocked the loop in the previous iteration).
+echo "Waiting for radosgw HTTP..."
+timeout 120 bash -c \
+    "until curl --max-time 5 -s -o /dev/null -w '%{http_code}' http://${HOST_IP} | grep -qE '^(200|403)'; do sleep 2; done"
+echo "radosgw ready"
 
 # Pre-create the test bucket.  radosgw does not auto-create buckets on first access.
 pip3 install --quiet boto3
