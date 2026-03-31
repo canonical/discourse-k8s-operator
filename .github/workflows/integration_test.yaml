@@ -10,8 +10,8 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
     with:
-      extra-arguments: -x --localstack-address 172.17.0.1
-      pre-run-script: localstack-installation.sh
+      extra-arguments: -x --s3-address 172.17.0.1
+      pre-run-script: s3-installation.sh
       trivy-image-config: "trivy.yaml"
       trivy-exit-code: 0
       juju-channel: 3.6/stable

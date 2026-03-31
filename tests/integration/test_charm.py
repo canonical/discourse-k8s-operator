@@ -65,17 +65,18 @@ def test_setup_discourse(
 
 
 @pytest.mark.abort_on_fail
-def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | None):
+def test_s3_conf(app: types.App, juju: jubilant.Juju, s3_address: str | None):
     """Check that the bootstrap page is reachable
-    with the charm configured with an S3 target
+    with the charm configured with an S3 target.
     Assume that the charm has already been built and is running.
-    This test requires a localstack deployed
+    This test requires an S3-compatible service (MicroCeph radosgw) deployed
+    on the runner host, started by the pre-run script s3-installation.sh.
     """
-    if not localstack_address:
-        pytest.skip("requires --localstack-address argument")
+    if not s3_address:
+        pytest.skip("requires --s3-address argument")
         return
 
-    s3_conf: Dict = generate_s3_config(localstack_address)
+    s3_conf: Dict = generate_s3_config(s3_address)
 
     logger.info("Updating discourse hosts")
 
@@ -119,7 +120,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | 
         s3_conf["region"],
         aws_access_key_id=s3_conf["credentials"]["access-key"],
         aws_secret_access_key=s3_conf["credentials"]["secret-key"],
-        endpoint_url=f"http://{localstack_address}:4566",
+        endpoint_url=f"http://{s3_address}",
         use_ssl=False,
         config=s3_client_config,
     )
@@ -153,17 +154,18 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, localstack_address: str | 
     juju.wait(jubilant.all_active)
 
 
-def generate_s3_config(localstack_address: str) -> Dict:
-    """Generate an S3 config for localstack based test."""
+def generate_s3_config(s3_address: str) -> Dict:
+    """Generate an S3 config for MicroCeph radosgw based tests."""
     return {
-        # Localstack doesn't require any specific value there, any random string will work
         "credentials": {"access-key": "my-lovely-key", "secret-key": "this-is-very-secret"},
-        # Localstack enforce to use this domain and it resolves to localhost
+        # radosgw is configured with rgw_dns_name = s3.localhost.localstack.cloud so that
+        # virtual-hosted requests to {bucket}.s3.localhost.localstack.cloud are routed correctly.
         "domain": "localhost.localstack.cloud",
         "bucket": "tests",
         "region": "us-east-1",
-        "ip_address": localstack_address,
-        "endpoint": "http://s3.localhost.localstack.cloud:4566",
+        "ip_address": s3_address,
+        # radosgw listens on port 80 (default); no port suffix required.
+        "endpoint": "http://s3.localhost.localstack.cloud",
     }
 
 

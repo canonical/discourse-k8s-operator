@@ -81,9 +81,9 @@ def app_config():
 
 
 @pytest.fixture(scope="session")
-def localstack_address(pytestconfig: pytest.Config):
-    """Provides localstack IP address to be used in the integration test"""
-    yield pytestconfig.getoption("--localstack-address")
+def s3_address(pytestconfig: pytest.Config):
+    """Provides the S3 service IP address to be used in integration tests."""
+    yield pytestconfig.getoption("--s3-address")
 
 
 @pytest.fixture(scope="session")
