@@ -163,7 +163,7 @@ and Juju are installed by the workflow itself.
 > infrastructure dependencies and are faster to run directly on your host machine
 > as described in the [Test](#test) section above.
 
-#### 1. Create the Multipass VM
+#### Create the Multipass VM
 
 ```bash
 multipass launch 24.04 \
@@ -182,7 +182,7 @@ multipass exec ci-runner -- sudo apt-get install -y \
   make unzip shellcheck
 ```
 
-#### 2. Register the VM as a self-hosted runner
+#### Register the VM as a self-hosted runner
 
 ```bash
 # Get a one-time registration token
@@ -207,7 +207,7 @@ multipass exec ci-runner -- bash -c "
 "
 ```
 
-#### 3. Temporarily change the runner label
+#### Temporarily change the runner label
 
 The workflow routes jobs using all of `[self-hosted, <arch>, <label>, noble]` — every
 label must match your runner. Change `self-hosted-runner-label` in the workflow you
@@ -218,9 +218,9 @@ want to run. For example, in `.github/workflows/integration_test.yaml`:
 +      self-hosted-runner-label: "local-multipass"
 ```
 
-#### 4. Start the runner
+#### Start the runner
 
-Install the runner as a systemd service so it starts automatically when the VM
+Install the runner as a `systemd` service so it starts automatically when the VM
 boots and survives shell disconnections:
 
 ```bash
@@ -245,7 +245,7 @@ multipass exec ci-runner -- tail -5 ~/runner.log
 
 #### Trigger the workflow
 
-If the workflow triggers on `workflow_dispatch`. Trigger it via the github cli with:
+If the workflow triggers on `workflow_dispatch`. Trigger it with the GIthub cli with:
 
 ```bash
 gh workflow run WORKFLOW_FILE_NAME --ref YOUR_TARGET_BRANCH -f self-hosted-runner-label=local-multipass
@@ -262,7 +262,7 @@ git push
 
 Watch progress at `https://github.com/canonical/discourse-k8s-operator/actions`.
 
-#### 5. Clean up when done
+#### Clean up when done
 
 ```bash
 # Remove the runner registration
