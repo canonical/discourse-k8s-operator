@@ -32,6 +32,8 @@ sudo microceph.radosgw-admin user create \
     --access-key "${S3_ACCESS_KEY}" \
     --secret-key "${S3_SECRET_KEY}"
 
+# microceph hardcodes port 80; patch to 7480 (avoids conflict with microk8s
+# nginx ingress) and inject rgw_dns_name for virtual-hosted bucket routing.
 sudo sed -i \
     -e 's/beast port=80/beast port=7480/' \
     -e '/rgw frontends/a rgw dns name = s3.localhost.localstack.cloud' \
