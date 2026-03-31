@@ -231,6 +231,13 @@ def test_relations(
     def srv_status():
         return requests.get(f"{discourse_address}/srv/status", timeout=requests_timeout)
 
+    def srv_status_ok():
+        """Return True when Discourse HTTP responds 200, False on connection errors."""
+        try:
+            return srv_status().status_code == 200
+        except requests.ConnectionError:
+            return False
+
     def srv_status_raises_connection_error():
         try:
             srv_status()
@@ -238,8 +245,12 @@ def test_relations(
         except requests.ConnectionError:
             return True
 
+    def all_active_and_serving(status):
+        """All apps active and Discourse is serving HTTP responses."""
+        return jubilant.all_active(status) and srv_status_ok()
+
     # The charm should be active when starting this test
-    juju.wait(jubilant.all_active)
+    juju.wait(all_active_and_serving)
     assert srv_status().status_code == 200
 
     # Removing the relation to postgresql should disable the charm
@@ -249,7 +260,7 @@ def test_relations(
     )
 
     juju.integrate(app.name, "postgresql-k8s:database")
-    juju.wait(jubilant.all_active)
+    juju.wait(all_active_and_serving)
     assert srv_status().status_code == 200
 
     # Removing the relation to redis should disable the charm
@@ -259,16 +270,16 @@ def test_relations(
     )
 
     juju.integrate(app.name, "redis-k8s")
-    juju.wait(jubilant.all_active)
+    juju.wait(all_active_and_serving)
     assert srv_status().status_code == 200
 
     # Removing the relation to ingress should keep the charm active
     juju.remove_relation(app.name, "nginx-ingress-integrator")
-    juju.wait(lambda status: status.apps[app.name].is_active)
+    juju.wait(lambda status: status.apps[app.name].is_active and srv_status_ok())
     assert srv_status().status_code == 200
 
     juju.integrate(app.name, "nginx-ingress-integrator")
-    juju.wait(jubilant.all_active)
+    juju.wait(all_active_and_serving)
     assert srv_status().status_code == 200
 
 
