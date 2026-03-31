@@ -163,7 +163,7 @@ and Juju are installed by the workflow itself.
 > infrastructure dependencies and are faster to run directly on your host machine
 > as described in the [Test](#test) section above.
 
-#### Create the Multipass VM
+#### Create the multipass instance
 
 ```bash
 multipass launch 24.04 \
@@ -174,12 +174,19 @@ multipass launch 24.04 \
 ```
 
 Then install packages that GitHub-hosted runners provide but a minimal Ubuntu
-image omits:
+image omits, and extend the runner's PATH to include pip and Go user bin dirs:
 
 ```bash
 multipass exec ci-runner -- sudo apt-get install -y \
   python3-pip python3-venv \
   make unzip shellcheck
+
+# Extend the runner's PATH so pip-installed tools (~/.local/bin) and
+# Go-built tools (~/go/bin, used by e.g. the license-headers check) are found
+multipass exec ci-runner -- bash -c '
+  sed -i "s|PATH=|PATH=/home/ubuntu/go/bin:/home/ubuntu/.local/bin:|" \
+    ~/actions-runner/.env
+'
 ```
 
 #### Register the VM as a self-hosted runner
@@ -245,7 +252,7 @@ multipass exec ci-runner -- tail -5 ~/runner.log
 
 #### Trigger the workflow
 
-If the workflow triggers on `workflow_dispatch`. Trigger it with the GIthub cli with:
+If the workflow triggers on `workflow_dispatch`. Trigger it with the Github cli with:
 
 ```bash
 gh workflow run WORKFLOW_FILE_NAME --ref YOUR_TARGET_BRANCH -f self-hosted-runner-label=local-multipass
