@@ -5,6 +5,7 @@
 import logging
 import os
 import pathlib
+import re
 import subprocess  # nosec B404
 from collections.abc import Generator
 from typing import Any, Dict, cast
@@ -80,10 +81,26 @@ def app_config():
     }
 
 
+def _host_ip() -> str | None:
+    """Return the host's primary outbound IP, reachable from microk8s pods."""
+    try:
+        out = subprocess.run(
+            ["ip", "-4", "route", "get", "2.2.2.2"], capture_output=True, text=True
+        ).stdout
+        match = re.search(r"src (\d+\.\d+\.\d+\.\d+)", out)
+        return match.group(1) if match else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 @pytest.fixture(scope="session")
 def s3_address(pytestconfig: pytest.Config):
-    """Provides the S3 service IP address to be used in integration tests."""
-    yield pytestconfig.getoption("--s3-address")
+    """Provides the S3 service IP address to be used in integration tests.
+
+    Defaults to the host's primary IP so microk8s pods can reach radosgw
+    on the runner without needing --s3-address to be passed explicitly.
+    """
+    yield pytestconfig.getoption("--s3-address") or _host_ip()
 
 
 @pytest.fixture(scope="session")
