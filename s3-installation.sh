@@ -19,12 +19,8 @@ timeout 180 bash -c \
     'until sudo microceph.ceph health 2>/dev/null | grep -qE "^HEALTH_OK|^HEALTH_WARN"; do sleep 3; done'
 echo "Ceph cluster healthy"
 
-sudo microceph enable rgw
 
-echo "Waiting for radosgw to register with cluster..."
-timeout 120 bash -c \
-    'until sudo microceph.ceph status 2>/dev/null | grep -q "rgw:"; do sleep 3; done'
-echo "radosgw registered"
+sudo microceph enable rgw --port 7480 --wait
 
 sudo microceph.radosgw-admin user create \
     --uid ci-user \
@@ -32,11 +28,8 @@ sudo microceph.radosgw-admin user create \
     --access-key "${S3_ACCESS_KEY}" \
     --secret-key "${S3_SECRET_KEY}"
 
-# microceph hardcodes port 80; patch to 7480 (avoids conflict with microk8s
-# nginx ingress) and inject rgw_dns_name for virtual-hosted bucket routing.
-sudo sed -i \
-    -e 's/beast port=80/beast port=7480/' \
-    -e '/rgw frontends/a rgw dns name = s3.localhost.localstack.cloud' \
+# Inject rgw_dns_name for virtual-hosted bucket routing, then restart.
+sudo sed -i '/rgw frontends/a rgw dns name = s3.localhost.localstack.cloud' \
     /var/snap/microceph/current/conf/radosgw.conf
 sudo snap restart microceph.rgw
 
