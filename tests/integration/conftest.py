@@ -84,12 +84,12 @@ def app_config():
 def _host_ip() -> str | None:
     """Return the host's primary outbound IP, reachable from microk8s pods."""
     try:
-        out = subprocess.run(
+        out = subprocess.run(  # nosec B603, B607
             ["ip", "-4", "route", "get", "2.2.2.2"], capture_output=True, text=True
         ).stdout
         match = re.search(r"src (\d+\.\d+\.\d+\.\d+)", out)
         return match.group(1) if match else None
-    except Exception:  # noqa: BLE001
+    except Exception:
         return None
 
 
