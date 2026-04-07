@@ -62,7 +62,7 @@ integration = [
   "bs4",
   "debugpy",
   "jubilant==1.8.0",
-  "protobuf==5.29.6",
+  "protobuf==7.34.1",
   "psycopg2-binary",
   "pytest",
   "requests",
