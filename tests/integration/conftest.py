@@ -5,7 +5,7 @@
 import logging
 import os
 import pathlib
-import re
+import socket
 import subprocess  # nosec B404
 from collections.abc import Generator
 from typing import Any, Dict, cast
@@ -84,11 +84,11 @@ def app_config():
 def _host_ip() -> str | None:
     """Return the host's primary outbound IP, reachable from microk8s pods."""
     try:
-        out = subprocess.run(  # nosec B603, B607
-            ["ip", "-4", "route", "get", "2.2.2.2"], capture_output=True, text=True
-        ).stdout
-        match = re.search(r"src (\d+\.\d+\.\d+\.\d+)", out)
-        return match.group(1) if match else None
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
     except Exception:
         return None
 
