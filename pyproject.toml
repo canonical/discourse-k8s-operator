@@ -6,11 +6,9 @@ name = "discourse-k8s-operator"
 version = "0.0.0"
 description = "Discourse is the modern forum for your community."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -19,7 +17,7 @@ classifiers = [
 ]
 dependencies = [
   "cosl==1.9.1",
-  "jsonschema==4.23.0",
+  "jsonschema==4.26.0",
   "ops==2.23.2",
   "pydantic==2.10.6",
 ]
