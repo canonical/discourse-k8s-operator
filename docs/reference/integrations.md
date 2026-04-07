@@ -78,7 +78,7 @@ juju integrate discourse-k8s prometheus-k8s
 _Interface_: `oauth`
 
 _Supported charms_: [Hydra](https://charmhub.io/hydra) 
-OAuth relation allows Discourse to integrate with an OAuth provider for authentication and authorization. This enables users to log in to Discourse using their existing credentials from the provider. The easiest way to use the [Hydra](https://charmhub.io/hydra) is to deploy [Canonical Identity Platform](https://charmhub.io/identity-platform/docs/tutorials/e2e-tutorial).
+OAuth relation allows Discourse to integrate with an OAuth provider for authentication and authorization. This enables users to log in to Discourse using their existing credentials from the provider. The easiest way to use the [Hydra](https://charmhub.io/hydra) is to deploy [Canonical Identity Platform](https://canonical-identity.readthedocs-hosted.com/tutorial/canonical-identity-platform/).
 
 OAuth integrate command:
 ```

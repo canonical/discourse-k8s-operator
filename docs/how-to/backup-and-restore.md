@@ -44,7 +44,7 @@ to restore the database. The instructions, depending on the configuration, can b
  - Charmed PostgreSQL. Local backup: https://charmhub.io/postgresql/docs/h-restore-backup
  - Charmed PostgreSQL. Migrate a cluster: https://canonical-charmed-postgresql-k8s.readthedocs-hosted.com/14/how-to/back-up-and-restore/create-a-backup/
  - Charmed PostgreSQL K8s. Local backup: https://charmhub.io/postgresql-k8s/docs/h-restore-backup
- - Charmed PostgreSQL K8s. Migrate a cluster: https://canonical-charmed-postgresql-k8s.readthedocs-hosted.com/latest/how-to/back-up-and-restore/migrate-a-cluster/
+ - Charmed PostgreSQL K8s. Migrate a cluster: https://canonical-charmed-postgresql-k8s.readthedocs-hosted.com/14/how-to/back-up-and-restore/migrate-a-cluster/
 
 ## S3 and the backup and restore procedure
 

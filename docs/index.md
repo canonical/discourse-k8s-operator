@@ -20,8 +20,8 @@ Kubernetes offerings.
 
 | | |
 |--|--|
-|  [Tutorials](/t/discourse-k8s-docs-getting-started/12157)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](/t/discourse-k8s-docs-how-to-configure-the-hostname/12143) </br> Step-by-step guides covering key operations and common tasks | 
-| [Reference](/t/discourse-k8s-docs-actions/12327) </br> Technical information - specifications, APIs, architecture | [Explanation](/t/discourse-k8s-docs-charm-architecture/12139) </br> Concepts - discussion and clarification of key topics  |
+|  [Tutorials](https://charmhub.io/discourse-k8s/docs/tutorial)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](https://charmhub.io/discourse-k8s/docs/how-to-landing-page) </br> Step-by-step guides covering key operations and common tasks | 
+| [Reference](https://charmhub.io/discourse-k8s/docs/reference-actions) </br> Technical information - specifications, APIs, architecture | [Explanation](https://charmhub.io/discourse-k8s/docs/explanation-security) </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation
 
