@@ -13,6 +13,8 @@ env
 .mypy_cache
 *.rock
 version
+.tmp
+.retrospectives
 
 # BEGIN VALE WORKFLOW IGNORE
 .vale/styles/*

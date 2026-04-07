@@ -6,11 +6,9 @@ name = "discourse-k8s-operator"
 version = "0.0.0"
 description = "Discourse is the modern forum for your community."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -18,8 +16,8 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "cosl==1.6.0",
-  "jsonschema==4.23.0",
+  "cosl==1.9.1",
+  "jsonschema==4.26.0",
   "ops==2.23.2",
   "pydantic==2.10.6",
 ]
@@ -32,7 +30,7 @@ lint = [
   "boto3",
   "bs4",
   "codespell",
-  "jubilant==1.7.0",
+  "jubilant==1.8.0",
   "mypy",
   "pep8-naming",
   "psycopg2-binary",
@@ -63,8 +61,8 @@ integration = [
   "boto3",
   "bs4",
   "debugpy",
-  "jubilant==1.7.0",
-  "protobuf==5.29.6",
+  "jubilant==1.8.0",
+  "protobuf==7.34.1",
   "psycopg2-binary",
   "pytest",
   "requests",
@@ -131,6 +129,7 @@ skip = "build,lib,venv,icon.svg,.tox,.git,.mypy_cache,.ruff_cache,.coverage,html
 [tool.pytest.ini_options]
 minversion = "6.0"
 log_cli_level = "INFO"
+addopts = "-x"
 pythonpath = [ "lib", "src" ]
 
 [tool.coverage.run]
