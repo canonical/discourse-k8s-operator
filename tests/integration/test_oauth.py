@@ -67,9 +67,12 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
         app=any_app_name,
         channel="beta",
         config={"src-overwrite": json.dumps(any_charm_src_overwrite), "python-packages": "ops"},
+        log=False,
     )
 
-    juju.config(app.name, {"force_https": True, "external_hostname": "test.discourse.com"})
+    juju.config(
+        app.name, {"force_https": True, "external_hostname": "test.discourse.com"}, log=False
+    )
 
     juju.integrate(app.name, f"{any_app_name}:oauth")
 

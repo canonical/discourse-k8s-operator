@@ -37,6 +37,7 @@ def test_db_migration(
         base="ubuntu@22.04",
         trust=True,
         config={"profile": "testing"},
+        log=False,
     )
     juju.wait(lambda status: status.apps[pg_app_name].is_active, timeout=JUJU_WAIT_TIMEOUT)
     juju.config(
@@ -45,6 +46,7 @@ def test_db_migration(
             "plugin_hstore_enable": True,
             "plugin_pg_trgm_enable": True,
         },
+        log=False,
     )
     juju.wait(lambda status: status.apps[pg_app_name].is_active)
     task = juju.run(pg_app_name + "/0", "get-password", {"username": "operator"})
@@ -94,10 +96,10 @@ def test_db_migration(
         "Discourse v3.3.0 git version does not match with the database version"
     )
 
-    juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
+    juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge", log=False)
     juju.wait(lambda status: status.apps["redis-k8s"].is_active)
 
-    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True)
+    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True, log=False)
 
     discourse_app_name = "discourse-k8s"
     juju.deploy(
@@ -105,6 +107,7 @@ def test_db_migration(
         app=discourse_app_name,
         resources=charm_resources,
         base=charm_base,
+        log=False,
     )
     juju.wait(lambda status: status.apps[discourse_app_name].is_waiting)
 

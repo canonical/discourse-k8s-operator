@@ -39,7 +39,7 @@ def test_prom_exporter_is_up(app: types.App, juju: jubilant.Juju):
     status = juju.status()
     assert app.name + "/0" in status.apps[app.name].units
     cmd = f"/usr/bin/curl -m 30 http://localhost:{PROMETHEUS_PORT}/metrics"
-    juju.exec(cmd, unit=app.name + "/0", wait=60)
+    juju.exec(cmd, unit=app.name + "/0", wait=60, log=False)
 
 
 @pytest.mark.abort_on_fail
@@ -86,6 +86,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, s3_address: str | None):
     juju.exec(
         f'echo "{s3_conf["ip_address"]}  {s3_domain}" >> /etc/hosts',
         unit=app.name + "/0",
+        log=False,
     )
 
     logger.info("Injected bucket subdomain in hosts, configuring settings for discourse")
@@ -101,6 +102,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, s3_address: str | None):
             # Default localstack region
             "s3_region": s3_conf["region"],
         },
+        log=False,
     )
     juju.wait(jubilant.all_active)
 
@@ -150,6 +152,7 @@ def test_s3_conf(app: types.App, juju: jubilant.Juju, s3_address: str | None):
             # Default localstack region
             "s3_region": "",
         },
+        log=False,
     )
     juju.wait(jubilant.all_active)
 

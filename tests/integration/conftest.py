@@ -218,14 +218,15 @@ def app_fixture(
         base="ubuntu@22.04",
         trust=True,
         config={"profile": "testing"},
+        log=False,
     )
-    juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
+    juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge", log=False)
     juju.wait(
         lambda status: jubilant.all_active(status, "postgresql-k8s", "redis-k8s"),
         timeout=20 * 60,
     )
 
-    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True)
+    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True, log=False)
 
     juju.deploy(
         charm=charm_file,
@@ -233,6 +234,7 @@ def app_fixture(
         resources=charm_resources,
         config=app_config,
         base=charm_base,
+        log=False,
     )
 
     juju.wait(lambda status: jubilant.all_waiting(status, app_name))
@@ -244,6 +246,7 @@ def app_fixture(
             "plugin_hstore_enable": True,
             "plugin_pg_trgm_enable": True,
         },
+        log=False,
     )
     juju.wait(lambda status: jubilant.all_active(status, "postgresql-k8s"))
 
@@ -265,7 +268,7 @@ def app_fixture(
         f"'set -euo pipefail; echo \"{inline_yaml}\" | {pebble_exec} -- {discourse_rake_command}'"
     )
     logger.info("Enable plugins command: %s", full_command)
-    task = juju.exec(full_command, unit=app_name + "/0")
+    task = juju.exec(full_command, unit=app_name + "/0", log=False)
     logger.info(task.results)
 
     yield types.App(app_name)
@@ -274,14 +277,11 @@ def app_fixture(
 @pytest.fixture(scope="module")
 def setup_saml_config(juju: jubilant.Juju, app: types.App):
     """Set SAML related charm config to enable SAML authentication."""
-    juju.config(app.name, {"force_https": True})
+    juju.config(app.name, {"force_https": True}, log=False)
 
     saml_helper = SamlK8sTestHelper.deploy_saml_idp(juju.model)
     juju.deploy(
-        "saml-integrator",
-        channel="latest/edge",
-        base="ubuntu@22.04",
-        trust=True,
+        "saml-integrator", channel="latest/edge", base="ubuntu@22.04", trust=True, log=False
     )
 
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
@@ -294,6 +294,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
             "entity_id": saml_helper.entity_id,
             "metadata_url": saml_helper.metadata_url,
         },
+        log=False,
     )
     juju.integrate(app.name, "saml-integrator")
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
