@@ -180,7 +180,9 @@ def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
         return
 
     try:
-        subprocess.run(["charmcraft", "pack"], check=True, capture_output=True, text=True)  # nosec B603, B607
+        subprocess.run(
+            ["charmcraft", "pack"], check=True, capture_output=True, text=True
+        )  # nosec B603, B607
     except subprocess.CalledProcessError as exc:
         raise OSError(f"Error packing charm: {exc}; Stderr:\n{exc.stderr}") from None
 
@@ -188,7 +190,9 @@ def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
     charm_path = pathlib.Path(__file__).parent.parent.parent
     charms = [p.absolute() for p in charm_path.glob(f"{app_name}_*.charm")]
     assert charms, f"{app_name} .charm file not found"
-    assert len(charms) == 1, f"{app_name} has more than one .charm file, unsure which to use"
+    assert (
+        len(charms) == 1
+    ), f"{app_name} has more than one .charm file, unsure which to use"
     yield str(charms[0])
 
 
@@ -218,14 +222,15 @@ def app_fixture(
         base="ubuntu@22.04",
         trust=True,
         config={"profile": "testing"},
+        log=False,
     )
-    juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
+    juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge", log=False)
     juju.wait(
         lambda status: jubilant.all_active(status, "postgresql-k8s", "redis-k8s"),
         timeout=20 * 60,
     )
 
-    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True)
+    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True, log=False)
 
     juju.deploy(
         charm=charm_file,
@@ -233,6 +238,7 @@ def app_fixture(
         resources=charm_resources,
         config=app_config,
         base=charm_base,
+        log=False,
     )
 
     juju.wait(lambda status: jubilant.all_waiting(status, app_name))
@@ -255,7 +261,9 @@ def app_fixture(
 
     # Enable plugins calling rake site_settings:import in one of the units.
     inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
-    discourse_rake_command = "/srv/discourse/app/bin/bundle exec rake site_settings:import "
+    discourse_rake_command = (
+        "/srv/discourse/app/bin/bundle exec rake site_settings:import "
+    )
     pebble_exec = (
         "PEBBLE_SOCKET=/charm/containers/discourse/pebble.socket "
         "pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app"
@@ -282,6 +290,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         channel="latest/edge",
         base="ubuntu@22.04",
         trust=True,
+        log=False,
     )
 
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
@@ -314,7 +323,9 @@ def admin_credentials_fixture(juju: jubilant.Juju, app: types.App) -> types.Cred
 
 
 @pytest.fixture(scope="module", name="admin_api_key")
-def admin_api_key_fixture(admin_credentials: types.Credentials, discourse_address: str) -> str:
+def admin_api_key_fixture(
+    admin_credentials: types.Credentials, discourse_address: str
+) -> str:
     """Admin user API key"""
     with requests.session() as session:
         # Get CSRF token

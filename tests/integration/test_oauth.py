@@ -24,7 +24,8 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
     """
     any_app_name = "any-oauth"
     any_charm_src_overwrite = {
-        "any_charm.py": textwrap.dedent("""\
+        "any_charm.py": textwrap.dedent(
+            """\
         from any_charm_base import AnyCharmBase
         from ops.model import ActiveStatus
         import json
@@ -59,17 +60,24 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
                 }
                 event.relation.data[self.app].update(relation_data)
                 self.unit.status = ActiveStatus()
-        """),
+        """
+        ),
     }
 
     juju.deploy(
         "any-charm",
         app=any_app_name,
         channel="beta",
-        config={"src-overwrite": json.dumps(any_charm_src_overwrite), "python-packages": "ops"},
+        config={
+            "src-overwrite": json.dumps(any_charm_src_overwrite),
+            "python-packages": "ops",
+        },
+        log=False,
     )
 
-    juju.config(app.name, {"force_https": True, "external_hostname": "test.discourse.com"})
+    juju.config(
+        app.name, {"force_https": True, "external_hostname": "test.discourse.com"}
+    )
 
     juju.integrate(app.name, f"{any_app_name}:oauth")
 
