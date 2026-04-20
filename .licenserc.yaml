@@ -36,4 +36,6 @@ header:
   - 'discourse_rock/patches/**'
   - 'lib/**'
   - 'uv.lock'
+  - '.lycheeignore'
+  - 'lychee.toml'
   comment: on-failure

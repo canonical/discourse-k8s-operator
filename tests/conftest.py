@@ -6,7 +6,7 @@
 def pytest_addoption(parser):
     """Adds parser switches."""
     parser.addoption("--discourse-image", action="store")
-    parser.addoption("--localstack-address", action="store")
+    parser.addoption("--s3-address", action="store")
     parser.addoption("--saml-email", action="store")
     parser.addoption("--saml-password", action="store")
     parser.addoption("--charm-file", action="store", default=None)

@@ -5,6 +5,7 @@
 import logging
 import os
 import pathlib
+import socket
 import subprocess  # nosec B404
 from collections.abc import Generator
 from typing import Any, Dict, cast
@@ -58,7 +59,7 @@ def charm_base() -> str:
     base = os.environ.get("JUJU_DEPLOY_BASE")
     if not base:
         # Returning the default base to stay consistent with current behavior
-        return "ubuntu@20.04"
+        return "ubuntu@22.04"
     return base
 
 
@@ -80,10 +81,26 @@ def app_config():
     }
 
 
+def _host_ip() -> str | None:
+    """Return the host's primary outbound IP, reachable from microk8s pods."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return None
+
+
 @pytest.fixture(scope="session")
-def localstack_address(pytestconfig: pytest.Config):
-    """Provides localstack IP address to be used in the integration test"""
-    yield pytestconfig.getoption("--localstack-address")
+def s3_address(pytestconfig: pytest.Config):
+    """Provides the S3 service IP address to be used in integration tests.
+
+    Defaults to the host's primary IP so microk8s pods can reach radosgw
+    on the runner without needing --s3-address to be passed explicitly.
+    """
+    yield pytestconfig.getoption("--s3-address") or _host_ip()
 
 
 @pytest.fixture(scope="session")
@@ -208,7 +225,7 @@ def app_fixture(
         timeout=20 * 60,
     )
 
-    juju.deploy("nginx-ingress-integrator", base="ubuntu@20.04", trust=True)
+    juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True)
 
     juju.deploy(
         charm=charm_file,
