@@ -1,25 +1,31 @@
 # How-to guides
 
-The following guides cover key processes and common tasks for managing
-and using the Discourse charm.
+Manage the operational lifecycle of your Discourse deployment, from initial provisioning and service configuration to ongoing maintenance, upgrades, and community contribution workflows.
+
+These guides walk you through setting up the charm's hostname and container environment, connecting external services such as S3, SMTP, and SAML, and performing backup, restore, and upgrade procedures.
 
 ## Initial setup
+
+A working Discourse deployment begins with establishing the charm's external identity and tuning the container runtime to match your infrastructure's resource profile.
+
 * [Configure the hostname]
 * [Configure the container]
 
 ## Basic operations
+
+Day-to-day administration spans direct database interaction through the Rails console, external service connectivity for object storage and email delivery, and federated authentication via SAML.
+
 * [Access the Rails Console]
 * [Configure S3]
 * [Configure SMTP]
-
-## Security
 * [Configure SAML]
 
-## Upgrade and redeployment 
+## Maintenance and development
+
+Preserving data integrity across upgrades requires a reliable backup and restore strategy. Contributors working on the charm itself should also familiarize themselves with the development workflow.
+
 * [Backup and restore]
 * [Upgrade]
-
-## Development
 * [Contribute]
 
 <!--Links-->
