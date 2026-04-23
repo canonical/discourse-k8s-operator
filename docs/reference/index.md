@@ -12,7 +12,7 @@ Every operational decision — from tuning runtime behavior to automating admini
 
 ## Connectivity
 
-Integrating Discourse into a broader service mesh requires precise knowledge of the charm's relation interfaces and the mechanisms that control how external traffic reaches the application.
+Expanding Discourse's reach within a Juju model depends on the charm's relation interfaces for service-to-service communication and the mechanisms that control how external traffic reaches the application.
 
 * [Integrations]
 * [External access]
