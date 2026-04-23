@@ -1,8 +1,6 @@
 # Reference
 
-The Discourse charm exposes a layered set of configuration surfaces, integration points, and architectural primitives that govern how the application behaves within a Juju-managed Kubernetes environment. A thorough understanding of these specifications is essential for informed capacity planning, secure connectivity, and long-term maintainability.
-
-Consult these materials to understand the charm's configurable parameters, its integration surface area, and the plugin and versioning mechanisms that affect upgrade compatibility.
+The Discourse charm exposes a layered set of configuration surfaces, integration points, and architectural primitives that govern how the application behaves within a Juju-managed Kubernetes environment -- from operational configuration and action automation through connectivity and external access to the plugin ecosystem and versioning policy.
 
 ## Configuration and operations
 

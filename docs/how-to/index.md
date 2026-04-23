@@ -1,8 +1,6 @@
 # How-to guides
 
-Manage the operational lifecycle of your Discourse deployment, from initial provisioning and service configuration to ongoing maintenance, upgrades, and community contribution workflows.
-
-These guides walk you through setting up the charm's hostname and container environment, connecting external services such as S3, SMTP, and SAML, and performing backup, restore, and upgrade procedures.
+Manage the operational lifecycle of your Discourse deployment, from initial provisioning and service configuration through to ongoing maintenance and contribution workflows.
 
 ## Initial setup
 
@@ -13,7 +11,7 @@ A working Discourse deployment begins with establishing the charm's external ide
 
 ## Basic operations
 
-Day-to-day administration spans direct database interaction through the Rails console, external service connectivity for object storage and email delivery, and federated authentication via SAML.
+Day-to-day administration may involve direct database interaction through the Rails console, and depending on your infrastructure requirements, connecting external services for object storage, email delivery, or federated authentication.
 
 * [Access the Rails Console]
 * [Configure S3]
