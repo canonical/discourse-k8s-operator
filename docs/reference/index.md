@@ -1,27 +1,31 @@
 # Reference
 
-The Discourse charm exposes a layered set of configuration surfaces, integration points, and architectural primitives that govern how the application behaves within a Juju-managed Kubernetes environment -- from operational configuration and action automation through connectivity and external access to the plugin ecosystem and versioning policy.
+Technical specifications and descriptions for the Discourse charm's configuration surfaces, integration interfaces, and runtime behavior within a Juju-managed Kubernetes environment.
 
 ## Configuration and operations
 
-Every operational decision — from tuning runtime behavior to automating administrative tasks — depends on a clear mapping between the charm's configuration options, its available actions, and the internal architecture that connects them.
+Your operational decisions depend on the charm's configuration options, its available actions, and the default plugins
+that ship with the charm.
 
 * [Actions]
 * [Configurations]
-* [Charm architecture]
+* [Plugins]
 
 ## Connectivity
 
-Expanding Discourse's reach within a Juju model depends on the charm's relation interfaces for service-to-service communication and the mechanisms that control how external traffic reaches the application.
+Expanding Discourse's reach in Juju depends on the charm's relation interfaces, and your reach to the outside world depends on the mechanisms for external access.
 
 * [Integrations]
 * [External access]
 
-## Ecosystem
+## Charm architecture and designs
 
-Plugin availability and versioning policy directly affect feature compatibility across upgrades. Evaluating these constraints before making changes prevents unexpected regressions in production.
+Understanding the overall charm architecture provides the structural
+context needed to see how your operational choices interact at runtime.
+In addition, we detailed design choices we made to align with
+the upstream Discourse project.
 
-* [Plugins]
+* [Charm architecture]
 * [Versioning]
 
 <!--Links-->
