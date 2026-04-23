@@ -1,17 +1,19 @@
 # How-to guides
 
-Manage the operational lifecycle of your Discourse deployment, from initial provisioning and service configuration through to ongoing maintenance and contribution workflows.
+Manage the operational lifecycle of your Discourse deployment, from initial provisioning and configurations to ongoing maintenance and contribution workflows.
 
 ## Initial setup
 
-A working Discourse deployment begins with establishing the charm's external identity and tuning the container runtime to match your infrastructure's resource profile.
+A working Discourse deployment begins with establishing an initial set of configurations to match your use case and needs.
 
 * [Configure the hostname]
 * [Configure the container]
 
 ## Basic operations
 
-Day-to-day administration may involve direct database interaction through the Rails console, and depending on your infrastructure requirements, connecting external services for object storage, email delivery, or federated authentication.
+Your day-to-day deployment might involve additional configurations
+and operations related to external services for storage, email
+delivery, or authentication.
 
 * [Access the Rails Console]
 * [Configure S3]
@@ -20,7 +22,11 @@ Day-to-day administration may involve direct database interaction through the Ra
 
 ## Maintenance and development
 
-Preserving data integrity across upgrades requires a reliable backup and restore strategy. Contributors working on the charm itself should also familiarize themselves with the development workflow.
+As your deployment ages, preserving data integrity across
+upgrades requires a reliable backup and restore strategy.
+You may even have feedback or ideas for future features to
+the charm; contributors working on the charm itself should familiarize
+themselves with the development workflow.
 
 * [Backup and restore]
 * [Upgrade]
