@@ -14,7 +14,7 @@ configurations to match your use case and needs.
 
 ## Basic operations
 
-Your day-to-day deployment might involve additional configurations
+Your base deployment might involve additional configurations
 and operations related to external services for storage, email
 delivery, or authentication.
 
