@@ -1,11 +1,13 @@
 # Reference
 
-Technical specifications and descriptions for the Discourse charm's configuration surfaces, integration interfaces, and runtime behavior within a Juju-managed Kubernetes environment.
+Technical specifications and descriptions for the Discourse charm's
+configuration surfaces, integration interfaces, and runtime behavior
+within a Juju-managed Kubernetes environment.
 
 ## Configuration and operations
 
-Your operational decisions depend on the charm's configuration options, its available actions, and the default plugins
-that ship with the charm.
+Your operational decisions depend on the charm's configuration options,
+its available actions, and the default plugins that ship with the charm.
 
 * [Actions]
 * [Configurations]
@@ -13,7 +15,9 @@ that ship with the charm.
 
 ## Connectivity
 
-Expanding Discourse's reach in Juju depends on the charm's relation interfaces, and your reach to the outside world depends on the mechanisms for external access.
+Expanding Discourse's reach in Juju depends on the charm's relation interfaces,
+and your deployment's reach to the outside world depends on the mechanisms
+for external access.
 
 * [Integrations]
 * [External access]
@@ -22,7 +26,7 @@ Expanding Discourse's reach in Juju depends on the charm's relation interfaces, 
 
 Understanding the overall charm architecture provides the structural
 context needed to see how your operational choices interact at runtime.
-In addition, we detailed design choices we made to align with
+In addition, we detailed design choices made to align with
 the upstream Discourse project.
 
 * [Charm architecture]

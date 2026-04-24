@@ -1,10 +1,13 @@
 # How-to guides
 
-Manage the operational lifecycle of your Discourse deployment, from initial provisioning and configurations to ongoing maintenance and contribution workflows.
+Manage the operational lifecycle of your Discourse deployment, from
+initial provisioning and configurations to ongoing maintenance and
+contribution workflows.
 
 ## Initial setup
 
-A working Discourse deployment begins with establishing an initial set of configurations to match your use case and needs.
+A working Discourse deployment begins with establishing an initial set of
+configurations to match your use case and needs.
 
 * [Configure the hostname]
 * [Configure the container]
