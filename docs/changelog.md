@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-04-24
+
+- docs: Add and update landing pages for how-to and reference sections.
+
 ## 2026-01-08
 
 - Add `oauth` relation, which provides necessary config to the charm to operate OIDC for Discourse.

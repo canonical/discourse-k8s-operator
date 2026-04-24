@@ -21,7 +21,7 @@ Kubernetes offerings.
 | | |
 |--|--|
 |  [Tutorials](https://charmhub.io/discourse-k8s/docs/tutorial)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](https://charmhub.io/discourse-k8s/docs/how-to-landing-page) </br> Step-by-step guides covering key operations and common tasks | 
-| [Reference](https://charmhub.io/discourse-k8s/docs/reference-actions) </br> Technical information - specifications, APIs, architecture | [Explanation](https://charmhub.io/discourse-k8s/docs/explanation-security) </br> Concepts - discussion and clarification of key topics  |
+| [Reference](reference/index.md) </br> Technical information - specifications, APIs, architecture | [Explanation](https://charmhub.io/discourse-k8s/docs/explanation-security) </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation
 
@@ -44,7 +44,7 @@ fixes and constructive feedback.
 
 1. [Tutorial](tutorial.md)
 1. [How To](how-to)
-  1. [Overview](how-to/landing-page.md)
+  1. [Overview](how-to/index.md)
   1. [Configure the hostname](how-to/configure-hostname.md)
   1. [Configure the container](how-to/configure-container.md)
   1. [Access the Rails console](how-to/access--the-rails-console.md)
@@ -55,6 +55,7 @@ fixes and constructive feedback.
   1. [Upgrade](how-to/upgrade.md)
   1. [Contribute](how-to/contribute.md)
 1. [Reference](reference)
+  1. [Overview](reference/index.md)
   1. [Actions](reference/actions.md)
   1. [Charm architecture](reference/charm-architecture.md)
   1. [Configurations](reference/configurations.md)
