@@ -1,3 +1,5 @@
+(tutorial)=
+
 # Deploy the Discourse charm for the first time
 
 In this tutorial, we'll go through each step of the process to get a basic Discourse deployment.
@@ -7,13 +9,15 @@ In this tutorial, we'll go through each step of the process to get a basic Disco
 You will need a working station, e.g., a laptop, with AMD64 architecture. Your working station
 should have at least 4 CPU cores, 8 GB of RAM, and 50 GB of disk space.
 
-> Tip: You can use Multipass to create an isolated environment by running:
-> ```
-> multipass launch 24.04 --name charm-tutorial-vm --cpus 4 --memory 8G --disk 50G
-> ```
-> When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
-> VM IP in steps that assume you're running locally. To get the IP address of the
-> Multipass instance run ```multipass info discourse-tutorial-vm```.
+````{tip}
+You can use Multipass to create an isolated environment by running:
+```
+multipass launch 24.04 --name charm-tutorial-vm --cpus 4 --memory 8G --disk 50G
+```
+When using a Multipass VM, make sure to replace `127.0.0.1` IP addresses with the
+VM IP in steps that assume you're running locally. To get the IP address of the
+Multipass instance run `multipass info discourse-tutorial-vm`.
+````
 
 This tutorial requires the following software to be installed on your working station
 (either locally or in the Multipass VM):
@@ -58,9 +62,13 @@ juju bootstrap microk8s tutorial-controller
 5. Clean up the environment
 
 ### Shell into the Multipass VM
-> NOTE: If you're working locally, you don't need to do this step.
+
+```{note}
+If you're working locally, you don't need to do this step.
+```
 
 To be able to work inside the Multipass VM first you need to log in with the following command:
+
 ```
 multipass shell charm-tutorial-vm
 ```
@@ -77,9 +85,12 @@ juju add-model discourse-tutorial
 
 Discourse requires connections to PostgreSQL and Redis. For more information, see the [Charm Integrations](https://charmhub.io/discourse-k8s/docs/reference-integrations).
 
-> NOTE: Discourse requires PostgreSQL extensions to be available in the relation.
+```{note}
+Discourse requires PostgreSQL extensions to be available in the relation.
+```
 
 Deploy the charms:
+
 ```
 juju deploy redis-k8s --channel latest/edge
 juju deploy postgresql-k8s --channel 14/stable --trust
@@ -87,6 +98,7 @@ juju deploy discourse-k8s
 ```
 
 Enable the required PostgreSQL extensions:
+
 ```
 juju config postgresql-k8s plugin_hstore_enable=True plugin_pg_trgm_enable=True
 ```
@@ -94,12 +106,14 @@ juju config postgresql-k8s plugin_hstore_enable=True plugin_pg_trgm_enable=True
 ### Integrate with the Redis k8s charm and the PostgreSQL k8s charm
 
 Integrate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
+
 ```
 juju integrate redis-k8s discourse-k8s
 juju integrate discourse-k8s postgresql-k8s
 ```
 
 By running `juju status --relations` the current state of the deployment can be queried:
+
 ```
 Model               Controller  Cloud/Region        Version  SLA          Timestamp
 discourse-tutorial  microk8s    microk8s/localhost  3.5.4    unsupported  14:07:18+03:00
@@ -123,9 +137,11 @@ postgresql-k8s:upgrade         postgresql-k8s:upgrade         upgrade           
 redis-k8s:redis                discourse-k8s:redis            redis              regular
 redis-k8s:redis-peers          redis-k8s:redis-peers          redis-peers        peer
 ```
+
 The deployment finishes when all the charms show `Active` states.
 
 Run `kubectl get pods -n discourse-tutorial` to see the pods that are being created by the charms:
+
 ```
 NAME                             READY   STATUS    RESTARTS   AGE
 modeloperator-c584f6f9f-qf9gr    1/1     Running   0          5m30s
@@ -141,21 +157,29 @@ In order to expose the charm, the Nginx Ingress Integrator needs to be deployed 
 ```
 juju deploy nginx-ingress-integrator
 ```
+
 To check if RBAC is enabled run the following command:
+
 ```
 microk8s status | grep rbac
 ```
+
 If it is enabled, then the output should be like the following:
+
 ```
 rbac                 # (core) Role-Based Access Control for authorisation
 ```
+
 If the output is empty then RBAC is not enabled.
 
 If your cluster has RBAC enabled, you'll be prompted to run the following command:
+
 ```
 juju trust nginx-ingress-integrator --scope=cluster
 ```
+
 Then you need to integrate the charm with Nginx Ingress Integrator:
+
 ```
 juju integrate discourse-k8s nginx-ingress-integrator
 ```
@@ -163,6 +187,7 @@ juju integrate discourse-k8s nginx-ingress-integrator
 ### Validate workload is reachable
 
 To validate that you can successfully reach the deployed workload, run the following command:
+
 ```
 curl http://discourse-k8s --resolve discourse-k8s:80:127.0.0.1
 ```
@@ -170,6 +195,7 @@ curl http://discourse-k8s --resolve discourse-k8s:80:127.0.0.1
 ### Create an admin user and log in
 
 To create an admin user, use the `create-user` action:
+
 ```
 juju run discourse-k8s/0 create-user admin=true email=email@example.com
 ```
@@ -191,7 +217,9 @@ model environment that you've created using the following command:
 ```
 juju destroy-model discourse-tutorial --destroy-storage
 ```
+
 If you used Multipass, to remove the Multipass instance you created for this tutorial, use the following command.
+
 ```
 multipass delete --purge charm-tutorial-vm
 ```

@@ -1,3 +1,5 @@
+(how_to_configure_s3)=
+
 # How to configure S3
 
 An S3 bucket can be leveraged to serve the static resources packaged by Discourse, potentially improving performance. Moreover, it is required when scaling the charm to serve the uploaded files. To configure it to set the following configuration options with the appropriate values for your existing bucket `juju config [charm_name] [configuration]=[value]`:

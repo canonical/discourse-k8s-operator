@@ -1,3 +1,5 @@
+(explanation_security)=
+
 # Security
 
 This document explains the possible security risks in the Discourse charm and best practices to avoid them. It revolves around the practices from the charm side. Refer to the [official Discourse documentation](https://meta.discourse.org/c/documentation/10?tl=en) for upstream practices. 

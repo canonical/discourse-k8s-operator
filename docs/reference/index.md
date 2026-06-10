@@ -1,3 +1,11 @@
+---
+myst:
+  html_meta:
+    "description lang=en": "Technical reference documentation for the Discourse charm, including actions, configurations, and architecture."
+---
+
+(reference_index)=
+
 # Reference
 
 Technical specifications and descriptions for the Discourse charm's
@@ -41,3 +49,15 @@ the upstream Discourse project.
 [Integrations]: integrations.md
 [Plugins]: plugins.md
 [Versioning]: versioning.md
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+actions
+configurations
+plugins
+integrations
+external-access
+charm-architecture
+versioning
+```
