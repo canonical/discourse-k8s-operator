@@ -121,8 +121,8 @@ Accordingly to the [Juju SDK](https://juju.is/docs/sdk/event): "an event is a da
 
 For this charm, the following events are observed:
 
-1. [`<container name>_pebble_ready`](https://documentation.ubuntu.com/juju/3.6/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
-2. [`config_changed`](https://documentation.ubuntu.com/juju/3.6/reference/hook/#config-changed): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
+1. `<container name>_pebble_ready` ({ref}`juju:hook`): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
+2. `config_changed` ({ref}`juju:hook`): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
 3. [`add_admin_user_action`](https://charmhub.io/discourse-k8s/actions): fired when add-admin-user action is executed. Action: add an admin user with the provided email and password.
 <!-- vale Canonical.400-Enforce-inclusive-terms = NO -->
 <!-- master refers to the main database -->
@@ -137,6 +137,6 @@ The `src/charm.py` is the default entry point for a charm and has the DiscourseC
 
 CharmBase is the base class from which all Charms are formed, defined by [Ops](https://juju.is/docs/sdk/ops) (Python framework for developing charms).
 
-See more information in [Charm](https://documentation.ubuntu.com/juju/3.6/howto/manage-charms/#build-a-charm).
+See more information in {ref}`Charm <juju:manage-charms>`.
 
 The `__init__` method guarantees that the charm observes all events relevant to its operation and handles them.

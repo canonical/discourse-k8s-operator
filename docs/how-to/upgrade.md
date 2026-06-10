@@ -44,4 +44,5 @@ Given that the image is now packed and released as a charm resource, the followi
 * `image_user`
 * `image_pass`
 
+<!-- TODO: Replace with intersphinx ref - could not find target for attach-resource CLI command -->
 You can use a different image than the one deployed by default with the charm using the [attach-resource](https://documentation.ubuntu.com/juju/3.6/reference/juju-cli/list-of-juju-cli-commands/attach-resource/) Juju command.

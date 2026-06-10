@@ -6,9 +6,12 @@ myst:
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
 <!-- "Operator" is part of the name -->
+
 # Discourse Operator
+
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
-A [Juju](https://juju.is/) [charm](https://documentation.ubuntu.com/juju/3.6/reference/charm/) deploying and managing Discourse on Kubernetes.
+
+A {ref}`Juju <juju:juju>` {ref}`charm <juju:charm>` deploying and managing Discourse on Kubernetes.
 
 Discourse is an open-source software application used to create customer-friendly and community-friendly discussion platforms, 
 forums, and mailing lists. It's designed to work as a discussion platform for various topics and is widely used by numerous 
@@ -26,7 +29,7 @@ Kubernetes offerings.
 
 | | |
 |--|--|
-|  [Tutorials](tutorial)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](how-to/index) </br> Step-by-step guides covering key operations and common tasks | 
+|  {ref}`Tutorials <tutorial>`</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](how-to/index) </br> Step-by-step guides covering key operations and common tasks | 
 | [Reference](reference/index) </br> Technical information - specifications, APIs, architecture | [Explanation](explanation/index) </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation

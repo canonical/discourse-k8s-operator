@@ -5,11 +5,11 @@
 Ideally, the Discourse charm should be handled by interacting with Juju, and everything that can be done with the console should
 be doable with Juju actions. In case there is something that needs to be done with the console anyway, the console can be accessed.
 
-### Prerequisites
+## Prerequisites
 
 Have a Discourse deployment active.
 
-### Access the console
+## Access the console
 
 First of all, switch into the Juju Discourse model if necessary:
 ```

@@ -53,7 +53,7 @@ themselves with the development workflow.
 [Configure SAML]: configure-saml.md
 [Configure SMTP]: configure-smtp.md
 [Upgrade]: upgrade.md
-[Contribute]: contribute.md
+[Contribute]: contribute.rst
 
 ```{toctree}
 :hidden:

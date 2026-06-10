@@ -9,6 +9,8 @@ header:
   - '**'
   paths-ignore:
   - '.github/**'
+  - '.readthedocs.yaml'
+  - 'docs/**'
   - '**/.gitkeep'
   - '**/*.cfg'
   - '**/*.conf'

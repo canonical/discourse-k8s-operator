@@ -4,7 +4,7 @@
 
 This guide provides instructions for configuring the external hostname of the Discourse charm.
 
-### Prerequisites
+## Prerequisites
 
 Deploy and relate [nginx-ingress-integrator](https://charmhub.io/nginx-ingress-integrator) charm.
 
@@ -14,7 +14,7 @@ juju trust nginx-ingress-integrator --scope cluster # if RBAC is enabled
 juju relate discourse-k8s nginx-ingress-integrator
 ```
 
-### Configure hostname
+## Configure hostname
 
 This charm exposes the `external_hostname` configuration option to specify the external hostname of the application.
 
