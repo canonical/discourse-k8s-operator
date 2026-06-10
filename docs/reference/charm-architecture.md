@@ -23,7 +23,7 @@ And if you run `kubectl describe pod discourse-k8s-0`, all the containers will h
 
 ## Charm architecture diagram
 
-```mermaid
+```{mermaid}
 C4Component
 title Component diagram for Discourse Charm
 
@@ -43,7 +43,7 @@ Below is a diagram of a basic Discourse deployment. It consists of three charms
 deployed on a Kubernetes cloud: the Discourse charm, the Redis charm, and the
 PostgreSQL charm.
 
-```mermaid
+```{mermaid}
 C4Container
 title Container diagram for Discourse deployment
 
