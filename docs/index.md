@@ -1,3 +1,9 @@
+---
+myst:
+  html_meta:
+    "description lang=en": "Learn how to deploy, configure and operate the Discourse charm using Juju."
+---
+
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
 <!-- "Operator" is part of the name -->
 # Discourse Operator
@@ -20,12 +26,12 @@ Kubernetes offerings.
 
 | | |
 |--|--|
-|  [Tutorials](https://charmhub.io/discourse-k8s/docs/tutorial)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](https://charmhub.io/discourse-k8s/docs/how-to-landing-page) </br> Step-by-step guides covering key operations and common tasks | 
-| [Reference](reference/index.md) </br> Technical information - specifications, APIs, architecture | [Explanation](https://charmhub.io/discourse-k8s/docs/explanation-security) </br> Concepts - discussion and clarification of key topics  |
+|  [Tutorials](tutorial)</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](how-to/index) </br> Step-by-step guides covering key operations and common tasks | 
+| [Reference](reference/index) </br> Technical information - specifications, APIs, architecture | [Explanation](explanation/index) </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation
 
-Documentation is an important part of this project, and we take the same open-source approach to the documentation as the code. As such, we welcome community contributions, suggestions, and constructive feedback on our documentation. See [How to contribute](https://charmhub.io/discourse-k8s/docs/how-to-contribute) for more information.
+Documentation is an important part of this project, and we take the same open-source approach to the documentation as the code. As such, we welcome community contributions, suggestions, and constructive feedback on our documentation. See {ref}`how_to_contribute` for more information.
 
 If there's a particular area of documentation that you'd like to see that's missing, please [file a bug](https://github.com/canonical/discourse-k8s-operator/issues).
 
@@ -38,30 +44,13 @@ fixes and constructive feedback.
 - [Code of conduct](https://ubuntu.com/community/code-of-conduct)
 - [Get support](https://discourse.charmhub.io/)
 - [Join our online chat](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
-- [Contribute](https://charmhub.io/discourse-k8s/docs/how-to-contribute)
+- {ref}`Contribute <how_to_contribute>`
 
-# Contents
-
-1. [Tutorial](tutorial.md)
-1. [How To](how-to)
-  1. [Overview](how-to/index.md)
-  1. [Configure the hostname](how-to/configure-hostname.md)
-  1. [Configure the container](how-to/configure-container.md)
-  1. [Access the Rails console](how-to/access--the-rails-console.md)
-  1. [Configure S3](how-to/configure-s3.md)
-  1. [Configure SMTP](how-to/configure-smtp.md)
-  1. [Configure SAML](how-to/configure-saml.md)
-  1. [Backup and restore](how-to/backup-and-restore.md)
-  1. [Upgrade](how-to/upgrade.md)
-  1. [Contribute](how-to/contribute.md)
-1. [Reference](reference)
-  1. [Overview](reference/index.md)
-  1. [Actions](reference/actions.md)
-  1. [Charm architecture](reference/charm-architecture.md)
-  1. [Configurations](reference/configurations.md)
-  1. [Integrations](reference/integrations.md)
-  1. [Plugins](reference/plugins.md)
-  1. [External Access](reference/external-access.md)
-  1. [Versioning](reference/versioning.md)
-1. [Explanation](explanation)
-  1. [Security](explanation/security.md)
+```{toctree}
+:hidden:
+Tutorial <tutorial>
+how-to/index
+reference/index
+explanation/index
+changelog
+```

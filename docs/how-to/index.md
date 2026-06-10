@@ -1,3 +1,11 @@
+---
+myst:
+  html_meta:
+    "description lang=en": "How-to guides for operating the Discourse charm, including basic operations, upgrades, and deployments."
+---
+
+(how_to_index)=
+
 # How-to guides
 
 Manage the operational lifecycle of your Discourse deployment, from
@@ -46,3 +54,17 @@ themselves with the development workflow.
 [Configure SMTP]: configure-smtp.md
 [Upgrade]: upgrade.md
 [Contribute]: contribute.md
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+configure-hostname
+configure-container
+access--the-rails-console
+configure-s3
+configure-smtp
+configure-saml
+backup-and-restore
+upgrade
+contribute
+```

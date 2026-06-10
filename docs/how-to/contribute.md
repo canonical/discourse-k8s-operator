@@ -1,3 +1,5 @@
+(how_to_contribute)=
+
 # How to contribute
 
 Our documentation is hosted on the [Charmhub forum](https://discourse.charmhub.io/t/discourse-documentation-overview/3773) to enable easy collaboration. Please use the "Help us improve this documentation" links on each documentation page to either directly change something you see that's wrong, ask a question, or make a suggestion about a potential change in the comments section.

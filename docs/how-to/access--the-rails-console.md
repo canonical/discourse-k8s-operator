@@ -1,3 +1,5 @@
+(how_to_access_the_rails_console)=
+
 # How to access the Rails console
 
 Ideally, the Discourse charm should be handled by interacting with Juju, and everything that can be done with the console should

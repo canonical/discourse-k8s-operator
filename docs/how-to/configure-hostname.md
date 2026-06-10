@@ -1,3 +1,5 @@
+(how_to_configure_hostname)=
+
 # How to configure the hostname
 
 This guide provides instructions for configuring the external hostname of the Discourse charm.

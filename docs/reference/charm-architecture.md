@@ -1,3 +1,5 @@
+(reference_charm_architecture)=
+
 # Charm architecture
 
 At its core, [Discourse](https://www.discourse.org/) is a [Ruby on Rails](https://rubyonrails.org/) application that integrates with [PostgreSQL](https://www.postgresql.org/) and [Redis](https://redis.io/).

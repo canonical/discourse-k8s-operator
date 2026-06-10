@@ -1,3 +1,5 @@
+(reference_plugins)=
+
 # Plugins
 
 By default, the following Discourse plugins are installed with the latest version from source.
