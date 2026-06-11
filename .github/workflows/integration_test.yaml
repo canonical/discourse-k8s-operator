@@ -9,6 +9,9 @@ on:
 jobs:
   integration-tests:
     uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    permissions:
+      contents: read
+      packages: write
     secrets: inherit
     with:
       pre-run-script: s3-installation.sh
@@ -25,3 +28,5 @@ jobs:
     needs:
     - integration-tests
     uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
+    permissions:
+      contents: write

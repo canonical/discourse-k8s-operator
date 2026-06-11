@@ -12,4 +12,5 @@ jobs:
     permissions:
       actions: read
       contents: write
+      packages: write
     secrets: inherit
