@@ -12,14 +12,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    secrets:
-      CHARMHUB_TOKEN: ${{ secrets.CHARMHUB_TOKEN }}
-      DISCOURSE_API_KEY: ${{ secrets.DISCOURSE_API_KEY }}
-      DISCOURSE_API_USERNAME: ${{ secrets.DISCOURSE_API_USERNAME }}
-      JIRA_URL: ${{ secrets.JIRA_URL }}
-      REPO_ACCESS_TOKEN: ${{ secrets.REPO_ACCESS_TOKEN }}
-      TEST_SAML_EMAIL: ${{ secrets.TEST_SAML_EMAIL }}
-      TEST_SAML_PASSWORD: ${{ secrets.TEST_SAML_PASSWORD }}
+    secrets: inherit
     with:
       pre-run-script: s3-installation.sh
       trivy-image-config: "trivy.yaml"
