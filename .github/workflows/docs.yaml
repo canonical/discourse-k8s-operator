@@ -9,4 +9,6 @@ on:
 jobs:
   docs-checks:
     uses: canonical/operator-workflows/.github/workflows/docs.yaml@main
+    permissions:
+      contents: read
     secrets: inherit
