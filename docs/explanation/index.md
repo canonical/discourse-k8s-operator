@@ -8,8 +8,7 @@ myst:
 
 # Explanation
 
-Conceptual discussions and background information about how the Discourse charm
-works and the design decisions behind it.
+Conceptual discussions around security topics relevant to the Discourse charm.
 
 ```{toctree}
 :maxdepth: 1

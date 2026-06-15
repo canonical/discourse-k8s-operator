@@ -22,15 +22,15 @@ constructive environment.
 
 This charm simplifies operations of Discourse on Kubernetes, such as scaling the number of instances, integration 
 with SSO, access to S3 for redundant file storage and more. It allows for deployment on many different Kubernetes 
-platforms, from [MicroK8s](https://microk8s.io) or [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud 
+platforms, from [MicroK8s](https://canonical.com/microk8s) or [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud 
 Kubernetes offerings.
 
 ## In this documentation
 
 | | |
 |--|--|
-|  {ref}`Tutorials <tutorial>`</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  [How-to guides](how-to/index) </br> Step-by-step guides covering key operations and common tasks | 
-| [Reference](reference/index) </br> Technical information - specifications, APIs, architecture | [Explanation](explanation/index) </br> Concepts - discussion and clarification of key topics  |
+|  {ref}`Tutorials <tutorial>`</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  {ref}`How-to guides <how_to_index>` </br> Step-by-step guides covering key operations and common tasks | 
+| {ref}`Reference <reference_index>` </br> Technical information - specifications, APIs, architecture | {ref}`Explanation <explanation_index>` </br> Concepts - discussion and clarification of key topics  |
 
 ## Contributing to this documentation
 

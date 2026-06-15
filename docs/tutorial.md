@@ -83,7 +83,7 @@ juju add-model discourse-tutorial
 
 ### Deploy the charms
 
-Discourse requires connections to PostgreSQL and Redis. For more information, see the [Charm Integrations](https://charmhub.io/discourse-k8s/docs/reference-integrations).
+Discourse requires connections to PostgreSQL and Redis. For more information, see the {ref}`Charm Integrations <reference_integrations>`.
 
 ```{note}
 Discourse requires PostgreSQL extensions to be available in the relation.
@@ -114,7 +114,9 @@ juju integrate discourse-k8s postgresql-k8s
 
 By running `juju status --relations` the current state of the deployment can be queried:
 
-```
+```{terminal}
+:output-only:
+
 Model               Controller  Cloud/Region        Version  SLA          Timestamp
 discourse-tutorial  microk8s    microk8s/localhost  3.5.4    unsupported  14:07:18+03:00
 
@@ -142,7 +144,9 @@ The deployment finishes when all the charms show `Active` states.
 
 Run `kubectl get pods -n discourse-tutorial` to see the pods that are being created by the charms:
 
-```
+```{terminal}
+:output-only:
+
 NAME                             READY   STATUS    RESTARTS   AGE
 modeloperator-c584f6f9f-qf9gr    1/1     Running   0          5m30s
 redis-k8s-0                      3/3     Running   0          5m22s
@@ -166,7 +170,9 @@ microk8s status | grep rbac
 
 If it is enabled, then the output should be like the following:
 
-```
+```{terminal}
+:output-only:
+
 rbac                 # (core) Role-Based Access Control for authorisation
 ```
 
@@ -223,6 +229,7 @@ If you used Multipass, to remove the Multipass instance you created for this tut
 ```
 multipass delete --purge charm-tutorial-vm
 ```
+
 Finally, remove the `127.0.0.1 discourse-k8s` line from the `/etc/hosts` file.
 
 ## Next steps
@@ -231,11 +238,11 @@ You achieved a basic deployment of the Discourse charm. If you want to go furthe
 or learn more about the charm, check out these pages:
 
 - Perform basic operations with your deployment like
-  [configuring S3](https://charmhub.io/discourse-k8s/docs/how-to-configure-s3)
-  or [SMTP](https://charmhub.io/discourse-k8s/docs/how-to-configure-smtp).
-- Make your deployment more secure by [configuring SAML](https://charmhub.io/discourse-k8s/docs/how-to-configure-saml),
+  {ref}`configuring S3 <how_to_configure_s3>`
+  or {ref}`SMTP <how_to_configure_smtp>`.
+- Make your deployment more secure by {ref}`configuring SAML <how_to_configure_saml>`,
   and learn more about the charm's security in
-  [Security overview](https://charmhub.io/discourse-k8s/docs/explanation-security).
-- Learn more about the available [relation endpoints](https://charmhub.io/discourse-k8s/docs/reference-integrations)
+  {ref}`Security overview <explanation_security>`.
+- Learn more about the available {ref}`relation endpoints <reference_integrations>`
   for the Discourse charm.
 
