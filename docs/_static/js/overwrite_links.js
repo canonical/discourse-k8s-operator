@@ -1,5 +1,5 @@
 // Replace oldDomain with newDomain
-const oldDomain = '<<RtDURL>>';
+const oldDomain = 'canonical-discourse-k8s-charm.readthedocs-hosted.com';
 const newDomain = 'canonical.com/juju/docs/discourse-k8s-charm';
 
 function escapeRegExp(value) {
