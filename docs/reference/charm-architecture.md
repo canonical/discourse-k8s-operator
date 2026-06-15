@@ -4,7 +4,7 @@
 
 At its core, [Discourse](https://www.discourse.org/) is a [Ruby on Rails](https://rubyonrails.org/) application that integrates with [PostgreSQL](https://www.postgresql.org/) and [Redis](https://redis.io/).
 
-The charm design leverages the [sidecar](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/#example-1-sidecar-containers) pattern to allow multiple containers in each pod with [Pebble](https://juju.is/docs/sdk/pebble) running as the workload container’s entrypoint.
+The charm design leverages the [sidecar](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/#example-1-sidecar-containers) pattern to allow multiple containers in each pod with [Pebble](https://documentation.ubuntu.com/ops/latest/reference/pebble/) running as the workload container’s entrypoint.
 
 Pebble is a lightweight, API-driven process supervisor that is responsible for configuring processes to run in a container and controlling those processes throughout the workload lifecycle.
 
@@ -86,7 +86,7 @@ The workload that this container is running is defined in the [Discourse `rockcr
 
 The OCI image is built using [Rockcraft](https://canonical-rockcraft.readthedocs-hosted.com) and defined in the [`rockcraft.yaml` file](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse_rock/rockcraft.yaml) in the charm repository. It is then published to [Charmhub](https://charmhub.io/), the official repository for charms.
 
-This is done by publishing a resource to Charmhub as described in the [Juju SDK How-to guides](https://juju.is/docs/sdk/publishing).
+This is done by publishing a resource to Charmhub as described in the [Ops guide for publishing charms](https://documentation.ubuntu.com/ops/latest/howto/publish-your-charm-on-charmhub/).
 
 ## Integrations
 
@@ -96,7 +96,7 @@ This section provides information about the integrations.
 
 The Discourse charm also supports being integrated with [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/#what-is-ingress) by using [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator/).
 
-In this case, an existing Ingress controller is required. For more information, see [Adding the Ingress Relation to a Charm](https://charmhub.io/nginx-ingress-integrator/docs/add-the-nginx-route-relation).
+In this case, an existing Ingress controller is required. For more information, see [NGINX Ingress Integrator](https://charmhub.io/nginx-ingress-integrator).
 
 ### PostgreSQL
 
@@ -117,7 +117,7 @@ Prometheus is an open-source systems monitoring and alerting toolkit with a dime
 
 ## Juju events
 
-Accordingly to the [Juju SDK](https://juju.is/docs/sdk/event): "an event is a data structure that encapsulates part of the execution context of a charm".
+Accordingly to the [Ops framework event reference](https://documentation.ubuntu.com/ops/latest/reference/ops/#ops.EventBase): "an event is a data structure that encapsulates part of the execution context of a charm".
 
 For this charm, the following events are observed:
 
@@ -135,7 +135,7 @@ For this charm, the following events are observed:
 
 The `src/charm.py` is the default entry point for a charm and has the DiscourseCharm Python class which inherits from CharmBase.
 
-CharmBase is the base class from which all Charms are formed, defined by [Ops](https://juju.is/docs/sdk/ops) (Python framework for developing charms).
+CharmBase is the base class from which all Charms are formed, defined by [Ops](https://documentation.ubuntu.com/ops/latest/reference/ops/) (Python framework for developing charms).
 
 See more information in {ref}`Charm <juju:manage-charms>`.
 
