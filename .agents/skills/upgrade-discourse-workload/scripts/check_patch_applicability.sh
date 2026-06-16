@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # check_patch_applicability.sh
 #
-# Clones Discourse at a specific tag (shallow), attempts to apply each patch
-# from discourse_rock/patches/, and reports which ones need updating.
+# Clones Discourse at a specific tag (shallow) into a unique temporary
+# workspace outside the repository, attempts to apply each patch from
+# discourse_rock/patches/, and reports which ones need updating.
 #
 # Usage:
 #   bash check_patch_applicability.sh <discourse-tag> [patches-dir]
@@ -33,12 +34,14 @@ if [[ ! -d "$PATCHES_DIR" ]]; then
   exit 1
 fi
 
-TMPDIR_BASE=$(mktemp -d)
+TMP_ROOT="${TMPDIR:-/tmp}"
+TMPDIR_BASE=$(mktemp -d "${TMP_ROOT%/}/upgrade-discourse-workload.XXXXXX")
 CLONE_DIR="${TMPDIR_BASE}/discourse"
 trap 'rm -rf "$TMPDIR_BASE"' EXIT
 
 echo "=== Patch Applicability Check for Discourse ${TAG} ==="
 echo ""
+echo "Temporary workspace: ${TMPDIR_BASE}"
 echo "Cloning discourse at ${TAG} (shallow)..."
 git -c advice.detachedHead=false clone --quiet --depth 1 --branch "${TAG}" https://github.com/discourse/discourse.git "$CLONE_DIR" 2>&1 \
   || { echo "ERROR: Failed to clone discourse at tag ${TAG}" >&2; exit 1; }
@@ -114,7 +117,7 @@ fi
 echo ""
 echo "=== Next step ==="
 if [[ ${#FAIL[@]} -gt 0 ]]; then
-  echo "  ❌ Manual patch regeneration required. See references/upgrade-checklist.md §Patches."
+  echo "  ❌ Manual patch regeneration required. See references/guide-patches.md."
   exit 2
 elif [[ ${#NEED_LINE_UPDATE[@]} -gt 0 ]]; then
   echo "  ⚠️  Line-offset updates needed. Run regenerate_patch.sh for each flagged patch."

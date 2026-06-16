@@ -7,6 +7,12 @@ and how to update each one for a new Discourse version.
 fine without verifying.** Use `check_patch_applicability.sh` first; only clone
 Discourse manually for patches that fail.
 
+**Clone workspace rule:** clone Discourse only into a unique temporary
+directory outside this repository, preferably via `mktemp -d` under `$TMPDIR`
+or `/tmp`. Never clone into `discourse_rock/`, the repo root, or a shared
+directory reused by multiple sub-agents. Clean up the temp workspace once the
+patch task is finished.
+
 | # | Patch | Target file | Typically needs update? |
 |---|---|---|---|
 | 1 | `db_migrations.patch` | `db/post_migrate/<TIMESTAMP>_<name>.rb` | Almost always (minor/major bumps) |
@@ -224,19 +230,25 @@ If `regenerate_patch.sh` is unavailable or you need full control:
 
 1. Clone discourse at the new tag:
    ```bash
+   WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/upgrade-discourse-workload.XXXXXX")"
    git -c advice.detachedHead=false clone --depth 1 --branch <NEW_TAG> \
-     https://github.com/discourse/discourse.git /tmp/discourse-new
-   cd /tmp/discourse-new
+     https://github.com/discourse/discourse.git "$WORKDIR/discourse"
+   cd "$WORKDIR/discourse"
    ```
 
 2. Edit the target file to apply the desired change.
 
 3. Generate the patch:
    ```bash
-   git diff > /tmp/<patch-name>.patch
+   git diff > "$WORKDIR/<patch-name>.patch"
    ```
 
 4. Review, then copy to `discourse_rock/patches/<patch-name>.patch`.
+
+5. Clean up when done:
+   ```bash
+   rm -rf "$WORKDIR"
+   ```
 
 Or use the interactive helper:
 ```bash

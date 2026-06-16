@@ -131,16 +131,22 @@ Do not assume any patch is fine without checking. All four must be confirmed.
 bash <skill-dir>/scripts/check_patch_applicability.sh <NEW_TAG>
 ```
 
-This clones Discourse at `<NEW_TAG>` and applies all four patches in sequence,
-reporting ✅/❌ per patch. No rock build is needed at this stage.
+This clones Discourse at `<NEW_TAG>` into a **unique temporary workspace**
+outside the repository (via `mktemp -d` under `$TMPDIR` or `/tmp`) and applies
+all four patches in sequence, reporting ✅/❌ per patch. Never clone into
+`discourse_rock/`, the repo root, or any shared working directory. No rock
+build is needed at this stage.
 
 **Step 2 — Fix any failing patches.**
 
 For each ❌ patch, delegate the regeneration work to a sub-agent with this
 context: the patch name, `NEW_TAG`, `OLD_TAG`, the current patch content from
 `discourse_rock/patches/`, and the relevant section of `references/guide-patches.md`.
-The sub-agent should clone Discourse at `NEW_TAG`, apply the change, produce
-the new patch diff, and return it. Apply the returned diff to the patch file.
+The sub-agent should create its **own** unique temporary workspace outside the
+repo, clone Discourse at `NEW_TAG`, apply the change, produce the new patch
+diff, return it, and clean up that temp workspace before finishing. Do not let
+multiple sub-agents share a clone directory. Apply the returned diff to the
+patch file.
 
 **Step 3 — Re-run the applicability check** to confirm all four patches now ✅.
 

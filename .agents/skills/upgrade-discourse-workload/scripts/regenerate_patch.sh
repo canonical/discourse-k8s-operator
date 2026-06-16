@@ -2,8 +2,9 @@
 # regenerate_patch.sh
 #
 # Helps regenerate a specific patch file for a new Discourse version.
-# Clones discourse at the target tag, applies all patches except the one
-# being regenerated, then guides the user through creating the new patch.
+# Clones discourse at the target tag into a unique temporary workspace outside
+# the repository, applies all patches except the one being regenerated, then
+# guides the user through creating the new patch.
 #
 # Usage:
 #   bash regenerate_patch.sh <discourse-tag> <patch-name>
@@ -43,11 +44,15 @@ if [[ ! -f "$PATCH_FILE" ]]; then
   exit 1
 fi
 
-TMPDIR_BASE=$(mktemp -d)
+TMP_ROOT="${TMPDIR:-/tmp}"
+TMPDIR_BASE=$(mktemp -d "${TMP_ROOT%/}/upgrade-discourse-workload.XXXXXX")
 CLONE_DIR="${TMPDIR_BASE}/discourse"
+PATCH_OUTPUT="${TMPDIR_BASE}/${PATCH_NAME}_new.patch"
 trap 'rm -rf "$TMPDIR_BASE"' EXIT
 
 echo "=== Patch Regeneration: ${PATCH_NAME}.patch for Discourse ${TAG} ==="
+echo ""
+echo "Temporary workspace: ${TMPDIR_BASE}"
 echo ""
 
 echo "--- Current patch content ---"
@@ -104,7 +109,7 @@ else
   echo "=== Manual regeneration steps ==="
   echo ""
   echo "1. The clone is at: ${CLONE_DIR}"
-  echo "   (Note: it will be deleted when this script exits)"
+  echo "   (This is a unique temp workspace outside the repo; it will be deleted when this script exits)"
   echo ""
   echo "2. Open the target file(s) and apply the same change manually:"
   for FILE in $TARGET_FILES; do
@@ -112,9 +117,9 @@ else
   done
   echo ""
   echo "3. After editing, run in ${CLONE_DIR}:"
-  echo "   git diff > /tmp/${PATCH_NAME}_new.patch"
+  echo "   git diff > '${PATCH_OUTPUT}'"
   echo ""
-  echo "4. Review /tmp/${PATCH_NAME}_new.patch and copy to ${PATCHES_DIR}/${PATCH_NAME}.patch"
+  echo "4. Review ${PATCH_OUTPUT} and copy to ${PATCHES_DIR}/${PATCH_NAME}.patch"
   echo ""
   echo "=== What the patch does (from the diff) ==="
   grep "^+" "$OLDPWD/$PATCH_FILE" | grep -v "^+++" | head -20 | sed 's/^+/  + /'
