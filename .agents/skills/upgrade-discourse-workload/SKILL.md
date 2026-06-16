@@ -84,57 +84,83 @@ Commit nothing yet — run all checks first.
 
 ## §2 — Runtime requirements
 
-Run:
-```bash
-bash <skill-dir>/scripts/check_discourse_requirements.sh <NEW_TAG>
-```
+Delegate to a sub-agent with this context: `NEW_TAG`, the current
+`discourse_rock/rockcraft.yaml` content, and `references/guide-core-versions.md`.
 
-Update `rockcraft.yaml` if the script reports mismatches for `NODE_VERSION`,
-`RUBY_VERSION`, `PNPM_VERSION`, or the bundler version in the `setup` part.
+The sub-agent should:
+1. Run `bash <skill-dir>/scripts/check_discourse_requirements.sh <NEW_TAG>`
+2. Compare the output against the current values in `rockcraft.yaml`
+3. Return the exact field-value pairs that need updating (e.g. `PNPM_VERSION: 10.28.0`)
 
-Load `references/guide-core-versions.md` for details on where each version is
-declared in the Discourse repo and the exact fields to change in `rockcraft.yaml`.
+The main agent applies those changes to `rockcraft.yaml`.
 
 ---
 
 ## §3 — Plugin commits
 
-Run:
-```bash
-bash <skill-dir>/scripts/check_plugin_commits.sh <NEW_TAG>
-```
+Delegate to a sub-agent with this context: `NEW_TAG`, the current
+`discourse_rock/rockcraft.yaml` content, and `references/guide-plugins.md`.
 
-For each plugin flagged with 🔄, update `source-commit` in `rockcraft.yaml`.
-Plugins with ⚠️ FALLBACK have no `.discourse-compatibility` file — verify
-compatibility manually before accepting the HEAD commit.
+The sub-agent should:
+1. Run `bash <skill-dir>/scripts/check_plugin_commits.sh <NEW_TAG>`
+2. For each plugin flagged with 🔄, record the resolved commit
+3. For each plugin flagged with ⚠️ FALLBACK (no `.discourse-compatibility` file),
+   verify the returned HEAD commit is safe to use and note the manual check
+4. Return the complete map of plugin name → new `source-commit` value
 
-Load `references/guide-plugins.md` for the `.discourse-compatibility` resolution
-algorithm, the full plugin inventory, and instructions on handling plugin
-additions or removals.
+The main agent applies those changes to `rockcraft.yaml` and records any
+FALLBACK plugins that need a manual compatibility note in the PR description.
 
 ---
 
 ## §4 — Patches
 
-Run:
+There are **exactly four patches** that must all be verified and updated as needed:
+
+| # | Patch file | Target file |
+|---|---|---|
+| 1 | `db_migrations.patch` | `db/post_migrate/<TIMESTAMP>_<name>.rb` |
+| 2 | `lp1903695.patch` | `lib/middleware/anonymous_cache.rb` |
+| 3 | `discourse-charm.patch` | `lib/tasks/discourse-charm.rake` |
+| 4 | `sigterm.patch` | `config/unicorn.conf.rb` |
+
+Do not assume any patch is fine without checking. All four must be confirmed.
+
+**Step 1 — Run the applicability check against a shallow clone of Discourse:**
 ```bash
 bash <skill-dir>/scripts/check_patch_applicability.sh <NEW_TAG>
 ```
 
-For patches that ❌ fail, load `references/guide-patches.md` to understand what
-the patch does and how to regenerate it. Use the interactive helper:
-```bash
-bash <skill-dir>/scripts/regenerate_patch.sh <NEW_TAG> <patch-name>
-```
+This clones Discourse at `<NEW_TAG>` and applies all four patches in sequence,
+reporting ✅/❌ per patch. No rock build is needed at this stage.
 
-> **After updating any patch**, check whether that patch's target file is listed
-> in the `prime` list under `apply-patches` in `rockcraft.yaml` and update the
-> filename if it changed. This is mandatory — an outdated `prime` entry causes
-> the rock to bundle the wrong file.
+**Step 2 — Fix any failing patches.**
+
+For each ❌ patch, delegate the regeneration work to a sub-agent with this
+context: the patch name, `NEW_TAG`, `OLD_TAG`, the current patch content from
+`discourse_rock/patches/`, and the relevant section of `references/guide-patches.md`.
+The sub-agent should clone Discourse at `NEW_TAG`, apply the change, produce
+the new patch diff, and return it. Apply the returned diff to the patch file.
+
+**Step 3 — Re-run the applicability check** to confirm all four patches now ✅.
+
+**Step 4 — Update the `prime` list.**  
+After any patch change, verify the patch's target file is listed under
+`apply-patches > prime` in `rockcraft.yaml` and update the filename if it
+changed. An outdated entry causes the rock to bundle the wrong file.
+
+Do not proceed to §5 until `check_patch_applicability.sh` reports ✅ for all
+four patches.
 
 ---
 
 ## §5 — Build and validate
+
+Only start this section once `check_patch_applicability.sh` confirms all four
+patches apply cleanly (§4 Step 3). The rock build is slow (20–40 min) and noisy
+— do not use it as the primary way to validate patches.
+
+Delegate the full build and test sequence to a sub-agent:
 
 ```bash
 # Build the rock (20-40 min)
@@ -152,9 +178,10 @@ tox -e unit
 make integration
 ```
 
-If the rock build fails, inspect the error and cross-reference with §2 (versions)
-or §4 (patches). A failed `bin/bundle install` usually means a Ruby or bundler
-version mismatch.
+The sub-agent should report only failures back. If the rock build fails:
+- `bin/bundle install` error → Ruby or bundler version mismatch (revisit §2)
+- patch-related error → patch applied cleanly in isolation but conflicts with
+  another; revisit §4 and check patch ordering in `rockcraft.yaml`
 
 ---
 
@@ -163,9 +190,19 @@ version mismatch.
 If the migration test fails with a "git_version does not match" assertion,
 the testing database needs regenerating from the version being migrated FROM.
 
-Load `references/guide-db-migration.md` for the regeneration procedure, the
-assertion to update in `test_db_migration.py`, and when to update `.trivyignore`
-after a trivy scan failure.
+Delegate to a sub-agent with this context: `OLD_TAG`, the current
+`testing_database/creating-the-testing-database.md`, `references/guide-db-migration.md`,
+and the current `tests/integration/test_db_migration.py`.
+
+The sub-agent should:
+1. Follow the procedure in `testing_database/creating-the-testing-database.md`
+   to regenerate `testing_database/testing_database.sql` from `OLD_TAG`
+2. Extract the `git_version` hash from the new dump
+3. Return the updated `testing_database.sql` and the exact assertion line
+   to update in `test_db_migration.py`
+
+The main agent applies those changes and checks whether `.trivyignore` needs
+updating (see `references/guide-db-migration.md` Part 2).
 
 ---
 

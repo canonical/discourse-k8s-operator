@@ -3,6 +3,17 @@
 Detailed background on each patch applied to the Discourse source in the rock,
 and how to update each one for a new Discourse version.
 
+**All four patches must be checked on every upgrade — do not assume any one is
+fine without verifying.** Use `check_patch_applicability.sh` first; only clone
+Discourse manually for patches that fail.
+
+| # | Patch | Target file | Typically needs update? |
+|---|---|---|---|
+| 1 | `db_migrations.patch` | `db/post_migrate/<TIMESTAMP>_<name>.rb` | Almost always (minor/major bumps) |
+| 2 | `lp1903695.patch` | `lib/middleware/anonymous_cache.rb` | Only if context lines shifted |
+| 3 | `discourse-charm.patch` | `lib/tasks/discourse-charm.rake` | Rarely |
+| 4 | `sigterm.patch` | `config/unicorn.conf.rb` | Only if index hash changed |
+
 ---
 
 ## Overview
