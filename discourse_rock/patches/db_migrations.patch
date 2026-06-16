@@ -1,16 +1,11 @@
-diff --git a/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb b/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb
-index a0e6237aa0..ce6b728163 100644
---- a/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb
-+++ b/db/post_migrate/20250227142351_migrate_sidekiq_jobs.rb
-@@ -3,6 +3,11 @@
- # TODO: Remove this after the Discourse 3.5 release
- class MigrateSidekiqJobs < ActiveRecord::Migration[7.2]
-   def up
+--- a/db/post_migrate/20260108044513_drop_imap_sync_logs.rb
++++ b/db/post_migrate/20260108044513_drop_imap_sync_logs.rb
+@@ -3,3 +3,8 @@
+   def change
+     drop_table :imap_sync_logs, if_exists: true
 +    execute <<~SQL
 +      DROP TRIGGER IF EXISTS invites_user_id_readonly ON invites;
 +      DROP TRIGGER IF EXISTS invites_redeemed_at_readonly ON invites;
 +      DROP TRIGGER IF EXISTS user_api_keys_scopes_readonly ON user_api_keys;
 +    SQL
-     SidekiqMigration.call
    end
- 
