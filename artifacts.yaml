@@ -1,0 +1,16 @@
+version: 1
+rocks:
+- name: discourse
+  rockcraft-yaml: discourse_rock/rockcraft.yaml
+  platforms:
+  - arch: amd64
+charms:
+- name: discourse-k8s
+  charmcraft-yaml: charmcraft.yaml
+  resources:
+    discourse-image:
+      type: oci-image
+      rock: discourse
+  platforms:
+  - arch: amd64
+snaps: []

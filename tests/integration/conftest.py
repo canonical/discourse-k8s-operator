@@ -3,10 +3,8 @@
 """Discourse integration tests fixtures."""
 
 import logging
-import os
 import pathlib
 import socket
-import subprocess  # nosec B404
 from collections.abc import Generator
 from typing import Any, Dict, cast
 
@@ -33,32 +31,12 @@ JUJU_WAIT_TIMEOUT = 1200
 
 
 @pytest.fixture(scope="module")
-def charm_resources(pytestconfig: pytest.Config) -> dict[str, str]:
-    """The OCI resources for the charm, read from option or env vars."""
-    discourse_image = pytestconfig.getoption("--discourse-image")
-    if discourse_image:
-        return {
-            "discourse-image": discourse_image,
-        }
-
-    resource_name = os.environ.get("OCI_RESOURCE_NAME")
-    rock_image_uri = os.environ.get("ROCK_IMAGE")
-
-    if not resource_name or not rock_image_uri:
-        pytest.fail(
-            "Environment variables OCI_RESOURCE_NAME and/or ROCK_IMAGE are not set. "
-            "Please set '--discourse-image' or run tests via 'make integration'."
-        )
-
-    return {resource_name: rock_image_uri}
-
-
-@pytest.fixture(scope="module")
 def charm_base() -> str:
     """The base to deploy the charm on"""
+    import os
+
     base = os.environ.get("JUJU_DEPLOY_BASE")
     if not base:
-        # Returning the default base to stay consistent with current behavior
         return "ubuntu@22.04"
     return base
 
@@ -167,29 +145,10 @@ def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]
 
 
 @pytest.fixture(scope="session")
-def charm_file(metadata: Dict[str, Any], pytestconfig: pytest.Config):
-    """Pytest fixture that packs the charm and returns the filename, or --charm-file if set."""
-    charm_file = pytestconfig.getoption("--charm-file")
-    if charm_file:
-        yield charm_file
-        return
-
-    charm_file = os.environ.get("CHARM_FILE")
-    if charm_file:
-        yield charm_file
-        return
-
-    try:
-        subprocess.run(["charmcraft", "pack"], check=True, capture_output=True, text=True)  # nosec B603, B607
-    except subprocess.CalledProcessError as exc:
-        raise OSError(f"Error packing charm: {exc}; Stderr:\n{exc.stderr}") from None
-
+def charm_file(charm_paths, metadata: Dict[str, Any]):
+    """Pytest fixture that returns the charm file path via opcli's charm_paths."""
     app_name = metadata["name"]
-    charm_path = pathlib.Path(__file__).parent.parent.parent
-    charms = [p.absolute() for p in charm_path.glob(f"{app_name}_*.charm")]
-    assert charms, f"{app_name} .charm file not found"
-    assert len(charms) == 1, f"{app_name} has more than one .charm file, unsure which to use"
-    yield str(charms[0])
+    return str(charm_paths[app_name].path)
 
 
 @pytest.fixture(scope="module", name="app")
@@ -199,13 +158,14 @@ def app_fixture(
     app_config: Dict[str, str],
     pytestconfig: pytest.Config,
     charm_file: str,
-    charm_resources: Dict[str, str],
+    charm_resource_images: dict[str, dict[str, str]],
     charm_base: str,
 ):  # pylint: disable=too-many-positional-arguments, too-many-arguments
     """Discourse charm used for integration testing.
     Builds the charm and deploys it and the relations it depends on.
     """
     app_name = metadata["name"]
+    charm_resources = charm_resource_images[app_name]
 
     use_existing = pytestconfig.getoption("--use-existing", default=False)
     if use_existing:
