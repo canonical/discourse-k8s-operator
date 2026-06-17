@@ -10,7 +10,12 @@ juju:
 providers:
   microk8s:
     enable: true
+    channel: 1.34-strict
     bootstrap: true
     addons:
       - hostpath-storage
       - dns
+      - ingress
+host:
+  snaps:
+    rockcraft:

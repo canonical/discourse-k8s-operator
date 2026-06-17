@@ -9,7 +9,10 @@ backends:
   integration-test:
     type: integration-test
     systems:
-    - ubuntu-24.04
+    - ubuntu-24.04:
+        cpu: 4
+        memory: 16
+        disk: 50
 environment:
   CONCIERGE: '$(HOST: echo "${CONCIERGE:-concierge.yaml}")'
   OPCLI_GIT_REF: '$(HOST: echo "${OPCLI_GIT_REF:-main}")'
@@ -25,4 +28,17 @@ integration-suites:
     backends:
     - integration-test
     auto-discover: true
-    pytest-arguments-template: '-x -v --tb=native --log-cli-level=INFO'
+    pytest-arguments-template: '-x -v --tb=native --log-cli-level=INFO --keep-models --model testing'
+    prepare: |
+      S3_ACCESS_KEY="my-lovely-key"
+      S3_SECRET_KEY="this-is-very-secret"
+      S3_BUCKET="tests"
+      sudo snap install microceph
+      sudo microceph cluster bootstrap
+      sudo microceph disk add loop,1G,3
+      sudo microceph enable rgw --port 7480 --wait
+      sudo microceph.ceph config set client rgw_dns_name s3.localhost.localstack.cloud
+      sudo snap restart microceph.rgw
+      curl --connect-timeout 2 --max-time 3 --retry 5 --retry-delay 2 --retry-connrefused -s http://127.0.0.1:7480 > /dev/null && echo "Success!" || echo "Failed after 5 attempts."
+      sudo microceph.radosgw-admin user create --uid ci-user --display-name "CI User" --access-key "${S3_ACCESS_KEY}" --secret-key "${S3_SECRET_KEY}"
+      curl -sf -X PUT "http://127.0.0.1:7480/${S3_BUCKET}" --aws-sigv4 "aws:amz:us-east-1:s3" --user "${S3_ACCESS_KEY}:${S3_SECRET_KEY}"
