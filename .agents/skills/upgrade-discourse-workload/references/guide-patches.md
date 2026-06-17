@@ -176,6 +176,16 @@ loading mechanism.
 If the rake syntax ever needs to change (e.g., Rails API update), update
 the task body in `discourse-charm.patch`.
 
+**Patch format warning:**  
+- Because this patch creates a new file, it **must** use `--- /dev/null` (not
+  `--- a/lib/tasks/discourse-charm.rake`).
+- When regenerating it, always use
+  `git add lib/tasks/discourse-charm.rake && git diff --cached` rather than
+  plain `git diff`, so Git emits the correct new-file patch format.
+- A malformed new-file patch may still pass a plain `git apply --check`, but
+  will fail during the actual rock build inside the LXC container. The
+  applicability checker now flags this as `⚠️  MALFORMED FORMAT`.
+
 ---
 
 ## 4. `sigterm.patch`

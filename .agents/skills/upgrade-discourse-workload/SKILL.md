@@ -166,6 +166,12 @@ Only start this section once `check_patch_applicability.sh` confirms all four
 patches apply cleanly (§4 Step 3). The rock build is slow (20–40 min) and noisy
 — do not use it as the primary way to validate patches.
 
+**Environment note:** Juju + MicroK8s are available in this environment.
+Use controller `concierge-microk8s` and model `testing`. Integration tests
+must be run locally here, not deferred to CI. If `uv` is missing, install it
+with `curl -LsSf https://astral.sh/uv/install.sh | sh`. If `.venv` has
+permission errors, retry commands with `UV_PROJECT_ENVIRONMENT=/tmp/discourse-venv`.
+
 Delegate the full build and test sequence to a sub-agent:
 
 ```bash
@@ -180,8 +186,9 @@ sudo rockcraft.skopeo --insecure-policy copy \
 # Run unit tests
 tox -e unit
 
-# Run integration tests
-make integration
+# Run integration tests locally (required)
+PATH="$HOME/.local/bin:$PATH" UV_PROJECT_ENVIRONMENT=/tmp/discourse-int-venv \
+  uv run --group integration pytest tests/integration/ -v --model testing
 ```
 
 The sub-agent should report only failures back. If the rock build fails:

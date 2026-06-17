@@ -56,10 +56,36 @@ git config user.name "CI"
 PASS=()
 FAIL=()
 NEED_LINE_UPDATE=()
+MALFORMED_FORMAT=()
+
+check_new_file_patch_format() {
+  local patch_file="$1"
+
+  if ! grep -Eq '^@@ -0,0 \+[0-9]+,[0-9]+ @@' "$patch_file"; then
+    return 0
+  fi
+
+  if ! grep -Eq '^diff --git a/.+ b/.+' "$patch_file"; then
+    echo "missing diff --git header"
+    return 1
+  fi
+
+  if ! grep -Fxq -- '--- /dev/null' "$patch_file"; then
+    echo "missing --- /dev/null header"
+    return 1
+  fi
+}
 
 for PATCH_FILE in "${OLDPWD}/${PATCHES_DIR}"/*.patch; do
   PATCH_NAME=$(basename "$PATCH_FILE")
   echo -n "  Applying ${PATCH_NAME} ... "
+
+  MALFORMED_REASON=""
+  if ! MALFORMED_REASON=$(check_new_file_patch_format "$PATCH_FILE"); then
+    echo "⚠️  MALFORMED FORMAT (${MALFORMED_REASON})"
+    MALFORMED_FORMAT+=("$PATCH_NAME")
+    continue
+  fi
 
   # Try applying (check-only, no actual change)
   if git apply --check "$PATCH_FILE" 2>/dev/null; then
@@ -103,6 +129,12 @@ if [[ ${#NEED_LINE_UPDATE[@]} -gt 0 ]]; then
   for p in "${NEED_LINE_UPDATE[@]}"; do echo "   - $p"; done
   echo "   → Usually line-number offsets in the patch header. Update with regenerate_patch.sh."
 fi
+if [[ ${#MALFORMED_FORMAT[@]} -gt 0 ]]; then
+  echo ""
+  echo "⚠️  Patches with malformed format (${#MALFORMED_FORMAT[@]}):"
+  for p in "${MALFORMED_FORMAT[@]}"; do echo "   - $p"; done
+  echo "   → New-file patches must include a diff --git header and --- /dev/null."
+fi
 if [[ ${#FAIL[@]} -gt 0 ]]; then
   echo ""
   echo "❌ Patches that FAIL (${#FAIL[@]}) — require manual regeneration:"
@@ -119,6 +151,9 @@ echo "=== Next step ==="
 if [[ ${#FAIL[@]} -gt 0 ]]; then
   echo "  ❌ Manual patch regeneration required. See references/guide-patches.md."
   exit 2
+elif [[ ${#MALFORMED_FORMAT[@]} -gt 0 ]]; then
+  echo "  ⚠️  Fix malformed patch headers before building the rock."
+  exit 1
 elif [[ ${#NEED_LINE_UPDATE[@]} -gt 0 ]]; then
   echo "  ⚠️  Line-offset updates needed. Run regenerate_patch.sh for each flagged patch."
   exit 1
