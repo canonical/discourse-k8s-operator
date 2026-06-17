@@ -55,7 +55,7 @@ if [[ -n "$OLD_TAG" ]]; then
   echo "--- New migrations added in ${NEW_TAG} (not in ${OLD_TAG}) ---"
   NEW_ONLY=$(comm -23 <(echo "$NEW_MIGRATIONS") <(echo "$OLD_MIGRATIONS") || true)
   if [[ -n "$NEW_ONLY" ]]; then
-    echo "$NEW_ONLY" | sed 's/^/  /'
+    while IFS= read -r line; do echo "  $line"; done <<< "$NEW_ONLY"
     FIRST_NEW=$(echo "$NEW_ONLY" | head -1)
     echo ""
     echo "  ➜ Earliest new migration: ${FIRST_NEW}"

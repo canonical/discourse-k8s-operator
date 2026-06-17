@@ -31,7 +31,7 @@ if [[ -z "$TAG" || -z "$PATCH_NAME" ]]; then
   echo "Usage: $0 <discourse-tag> <patch-name> [patches-dir]" >&2
   echo ""
   echo "Available patches (run from repo root):"
-  ls discourse_rock/patches/*.patch 2>/dev/null | xargs -I{} basename {} .patch || true
+  find discourse_rock/patches -name '*.patch' -print0 2>/dev/null | xargs -0 -I{} basename {} .patch || true
   exit 1
 fi
 
@@ -72,7 +72,7 @@ git config user.name "CI"
 TARGET_FILES=$(grep -oP "(?<=--- a/).*" "$OLDPWD/$PATCH_FILE" || grep -oP "(?<=\+\+\+ b/).*" "$OLDPWD/$PATCH_FILE" || true)
 
 echo "--- Target file(s) in patch ---"
-echo "$TARGET_FILES" | sed 's/^/  /'
+while IFS= read -r line; do echo "  $line"; done <<< "$TARGET_FILES"
 echo ""
 
 # Show current content of target files

@@ -1,0 +1,6 @@
+.venv
+discourse_rock
+tests
+*.rock
+*.charm
+.tmp

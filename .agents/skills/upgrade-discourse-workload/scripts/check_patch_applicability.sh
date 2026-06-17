@@ -18,8 +18,6 @@
 set -euo pipefail
 
 TAG="${1:-}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_DIR="$(dirname "$SCRIPT_DIR")"
 # Default: look for patches relative to cwd (expected to be repo root)
 PATCHES_DIR="${2:-discourse_rock/patches}"
 
