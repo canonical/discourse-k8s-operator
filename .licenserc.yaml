@@ -19,6 +19,7 @@ header:
   - '**/*.rule'
   - '**/*.tmpl'
   - '**/*.txt'
+  - '.charmignore'
   - '.codespellignore'
   - '.dockerignore'
   - '.flake8'
