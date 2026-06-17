@@ -15,6 +15,7 @@ providers:
     addons:
       - hostpath-storage
       - dns
+      - rbac
       - ingress
 host:
   snaps:
