@@ -54,7 +54,6 @@ git config user.name "CI"
 PASS=()
 FAIL=()
 NEED_LINE_UPDATE=()
-MALFORMED_FORMAT=()
 
 check_new_file_patch_format() {
   local patch_file="$1"
@@ -80,8 +79,8 @@ for PATCH_FILE in "${OLDPWD}/${PATCHES_DIR}"/*.patch; do
 
   MALFORMED_REASON=""
   if ! MALFORMED_REASON=$(check_new_file_patch_format "$PATCH_FILE"); then
-    echo "⚠️  MALFORMED FORMAT (${MALFORMED_REASON})"
-    MALFORMED_FORMAT+=("$PATCH_NAME")
+    echo "❌ MALFORMED NEW-FILE FORMAT (${MALFORMED_REASON}) — rock build will fail"
+    FAIL+=("$PATCH_NAME")
     continue
   fi
 
@@ -127,12 +126,6 @@ if [[ ${#NEED_LINE_UPDATE[@]} -gt 0 ]]; then
   for p in "${NEED_LINE_UPDATE[@]}"; do echo "   - $p"; done
   echo "   → Usually line-number offsets in the patch header. Update with regenerate_patch.sh."
 fi
-if [[ ${#MALFORMED_FORMAT[@]} -gt 0 ]]; then
-  echo ""
-  echo "⚠️  Patches with malformed format (${#MALFORMED_FORMAT[@]}):"
-  for p in "${MALFORMED_FORMAT[@]}"; do echo "   - $p"; done
-  echo "   → New-file patches must include a diff --git header and --- /dev/null."
-fi
 if [[ ${#FAIL[@]} -gt 0 ]]; then
   echo ""
   echo "❌ Patches that FAIL (${#FAIL[@]}) — require manual regeneration:"
@@ -142,6 +135,8 @@ if [[ ${#FAIL[@]} -gt 0 ]]; then
   echo "   1. Read the patch to understand what change it makes"
   echo "   2. Find the same lines in the new Discourse source"
   echo "   3. Run: bash scripts/regenerate_patch.sh ${TAG} <patch-name>"
+  echo "   NOTE: For discourse-charm.patch (creates a new file), regenerate with:"
+  echo "         git add <file> && git diff --cached > new.patch  (NOT git diff)"
 fi
 
 echo ""
@@ -149,9 +144,6 @@ echo "=== Next step ==="
 if [[ ${#FAIL[@]} -gt 0 ]]; then
   echo "  ❌ Manual patch regeneration required. See references/guide-patches.md."
   exit 2
-elif [[ ${#MALFORMED_FORMAT[@]} -gt 0 ]]; then
-  echo "  ⚠️  Fix malformed patch headers before building the rock."
-  exit 1
 elif [[ ${#NEED_LINE_UPDATE[@]} -gt 0 ]]; then
   echo "  ⚠️  Line-offset updates needed. Run regenerate_patch.sh for each flagged patch."
   exit 1
