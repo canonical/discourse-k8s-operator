@@ -3,8 +3,8 @@
 """Discourse integration tests fixtures."""
 
 import logging
-import pathlib
 import os
+import pathlib
 import socket
 from collections.abc import Generator
 from typing import Any, Dict, cast
