@@ -4,6 +4,7 @@
 
 import logging
 import pathlib
+import os
 import socket
 from collections.abc import Generator
 from typing import Any, Dict, cast
@@ -33,8 +34,6 @@ JUJU_WAIT_TIMEOUT = 1200
 @pytest.fixture(scope="module")
 def charm_base() -> str:
     """The base to deploy the charm on"""
-    import os
-
     base = os.environ.get("JUJU_DEPLOY_BASE")
     if not base:
         return "ubuntu@22.04"
