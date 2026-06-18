@@ -36,6 +36,7 @@ def charm_base() -> str:
     """The base to deploy the charm on"""
     base = os.environ.get("JUJU_DEPLOY_BASE")
     if not base:
+        # Returning the default base to stay consistent with current behavior
         return "ubuntu@22.04"
     return base
 
