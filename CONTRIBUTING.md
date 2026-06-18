@@ -184,3 +184,12 @@ juju model-config logging-config="<root>=INFO;unit=DEBUG"
 # Deploy the charm
 juju deploy ./discourse-k8s*.charm
 ```
+
+### Upgrading the Discourse workload version
+
+Updating the Discourse version in the rock involves several coordinated changes.
+An agent skill at `.agents/skills/upgrade-discourse-workload/` is available to
+guide and automate the process.
+
+To use it, activate the skill in your Copilot CLI session and ask:
+> "Upgrade the Discourse workload to `<NEW_TAG>`"

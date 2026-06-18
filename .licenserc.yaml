@@ -8,6 +8,7 @@ header:
   paths:
   - '**'
   paths-ignore:
+  - '.agents/**'
   - '.github/**'
   - '**/.gitkeep'
   - '**/*.cfg'
@@ -18,6 +19,7 @@ header:
   - '**/*.rule'
   - '**/*.tmpl'
   - '**/*.txt'
+  - '.charmignore'
   - '.codespellignore'
   - '.dockerignore'
   - '.flake8'
