@@ -5,7 +5,7 @@ name: discourse
 summary: Discourse rock
 description: Discourse OCI image for the Discourse charm
 base: ubuntu@22.04
-# renovate: base: ubuntu:22.04@sha256:4f838adc7181d9039ac795a7d0aba05a9bd9ecd480d294483169c5def983b64d
+# renovate: base: ubuntu:26.04@sha256:f3d28607ddd78734bb7f71f117f3c6706c666b8b76cbff7c9ff6e5718d46ff64
 run-user: _daemon_  # UID/GID 584792
 license: Apache-2.0
 version: "1.0"
@@ -52,7 +52,7 @@ parts:
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global terser
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global uglify-js
       $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global svgo
-      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global pnpm@10
+      $CRAFT_OVERLAY/usr/bin/node $CRAFT_OVERLAY/usr/bin/npm install --verbose --prefix $CRAFT_OVERLAY/usr/local/ --global pnpm@${PNPM_VERSION}
       ruby_install_uri="https://github.com/postmodern/ruby-install/releases/download/v${RUBY_INSTALL_VERSION}/ruby-install-${RUBY_INSTALL_VERSION}.tar.gz"
       curl -fLO $ruby_install_uri
       tar -xzvf ruby-install-${RUBY_INSTALL_VERSION}.tar.gz
