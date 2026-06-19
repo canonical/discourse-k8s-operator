@@ -17,6 +17,7 @@ pass_env = [
   "OCI_RESOURCE_NAME",
   "JUJU_DEPLOY_BASE",
   "TOX_CMD_PREFIX",
+  "OPCLI_ARTIFACTS_BUILD_YAML",
 ]
 runner = "uv-venv-lock-runner"
 

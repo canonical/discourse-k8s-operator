@@ -2,43 +2,9 @@ version = 1
 revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
-    "python_full_version >= '3.11'",
+    "python_full_version >= '3.12'",
+    "python_full_version == '3.11.*'",
     "python_full_version < '3.11'",
-]
-
-[[package]]
-name = "allure-pytest"
-version = "2.15.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "allure-python-commons" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/44/f7/f0941b53dcf0fcac7a16a0c4e85985dbab2d2488423c33c757aacf16fcef/allure_pytest-2.15.0.tar.gz", hash = "sha256:b8f464d3bfeb6cb5e6a77e70eacd1aa3762133677cabece57a07c9f3bcd4b1e8", size = 17682, upload-time = "2025-07-22T11:12:17.735Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/e5/0bc588f0a1605435cd8811696c17d78e82fb84cc3933d57edda10bea4b5c/allure_pytest-2.15.0-py3-none-any.whl", hash = "sha256:f33c6ad242995bd27d2b467ee685772904d6941a6a6c9877657e0b8fe97a0ede", size = 12448, upload-time = "2025-07-22T11:12:16.583Z" },
-]
-
-[[package]]
-name = "allure-pytest-collection-report"
-version = "0.1.0"
-source = { git = "https://github.com/canonical/data-platform-workflows?subdirectory=python%2Fpytest_plugins%2Fallure_pytest_collection_report&rev=v24.0.0#8ec5cc7242d90d7ae1e125755297a97402e54584" }
-dependencies = [
-    { name = "allure-pytest" },
-    { name = "pytest" },
-]
-
-[[package]]
-name = "allure-python-commons"
-version = "2.15.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "attrs" },
-    { name = "pluggy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c0/da/d44069099ddb2b2deb736ec91f7c52691cef8de68d784e013c0d6fcd6b8c/allure_python_commons-2.15.0.tar.gz", hash = "sha256:4f639c8bb4b79df0d94f1baa88782c9399be3f45fd839ae583a314a5d451b978", size = 15212, upload-time = "2025-07-22T11:12:09.226Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/d7/63e1a5fa876a8e8106ce73079fd0394ae1bf953f99ea14886c180c210ba5/allure_python_commons-2.15.0-py3-none-any.whl", hash = "sha256:84ebbbca2e4c147ed151e615f995eb2e0dd688818d06c55df9e8e3ce4de6eeeb", size = 16198, upload-time = "2025-07-22T11:12:08.034Z" },
 ]
 
 [[package]]
@@ -704,12 +670,11 @@ fmt = [
     { name = "ruff" },
 ]
 integration = [
-    { name = "allure-pytest" },
-    { name = "allure-pytest-collection-report" },
     { name = "boto3" },
     { name = "bs4" },
     { name = "debugpy" },
     { name = "jubilant" },
+    { name = "opcli", marker = "python_full_version >= '3.12'" },
     { name = "protobuf" },
     { name = "psycopg2-binary" },
     { name = "pytest" },
@@ -757,12 +722,11 @@ coverage-report = [
 ]
 fmt = [{ name = "ruff" }]
 integration = [
-    { name = "allure-pytest", specifier = ">=2.8.18" },
-    { name = "allure-pytest-collection-report", git = "https://github.com/canonical/data-platform-workflows?subdirectory=python%2Fpytest_plugins%2Fallure_pytest_collection_report&rev=v24.0.0" },
     { name = "boto3" },
     { name = "bs4" },
     { name = "debugpy" },
     { name = "jubilant", specifier = "==1.10.0" },
+    { name = "opcli", marker = "python_full_version >= '3.12'", git = "https://github.com/canonical/charm-ci.git?rev=v0.0.1-alpha.4" },
     { name = "protobuf", specifier = "==7.35.1" },
     { name = "psycopg2-binary" },
     { name = "pytest" },
@@ -938,7 +902,8 @@ name = "ipython"
 version = "9.7.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11'",
+    "python_full_version >= '3.12'",
+    "python_full_version == '3.11.*'",
 ]
 dependencies = [
     { name = "colorama", marker = "python_full_version >= '3.11' and sys_platform == 'win32'" },
@@ -1292,6 +1257,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/0b/5f/19930f824ffeb0ad4372da4812c50edbd1434f678c90c2733e1188edfc63/oauthlib-3.3.1.tar.gz", hash = "sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9", size = 185918, upload-time = "2025-06-19T22:48:08.269Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/be/9c/92789c596b8df838baa98fa71844d84283302f7604ed565dafe5a6b5041a/oauthlib-3.3.1-py3-none-any.whl", hash = "sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1", size = 160065, upload-time = "2025-06-19T22:48:06.508Z" },
+]
+
+[[package]]
+name = "opcli"
+version = "0.0.1a2"
+source = { git = "https://github.com/canonical/charm-ci.git?rev=v0.0.1-alpha.4#b4788978c987440a24360f3fb7cb879961ddb4c5" }
+dependencies = [
+    { name = "pydantic", marker = "python_full_version >= '3.12'" },
+    { name = "ruamel-yaml", marker = "python_full_version >= '3.12'" },
 ]
 
 [[package]]
@@ -2059,6 +2033,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/da/8a/22b7beea3ee0d44b1916c0c1cb0ee3af23b700b6da9f04991899d0c555d4/rsa-4.9.1.tar.gz", hash = "sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75", size = 29034, upload-time = "2025-04-16T09:51:18.218Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/64/8d/0133e4eb4beed9e425d9a98ed6e081a55d195481b7632472be1af08d2f6b/rsa-4.9.1-py3-none-any.whl", hash = "sha256:68635866661c6836b8d39430f97a996acbd61bfa49406748ea243539fe239762", size = 34696, upload-time = "2025-04-16T09:51:17.142Z" },
+]
+
+[[package]]
+name = "ruamel-yaml"
+version = "0.19.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/3b/ebda527b56beb90cb7652cb1c7e4f91f48649fbcd8d2eb2fb6e77cd3329b/ruamel_yaml-0.19.1.tar.gz", hash = "sha256:53eb66cd27849eff968ebf8f0bf61f46cdac2da1d1f3576dd4ccee9b25c31993", size = 142709, upload-time = "2026-01-02T16:50:31.84Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl", hash = "sha256:27592957fedf6e0b62f281e96effd28043345e0e66001f97683aa9a40c667c93", size = 118102, upload-time = "2026-01-02T16:50:29.201Z" },
 ]
 
 [[package]]

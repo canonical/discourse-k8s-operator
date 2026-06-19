@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def test_db_migration(
     juju: jubilant.Juju,
     charm_file: str,
-    charm_resources: dict[str, str],
+    charm_resource_images: dict[str, dict[str, str]],
     charm_base: str,
 ):
     """
@@ -111,7 +111,7 @@ def test_db_migration(
     juju.deploy(
         charm=charm_file,
         app=discourse_app_name,
-        resources=charm_resources,
+        resources=charm_resource_images[discourse_app_name],
         base=charm_base,
     )
     juju.wait(
