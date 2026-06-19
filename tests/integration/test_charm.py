@@ -299,7 +299,7 @@ def test_upgrade(
     juju.add_unit(app.name, num_units=2)
     juju.wait(jubilant.all_active)
 
-    resources = charm_resource_images["discourse"]
+    resources = charm_resource_images["discourse-k8s"]
 
     host = app.name
 
