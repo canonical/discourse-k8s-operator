@@ -1,8 +1,11 @@
+(reference_integrations)=
+
 # Integrations
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
 <!-- The headings are relation endpoints, makes sense they are lowercase as in metadata.yaml-->
-### db
+
+## db
 
 _Interface_: `pgsql`
 
@@ -12,12 +15,13 @@ _Supported charms_: [`postgresql-k8s`](https://charmhub.io/postgresql-k8s),
 Database integration is a required relation for the Discourse charm to supply
 structured data storage for Discourse.
 
-Database integrate command: 
+Database integrate command:
+
 ```
 juju integrate discourse-k8s postgresql-k8s
 ```
 
-### grafana-dashboard
+## grafana-dashboard
 
 _Interface_: `grafana-dashboard`
 
@@ -31,15 +35,18 @@ In Grafana UI, it can be found as “Discourse Operator” under the General sec
 persisted upon restart/redeployment of the charm.
 
 Grafana-Prometheus integrate command:
+
 ```
 juju integrate grafana-k8s:grafana-source prometheus-k8s:grafana-source
 ```
+
 Grafana-dashboard integrate command:
+
 ```
 juju integrate discourse-k8s grafana-dashboard`
 ```
 
-### ingress
+## ingress
 
 _Interface_: `ingress`
 
@@ -51,12 +58,14 @@ Note that the kubernetes cluster must already have an nginx ingress controller
 already deployed. Documentation to enable ingress in MicroK8s can be found in
 [Add-on: Ingress](https://microk8s.io/docs/addon-ingress).
 
-Ingress integrate command: 
+Ingress integrate command:
+
 ```
 juju integrate discourse-k8s nginx-ingress-integrator
 ```
 
-### metrics-endpoint
+## metrics-endpoint
+
 <!-- vale Canonical.000-US-spellcheck = NO -->
 <!-- prometheus_scrape is the name of the interface>
 _Interface_: [prometheus_scrape](https://charmhub.io/interfaces/prometheus_scrape)
@@ -68,12 +77,13 @@ Metrics-endpoint relation allows scraping the `/metrics` endpoint provided by Di
 The metrics are exposed in the [open metrics format](https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#data-model) and will only be scraped by Prometheus once the
 relation becomes active. For more information about the metrics exposed, refer to ["How to monitor Discourse metrics using Prometheus"](https://meta.discourse.org/t/discourse-prometheus/72666).
 
-Metrics-endpoint integrate command: 
+Metrics-endpoint integrate command:
+
 ```
 juju integrate discourse-k8s prometheus-k8s
 ```
 
-### oauth
+## oauth
 
 _Interface_: `oauth`
 
@@ -83,11 +93,13 @@ OAuth relation allows Discourse to integrate with an OAuth provider for authenti
 
 
 OAuth integrate command:
+
 ```
 juju integrate discourse-k8s hydra
 ```
 
-### redis
+## redis
+
 <!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 _Interface_: `redis`
@@ -96,7 +108,8 @@ _Supported charms_: [redis-k8s](https://charmhub.io/redis-k8s)
 
 Discourse uses Redis to run background tasks (with Sidekiq) and keep the application fast and responsive. It enables real-time updates on the pages and helps in managing data efficiently. Redis also helps Discourse in balancing loads by managing rate limits, making it a crucial part of its system.
 
-Redis integrate commands: 
+Redis integrate commands:
+
 ```
 juju integrate discourse-k8s redis-k8s
 ```

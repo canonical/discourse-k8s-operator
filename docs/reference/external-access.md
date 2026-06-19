@@ -1,3 +1,5 @@
+(reference_external_access)=
+
 # External access required by the Charm
 
 Depending on the configuration of the charm, the following external accesses are needed:
