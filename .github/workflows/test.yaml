@@ -13,3 +13,6 @@ jobs:
     secrets: inherit
     with:
       with-uv: true
+      self-hosted-runner: true
+      self-hosted-runner-label: "edge"
+
