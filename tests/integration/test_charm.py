@@ -283,12 +283,12 @@ def test_relations(
     assert srv_status().status_code == 200
 
 
-@pytest.mark.skip(reason="Frequent timeouts")
 def test_upgrade(
     app: types.App,
     juju: jubilant.Juju,
     pytestconfig: pytest.Config,
     charm_file: str,
+    charm_resource_images: dict[str, dict[str, str]],
 ):
     """
     arrange: A discourse application with three units
@@ -299,9 +299,7 @@ def test_upgrade(
     juju.add_unit(app.name, num_units=2)
     juju.wait(jubilant.all_active)
 
-    resources = {
-        "discourse-image": pytestconfig.getoption("--discourse-image"),
-    }
+    resources = charm_resource_images['discourse']
 
     host = app.name
 

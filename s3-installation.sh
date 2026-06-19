@@ -16,7 +16,7 @@ sudo microceph.ceph config set client rgw_dns_name s3.localhost.localstack.cloud
 
 sudo snap restart microceph.rgw
 
-curl --connect-timeout 2 --max-time 3 --retry 5 --retry-delay 2 --retry-connrefused -s http://127.0.0.1:7480 > /dev/null && echo "Success!" || echo "Failed after 5 attempts."
+curl --connect-timeout 2 --max-time 3 --retry 5 --retry-delay 2 --retry-connrefused -s http://127.0.0.1:7480
 
 sudo microceph.radosgw-admin user create --uid ci-user --display-name "CI User" --access-key "${S3_ACCESS_KEY}" --secret-key "${S3_SECRET_KEY}"
 
