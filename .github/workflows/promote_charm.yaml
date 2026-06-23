@@ -27,4 +27,5 @@ jobs:
       destination-channel: ${{ github.event.inputs.destination-channel }}
       base-channel: "22.04"
       doc-automation-disabled: false
+      tag-prefix: discourse-k8s
     secrets: inherit
