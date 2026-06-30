@@ -1,3 +1,5 @@
+(how_to_backup_and_restore)=
+
 # How to back up and restore Discourse
 
 This document shows how to back up and restore Discourse.

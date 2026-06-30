@@ -12,3 +12,5 @@ jobs:
     permissions:
       contents: read
     secrets: inherit
+    with:
+      vale-files: '["README.md", "CONTRIBUTING.md"]'
