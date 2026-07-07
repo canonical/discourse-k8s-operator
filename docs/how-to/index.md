@@ -58,13 +58,13 @@ themselves with the development workflow.
 ```{toctree}
 :hidden:
 :maxdepth: 1
-configure-hostname
-configure-container
-access--the-rails-console
-configure-s3
-configure-smtp
-configure-saml
-backup-and-restore
-upgrade
-contribute
+Configure hostname <configure-hostname>
+Configure container <configure-container>
+Access the Rails console <access--the-rails-console>
+Configure S3 <configure-s3>
+Configure SMTP <configure-smtp>
+Configure SAML <configure-saml>
+Back up and restore <backup-and-restore>
+Upgrade <upgrade>
+Contribute <contribute>
 ```

@@ -69,7 +69,6 @@ UpdateRelStyle(discourse_charm, redis_charm, $textColor="blue", $offsetY="-30", 
 UpdateRelStyle(discourse_charm, postgresql_charm, $textColor="blue", $offsetX="20")
 ```
 
-
 ## Containers
 
 Configuration files for the workload can be found [here](https://github.com/canonical/discourse-k8s-operator/blob/main/config.yaml).
@@ -107,12 +106,15 @@ PostgreSQL is an open-source object-relational database used by Discourse to sto
 Redis is an open-source in-memory data structure store used as a cache backend. Copies of frequently accessed data are stored and used if satisfy the request. Otherwise, the application will handle it. This configuration helps to reduce the number of queries and improve response latency.
 
 ### Grafana
+
 Grafana is an open-source visualization tools that allows to query, visualize, alert on, and visualize metrics from mixed data sources in configurable dashboards for observability. This charms is shipped with its own Grafana dashboard and supports integration with the [Grafana Operator](https://charmhub.io/grafana-k8s) to simplify observability.
 
 ### Loki
+
 Loki is an open-source fully-featured logging system. This charms is shipped with support for the [Loki Operator](https://charmhub.io/loki-k8s) to collect the generated logs.
 
 ### Prometheus
+
 Prometheus is an open-source systems monitoring and alerting toolkit with a dimensional data model, flexible query language, efficient time series database and modern alerting approach. This charm is shipped with a Prometheus exporter, alerts and support for integrating with the [Prometheus Operator](https://charmhub.io/prometheus-k8s) to automatically scrape the targets.
 
 ## Juju events
@@ -135,7 +137,7 @@ For this charm, the following events are observed:
 
 The `src/charm.py` is the default entry point for a charm and has the DiscourseCharm Python class which inherits from CharmBase.
 
-CharmBase is the base class from which all Charms are formed, defined by [Ops](https://documentation.ubuntu.com/ops/latest/reference/ops/) (Python framework for developing charms).
+CharmBase is the base class from which all Charms are formed, defined by [Ops](https://canonical.com/juju/docs/ops/latest/reference/ops/) (Python framework for developing charms).
 
 See more information in {ref}`Charm <juju:manage-charms>`.
 

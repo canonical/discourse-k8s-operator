@@ -27,7 +27,9 @@ juju config discourse-k8s external_hostname=<desired-hostname>
 
 The output of `juju status` should look similar to the following:
 
-```
+```{terminal}
+:output-only:
+
 Model           Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial        mk8s        microk8s/localhost  2.9.44   unsupported  18:19:34-04:00
 

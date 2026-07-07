@@ -3,6 +3,7 @@
 # External access required by the Charm
 
 Depending on the configuration of the charm, the following external accesses are needed:
+
  - Access to the PostgreSQL database (mandatory).
  - Access to the S3 server is S3 is configured in the charm.
  - Access to [GitHub](http://github.com) to download Promtail if the logging interface is used in the charm.
