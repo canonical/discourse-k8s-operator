@@ -2,43 +2,9 @@ version = 1
 revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
-    "python_full_version >= '3.11'",
+    "python_full_version >= '3.12'",
+    "python_full_version == '3.11.*'",
     "python_full_version < '3.11'",
-]
-
-[[package]]
-name = "allure-pytest"
-version = "2.15.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "allure-python-commons" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/44/f7/f0941b53dcf0fcac7a16a0c4e85985dbab2d2488423c33c757aacf16fcef/allure_pytest-2.15.0.tar.gz", hash = "sha256:b8f464d3bfeb6cb5e6a77e70eacd1aa3762133677cabece57a07c9f3bcd4b1e8", size = 17682, upload-time = "2025-07-22T11:12:17.735Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/e5/0bc588f0a1605435cd8811696c17d78e82fb84cc3933d57edda10bea4b5c/allure_pytest-2.15.0-py3-none-any.whl", hash = "sha256:f33c6ad242995bd27d2b467ee685772904d6941a6a6c9877657e0b8fe97a0ede", size = 12448, upload-time = "2025-07-22T11:12:16.583Z" },
-]
-
-[[package]]
-name = "allure-pytest-collection-report"
-version = "0.1.0"
-source = { git = "https://github.com/canonical/data-platform-workflows?subdirectory=python%2Fpytest_plugins%2Fallure_pytest_collection_report&rev=v24.0.0#8ec5cc7242d90d7ae1e125755297a97402e54584" }
-dependencies = [
-    { name = "allure-pytest" },
-    { name = "pytest" },
-]
-
-[[package]]
-name = "allure-python-commons"
-version = "2.15.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "attrs" },
-    { name = "pluggy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c0/da/d44069099ddb2b2deb736ec91f7c52691cef8de68d784e013c0d6fcd6b8c/allure_python_commons-2.15.0.tar.gz", hash = "sha256:4f639c8bb4b79df0d94f1baa88782c9399be3f45fd839ae583a314a5d451b978", size = 15212, upload-time = "2025-07-22T11:12:09.226Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/d7/63e1a5fa876a8e8106ce73079fd0394ae1bf953f99ea14886c180c210ba5/allure_python_commons-2.15.0-py3-none-any.whl", hash = "sha256:84ebbbca2e4c147ed151e615f995eb2e0dd688818d06c55df9e8e3ce4de6eeeb", size = 16198, upload-time = "2025-07-22T11:12:08.034Z" },
 ]
 
 [[package]]
@@ -463,7 +429,7 @@ wheels = [
 
 [[package]]
 name = "cosl"
-version = "1.9.1"
+version = "1.9.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ops" },
@@ -472,9 +438,9 @@ dependencies = [
     { name = "tenacity" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/f1/6bc646976c499e9bb7a048ef17b6295f23b145f11f1cee4207ce10494342/cosl-1.9.1.tar.gz", hash = "sha256:80d899b5f278bf64252eb94bfb1bbd03dade5073c2cbc0ea43e9abc68be9ee1e", size = 150395, upload-time = "2026-03-31T12:50:20.064Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/3e/2f8fe3f460b18cea99722f3cdb885d494de1cc9accef1cd18535c14de3f1/cosl-1.9.2.tar.gz", hash = "sha256:4999be5574c679f8070806f125b2c50fc4bdaa78e8f8247b17868af20e82bcfd", size = 150799, upload-time = "2026-06-16T15:00:42.378Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/1d/558af69f639d6772be034b13417a7bbeb92a56939f891493d1546e724213/cosl-1.9.1-py3-none-any.whl", hash = "sha256:201107a68f398b8a5f5e91f6dcaeb1777e7b2816a1592c8eea4a491d1750e1a6", size = 38217, upload-time = "2026-03-31T12:50:18.87Z" },
+    { url = "https://files.pythonhosted.org/packages/66/be/93e0b9eb3de24b5fd670e1de2dac2ab9bdb6e2fcd659a806830aa07bc6ca/cosl-1.9.2-py3-none-any.whl", hash = "sha256:b78248720fc250fb8f3b872c2e0eae760129d80ac76829a556ecc963fe793b81", size = 38346, upload-time = "2026-06-16T15:00:41.215Z" },
 ]
 
 [[package]]
@@ -704,12 +670,11 @@ fmt = [
     { name = "ruff" },
 ]
 integration = [
-    { name = "allure-pytest" },
-    { name = "allure-pytest-collection-report" },
     { name = "boto3" },
     { name = "bs4" },
     { name = "debugpy" },
     { name = "jubilant" },
+    { name = "opcli", marker = "python_full_version >= '3.12'" },
     { name = "protobuf" },
     { name = "psycopg2-binary" },
     { name = "pytest" },
@@ -744,9 +709,9 @@ unit = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cosl", specifier = "==1.9.1" },
+    { name = "cosl", specifier = "==1.9.2" },
     { name = "jsonschema", specifier = "==4.26.0" },
-    { name = "ops", specifier = "==2.23.2" },
+    { name = "ops", specifier = "==3.8.0" },
     { name = "pydantic", specifier = "==2.10.6" },
 ]
 
@@ -757,13 +722,12 @@ coverage-report = [
 ]
 fmt = [{ name = "ruff" }]
 integration = [
-    { name = "allure-pytest", specifier = ">=2.8.18" },
-    { name = "allure-pytest-collection-report", git = "https://github.com/canonical/data-platform-workflows?subdirectory=python%2Fpytest_plugins%2Fallure_pytest_collection_report&rev=v24.0.0" },
     { name = "boto3" },
     { name = "bs4" },
     { name = "debugpy" },
-    { name = "jubilant", specifier = "==1.10.0" },
-    { name = "protobuf", specifier = "==7.34.1" },
+    { name = "jubilant", specifier = "==1.11.0" },
+    { name = "opcli", marker = "python_full_version >= '3.12'", git = "https://github.com/canonical/charm-ci.git?rev=v0.0.1-alpha.4" },
+    { name = "protobuf", specifier = "==7.35.1" },
     { name = "psycopg2-binary" },
     { name = "pytest" },
     { name = "requests" },
@@ -773,7 +737,7 @@ lint = [
     { name = "boto3" },
     { name = "bs4" },
     { name = "codespell" },
-    { name = "jubilant", specifier = "==1.10.0" },
+    { name = "jubilant", specifier = "==1.11.0" },
     { name = "mypy" },
     { name = "pep8-naming" },
     { name = "psycopg2-binary" },
@@ -798,7 +762,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -916,17 +880,17 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "colorama", marker = "python_full_version < '3.11' and sys_platform == 'win32'" },
-    { name = "decorator", marker = "python_full_version < '3.11'" },
-    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
-    { name = "jedi", marker = "python_full_version < '3.11'" },
-    { name = "matplotlib-inline", marker = "python_full_version < '3.11'" },
-    { name = "pexpect", marker = "python_full_version < '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "prompt-toolkit", marker = "python_full_version < '3.11'" },
-    { name = "pygments", marker = "python_full_version < '3.11'" },
-    { name = "stack-data", marker = "python_full_version < '3.11'" },
-    { name = "traitlets", marker = "python_full_version < '3.11'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "decorator" },
+    { name = "exceptiongroup" },
+    { name = "jedi" },
+    { name = "matplotlib-inline" },
+    { name = "pexpect", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "prompt-toolkit" },
+    { name = "pygments" },
+    { name = "stack-data" },
+    { name = "traitlets" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/85/31/10ac88f3357fc276dc8a64e8880c82e80e7459326ae1d0a211b40abf6665/ipython-8.37.0.tar.gz", hash = "sha256:ca815841e1a41a1e6b73a0b08f3038af9b2252564d01fc405356d34033012216", size = 5606088, upload-time = "2025-05-31T16:39:09.613Z" }
 wheels = [
@@ -938,20 +902,21 @@ name = "ipython"
 version = "9.7.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11'",
+    "python_full_version >= '3.12'",
+    "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "colorama", marker = "python_full_version >= '3.11' and sys_platform == 'win32'" },
-    { name = "decorator", marker = "python_full_version >= '3.11'" },
-    { name = "ipython-pygments-lexers", marker = "python_full_version >= '3.11'" },
-    { name = "jedi", marker = "python_full_version >= '3.11'" },
-    { name = "matplotlib-inline", marker = "python_full_version >= '3.11'" },
-    { name = "pexpect", marker = "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "prompt-toolkit", marker = "python_full_version >= '3.11'" },
-    { name = "pygments", marker = "python_full_version >= '3.11'" },
-    { name = "stack-data", marker = "python_full_version >= '3.11'" },
-    { name = "traitlets", marker = "python_full_version >= '3.11'" },
-    { name = "typing-extensions", marker = "python_full_version == '3.11.*'" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "decorator" },
+    { name = "ipython-pygments-lexers" },
+    { name = "jedi" },
+    { name = "matplotlib-inline" },
+    { name = "pexpect", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "prompt-toolkit" },
+    { name = "pygments" },
+    { name = "stack-data" },
+    { name = "traitlets" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/29/e6/48c74d54039241a456add616464ea28c6ebf782e4110d419411b83dae06f/ipython-9.7.0.tar.gz", hash = "sha256:5f6de88c905a566c6a9d6c400a8fed54a638e1f7543d17aae2551133216b1e4e", size = 4422115, upload-time = "2025-11-05T12:18:54.646Z" }
 wheels = [
@@ -963,7 +928,7 @@ name = "ipython-pygments-lexers"
 version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pygments", marker = "python_full_version >= '3.11'" },
+    { name = "pygments" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/4c/5dd1d8af08107f88c7f741ead7a40854b8ac24ddf9ae850afbcf698aa552/ipython_pygments_lexers-1.1.1.tar.gz", hash = "sha256:09c0138009e56b6854f9535736f4171d855c8c08a563a0dcd8022f78355c7e81", size = 8393, upload-time = "2025-01-17T11:24:34.505Z" }
 wheels = [
@@ -1032,14 +997,14 @@ wheels = [
 
 [[package]]
 name = "jubilant"
-version = "1.10.0"
+version = "1.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0e/4b/faf53677e40ce2bf836d53d33f97b14a2a5083e25984115fa28a0dd33bb9/jubilant-1.10.0.tar.gz", hash = "sha256:c0040c5e897108ea4efb65bfd3d4bfa0ff62ef91f2a4c6ff6d6dbad8665cc992", size = 33147, upload-time = "2026-05-28T03:54:42.62Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/0a/4112c6a16440efa7047b58ea7cd3751a75ef4b73e75fa4b4b4aadf7cbf1c/jubilant-1.11.0.tar.gz", hash = "sha256:69d13d2a0c9604a146fb7172732b9344f7aa14a35cdc29a37189831a724dc80a", size = 34642, upload-time = "2026-06-29T04:23:29.965Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/af/3ee025257fc62c0285833fa8c2c099a86a65a1d9e37eb4f41e301180deac/jubilant-1.10.0-py3-none-any.whl", hash = "sha256:af437ca48eddb6b9eace888ec60a299b003eb425b20009c21c2f49c86d126741", size = 34744, upload-time = "2026-05-28T03:54:41.074Z" },
+    { url = "https://files.pythonhosted.org/packages/63/72/8ba367bc63f03b9f0a31c7975fec8e7f3c9da3516a8d1db668164fc1801b/jubilant-1.11.0-py3-none-any.whl", hash = "sha256:900427d616c75f1cfb6ee11212fefe9c7877111209630a87b2b2556a37d626e7", size = 36640, upload-time = "2026-06-29T04:23:28.667Z" },
 ]
 
 [[package]]
@@ -1295,6 +1260,15 @@ wheels = [
 ]
 
 [[package]]
+name = "opcli"
+version = "0.0.1a2"
+source = { git = "https://github.com/canonical/charm-ci.git?rev=v0.0.1-alpha.4#b4788978c987440a24360f3fb7cb879961ddb4c5" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "ruamel-yaml" },
+]
+
+[[package]]
 name = "opentelemetry-api"
 version = "1.38.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1309,17 +1283,16 @@ wheels = [
 
 [[package]]
 name = "ops"
-version = "2.23.2"
+version = "3.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "importlib-metadata" },
     { name = "opentelemetry-api" },
     { name = "pyyaml" },
     { name = "websocket-client" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/98/84789a5e15ad76e043301bbd70b4d39cffaa717ae6eecb662fd0dd0cc7af/ops-2.23.2.tar.gz", hash = "sha256:a69b0c5bc65ebd91720fc96459e81b969df851f3a6c9c855ee73de7004205987", size = 528074, upload-time = "2026-02-11T03:58:15.565Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/e4/70ed4f3dc41b2d626ef38ffc7c2418b680f0c7f0ddf0a4410572903734df/ops-3.8.0.tar.gz", hash = "sha256:bdbf4bbcd0622acade9ef0b156ddefc31be59f0ef55d563081a094cf7dd6665c", size = 606170, upload-time = "2026-06-30T03:24:48.612Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/00/65da7c96d0f9e13c4de3bdd2e3717259fe723ff4bd4e5dc714164f851032/ops-2.23.2-py3-none-any.whl", hash = "sha256:9cab0c6bc46eeff2e96777128200c3ef872b55641b12f07dc4fd6fe3103954be", size = 188415, upload-time = "2026-02-11T03:58:13.693Z" },
+    { url = "https://files.pythonhosted.org/packages/46/70/234d31bdee92d89fd7a4e0944283469a88fad5ea23e2ad449d6ce1256b53/ops-3.8.0-py3-none-any.whl", hash = "sha256:03f788091b10c5ed37a0a290e814b1a90aa0dcec6006a87875a085072df2261d", size = 215545, upload-time = "2026-06-30T03:24:43.916Z" },
 ]
 
 [package.optional-dependencies]
@@ -1329,15 +1302,16 @@ testing = [
 
 [[package]]
 name = "ops-scenario"
-version = "7.23.2"
+version = "8.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ops" },
     { name = "pyyaml" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/e7/1514b9c27b9364ec1d04791b0fb76d1a629c8cc73f90fbf6dd867457c914/ops_scenario-7.23.2.tar.gz", hash = "sha256:327dda8b3c871ccf16246ed4f8c7e093526af42093549976596cede58cbc8488", size = 70017, upload-time = "2026-02-11T03:58:16.553Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/43/0f12c71563810b5121b2f9432890c517f8f97f592cc86a1ea6c7835ef5c9/ops_scenario-8.8.0.tar.gz", hash = "sha256:3140fe256c68ac4d2d498cfe1cadb7f7e8a0a9687090bb137883ad8b7096cb96", size = 83463, upload-time = "2026-06-30T03:24:49.733Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/01/15/3b59993cad1b2838c9bb20f6f2ed5297fcf490025b1ffecc27d06be1daba/ops_scenario-7.23.2-py3-none-any.whl", hash = "sha256:024b638e0ea94e8f2e3c642d4f96031b0c7ac4f39117b97107dc9a09503651b4", size = 64328, upload-time = "2026-02-11T03:58:14.916Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/db/adf8fa05fc609d9a261c28b6b320c140eb635a95e056f5a2f9ae255c6aff/ops_scenario-8.8.0-py3-none-any.whl", hash = "sha256:088f0c5713d330b92762c4853a32a9482f4a162667d9d475edf924ce2510a3f0", size = 72696, upload-time = "2026-06-30T03:24:45.626Z" },
 ]
 
 [[package]]
@@ -1429,17 +1403,17 @@ wheels = [
 
 [[package]]
 name = "protobuf"
-version = "7.34.1"
+version = "7.35.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6b/6b/a0e95cad1ad7cc3f2c6821fcab91671bd5b78bd42afb357bb4765f29bc41/protobuf-7.34.1.tar.gz", hash = "sha256:9ce42245e704cc5027be797c1db1eb93184d44d1cdd71811fb2d9b25ad541280", size = 454708, upload-time = "2026-03-20T17:34:47.036Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/01/9ef0afd7999eb9badb3a768b4aedd78c86d4c65cfaf1958ab276199e76b4/protobuf-7.35.1.tar.gz", hash = "sha256:ce115a26fe0c39a2c29973d914d327e516a6455464489fe3cd1e51a1b354f81a", size = 458717, upload-time = "2026-06-11T21:55:40.257Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ec/11/3325d41e6ee15bf1125654301211247b042563bcc898784351252549a8ad/protobuf-7.34.1-cp310-abi3-macosx_10_9_universal2.whl", hash = "sha256:d8b2cc79c4d8f62b293ad9b11ec3aebce9af481fa73e64556969f7345ebf9fc7", size = 429247, upload-time = "2026-03-20T17:34:37.024Z" },
-    { url = "https://files.pythonhosted.org/packages/eb/9d/aa69df2724ff63efa6f72307b483ce0827f4347cc6d6df24b59e26659fef/protobuf-7.34.1-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:5185e0e948d07abe94bb76ec9b8416b604cfe5da6f871d67aad30cbf24c3110b", size = 325753, upload-time = "2026-03-20T17:34:38.751Z" },
-    { url = "https://files.pythonhosted.org/packages/92/e8/d174c91fd48e50101943f042b09af9029064810b734e4160bbe282fa1caa/protobuf-7.34.1-cp310-abi3-manylinux2014_s390x.whl", hash = "sha256:403b093a6e28a960372b44e5eb081775c9b056e816a8029c61231743d63f881a", size = 340198, upload-time = "2026-03-20T17:34:39.871Z" },
-    { url = "https://files.pythonhosted.org/packages/53/1b/3b431694a4dc6d37b9f653f0c64b0a0d9ec074ee810710c0c3da21d67ba7/protobuf-7.34.1-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:8ff40ce8cd688f7265326b38d5a1bed9bfdf5e6723d49961432f83e21d5713e4", size = 324267, upload-time = "2026-03-20T17:34:41.1Z" },
-    { url = "https://files.pythonhosted.org/packages/85/29/64de04a0ac142fb685fd09999bc3d337943fb386f3a0ec57f92fd8203f97/protobuf-7.34.1-cp310-abi3-win32.whl", hash = "sha256:34b84ce27680df7cca9f231043ada0daa55d0c44a2ddfaa58ec1d0d89d8bf60a", size = 426628, upload-time = "2026-03-20T17:34:42.536Z" },
-    { url = "https://files.pythonhosted.org/packages/4d/87/cb5e585192a22b8bd457df5a2c16a75ea0db9674c3a0a39fc9347d84e075/protobuf-7.34.1-cp310-abi3-win_amd64.whl", hash = "sha256:e97b55646e6ce5cbb0954a8c28cd39a5869b59090dfaa7df4598a7fba869468c", size = 437901, upload-time = "2026-03-20T17:34:44.112Z" },
-    { url = "https://files.pythonhosted.org/packages/88/95/608f665226bca68b736b79e457fded9a2a38c4f4379a4a7614303d9db3bc/protobuf-7.34.1-py3-none-any.whl", hash = "sha256:bb3812cd53aefea2b028ef42bd780f5b96407247f20c6ef7c679807e9d188f11", size = 170715, upload-time = "2026-03-20T17:34:45.384Z" },
+    { url = "https://files.pythonhosted.org/packages/10/03/8aeeb7458d22546bf64b5250ca1daeb5ff757d900e8e4a7476c6f0db843e/protobuf-7.35.1-cp310-abi3-macosx_10_9_universal2.whl", hash = "sha256:24f857477359a85c0c235261b8ba905fd51b2562f4a64ca1df5473f29850cbf6", size = 433226, upload-time = "2026-06-11T21:55:31.719Z" },
+    { url = "https://files.pythonhosted.org/packages/37/4b/dfb89eb0e652a1ff073c39a59fb5e3a83cfe9b57a2c83fa6d78270101767/protobuf-7.35.1-cp310-abi3-manylinux2014_aarch64.whl", hash = "sha256:11d6b0ec246892d85215b0a13ca6e0233cf5284b68f0ac02646427f4ff88a799", size = 328847, upload-time = "2026-06-11T21:55:34.035Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/58/dc12f2cd484951524af6e3382c785869b9b3fb5e52ee95ae23add53ee8f9/protobuf-7.35.1-cp310-abi3-manylinux2014_s390x.whl", hash = "sha256:b73f9489a4b8b1c9cb1f8ed951c736392592edb24b9d6819f36d2e10b171d5b4", size = 344030, upload-time = "2026-06-11T21:55:34.941Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/be/5b3cfe508bfab6761414ff944e3366eb13be4fd71efcd69450f89ba39f43/protobuf-7.35.1-cp310-abi3-manylinux2014_x86_64.whl", hash = "sha256:74758715c53d7158fb76caf4f0cfdacc5329a4b1bb994f865d6cf302d413a1c4", size = 327130, upload-time = "2026-06-11T21:55:35.921Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/bc/6d6c7ba8709c85f8f2c390b2b118d6fb08a783676a572271851bf45a7d22/protobuf-7.35.1-cp310-abi3-win32.whl", hash = "sha256:353652e4efd0bca5b5fc2656abf8307ef351f0cf938c9eba09f0e09c20a25c30", size = 428945, upload-time = "2026-06-11T21:55:37.034Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/19/8d0cb6f20a1ef7b18f1c8986ad5783f22f84cce39c6ce9a6e645ea55192e/protobuf-7.35.1-cp310-abi3-win_amd64.whl", hash = "sha256:230a75ddfc2de4806e56696ce9640c1cdfdb6543b7cfce98d42a4c0a0e7bdb87", size = 439996, upload-time = "2026-06-11T21:55:38.123Z" },
+    { url = "https://files.pythonhosted.org/packages/19/c7/5f7c636ec43e0c545e28d1f1db71990108306f7bdcb89f069ba97e428e7f/protobuf-7.35.1-py3-none-any.whl", hash = "sha256:4bc97768d8fe4ad6743c8a19403e314511ed9f6d13205b687e52421c023ac1b9", size = 171659, upload-time = "2026-06-11T21:55:39.155Z" },
 ]
 
 [[package]]
@@ -2059,6 +2033,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/da/8a/22b7beea3ee0d44b1916c0c1cb0ee3af23b700b6da9f04991899d0c555d4/rsa-4.9.1.tar.gz", hash = "sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75", size = 29034, upload-time = "2025-04-16T09:51:18.218Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/64/8d/0133e4eb4beed9e425d9a98ed6e081a55d195481b7632472be1af08d2f6b/rsa-4.9.1-py3-none-any.whl", hash = "sha256:68635866661c6836b8d39430f97a996acbd61bfa49406748ea243539fe239762", size = 34696, upload-time = "2025-04-16T09:51:17.142Z" },
+]
+
+[[package]]
+name = "ruamel-yaml"
+version = "0.19.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/3b/ebda527b56beb90cb7652cb1c7e4f91f48649fbcd8d2eb2fb6e77cd3329b/ruamel_yaml-0.19.1.tar.gz", hash = "sha256:53eb66cd27849eff968ebf8f0bf61f46cdac2da1d1f3576dd4ccee9b25c31993", size = 142709, upload-time = "2026-01-02T16:50:31.84Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b8/0c/51f6841f1d84f404f92463fc2b1ba0da357ca1e3db6b7fbda26956c3b82a/ruamel_yaml-0.19.1-py3-none-any.whl", hash = "sha256:27592957fedf6e0b62f281e96effd28043345e0e66001f97683aa9a40c667c93", size = 118102, upload-time = "2026-01-02T16:50:29.201Z" },
 ]
 
 [[package]]

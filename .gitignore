@@ -15,6 +15,7 @@ env
 version
 .tmp
 .retrospectives
+*.egg-info/
 
 # BEGIN VALE WORKFLOW IGNORE
 .vale/styles/*
@@ -27,3 +28,4 @@ version
 .vale/styles/config/vocabularies/*
 !.vale/styles/config/vocabularies/local
 # END VALE WORKFLOW IGNORE
+artifacts.build.yaml

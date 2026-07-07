@@ -8,6 +8,7 @@ header:
   paths:
   - '**'
   paths-ignore:
+  - '.agents/**'
   - '.github/**'
   - '.readthedocs.yaml'
   - 'docs/**'
@@ -20,6 +21,7 @@ header:
   - '**/*.rule'
   - '**/*.tmpl'
   - '**/*.txt'
+  - '.charmignore'
   - '.codespellignore'
   - '.dockerignore'
   - '.flake8'

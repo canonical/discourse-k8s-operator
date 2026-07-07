@@ -89,7 +89,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 8
+LIBPATCH = 9
 
 
 class LockNoRelationError(Exception):
@@ -301,6 +301,11 @@ class RollingOpsManager(Object):
             callback: a closure to run when we have a lock. (It must take a CharmBase object and
                 EventBase object as args.)
         """
+        logger.warning(
+            "The 'rollingops' v0 library is deprecated and no longer maintained. "
+            "Please migrate to the new implementation: "
+            "https://github.com/canonical/charmlibs/tree/main/rollingops"
+        )
         # "Inherit" from the charm's class. This gives us access to the framework as
         # self.framework, as well as the self.model shortcut.
         super().__init__(charm, None)

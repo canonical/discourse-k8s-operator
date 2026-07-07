@@ -36,7 +36,7 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.framework.observe(
-                    self.on["oauth"].relation_changed, self._on_relation_changed
+                    self.on["provide-oauth"].relation_changed, self._on_relation_changed
                 )
 
             def _on_relation_changed(self, event):
@@ -71,6 +71,6 @@ def test_oauth_integration(app: types.App, juju: jubilant.Juju):
 
     juju.config(app.name, {"force_https": True, "external_hostname": "test.discourse.com"})
 
-    juju.integrate(app.name, f"{any_app_name}:oauth")
+    juju.integrate(app.name, f"{any_app_name}:provide-oauth")
 
     juju.wait(jubilant.all_active)

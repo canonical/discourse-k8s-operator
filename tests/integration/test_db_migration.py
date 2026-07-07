@@ -17,18 +17,17 @@ logger = logging.getLogger(__name__)
 def test_db_migration(
     juju: jubilant.Juju,
     charm_file: str,
-    charm_resources: dict[str, str],
+    charm_resource_images: dict[str, dict[str, str]],
     charm_base: str,
 ):
     """
-    arrange: preload postgres with a testing db that is created in Discourse v3.2.0
-    act: deploy and integrate with Discourse v3.3.0 (latest)
+    arrange: preload postgres with a testing db that was created in Discourse v3.3.0
+    act: deploy and integrate with the current Discourse version (latest)
     assert: discourse is active/idle
 
-    Discourse must be active idle, it might create migration errors related to
-    not being able to delete some columns because of triggers. This is fixed
-    with a patch but this patch only works for Discourse v3.2.0 and we might
-    need to create a new patch for the new version of Discourse.
+    Discourse must be active idle; migrations can fail if triggers prevent column
+    changes. This is addressed with db_migrations.patch which must be regenerated
+    for each Discourse version upgrade.
     """
     pg_app_name = "postgresql-k8s"
     juju.deploy(
@@ -38,7 +37,10 @@ def test_db_migration(
         trust=True,
         config={"profile": "testing"},
     )
-    juju.wait(lambda status: status.apps[pg_app_name].is_active, timeout=JUJU_WAIT_TIMEOUT)
+    juju.wait(
+        lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
+        timeout=JUJU_WAIT_TIMEOUT,
+    )
     juju.config(
         pg_app_name,
         {
@@ -46,7 +48,10 @@ def test_db_migration(
             "plugin_pg_trgm_enable": True,
         },
     )
-    juju.wait(lambda status: status.apps[pg_app_name].is_active)
+    juju.wait(
+        lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
+        timeout=JUJU_WAIT_TIMEOUT,
+    )
     task = juju.run(pg_app_name + "/0", "get-password", {"username": "operator"})
     db_pass = task.results["password"]
     juju.cli(
@@ -95,7 +100,10 @@ def test_db_migration(
     )
 
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
-    juju.wait(lambda status: status.apps["redis-k8s"].is_active)
+    juju.wait(
+        lambda status: "redis-k8s" in status.apps and status.apps["redis-k8s"].is_active,
+        timeout=JUJU_WAIT_TIMEOUT,
+    )
 
     juju.deploy("nginx-ingress-integrator", base="ubuntu@22.04", trust=True)
 
@@ -103,15 +111,22 @@ def test_db_migration(
     juju.deploy(
         charm=charm_file,
         app=discourse_app_name,
-        resources=charm_resources,
+        resources=charm_resource_images[discourse_app_name],
         base=charm_base,
     )
-    juju.wait(lambda status: status.apps[discourse_app_name].is_waiting)
+    juju.wait(
+        lambda status: discourse_app_name in status.apps
+        and status.apps[discourse_app_name].is_waiting,
+        timeout=JUJU_WAIT_TIMEOUT,
+    )
 
     juju.integrate(discourse_app_name, pg_app_name + ":database")
     juju.integrate(discourse_app_name, "redis-k8s")
     juju.integrate(discourse_app_name, "nginx-ingress-integrator")
     juju.wait(
-        lambda status: status.apps[discourse_app_name].is_active,
-        error=lambda status: status.apps[discourse_app_name].is_error,
+        lambda status: discourse_app_name in status.apps
+        and status.apps[discourse_app_name].is_active,
+        error=lambda status: discourse_app_name in status.apps
+        and status.apps[discourse_app_name].is_error,
+        timeout=JUJU_WAIT_TIMEOUT,
     )

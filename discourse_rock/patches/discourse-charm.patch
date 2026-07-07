@@ -1,4 +1,7 @@
---- a/lib/tasks/discourse-charm.rake
+diff --git a/lib/tasks/discourse-charm.rake b/lib/tasks/discourse-charm.rake
+new file mode 100644
+index 00000000..d74eb919
+--- /dev/null
 +++ b/lib/tasks/discourse-charm.rake
 @@ -0,0 +1,25 @@
 +# frozen_string_literal: true
