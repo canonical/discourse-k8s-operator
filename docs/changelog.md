@@ -17,7 +17,7 @@
 
 ## 2025-12-17
 
-- Moved charm-architecture.md from Explanation to Reference category.
+- Moved "Charm architecture" document from Explanation to Reference category.
 
 ## 2025-11-19
 

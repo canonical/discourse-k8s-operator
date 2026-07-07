@@ -123,15 +123,17 @@ Accordingly to the [Ops framework event reference](https://documentation.ubuntu.
 
 For this charm, the following events are observed:
 
+<!-- vale Canonical.400-Enforce-inclusive-terms = NO -->
+<!-- master refers to the main database -->
+
 1. `<container name>_pebble_ready` ({ref}`juju:hook`): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
 2. `config_changed` ({ref}`juju:hook`): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
 3. [`add_admin_user_action`](https://charmhub.io/discourse-k8s/actions): fired when add-admin-user action is executed. Action: add an admin user with the provided email and password.
-<!-- vale Canonical.400-Enforce-inclusive-terms = NO -->
-<!-- master refers to the main database -->
 4. [`database_relation_joined`](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation joins. Action: initialize the database and enable the appropriate extensions.
 5. [`master_changed`](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation change. Action: update the database connection string configuration and emit `config_changed` event.
-<!-- vale Canonical.400-Enforce-inclusive-terms = YES -->
 6. [`redis_relation_updated`](https://github.com/canonical/redis-k8s-operator): Redis Operator custom event for when the relation details have been updated. Action: wait for the integrations and restart the containers.
+
+<!-- vale Canonical.400-Enforce-inclusive-terms = YES -->
 
 ## Charm code overview
 

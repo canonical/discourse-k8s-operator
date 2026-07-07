@@ -15,7 +15,6 @@ For this How-to, it is supposed that S3 has been configured (see [how to configu
 Running the Discourse Operator without S3 configured is not recommended as it will not work in HA mode and
 it is risky and data loss can happen if the workload container is restarted.
 
-
 ## Backup and restore using Discourse backup functionality
 
 It is recommended to configure the `s3_backup_bucket` to a bucket that will store the
@@ -31,7 +30,6 @@ for the full process.
 
 Backups can also be configured to be automatically created. See [Configure automatic backups for Discourse](https://meta.discourse.org/t/configure-automatic-backups-for-discourse/14855/1) for the full process.
 
-
 ## Backup and restore using PostgreSQL
 
 If the same S3 bucket can be used in the restored Discourse instance, then it is only necessary
@@ -43,6 +41,7 @@ or [How to create and list backups in Charmed PostgreSQL K8s](https://canonical-
 
 To restore Discourse, once it is deployed and configured as the Discourse instance to restore, it is only necessary
 to restore the database. The instructions, depending on the configuration, can be found in the next links:
+
  - Charmed PostgreSQL. Local backup: https://charmhub.io/postgresql/docs/h-restore-backup
  - Charmed PostgreSQL. Migrate a cluster: https://canonical-charmed-postgresql-k8s.readthedocs-hosted.com/14/how-to/back-up-and-restore/create-a-backup/
  - Charmed PostgreSQL K8s. Local backup: https://charmhub.io/postgresql-k8s/docs/h-restore-backup

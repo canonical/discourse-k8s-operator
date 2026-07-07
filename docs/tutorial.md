@@ -205,6 +205,7 @@ To create an admin user, use the `create-user` action:
 ```
 juju run discourse-k8s/0 create-user admin=true email=email@example.com
 ```
+
 The command will return the password of the created user. Discourse will be deployed with `discourse-k8s` as default hostname.
 
 If you are following the tutorial in your local machine, modify your `/etc/hosts` file so that it points to `127.0.0.1`:
