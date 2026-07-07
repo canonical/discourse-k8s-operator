@@ -24,7 +24,7 @@ description: |
   straightforward through Juju's clean interface. It will allow easy deployment
   into multiple environments for testing of changes, and supports scaling out for
   enterprise deployments.
-docs: https://discourse.charmhub.io/t/discourse-documentation-overview/3773
+docs: https://canonical.com/juju/docs/discourse-k8s-charm
 maintainers:
   - https://launchpad.net/~canonical-is-devops
 issues: https://github.com/canonical/discourse-k8s-operator/issues
