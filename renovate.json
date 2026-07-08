@@ -86,6 +86,17 @@
       ]
     },
     {
+      "description": "Disable major and minor updates for Discourse workload - only patch versions allowed within the current ESR",
+      "enabled": false,
+      "matchDepNames": [
+        "discourse/discourse"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ]
+    },
+    {
       "description": "Allow only patch updates for Discourse workload",
       "enabled": true,
       "matchDepNames": [
