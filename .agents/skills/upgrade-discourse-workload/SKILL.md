@@ -40,7 +40,7 @@ Run all scripts regardless of bump size — do not pre-judge scope.
 
 ---
 
-## §1 — Update `source-tag`
+## §1 — Update `source-tag` and `renovate.json`
 
 Edit `discourse_rock/rockcraft.yaml`:
 
@@ -48,6 +48,16 @@ Edit `discourse_rock/rockcraft.yaml`:
   discourse:
     source-tag: <NEW_TAG>
 ```
+
+If the **minor version changed** (e.g. `v2026.1.x` → `v2026.2.x`), also update `renovate.json` so Renovate auto-proposes future patches within the new series:
+
+```json
+{
+  "allowedVersions": "/^v<YEAR>.<NEW_MINOR>\./"
+}
+```
+
+Find this rule by `matchDepNames: ["discourse/discourse"]` in `packageRules`.
 
 ---
 
@@ -187,6 +197,7 @@ Apply the changes and check `.trivyignore` per `references/guide-db-migration.md
 ## Completion checklist
 
 - [ ] `source-tag` updated in `rockcraft.yaml`
+- [ ] `allowedVersions` in `renovate.json` updated to match new minor series (if minor version changed)
 - [ ] `NODE_VERSION`, `RUBY_VERSION`, `PNPM_VERSION`, bundler version updated if needed
 - [ ] All plugin `source-commit` values updated
 - [ ] `db_migrations.patch` targets the correct file for the new version

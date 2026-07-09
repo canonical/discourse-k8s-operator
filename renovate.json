@@ -86,13 +86,10 @@
       ]
     },
     {
-      "description": "Allow only patch updates for Discourse workload",
-      "enabled": true,
+      "description": "Restrict Discourse to current ESR patch series only - update allowedVersions when intentionally upgrading ESR",
+      "allowedVersions": "/^v2026\\.1\\./",
       "matchDepNames": [
         "discourse/discourse"
-      ],
-      "matchUpdateTypes": [
-        "patch"
       ]
     }
   ],
