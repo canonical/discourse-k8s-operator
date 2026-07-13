@@ -56,7 +56,7 @@ For a full list of integrations, see the [Charmhub documentation](https://charmh
 ## Documentation
 
 Our documentation is stored in the `docs` directory
-and can be viewed at `https://canonical.com/juju/docs/discourse-k8s-charm/`.
+and can be viewed at https://canonical.com/juju/docs/discourse-k8s-charm/.
 It is based on the Canonical Sphinx Stack
 and hosted on [Read the Docs](https://about.readthedocs.com/). In structuring,
 the documentation employs the [Diátaxis](https://diataxis.fr/) approach.
