@@ -53,6 +53,36 @@ For a full list of integrations, see the [Charmhub documentation](https://charmh
 * [Official webpage](https://www.discourse.org/index) <!--(Optional) Link to official webpage/blog/marketing content-->
 * [Troubleshooting](https://matrix.to/#/#charmhub-charmdev:ubuntu.com) <!--(Optional) Link to a page or section about troubleshooting/FAQ-->
 
+## Documentation
+
+Our documentation is stored in the `docs` directory
+and can be viewed at https://canonical.com/juju/docs/discourse-k8s-charm/.
+It is based on the Canonical Sphinx Stack
+and hosted on [Read the Docs](https://about.readthedocs.com/). In structuring,
+the documentation employs the [Diátaxis](https://diataxis.fr/) approach.
+
+You may open a pull request with your documentation changes, or you can
+[file a bug](https://github.com/canonical/discourse-k8s-operator/issues) to provide constructive feedback or suggestions.
+
+To run the documentation locally before submitting your changes:
+
+```bash
+cd docs
+make run
+```
+
+GitHub runs automatic checks on the documentation
+to verify spelling, validate links and style guide compliance.
+
+You can (and should) run the same checks locally:
+
+```bash
+make spelling
+make linkcheck
+make vale
+make lint-md
+```
+
 ## Project and community
 * [Issues](https://github.com/canonical/discourse-k8s-operator/issues) <!--Link to GitHub issues (if applicable)-->
 * [Contributing](https://charmhub.io/discourse-k8s/docs/how-to-contribute) <!--Link to any contribution guides-->

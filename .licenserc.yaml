@@ -10,6 +10,8 @@ header:
   paths-ignore:
   - '.agents/**'
   - '.github/**'
+  - '.readthedocs.yaml'
+  - 'docs/**'
   - '**/.gitkeep'
   - '**/*.cfg'
   - '**/*.conf'

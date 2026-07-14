@@ -1,3 +1,5 @@
+(reference_versioning)=
+
 # Versioning
 
 The Discourse charm has transitioned from semantic versioning to calendar-based versioning to align with the upstream Discourse project's new versioning strategy.

@@ -1,3 +1,5 @@
+(explanation_security)=
+
 # Security
 
 This document explains the possible security risks in the Discourse charm and best practices to avoid them. It revolves around the practices from the charm side. Refer to the [official Discourse documentation](https://meta.discourse.org/c/documentation/10?tl=en) for upstream practices. 
@@ -8,10 +10,9 @@ Outdated software components, such as plugins or the upstream workload, can intr
 
 ### Best practices
 
-- Regularly [update the charm](../how-to/upgrade.md) revision to include latest charm components. Updates include the security fixes from the dependencies and the workloads as the charm dependencies are regularly updated.
+- Regularly {ref}`update the charm <how_to_upgrade>` revision to include latest charm components. Updates include the security fixes from the dependencies and the workloads as the charm dependencies are regularly updated.
 - Regularly update Juju to latest version to include security fixes.
 - Deploy observability, like the Canonical Observability Stack, to detect any unusual behaviors.
-
 
 ## Loss of data
 
@@ -19,12 +20,14 @@ The Discourse database or the media files can be lost or corrupted for various r
 
 ### Best practices
 
-- Use S3 for uploads and regular backups. See [how to configure S3 section](../how-to/configure-s3.md).
-- Use a dedicated Charmed PostgreSQL and regularly back up the database through the charm's [backup action](https://canonical-charmed-postgresql.readthedocs-hosted.com/14/how-to/back-up-and-restore/create-a-backup/).
+- Use S3 for uploads and regular backups. See {ref}`how_to_configure_s3`.
+- Use a dedicated Charmed PostgreSQL and regularly back up the database through the charm's [backup action](https://documentation.ubuntu.com/charmed-postgresql/14/how-to/back-up-and-restore/create-a-backup/).
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
 <!-- DOS is an acronym -->
+
 ## Denial-of-service (DOS) attacks
+
 <!-- vale Canonical.007-Headings-sentence-case = YES-->
 
 Malicious attackers can overwhelm the Discourse traffic with DOS attacks, making the application unresponsive to legitimate users.
@@ -50,7 +53,9 @@ If Discourse serves HTTP, the traffic between Discourse and the clients will be 
 
 <!-- vale Canonical.007-Headings-sentence-case = NO -->
 <!-- CORS is an acronym -->
+
 ## Cross-origin requests (CORS)
+
 <!-- vale Canonical.007-Headings-sentence-case = YES-->
 
 Discourse can be configured to enable or disable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS) through the [`enable_cors`](https://charmhub.io/discourse-k8s/configurations#enable_cors) configuration option. If enabled unnecessarily or [`cors_origin`](https://charmhub.io/discourse-k8s/configurations#cors_origin) is configured too broadly, a malicious attacker can interact with Discourse on behalf of legitimate users.

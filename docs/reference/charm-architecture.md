@@ -1,3 +1,5 @@
+(reference_charm_architecture)=
+
 # Charm architecture
 
 At its core, [Discourse](https://www.discourse.org/) is a [Ruby on Rails](https://rubyonrails.org/) application that integrates with [PostgreSQL](https://www.postgresql.org/) and [Redis](https://redis.io/).
@@ -23,7 +25,7 @@ And if you run `kubectl describe pod discourse-k8s-0`, all the containers will h
 
 ## Charm architecture diagram
 
-```mermaid
+```{mermaid}
 C4Component
 title Component diagram for Discourse Charm
 
@@ -43,7 +45,7 @@ Below is a diagram of a basic Discourse deployment. It consists of three charms
 deployed on a Kubernetes cloud: the Discourse charm, the Redis charm, and the
 PostgreSQL charm.
 
-```mermaid
+```{mermaid}
 C4Container
 title Container diagram for Discourse deployment
 
@@ -66,7 +68,6 @@ UpdateRelStyle(user, discourse_charm ,$textColor="blue" , $offsetY="-30", $offse
 UpdateRelStyle(discourse_charm, redis_charm, $textColor="blue", $offsetY="-30", $offsetX="-40")
 UpdateRelStyle(discourse_charm, postgresql_charm, $textColor="blue", $offsetX="20")
 ```
-
 
 ## Containers
 
@@ -105,12 +106,15 @@ PostgreSQL is an open-source object-relational database used by Discourse to sto
 Redis is an open-source in-memory data structure store used as a cache backend. Copies of frequently accessed data are stored and used if satisfy the request. Otherwise, the application will handle it. This configuration helps to reduce the number of queries and improve response latency.
 
 ### Grafana
+
 Grafana is an open-source visualization tools that allows to query, visualize, alert on, and visualize metrics from mixed data sources in configurable dashboards for observability. This charms is shipped with its own Grafana dashboard and supports integration with the [Grafana Operator](https://charmhub.io/grafana-k8s) to simplify observability.
 
 ### Loki
+
 Loki is an open-source fully-featured logging system. This charms is shipped with support for the [Loki Operator](https://charmhub.io/loki-k8s) to collect the generated logs.
 
 ### Prometheus
+
 Prometheus is an open-source systems monitoring and alerting toolkit with a dimensional data model, flexible query language, efficient time series database and modern alerting approach. This charm is shipped with a Prometheus exporter, alerts and support for integrating with the [Prometheus Operator](https://charmhub.io/prometheus-k8s) to automatically scrape the targets.
 
 ## Juju events
@@ -119,22 +123,24 @@ Accordingly to the [Ops framework event reference](https://documentation.ubuntu.
 
 For this charm, the following events are observed:
 
-1. [`<container name>_pebble_ready`](https://documentation.ubuntu.com/juju/3.6/reference/hook/#container-pebble-ready): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
-2. [`config_changed`](https://documentation.ubuntu.com/juju/3.6/reference/hook/#config-changed): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
-3. [`add_admin_user_action`](https://charmhub.io/discourse-k8s/actions): fired when add-admin-user action is executed. Action: add an admin user with the provided email and password.
 <!-- vale Canonical.400-Enforce-inclusive-terms = NO -->
 <!-- master refers to the main database -->
+
+1. `<container name>_pebble_ready` ({ref}`juju:hook`): fired on Kubernetes charms when the requested container is ready. Action: wait for the integrations, and configure the containers.
+2. `config_changed` ({ref}`juju:hook`): usually fired in response to a configuration change using the GUI or CLI. Action: wait for the integrations, validate the configuration, update Ingress, and restart the containers.
+3. [`add_admin_user_action`](https://charmhub.io/discourse-k8s/actions): fired when add-admin-user action is executed. Action: add an admin user with the provided email and password.
 4. [`database_relation_joined`](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation joins. Action: initialize the database and enable the appropriate extensions.
 5. [`master_changed`](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation change. Action: update the database connection string configuration and emit `config_changed` event.
-<!-- vale Canonical.400-Enforce-inclusive-terms = YES -->
 6. [`redis_relation_updated`](https://github.com/canonical/redis-k8s-operator): Redis Operator custom event for when the relation details have been updated. Action: wait for the integrations and restart the containers.
+
+<!-- vale Canonical.400-Enforce-inclusive-terms = YES -->
 
 ## Charm code overview
 
 The `src/charm.py` is the default entry point for a charm and has the DiscourseCharm Python class which inherits from CharmBase.
 
-CharmBase is the base class from which all Charms are formed, defined by [Ops](https://documentation.ubuntu.com/ops/latest/reference/ops/) (Python framework for developing charms).
+CharmBase is the base class from which all Charms are formed, defined by [Ops](https://canonical.com/juju/docs/ops/latest/reference/ops/) (Python framework for developing charms).
 
-See more information in [Charm](https://documentation.ubuntu.com/juju/3.6/howto/manage-charms/#build-a-charm).
+See more information in {ref}`Charm <juju:manage-charms>`.
 
 The `__init__` method guarantees that the charm observes all events relevant to its operation and handles them.
