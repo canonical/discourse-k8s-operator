@@ -30,7 +30,7 @@ sphinx-sitemap==2.9.0
 sphinx-llm==0.4.1
 
 # Mermaid diagrams
-sphinxcontrib-mermaid==2.0.3
+sphinxcontrib-mermaid==2.1.0
 
 # Vale dependencies
 rst2html==2020.7.4
