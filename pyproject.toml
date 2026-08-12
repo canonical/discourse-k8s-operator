@@ -60,7 +60,7 @@ integration = [
   "bs4",
   "debugpy",
   "jubilant==1.11.0",
-  "opcli @ git+https://github.com/canonical/charm-ci.git@v0.0.1-alpha.4 ; python_version >= '3.12'",
+  "opcli @ git+https://github.com/canonical/charm-ci.git@v0.0.1-alpha.10 ; python_version >= '3.12'",
   "protobuf==7.35.1",
   "psycopg2-binary",
   "pytest",
