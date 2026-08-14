@@ -37,15 +37,15 @@ to backup the database.
 
 This can be easily done with [Charmed PostgreSQL](https://charmhub.io/postgresql) and [Charmed PostgreSQL K8s](https://charmhub.io/postgresql-k8s).
 See [How to create and list backups in Charmed PostgreSQL](https://canonical-charmed-postgresql.readthedocs-hosted.com/14/how-to/back-up-and-restore/create-a-backup/)
-or [How to create and list backups in Charmed PostgreSQL K8s](https://canonical-charmed-postgresql-k8s.readthedocs-hosted.com/14/how-to/back-up-and-restore/create-a-backup/) for the full procedure.
+or [How to create and list backups in Charmed PostgreSQL K8s](https://canonical.com/data/postgresql/docs/14/how-to/back-up-and-restore/create-a-backup/) for the full procedure.
 
 To restore Discourse, once it is deployed and configured as the Discourse instance to restore, it is only necessary
 to restore the database. The instructions, depending on the configuration, can be found in the next links:
 
  - Charmed PostgreSQL. Local backup: https://charmhub.io/postgresql/docs/h-restore-backup
- - Charmed PostgreSQL. Migrate a cluster: https://canonical-charmed-postgresql-k8s.readthedocs-hosted.com/14/how-to/back-up-and-restore/create-a-backup/
- - Charmed PostgreSQL K8s. Local backup: https://charmhub.io/postgresql-k8s/docs/h-restore-backup
- - Charmed PostgreSQL K8s. Migrate a cluster: https://canonical-charmed-postgresql-k8s.readthedocs-hosted.com/14/how-to/back-up-and-restore/migrate-a-cluster/
+ - Charmed PostgreSQL. Migrate a cluster: https://canonical.com/data/postgresql/docs/14/how-to/back-up-and-restore/migrate-a-cluster/
+ - Charmed PostgreSQL K8s. Local backup: https://canonical.com/data/postgresql/docs/14/h-restore-backup/
+ - Charmed PostgreSQL K8s. Migrate a cluster: https://canonical.com/data/postgresql/docs/14/how-to/back-up-and-restore/migrate-a-cluster/
 
 ## S3 and the backup and restore procedure
 
