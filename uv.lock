@@ -727,7 +727,7 @@ integration = [
     { name = "bs4" },
     { name = "debugpy" },
     { name = "jubilant", specifier = "==1.11.0" },
-    { name = "opcli", marker = "python_full_version >= '3.12'", git = "https://github.com/canonical/charm-ci.git?rev=v0.0.1-alpha.4" },
+    { name = "opcli", marker = "python_full_version >= '3.12'", git = "https://github.com/canonical/charm-ci.git?rev=v0.0.1-alpha.10" },
     { name = "protobuf", specifier = "==7.35.1" },
     { name = "psycopg2-binary" },
     { name = "pytest" },
@@ -1271,8 +1271,8 @@ wheels = [
 
 [[package]]
 name = "opcli"
-version = "0.0.1a2"
-source = { git = "https://github.com/canonical/charm-ci.git?rev=v0.0.1-alpha.4#b4788978c987440a24360f3fb7cb879961ddb4c5" }
+version = "0.0.1a10"
+source = { git = "https://github.com/canonical/charm-ci.git?rev=v0.0.1-alpha.10#f0746f4dab15ea08354d38024b188b38576b944a" }
 dependencies = [
     { name = "pydantic" },
     { name = "ruamel-yaml" },
