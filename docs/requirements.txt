@@ -34,4 +34,4 @@ sphinxcontrib-mermaid==2.1.0
 
 # Vale dependencies
 rst2html==2020.7.4
-vale==3.13.0
+vale==3.17.1.0
