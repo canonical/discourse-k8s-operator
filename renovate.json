@@ -58,7 +58,7 @@
   "ignoreDeps": [
     "pydantic"
   ],
-  "ignorePaths": [],
+  "ignorePaths": ["docs/**"],
   "packageRules": [
     {
       "enabled": true,
