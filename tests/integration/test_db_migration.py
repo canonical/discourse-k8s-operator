@@ -3,7 +3,9 @@
 # See LICENSE file for licensing details.
 """Discourse integration tests."""
 
+import json
 import logging
+import time
 
 import jubilant
 import pytest
@@ -54,8 +56,26 @@ def test_db_migration(
         lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
         timeout=JUJU_WAIT_TIMEOUT,
     )
-    task = juju.run(pg_app_name + "/0", "get-password", {"username": "operator"})
-    db_pass = task.results["password"]
+    app_secret_id = None
+    for _ in range(30):
+        secrets = json.loads(juju.cli("secrets", "--format", "json"))
+        app_secret_id = next(
+            (
+                secret_id
+                for secret_id, metadata in secrets.items()
+                if metadata.get("owner") == pg_app_name
+                and metadata.get("label", "").startswith("database-peers.")
+            ),
+            None,
+        )
+        if app_secret_id:
+            break
+        time.sleep(2)
+
+    assert app_secret_id, "PostgreSQL app secret with operator password not found"
+
+    secret_data = json.loads(juju.cli("show-secret", "--reveal", "--format", "json", app_secret_id))
+    db_pass = secret_data[app_secret_id]["content"]["Data"]["operator-password"]
     juju.cli(
         "scp",
         "--container",
@@ -64,23 +84,56 @@ def test_db_migration(
         pg_app_name + "/0:.",
     )
 
-    juju.cli(
-        "ssh",
-        "--container",
-        "postgresql",
-        pg_app_name + "/0",
-        "createdb -h localhost -U operator --password discourse",
-        stdin=db_pass + "\n",
-    )
+    for _ in range(30):
+        try:
+            juju.cli(
+                "ssh",
+                "--container",
+                "postgresql",
+                pg_app_name + "/0",
+                "createdb -h localhost -U operator --password discourse",
+                stdin=db_pass + "\n",
+            )
+            break
+        except jubilant.CLIError as error:
+            if "Connection refused" not in error.stderr:
+                raise
+            time.sleep(2)
+    else:
+        raise AssertionError("PostgreSQL did not accept TCP connections before migration import")
+
+    for _ in range(5):
+        try:
+            juju.cli(
+                "ssh",
+                "--container",
+                "postgresql",
+                pg_app_name + "/0",
+                "pg_restore -h localhost -U operator \
+                      --password -d discourse \
+                      --no-comments --no-owner --no-privileges --clean --if-exists ./testing_database.sql",
+                stdin=db_pass + "\n",
+            )
+            break
+        except jubilant.CLIError as error:
+            if (
+                "terminating connection due to administrator command" not in error.stderr
+                and "no connection to the server" not in error.stderr
+            ):
+                raise
+            time.sleep(15)
+    else:
+        raise AssertionError("PostgreSQL did not stay available long enough to restore fixture database")
 
     juju.cli(
         "ssh",
         "--container",
         "postgresql",
         pg_app_name + "/0",
-        "pg_restore -h localhost -U operator \
-              --password -d discourse \
-              --no-comments --no-owner --no-privileges --clean --if-exists ./testing_database.sql",
+        "psql -h localhost -U operator --password -d discourse \
+              -c 'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO PUBLIC; \
+                  GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO PUBLIC; \
+                  GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO PUBLIC;'",
         stdin=db_pass + "\n",
     )
 
@@ -123,6 +176,65 @@ def test_db_migration(
     )
 
     juju.integrate(discourse_app_name, pg_app_name + ":database")
+
+    db_relation_user = None
+    db_relation_password = None
+    for _ in range(30):
+        show_unit = json.loads(juju.cli("show-unit", "--format", "json", discourse_app_name + "/0"))
+        relation_info = show_unit[discourse_app_name + "/0"]["relation-info"]
+        database_relation = next(
+            (relation for relation in relation_info if relation["endpoint"] == "database"),
+            None,
+        )
+        secret_uri = database_relation["application-data"].get("secret-user") if database_relation else None
+        if not secret_uri:
+            time.sleep(2)
+            continue
+        secret_id = secret_uri.rsplit("/", 1)[-1]
+        db_credentials = json.loads(juju.cli("show-secret", "--reveal", "--format", "json", secret_id))
+        db_relation_user = db_credentials[secret_id]["content"]["Data"]["username"]
+        db_relation_password = db_credentials[secret_id]["content"]["Data"]["password"]
+        if db_relation_user and db_relation_password:
+            break
+        time.sleep(2)
+    assert db_relation_user, "Discourse database relation user not found"
+    assert db_relation_password, "Discourse database relation password not found"
+
+    db_effective_user = (
+        juju.cli(
+            "ssh",
+            "--container",
+            "postgresql",
+            pg_app_name + "/0",
+            f"psql -h localhost -U {db_relation_user} --password -d discourse "
+            "-tAc 'SELECT current_user;'",
+            stdin=db_relation_password + "\n",
+        )
+        .strip()
+    )
+    assert db_effective_user, "Discourse database effective role not found"
+
+    juju.cli(
+        "ssh",
+        "--container",
+        "postgresql",
+        pg_app_name + "/0",
+        "psql -h localhost -U operator --password -d discourse -v ON_ERROR_STOP=1 "
+        f"-c \"DO \\$\\$ DECLARE r RECORD; "
+        f"owner_role TEXT := '{db_effective_user}'; "
+        f"BEGIN "
+        f"EXECUTE format('ALTER SCHEMA public OWNER TO %I', owner_role); "
+        f"FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP "
+        f"EXECUTE format('ALTER TABLE public.%I OWNER TO %I', r.tablename, owner_role); "
+        f"END LOOP; "
+        f"FOR r IN SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public' LOOP "
+        f"EXECUTE format('ALTER SEQUENCE public.%I OWNER TO %I', r.sequence_name, owner_role); "
+        f"END LOOP; "
+        f"END \\$\\$; "
+        f"ALTER DATABASE discourse OWNER TO {db_effective_user};\"",
+        stdin=db_pass + "\n",
+    )
+
     juju.integrate(discourse_app_name, "redis-k8s")
     juju.integrate(discourse_app_name, "nginx-ingress-integrator")
     juju.wait(
