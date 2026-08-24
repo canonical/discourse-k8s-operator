@@ -4,6 +4,7 @@
 """Discourse integration tests."""
 
 import logging
+import time
 
 import jubilant
 import pytest
@@ -23,7 +24,7 @@ def test_create_user(juju: jubilant.Juju, app: types.App):
     """
     juju.wait(jubilant.all_active, timeout=JUJU_WAIT_TIMEOUT)
 
-    email = "test-user@test.internal"
+    email = f"test-user-{int(time.time())}@test.internal"
 
     task = juju.run(app.name + "/0", "create-user", {"email": email})
     assert task.results["user"] == email
@@ -63,7 +64,7 @@ def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: st
         assert data["csrf"], data
         csrf = data["csrf"]
 
-        email = "test-promote-user@test.internal"
+        email = f"test-promote-user-{int(time.time())}@test.internal"
         task = juju.run(app.name + "/0", "create-user", {"email": email})
         assert task.results["user"] == email
 

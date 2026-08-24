@@ -87,7 +87,7 @@
     },
     {
       "description": "Restrict Discourse to current ESR patch series only - update allowedVersions when intentionally upgrading ESR",
-      "allowedVersions": "/^v2026\\.1\\./",
+      "allowedVersions": "/^v2026\\.7\\./",
       "matchDepNames": [
         "discourse/discourse"
       ]

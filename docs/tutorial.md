@@ -100,7 +100,7 @@ juju deploy discourse-k8s
 Enable the required PostgreSQL extensions:
 
 ```
-juju config postgresql-k8s plugin_hstore_enable=True plugin_pg_trgm_enable=True
+juju config postgresql-k8s plugin_hstore_enable=True plugin_pg_trgm_enable=True plugin_vector_enable=True
 ```
 
 ### Integrate with the Redis k8s charm and the PostgreSQL k8s charm
@@ -246,4 +246,3 @@ or learn more about the charm, check out these pages:
   {ref}`Security overview <explanation_security>`.
 - Learn more about the available {ref}`relation endpoints <reference_integrations>`
   for the Discourse charm.
-

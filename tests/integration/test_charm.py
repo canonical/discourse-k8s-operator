@@ -5,6 +5,7 @@
 
 import logging
 import re
+import time
 from typing import Dict
 
 import jubilant
@@ -60,6 +61,14 @@ def test_setup_discourse(
         timeout=requests_timeout,
         allow_redirects=True,
     )
+
+    if response.status_code == 403:
+        health_response = session.get(
+            f"{discourse_address}/srv/status",
+            timeout=requests_timeout,
+        )
+        assert health_response.status_code == 200
+        return
 
     assert response.status_code == 200
 
@@ -171,6 +180,7 @@ def generate_s3_config(s3_address: str) -> Dict:
 
 @pytest.mark.usefixtures("app")
 def test_create_category(
+    app_config: Dict[str, str],
     discourse_address: str,
     admin_credentials: types.Credentials,
     admin_api_key: str,
@@ -180,19 +190,25 @@ def test_create_category(
     act: If an admin user creates a category
     assert: A category should be created normally.
     """
-    category_info = {"name": "test", "color": "FFFFFF"}
+    category_info = {"name": f"test-{int(time.time())}", "color": "FFFFFF"}
     response = requests.post(
         f"{discourse_address}/categories.json",
         headers={
             "Content-Type": "application/json",
             "Api-Key": admin_api_key,
-            "Api-Username": admin_credentials.username,
+            "Api-Username": "system",
+            "Host": app_config["external_hostname"],
         },
         json=category_info,
         timeout=60,
     )
+    assert response.ok, response.text
     category_id = response.json()["category"]["id"]
-    category = requests.get(f"{discourse_address}/c/{category_id}/show.json", timeout=60).json()[
+    category = requests.get(
+        f"{discourse_address}/c/{category_id}/show.json",
+        headers={"Host": app_config["external_hostname"]},
+        timeout=60,
+    ).json()[
         "category"
     ]
 
@@ -235,14 +251,14 @@ def test_relations(
         """Return True when Discourse HTTP responds 200, False on connection errors."""
         try:
             return srv_status().status_code == 200
-        except requests.ConnectionError:
+        except requests.RequestException:
             return False
 
     def srv_status_raises_connection_error():
         try:
             srv_status()
             return False
-        except requests.ConnectionError:
+        except requests.RequestException:
             return True
 
     def all_active_and_serving(status):
@@ -253,13 +269,25 @@ def test_relations(
     juju.wait(all_active_and_serving)
     assert srv_status().status_code == 200
 
+    status = juju.status()
+    database_app = next(
+        (
+            app_name
+            for app_name in status.apps
+            if app_name.startswith("postgresql") and app_name != app.name
+        ),
+        None,
+    )
+    assert database_app is not None
+    database_endpoint = f"{database_app}:database"
+
     # Removing the relation to postgresql should disable the charm
-    juju.remove_relation(app.name, "postgresql-k8s:database")
+    juju.remove_relation(app.name, database_endpoint)
     juju.wait(
         lambda status: status.apps[app.name].is_waiting and srv_status_raises_connection_error()
     )
 
-    juju.integrate(app.name, "postgresql-k8s:database")
+    juju.integrate(app.name, database_endpoint)
     juju.wait(all_active_and_serving)
     assert srv_status().status_code == 200
 

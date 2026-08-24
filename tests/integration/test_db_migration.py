@@ -9,6 +9,7 @@ import jubilant
 import pytest
 
 from .conftest import JUJU_WAIT_TIMEOUT
+from .conftest import POSTGRESQL_BASE, POSTGRESQL_CHANNEL
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +33,8 @@ def test_db_migration(
     pg_app_name = "postgresql-k8s"
     juju.deploy(
         pg_app_name,
-        channel="14/stable",
-        base="ubuntu@22.04",
+        channel=POSTGRESQL_CHANNEL,
+        base=POSTGRESQL_BASE,
         trust=True,
         config={"profile": "testing"},
     )
@@ -44,8 +45,9 @@ def test_db_migration(
     juju.config(
         pg_app_name,
         {
-            "plugin_hstore_enable": True,
-            "plugin_pg_trgm_enable": True,
+            "plugin-hstore-enable": True,
+            "plugin-pg-trgm-enable": True,
+            "plugin-vector-enable": True,
         },
     )
     juju.wait(
