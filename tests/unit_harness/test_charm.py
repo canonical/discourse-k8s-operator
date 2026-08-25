@@ -328,17 +328,30 @@ def test_promote_user_success():
         nonlocal expected_exec_call_was_made
         expected_exec_call_was_made = True
         if (
-            args.environment != harness.charm._create_discourse_environment_settings()
+            args.environment
+            != {
+                **harness.charm._create_discourse_environment_settings(),
+                "TARGET_EMAIL": email,
+            }
             or args.working_dir != DISCOURSE_PATH
             or args.user != "_daemon_"
-            or args.stdin != f"{email}\nn\nY\n"
+            or args.stdin is not None
             or args.timeout != 60
         ):
             raise ValueError(f"{args.command} wasn't made with the correct args.")
 
     harness.handle_exec(
         SERVICE_NAME,
-        [f"{DISCOURSE_PATH}/bin/bundle", "exec", "rake", "admin:create"],
+        [
+            f"{DISCOURSE_PATH}/bin/bundle",
+            "exec",
+            "rails",
+            "runner",
+            "user = User.find_by_email(ENV.fetch('TARGET_EMAIL')); "
+            "raise 'missing user' unless user; "
+            "user.admin = true; "
+            "user.save!",
+        ],
         handler=bundle_handler,
     )
 

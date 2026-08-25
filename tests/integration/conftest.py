@@ -6,7 +6,7 @@ import logging
 import os
 import pathlib
 import socket
-import subprocess
+import subprocess  # nosec B404
 import time
 from collections.abc import Generator
 from typing import Any, Dict, cast
@@ -56,7 +56,7 @@ def _cleanup_saml_integration(juju: jubilant.Juju, app_name: str) -> None:
 
 def _cleanup_saml_test_idp_pod(model_name: str) -> None:
     """Ensure the helper-managed SAML IdP pod does not persist across runs."""
-    subprocess.run(
+    subprocess.run(  # nosec
         [
             "kubectl",
             "--namespace",

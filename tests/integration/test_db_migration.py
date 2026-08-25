@@ -74,7 +74,9 @@ def test_db_migration(
 
     assert app_secret_id, "PostgreSQL app secret with operator password not found"
 
-    secret_data = json.loads(juju.cli("show-secret", "--reveal", "--format", "json", app_secret_id))
+    secret_data = json.loads(
+        juju.cli("show-secret", "--reveal", "--format", "json", app_secret_id)
+    )
     db_pass = secret_data[app_secret_id]["content"]["Data"]["operator-password"]
     juju.cli(
         "scp",
@@ -123,7 +125,9 @@ def test_db_migration(
                 raise
             time.sleep(15)
     else:
-        raise AssertionError("PostgreSQL did not stay available long enough to restore fixture database")
+        raise AssertionError(
+            "PostgreSQL did not stay available long enough to restore fixture database"
+        )
 
     juju.cli(
         "ssh",
@@ -180,18 +184,24 @@ def test_db_migration(
     db_relation_user = None
     db_relation_password = None
     for _ in range(30):
-        show_unit = json.loads(juju.cli("show-unit", "--format", "json", discourse_app_name + "/0"))
+        show_unit = json.loads(
+            juju.cli("show-unit", "--format", "json", discourse_app_name + "/0")
+        )
         relation_info = show_unit[discourse_app_name + "/0"]["relation-info"]
         database_relation = next(
             (relation for relation in relation_info if relation["endpoint"] == "database"),
             None,
         )
-        secret_uri = database_relation["application-data"].get("secret-user") if database_relation else None
+        secret_uri = (
+            database_relation["application-data"].get("secret-user") if database_relation else None
+        )
         if not secret_uri:
             time.sleep(2)
             continue
         secret_id = secret_uri.rsplit("/", 1)[-1]
-        db_credentials = json.loads(juju.cli("show-secret", "--reveal", "--format", "json", secret_id))
+        db_credentials = json.loads(
+            juju.cli("show-secret", "--reveal", "--format", "json", secret_id)
+        )
         db_relation_user = db_credentials[secret_id]["content"]["Data"]["username"]
         db_relation_password = db_credentials[secret_id]["content"]["Data"]["password"]
         if db_relation_user and db_relation_password:
@@ -200,18 +210,15 @@ def test_db_migration(
     assert db_relation_user, "Discourse database relation user not found"
     assert db_relation_password, "Discourse database relation password not found"
 
-    db_effective_user = (
-        juju.cli(
-            "ssh",
-            "--container",
-            "postgresql",
-            pg_app_name + "/0",
-            f"psql -h localhost -U {db_relation_user} --password -d discourse "
-            "-tAc 'SELECT current_user;'",
-            stdin=db_relation_password + "\n",
-        )
-        .strip()
-    )
+    db_effective_user = juju.cli(
+        "ssh",
+        "--container",
+        "postgresql",
+        pg_app_name + "/0",
+        f"psql -h localhost -U {db_relation_user} --password -d discourse "
+        "-tAc 'SELECT current_user;'",
+        stdin=db_relation_password + "\n",
+    ).strip()
     assert db_effective_user, "Discourse database effective role not found"
 
     juju.cli(
@@ -219,8 +226,8 @@ def test_db_migration(
         "--container",
         "postgresql",
         pg_app_name + "/0",
-        "psql -h localhost -U operator --password -d discourse -v ON_ERROR_STOP=1 "
-        f"-c \"DO \\$\\$ DECLARE r RECORD; "
+        "psql -h localhost -U operator --password -d discourse -v ON_ERROR_STOP=1 "  # nosec B608
+        f'-c "DO \\$\\$ DECLARE r RECORD; '
         f"owner_role TEXT := '{db_effective_user}'; "
         f"BEGIN "
         f"EXECUTE format('ALTER SCHEMA public OWNER TO %I', owner_role); "
@@ -231,7 +238,7 @@ def test_db_migration(
         f"EXECUTE format('ALTER SEQUENCE public.%I OWNER TO %I', r.sequence_name, owner_role); "
         f"END LOOP; "
         f"END \\$\\$; "
-        f"ALTER DATABASE discourse OWNER TO {db_effective_user};\"",
+        f'ALTER DATABASE discourse OWNER TO {db_effective_user};"',
         stdin=db_pass + "\n",
     )
 
