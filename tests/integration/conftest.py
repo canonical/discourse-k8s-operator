@@ -5,6 +5,7 @@
 import logging
 import os
 import pathlib
+import shutil
 import socket
 import subprocess  # nosec B404
 import time
@@ -34,6 +35,36 @@ ENABLED_PLUGINS = [
 JUJU_WAIT_TIMEOUT = 1200
 POSTGRESQL_CHANNEL = "16/stable"
 POSTGRESQL_BASE = "ubuntu@24.04"
+SAML_KUBECONFIG_CANDIDATES = (
+    "~/.kube/config",
+    "/var/snap/microk8s/current/credentials/client.config",
+)
+
+
+def _resolve_kubectl_command() -> list[str]:
+    """Resolve kubectl command, falling back to microk8s wrapper when needed."""
+    if shutil.which("kubectl"):
+        return ["kubectl"]
+    if shutil.which("microk8s"):
+        return ["microk8s", "kubectl"]
+    raise FileNotFoundError("Neither kubectl nor microk8s commands are available")
+
+
+def _resolve_saml_kube_config() -> str | None:
+    """Resolve a kubeconfig path usable by saml_test_helper."""
+    kubeconfig = os.environ.get("KUBECONFIG")
+    if kubeconfig:
+        for path in kubeconfig.split(os.pathsep):
+            expanded = pathlib.Path(path).expanduser()
+            if expanded.is_file():
+                return str(expanded)
+
+    for path in SAML_KUBECONFIG_CANDIDATES:
+        expanded = pathlib.Path(path).expanduser()
+        if expanded.is_file():
+            return str(expanded)
+
+    return None
 
 
 def _cleanup_saml_integration(juju: jubilant.Juju, app_name: str) -> None:
@@ -55,16 +86,9 @@ def _cleanup_saml_integration(juju: jubilant.Juju, app_name: str) -> None:
 
 def _cleanup_saml_test_idp_pod(model_name: str) -> None:
     """Ensure the helper-managed SAML IdP pod does not persist across runs."""
+    kubectl = _resolve_kubectl_command()
     subprocess.run(  # nosec
-        [
-            "kubectl",
-            "--namespace",
-            model_name,
-            "delete",
-            "pod",
-            "saml-test-idp",
-            "--ignore-not-found",
-        ],
+        [*kubectl, "--namespace", model_name, "delete", "pod", "saml-test-idp", "--ignore-not-found"],
         check=True,
     )
 
@@ -309,7 +333,8 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
     _cleanup_saml_test_idp_pod(model_name)
     juju.config(app.name, {"force_https": True})
 
-    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model_name)
+    kube_config = _resolve_saml_kube_config()
+    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model_name, kube_config=kube_config)
     juju.deploy(
         "saml-integrator",
         channel="latest/edge",
