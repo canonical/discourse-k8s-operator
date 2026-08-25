@@ -77,13 +77,22 @@ def test_db_migration(  # noqa: C901
         juju.cli("show-secret", "--reveal", "--format", "json", app_secret_id)
     )
     db_pass = secret_data[app_secret_id]["content"]["Data"]["operator-password"]
-    juju.cli(
-        "scp",
-        "--container",
-        "postgresql",
-        "./testing_database/testing_database.sql",
-        pg_app_name + "/0:.",
-    )
+    for _ in range(30):
+        try:
+            juju.cli(
+                "scp",
+                "--container",
+                "postgresql",
+                "./testing_database/testing_database.sql",
+                pg_app_name + "/0:.",
+            )
+            break
+        except jubilant.CLIError as error:
+            if 'container "postgresql" not running' not in error.stderr:
+                raise
+            time.sleep(2)
+    else:
+        raise AssertionError("PostgreSQL container did not become ready for test database upload")
 
     for _ in range(30):
         try:

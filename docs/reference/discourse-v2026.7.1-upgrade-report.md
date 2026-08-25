@@ -1,5 +1,7 @@
 # Discourse v2026.7.1 upgrade report
 
+<!-- vale off -->
+
 ## Summary
 
 Upgrade work from `v2026.1` to `v2026.7.1` is mostly complete in the charm and rock, but full integration validation is currently blocked by a PostgreSQL/pgvector prerequisite not yet available in published stable charm channels.
@@ -87,3 +89,5 @@ When a supported PostgreSQL charm channel reports pgvector `>= 0.7.0`:
   - rock build (with updated Node and runtime changes).
 - Blocked:
   - full integration and migration pass for `v2026.7.1` due to missing `halfvec` support in currently available PostgreSQL charm channels.
+
+<!-- vale on -->

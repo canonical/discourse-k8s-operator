@@ -39,6 +39,7 @@ the upstream Discourse project.
 
 * [Charm architecture]
 * [Versioning]
+* [Discourse v2026.7.1 upgrade report]
 
 <!--Links-->
 
@@ -49,6 +50,7 @@ the upstream Discourse project.
 [Integrations]: integrations.md
 [Plugins]: plugins.md
 [Versioning]: versioning.md
+[Discourse v2026.7.1 upgrade report]: discourse-v2026.7.1-upgrade-report.md
 
 ```{toctree}
 :hidden:
@@ -60,4 +62,5 @@ integrations
 external-access
 charm-architecture
 versioning
+discourse-v2026.7.1-upgrade-report
 ```
