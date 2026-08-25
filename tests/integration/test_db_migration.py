@@ -10,19 +10,18 @@ import time
 import jubilant
 import pytest
 
-from .conftest import JUJU_WAIT_TIMEOUT
-from .conftest import POSTGRESQL_BASE, POSTGRESQL_CHANNEL
+from .conftest import JUJU_WAIT_TIMEOUT, POSTGRESQL_BASE, POSTGRESQL_CHANNEL
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.mark.abort_on_fail
-def test_db_migration(
+def test_db_migration(  # noqa: C901
     juju: jubilant.Juju,
     charm_file: str,
     charm_resource_images: dict[str, dict[str, str]],
     charm_base: str,
-):
+) -> None:
     """
     arrange: preload postgres with a testing db that was created in Discourse v3.3.0
     act: deploy and integrate with the current Discourse version (latest)

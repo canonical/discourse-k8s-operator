@@ -9,6 +9,7 @@ import socket
 import subprocess  # nosec B404
 import time
 from collections.abc import Generator
+from contextlib import suppress
 from typing import Any, Dict, cast
 
 import jubilant
@@ -41,10 +42,8 @@ def _cleanup_saml_integration(juju: jubilant.Juju, app_name: str) -> None:
     if "saml-integrator" not in status.apps:
         return
 
-    try:
+    with suppress(subprocess.CalledProcessError):
         juju.remove_relation(app_name, "saml-integrator")
-    except subprocess.CalledProcessError:
-        pass
 
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
     juju.cli("remove-application", "saml-integrator", "--force", "--no-wait", "--no-prompt")
@@ -332,15 +331,11 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
 
     yield saml_helper
 
-    try:
+    with suppress(subprocess.CalledProcessError):
         juju.remove_relation(app.name, "saml-integrator")
-    except subprocess.CalledProcessError:
-        pass
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
-    try:
+    with suppress(subprocess.CalledProcessError):
         juju.cli("remove-application", "saml-integrator", "--force", "--no-wait", "--no-prompt")
-    except subprocess.CalledProcessError:
-        pass
     try:
         juju.wait(lambda status: "saml-integrator" not in status.apps, timeout=120)
     except TimeoutError:
