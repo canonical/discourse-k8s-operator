@@ -50,7 +50,9 @@ def test_promote_user(
         base_headers = {"Host": app_config["external_hostname"], "X-Forwarded-Proto": "https"}
         session.headers.update(base_headers)
 
-        def get_api_key_response(http_session: requests.Session, csrf_token: str) -> requests.Response:
+        def get_api_key_response(
+            http_session: requests.Session, csrf_token: str
+        ) -> requests.Response:
             http_session.headers.update(base_headers)
             response = http_session.post(
                 f"{discourse_address}/admin/api/keys",
@@ -66,7 +68,9 @@ def test_promote_user(
         def login(http_session: requests.Session, email: str, password: str) -> str:
             http_session.headers.update(base_headers)
             csrf_response = http_session.get(
-                f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}, timeout=60
+                f"{discourse_address}/session/csrf",
+                headers={"Accept": "application/json"},
+                timeout=60,
             )
 
             assert csrf_response.ok, csrf_response.text
@@ -92,7 +96,9 @@ def test_promote_user(
             assert "error" not in login_response.json()
 
             refreshed_csrf = http_session.get(
-                f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}, timeout=60
+                f"{discourse_address}/session/csrf",
+                headers={"Accept": "application/json"},
+                timeout=60,
             )
             assert refreshed_csrf.ok, refreshed_csrf.text
             refreshed_data = refreshed_csrf.json()

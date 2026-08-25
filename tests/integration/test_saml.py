@@ -18,7 +18,9 @@ from . import types
 logger = logging.getLogger(__name__)
 
 
-def _set_session_cookie_from_response(session: requests.Session, response: requests.Response) -> None:
+def _set_session_cookie_from_response(
+    session: requests.Session, response: requests.Response
+) -> None:
     """Persist response cookies in manual Cookie header for host-mapped test traffic."""
     cookie_header = response.headers.get("set-cookie")
     if not cookie_header:

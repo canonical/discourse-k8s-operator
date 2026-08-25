@@ -208,9 +208,7 @@ def test_create_category(
         f"{discourse_address}/c/{category_id}/show.json",
         headers={"Host": app_config["external_hostname"]},
         timeout=60,
-    ).json()[
-        "category"
-    ]
+    ).json()["category"]
 
     assert category["name"] == category_info["name"]
     assert category["color"] == category_info["color"]

@@ -57,7 +57,15 @@ def _cleanup_saml_integration(juju: jubilant.Juju, app_name: str) -> None:
 def _cleanup_saml_test_idp_pod(model_name: str) -> None:
     """Ensure the helper-managed SAML IdP pod does not persist across runs."""
     subprocess.run(
-        ["kubectl", "--namespace", model_name, "delete", "pod", "saml-test-idp", "--ignore-not-found"],
+        [
+            "kubectl",
+            "--namespace",
+            model_name,
+            "delete",
+            "pod",
+            "saml-test-idp",
+            "--ignore-not-found",
+        ],
         check=True,
     )
 
@@ -225,7 +233,8 @@ def app_fixture(
             if not jubilant.all_active(status, "redis-k8s", "nginx-ingress-integrator"):
                 return False
             return any(
-                name.startswith("postgresql") and app.is_active for name, app in status.apps.items()
+                name.startswith("postgresql") and app.is_active
+                for name, app in status.apps.items()
             )
 
         juju.wait(required_apps_ready, timeout=JUJU_WAIT_TIMEOUT)
@@ -347,9 +356,7 @@ def admin_credentials_fixture(juju: jubilant.Juju, app: types.App) -> types.Cred
     email = f"{username}@test.internal"
     task = juju.run(f"{app.name}/0", "create-user", {"email": email, "admin": True})
     password = task.results["password"]
-    admin_credentials = types.Credentials(
-        email=email, username=username, password=password
-    )
+    admin_credentials = types.Credentials(email=email, username=username, password=password)
     return admin_credentials
 
 
