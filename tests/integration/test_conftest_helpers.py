@@ -10,7 +10,11 @@ from . import conftest
 
 def test_resolve_kubectl_command_falls_back_to_microk8s(monkeypatch) -> None:
     """Fallback to microk8s kubectl wrapper when kubectl is not on PATH."""
-    monkeypatch.setattr(conftest.shutil, "which", lambda command: None if command == "kubectl" else "/usr/bin/microk8s")
+    monkeypatch.setattr(
+        conftest.shutil,
+        "which",
+        lambda command: None if command == "kubectl" else "/usr/bin/microk8s",
+    )
 
     assert conftest._resolve_kubectl_command() == ["microk8s", "kubectl"]
 
@@ -34,7 +38,9 @@ def test_resolve_saml_kube_config_falls_back_to_candidate_paths(
 ) -> None:
     """Fall back to known candidate paths when KUBECONFIG is unset."""
     candidate = tmp_path / "candidate-kubeconfig"
-    candidate.write_text("apiVersion: v1\nclusters: []\ncontexts: []\nusers: []\n", encoding="utf-8")
+    candidate.write_text(
+        "apiVersion: v1\nclusters: []\ncontexts: []\nusers: []\n", encoding="utf-8"
+    )
     monkeypatch.delenv("KUBECONFIG", raising=False)
     monkeypatch.setattr(conftest, "SAML_KUBECONFIG_CANDIDATES", (str(candidate),))
 

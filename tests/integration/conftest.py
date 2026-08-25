@@ -88,7 +88,15 @@ def _cleanup_saml_test_idp_pod(model_name: str) -> None:
     """Ensure the helper-managed SAML IdP pod does not persist across runs."""
     kubectl = _resolve_kubectl_command()
     subprocess.run(  # nosec
-        [*kubectl, "--namespace", model_name, "delete", "pod", "saml-test-idp", "--ignore-not-found"],
+        [
+            *kubectl,
+            "--namespace",
+            model_name,
+            "delete",
+            "pod",
+            "saml-test-idp",
+            "--ignore-not-found",
+        ],
         check=True,
     )
 
