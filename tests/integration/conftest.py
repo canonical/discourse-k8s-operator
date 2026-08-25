@@ -303,11 +303,13 @@ def app_fixture(
 @pytest.fixture(scope="module")
 def setup_saml_config(juju: jubilant.Juju, app: types.App):
     """Set SAML related charm config to enable SAML authentication."""
+    model_name = juju.model
+    assert model_name is not None
     _cleanup_saml_integration(juju, app.name)
-    _cleanup_saml_test_idp_pod(juju.model)
+    _cleanup_saml_test_idp_pod(model_name)
     juju.config(app.name, {"force_https": True})
 
-    saml_helper = SamlK8sTestHelper.deploy_saml_idp(juju.model)
+    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model_name)
     juju.deploy(
         "saml-integrator",
         channel="latest/edge",
@@ -316,8 +318,8 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
     )
 
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
-    saml_helper.prepare_pod(juju.model, "saml-integrator-0")
-    saml_helper.prepare_pod(juju.model, f"{app.name}-0")
+    saml_helper.prepare_pod(model_name, "saml-integrator-0")
+    saml_helper.prepare_pod(model_name, f"{app.name}-0")
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
     juju.config(
         "saml-integrator",
@@ -340,7 +342,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
         juju.wait(lambda status: "saml-integrator" not in status.apps, timeout=120)
     except TimeoutError:
         logger.warning("saml-integrator removal did not complete before teardown timeout")
-    _cleanup_saml_test_idp_pod(juju.model)
+    _cleanup_saml_test_idp_pod(model_name)
     juju.config(app.name, {"force_https": True})
 
 

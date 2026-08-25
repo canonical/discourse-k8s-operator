@@ -28,6 +28,8 @@ def _set_session_cookie_from_response(
     parsed_cookie = SimpleCookie()
     parsed_cookie.load(cookie_header)
     existing_cookie_header = session.headers.get("Cookie", "")
+    if isinstance(existing_cookie_header, bytes):
+        existing_cookie_header = existing_cookie_header.decode()
     merged_cookie = SimpleCookie()
     if existing_cookie_header:
         merged_cookie.load(existing_cookie_header)
