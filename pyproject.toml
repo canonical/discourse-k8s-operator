@@ -60,7 +60,7 @@ integration = [
   "bs4",
   "debugpy",
   "jubilant==1.12.0",
-  "opcli @ git+https://github.com/canonical/charm-ci.git@v0.0.1-alpha.10 ; python_version >= '3.12'",
+  "opcli ; python_version >= '3.12'",
   "protobuf==7.36.0",
   "psycopg2-binary",
   "pytest",
@@ -70,6 +70,10 @@ integration = [
 
 [tool.uv]
 package = false
+
+[tool.uv.sources]
+# opcli is published only from the charm-ci git repository, not PyPI.
+opcli = { git = "https://github.com/canonical/charm-ci.git", tag = "v1.0.0" }
 
 [tool.ruff]
 target-version = "py310"
