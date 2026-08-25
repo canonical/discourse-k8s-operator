@@ -6,8 +6,8 @@ discourse: https://discourse.charmhub.io
 display_contributors: false
 github_url: https://github.com/canonical/discourse-k8s-operator
 html_favicon: ''
-license_name: ''
-license_url: ''
+license_name: 'Apache-2.0'
+license_url: 'https://github.com/canonical/discourse-k8s-operator/blob/main/LICENSE'
 linkcheck_timeout: 30
 llms_txt_description: This is the documentation for the Discourse charm, a Juju charm
     that deploys and manages Discourse on Kubernetes.
