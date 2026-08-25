@@ -1,19 +1,21 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: fe329c8
+_commit: aca1158
 _src_path: gh:canonical/platform-engineering-documentation-files.git
 author: Canonical Ltd.
 discourse: https://discourse.charmhub.io
 display_contributors: false
 github_url: https://github.com/canonical/discourse-k8s-operator
 html_favicon: ''
-license_name: 'Apache-2.0'
-license_url: 'https://github.com/canonical/discourse-k8s-operator/blob/main/LICENSE'
+license_name: Apache-2.0
+license_url: https://github.com/canonical/discourse-k8s-operator/blob/main/LICENSE
 linkcheck_timeout: 30
 llms_txt_description: This is the documentation for the Discourse charm, a Juju charm
     that deploys and manages Discourse on Kubernetes.
 matrix: https://matrix.to/#/#charmhub-charmdev:ubuntu.com
 mattermost: ''
+new_domain: canonical.com/juju/docs/discourse-k8s-charm
 ogp_image: https://assets.ubuntu.com/v1/cc828679-docs_illustration.svg
+old_domain: canonical-discourse-k8s-charm.readthedocs-hosted.com
 product_page: charmhub.io/discourse-k8s
 product_tag: ''
 project: Discourse charm
