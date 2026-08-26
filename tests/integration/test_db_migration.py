@@ -149,9 +149,9 @@ def test_db_migration(  # noqa: C901
         stdin=db_pass + "\n",
     )
 
-    # ensure we are using the Discourse v3.3.0 database
-    # Discourse v3.3.0 uses the git commit hash:
-    # 5bbdc8a813caf55ab3147ac65b5ffafb5e0aab90
+    # ensure we are using the Discourse v2026.1.7 baseline database
+    # Discourse v2026.1.7 uses the git commit hash:
+    # b6af77c0382ac61817e825e4e285217327772b54
     latest_git_version = juju.cli(
         "ssh",
         "--container",
@@ -162,8 +162,8 @@ def test_db_migration(  # noqa: C901
               -c 'SELECT git_version FROM schema_migration_details LIMIT 1;'",
         stdin=db_pass + "\n",
     )
-    assert "5bbdc8a813caf55ab3147ac65b5ffafb5e0aab90" in latest_git_version, (
-        "Discourse v3.3.0 git version does not match with the database version"
+    assert "b6af77c0382ac61817e825e4e285217327772b54" in latest_git_version, (
+        "Discourse v2026.1.7 git version does not match with the database version"
     )
 
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
