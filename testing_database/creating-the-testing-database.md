@@ -8,8 +8,41 @@ Current baseline fixture:
 
 ## 1) Deploy the baseline stack
 
-Deploy Discourse `v2026.1.7` with PostgreSQL 14 and wait until all units are active.
-Use the same charm configuration used by integration tests (external hostname, smtp placeholders, etc.).
+Create a new Juju model or use an existing one with space for a clean deployment:
+
+```bash
+juju add-model testing-db-baseline || juju switch testing-db-baseline
+```
+
+Deploy PostgreSQL 14 and wait for it to be ready:
+
+```bash
+juju deploy postgresql-k8s --channel 14/stable --wait
+```
+
+Deploy the Discourse charm at v2026.1.7 with appropriate configuration:
+
+```bash
+# Build/obtain the v2026.1.7 charm file
+juju deploy ./discourse-k8s.charm discourse-k8s \
+  --config developer_emails="noreply@canonical.com" \
+  --config external_hostname="discourse-k8s" \
+  --config smtp_address="test.local" \
+  --config smtp_domain="test.local" \
+  --config s3_install_cors_rule="false" \
+  --wait
+
+# Relate to PostgreSQL
+juju relate discourse-k8s:postgresql-client postgresql-k8s:database
+```
+
+Wait until all units reach active/idle state:
+
+```bash
+juju wait-for unit -m testing-db-baseline --timeout=10m
+```
+
+Verify the deployment is healthy by checking unit status and logs if needed.
 
 ## 2) Export the database dump from PostgreSQL
 

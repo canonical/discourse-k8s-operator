@@ -53,6 +53,8 @@ def test_saml_login(  # pylint: disable=too-many-locals
     act: add an admin user and enable force-https mode.
     assert: user can login discourse using SAML Authentication.
     """
+    # ==================== ARRANGE ====================
+    # Set up SAML helper and test credentials
     saml_helper = setup_saml_config
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     # discourse need a long password and a valid email
@@ -62,12 +64,15 @@ def test_saml_login(  # pylint: disable=too-many-locals
     password = "test-discourse-k8s-password"  # nosecue
     saml_helper.register_user(username=username, email=email, password=password)
 
+    # ==================== ACT ====================
+    # Create admin user in Discourse
     try:
         task = juju.run(app.name + "/0", "create-user", {"email": email})
         assert "user" in task.results
     except Exception as error:
         assert "already exists" in str(error)
 
+    # Prepare HTTP session with proper headers for SAML authentication
     host = app.name
     parsed_address = urlsplit(discourse_address)
     session = requests.session()
@@ -80,6 +85,7 @@ def test_saml_login(  # pylint: disable=too-many-locals
         }
     )
 
+    # Wait for SAML metadata endpoint to be available (discourse initializes SAML async)
     response = None
     last_error = None
     for _ in range(90):
@@ -100,6 +106,8 @@ def test_saml_login(  # pylint: disable=too-many-locals
     assert response.ok, response.text
     saml_helper.register_service_provider(name=host, metadata=response.text)
 
+    # ==================== ASSERT ====================
+    # Verify user cannot access preferences without authentication
     preference_page = session.get(
         f"{discourse_address}/u/{username}/preferences/account",
         timeout=requests_timeout,
@@ -107,6 +115,8 @@ def test_saml_login(  # pylint: disable=too-many-locals
     )
     assert preference_page.status_code == 404
 
+    # Initiate SAML login flow by posting to /auth/saml endpoint
+    # This returns a 302 redirect to the IdP (SAML service provider)
     session.get(discourse_address, timeout=requests_timeout, verify=False)
     redirect_response = None
     for _ in range(30):
@@ -136,6 +146,8 @@ def test_saml_login(  # pylint: disable=too-many-locals
     assert redirect_response is not None
     assert redirect_response.status_code == 302, redirect_response.text
     redirect_url = redirect_response.headers["Location"]
+
+    # Follow SAML login via IdP and get SAML response
     saml_response = saml_helper.redirect_sso_login(
         redirect_url, username=username, password=password
     )

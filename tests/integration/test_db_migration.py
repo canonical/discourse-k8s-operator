@@ -189,6 +189,13 @@ def test_db_migration(  # noqa: C901
 
     juju.integrate(discourse_app_name, pg_app_name + ":database")
 
+    # Wait for database relation to settle and secrets to be available.
+    # This loop is necessary because:
+    # 1. juju integrate returns immediately, before relation hooks complete
+    # 2. Database credentials are passed via Juju secrets, which are populated asynchronously
+    # 3. We need to extract the secret-uri from relation-info, then query the secret data
+    # Cannot use simple 'juju wait-for relation' because we need the actual credentials,
+    # not just relation presence.
     db_relation_user = None
     db_relation_password = None
     for _ in range(30):
