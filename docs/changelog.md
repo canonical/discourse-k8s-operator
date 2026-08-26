@@ -2,6 +2,11 @@
 
 # Changelog
 
+## 2026-08-24
+
+- feat(docs): onboard repository into Copier-based central management solution
+  in canonical/platform-engineering-documentation-files.
+
 ## 2026-04-24
 
 - docs: Add and update landing pages for how-to and reference sections.
