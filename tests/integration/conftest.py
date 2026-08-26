@@ -35,6 +35,12 @@ ENABLED_PLUGINS = [
 JUJU_WAIT_TIMEOUT = 1200
 POSTGRESQL_CHANNEL = "16/stable"
 POSTGRESQL_BASE = "ubuntu@24.04"
+# PostgreSQL charm (16/stable) expects kebab-case plugin config keys.
+POSTGRESQL_PLUGIN_CONFIG = {
+    "plugin-hstore-enable": True,
+    "plugin-pg-trgm-enable": True,
+    "plugin-vector-enable": True,
+}
 SAML_KUBECONFIG_CANDIDATES = (
     "~/.kube/config",
     "/var/snap/microk8s/current/credentials/client.config",
@@ -65,6 +71,17 @@ def _resolve_saml_kube_config() -> str | None:
             return str(expanded)
 
     return None
+
+
+def _deploy_saml_test_idp(model_name: str) -> SamlK8sTestHelper:
+    """Deploy the SAML IdP helper with a resolved kubeconfig.
+
+    The helper runs outside Juju and talks directly to Kubernetes. In CI and
+    shared dev machines, $KUBECONFIG is not always exported even when MicroK8s
+    is available, so we resolve a usable kubeconfig path before deployment.
+    """
+    kube_config = _resolve_saml_kube_config()
+    return SamlK8sTestHelper.deploy_saml_idp(model_name, kube_config=kube_config)
 
 
 def _cleanup_saml_integration(juju: jubilant.Juju, app_name: str) -> None:
@@ -300,11 +317,7 @@ def app_fixture(
     # configure postgres
     juju.config(
         "postgresql-k8s",
-        {
-            "plugin-hstore-enable": True,
-            "plugin-pg-trgm-enable": True,
-            "plugin-vector-enable": True,
-        },
+        POSTGRESQL_PLUGIN_CONFIG,
     )
     juju.wait(lambda status: jubilant.all_active(status, "postgresql-k8s"))
 
@@ -341,8 +354,7 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
     _cleanup_saml_test_idp_pod(model_name)
     juju.config(app.name, {"force_https": True})
 
-    kube_config = _resolve_saml_kube_config()
-    saml_helper = SamlK8sTestHelper.deploy_saml_idp(model_name, kube_config=kube_config)
+    saml_helper = _deploy_saml_test_idp(model_name)
     juju.deploy(
         "saml-integrator",
         channel="latest/edge",

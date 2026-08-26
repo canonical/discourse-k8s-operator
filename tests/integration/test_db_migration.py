@@ -10,7 +10,13 @@ import time
 import jubilant
 import pytest
 
-from .conftest import JUJU_WAIT_TIMEOUT, POSTGRESQL_BASE, POSTGRESQL_CHANNEL
+from .conftest import (
+    JUJU_WAIT_TIMEOUT,
+    POSTGRESQL_BASE,
+    POSTGRESQL_CHANNEL,
+    POSTGRESQL_PLUGIN_CONFIG,
+)
+from .pg_restore_utils import is_retryable_pg_restore_error
 
 logger = logging.getLogger(__name__)
 
@@ -87,14 +93,7 @@ def test_db_migration(  # noqa: C901
         lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
         timeout=JUJU_WAIT_TIMEOUT,
     )
-    juju.config(
-        pg_app_name,
-        {
-            "plugin-hstore-enable": True,
-            "plugin-pg-trgm-enable": True,
-            "plugin-vector-enable": True,
-        },
-    )
+    juju.config(pg_app_name, POSTGRESQL_PLUGIN_CONFIG)
     juju.wait(
         lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
         timeout=JUJU_WAIT_TIMEOUT,
@@ -170,10 +169,7 @@ def test_db_migration(  # noqa: C901
             )
             break
         except jubilant.CLIError as error:
-            if (
-                "terminating connection due to administrator command" not in error.stderr
-                and "no connection to the server" not in error.stderr
-            ):
+            if not is_retryable_pg_restore_error(error.stderr):
                 raise
             time.sleep(15)
     else:

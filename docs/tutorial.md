@@ -97,7 +97,7 @@ juju deploy postgresql-k8s --channel 16/stable --trust
 juju deploy discourse-k8s
 ```
 
-Enable the required PostgreSQL extensions:
+Enable the required PostgreSQL extensions (for `16/stable`, use kebab-case option names):
 
 ```
 juju config postgresql-k8s plugin-hstore-enable=true plugin-pg-trgm-enable=true plugin-vector-enable=true

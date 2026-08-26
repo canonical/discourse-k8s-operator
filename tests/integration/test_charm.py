@@ -270,6 +270,8 @@ def test_relations(
     assert srv_status().status_code == 200
 
     status = juju.status()
+    # Detect the deployed PostgreSQL app name dynamically because integration
+    # jobs can reuse models where app names are not always exactly "postgresql-k8s".
     database_app = next(
         (
             app_name
