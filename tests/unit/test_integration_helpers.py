@@ -20,7 +20,7 @@ def test_pg_restore_retryable_on_connection_refused() -> None:
     """pg_restore connection-refused failures should be retried."""
     module = _load_pg_restore_utils_module()
     stderr = (
-        "pg_restore: error: connection to server at \"localhost\" (::1), port 5432 failed: "
+        'pg_restore: error: connection to server at "localhost" (::1), port 5432 failed: '
         "Connection refused"
     )
     assert module.is_retryable_pg_restore_error(stderr)

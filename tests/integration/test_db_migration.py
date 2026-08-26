@@ -46,11 +46,7 @@ def _wait_for_db_relation_credentials(
             (relation for relation in relation_info if relation["endpoint"] == "database"),
             None,
         )
-        secret_uri = (
-            database_relation["application-data"].get("secret-user")
-            if database_relation
-            else None
-        )
+        secret_uri = database_relation["application-data"].get("secret-user") if database_relation else None
         if secret_uri:
             secret_id = secret_uri.rsplit("/", 1)[-1]
             db_credentials = json.loads(
