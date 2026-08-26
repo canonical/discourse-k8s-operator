@@ -36,28 +36,25 @@ version = f"{os.environ.get('READTHEDOCS_VERSION', 'local')}"
 html_title = project + " documentation"
 
 # Documentation website URL
+
 ogp_site_url = f"https://canonical.com/juju/docs/discourse-k8s-charm/{version}/"
 
+
 # Preview name of the documentation website
-# TODO: To use a different name for the project in previews, update the next line.
 ogp_site_name = project
 
 # Preview image URL
-# TODO: To customise the preview image, update the next line.
 ogp_image = "https://assets.ubuntu.com/v1/cc828679-docs_illustration.svg"
 
 # Product favicon; shown in bookmarks, browser tabs, etc.
-# TODO: To customise the favicon, uncomment and update the next line.
-# html_favicon = ".sphinx/_static/favicon.png"
+
 
 # Dictionary of values to pass into the Sphinx context for all pages:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_context
 html_context = {
     # Product page URL; can be different from product docs URL
     "product_page": "charmhub.io/discourse-k8s",
-    # Product tag image; the orange part of your logo, shown in the page header
-    # TODO: To add a tag image, uncomment and update as needed.
-    # 'product_tag': '_static/tag.png',
+
     # Your Discourse instance URL
     "discourse": "https://discourse.charmhub.io",
     # Your Mattermost channel URL
@@ -83,30 +80,31 @@ html_context = {
     "author": author,
     # Documentation license information
     "license": {
-        # TODO: Specify your project's license.
-        # For the name, we recommend using the standard shorthand identifier from
-        # https://spdx.org/licenses
         "name": "",
-        # TODO: Link directly to your project's license statement.
         "url": "",
     },
 }
 
+
+# Enable the edit button on pages
 html_theme_options = {
-    'source_edit_link': 'https://github.com/canonical/discourse-k8s-operator',
+    "source_edit_link": "https://github.com/canonical/discourse-k8s-operator",
 }
 
-# Project slug
-# TODO: If your documentation is hosted on https://documentation.ubuntu.com/,
-#       uncomment and set to the RTD slug.
-slug = 'juju/docs/discourse-k8s-charm'
+
+
+# Project slug for Read the Docs
+slug = "juju/docs/discourse-k8s-charm"
+
 
 #######################
 # Sitemap configuration: https://sphinx-sitemap.readthedocs.io/
 #######################
 
 # Use RTD canonical URL to ensure duplicate pages have a specific canonical URL
+
 html_baseurl = f"https://canonical.com/juju/docs/discourse-k8s-charm/{version}/"
+
 
 # sphinx-sitemap uses html_baseurl to generate the full URL for each page:
 sitemap_url_scheme = "{link}"
@@ -154,12 +152,9 @@ rediraffe_dir_only = True
 
 # This description is included in llms.txt to provide some initial context for your
 # product docs.
-# TODO: Add a description in the form "This is the documentation for <product name>,
-# <first sentence of home page>".
 llms_txt_description = textwrap.dedent(
     """\
-    This is the documentation for the Discourse charm, a Juju charm that deploys
-    and manages Discourse on Kubernetes.
+    This is the documentation for the Discourse charm, a Juju charm that deploys and manages Discourse on Kubernetes.
     """
 )
 
@@ -176,7 +171,6 @@ linkcheck_ignore = [
     "http://127.0.0.1:8000",
     "https://github.com",
     r"https://matrix\.to/.*",
-    "https://matrix.to/#/#charmhub-charmdev:ubuntu.com",
     "https://example.com",
     # SourceForge domains often block linkcheck
     r"https://.*\.sourceforge\.(net|io)/.*",
@@ -186,26 +180,18 @@ linkcheck_ignore = [
 linkcheck_anchors_ignore_for_url = [r"https://github\.com/.*"]
 
 # How long the link checker will wait for a response for each request
-# TODO: Decrease to improve run time or increase if links frequently time out.
-# linkcheck_timeout = 30
+linkcheck_timeout = 30
 
 # Give linkcheck multiple tries on failure
 linkcheck_retries = 3
+
 
 ########################
 # Configuration extras #
 ########################
 
-# Custom MyST syntax extensions; see
-# https://myst-parser.readthedocs.io/en/latest/syntax/optional.html
-# NOTE: By default, the following MyST extensions are enabled:
-#   - substitution
-#   - deflist
-#   - linkify
-# myst_enable_extensions = set()
-
-# Custom Sphinx extensions; see
-# https://www.sphinx-doc.org/en/master/usage/extensions/index.html
+# Custom Sphinx extensions beyond what the template provides.
+# Re-add any project-specific extensions here during onboarding (Phase 6).
 extensions = [
     "canonical_sphinx",
     "notfound.extension",
@@ -246,27 +232,7 @@ html_js_files = [
     "js/overwrite_links.js",
 ]
 
-# Appends extra markup to the end of every document written in reST
-# rst_epilog = """
-# """
-
-# Feedback button at the top; enabled by default
-# TODO: Disable the button if your project is unsuitable for public feedback.
-# disable_feedback_button = True
-
-# Your manpage URL
-# TODO: To enable manpage links, uncomment and replace {codename} with required
-#       release, preferably an LTS release (e.g. noble). Do *not* substitute
-#       {section} or {page}; these will be replaced by sphinx at build time
-#
-# NOTE: If set, adding ':manpage:' to an .rst file
-#       adds a link to the corresponding man section at the bottom of the page.
-# manpages_url = 'https://manpages.ubuntu.com/manpages/{codename}/en/' + \
-#     'man{section}/{page}.{section}.html'
-
-# Specifies a reST snippet to be prepended to each .rst file
-# This defines a :center: role that centers table cell content.
-# This defines a :h2: role that styles content for use with PDF generation.
+# A string of reStructuredText included at the beginning of every source file.
 rst_prolog = """
 .. role:: center
    :class: align-center
@@ -278,7 +244,7 @@ rst_prolog = """
     :class: vale-ignore
 """
 
-# Configuration for Intersphinx projects
+# Intersphinx mappings for cross-referencing external documentation.
 intersphinx_mapping = {
     "juju": ("https://documentation.ubuntu.com/juju/3.6/", None),
     "starter-pack": ("https://canonical-starter-pack.readthedocs-hosted.com/stable/", None),

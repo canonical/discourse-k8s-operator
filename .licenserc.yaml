@@ -42,4 +42,5 @@ header:
   - 'uv.lock'
   - '.lycheeignore'
   - 'lychee.toml'
+  - '.copier-answers.yml'
   comment: on-failure
