@@ -15,6 +15,50 @@ from .conftest import JUJU_WAIT_TIMEOUT, POSTGRESQL_BASE, POSTGRESQL_CHANNEL
 logger = logging.getLogger(__name__)
 
 
+def _wait_for_db_relation_credentials(
+    juju: jubilant.Juju, app_unit: str, timeout: int = 60
+) -> tuple[str, str]:
+    """Wait for database relation credentials to be available via Juju secrets.
+
+    Args:
+        juju: Juju instance
+        app_unit: Unit name (e.g. "discourse-k8s/0")
+        timeout: Maximum seconds to wait
+
+    Returns:
+        Tuple of (username, password)
+
+    Raises:
+        TimeoutError: If credentials not available within timeout
+        AssertionError: If required fields are missing
+    """
+    start = time.time()
+    while time.time() - start < timeout:
+        show_unit = json.loads(juju.cli("show-unit", "--format", "json", app_unit))
+        relation_info = show_unit[app_unit]["relation-info"]
+        database_relation = next(
+            (relation for relation in relation_info if relation["endpoint"] == "database"),
+            None,
+        )
+        secret_uri = (
+            database_relation["application-data"].get("secret-user")
+            if database_relation
+            else None
+        )
+        if secret_uri:
+            secret_id = secret_uri.rsplit("/", 1)[-1]
+            db_credentials = json.loads(
+                juju.cli("show-secret", "--reveal", "--format", "json", secret_id)
+            )
+            username = db_credentials[secret_id]["content"]["Data"]["username"]
+            password = db_credentials[secret_id]["content"]["Data"]["password"]
+            if username and password:
+                return username, password
+        time.sleep(2)
+
+    raise TimeoutError(f"Database relation credentials not available after {timeout}s")
+
+
 @pytest.mark.abort_on_fail
 def test_db_migration(  # noqa: C901
     juju: jubilant.Juju,
@@ -190,40 +234,11 @@ def test_db_migration(  # noqa: C901
     juju.integrate(discourse_app_name, pg_app_name + ":database")
 
     # Wait for database relation to settle and secrets to be available.
-    # This loop is necessary because:
-    # 1. juju integrate returns immediately, before relation hooks complete
-    # 2. Database credentials are passed via Juju secrets, which are populated asynchronously
-    # 3. We need to extract the secret-uri from relation-info, then query the secret data
-    # Cannot use simple 'juju wait-for relation' because we need the actual credentials,
-    # not just relation presence.
-    db_relation_user = None
-    db_relation_password = None
-    for _ in range(30):
-        show_unit = json.loads(
-            juju.cli("show-unit", "--format", "json", discourse_app_name + "/0")
-        )
-        relation_info = show_unit[discourse_app_name + "/0"]["relation-info"]
-        database_relation = next(
-            (relation for relation in relation_info if relation["endpoint"] == "database"),
-            None,
-        )
-        secret_uri = (
-            database_relation["application-data"].get("secret-user") if database_relation else None
-        )
-        if not secret_uri:
-            time.sleep(2)
-            continue
-        secret_id = secret_uri.rsplit("/", 1)[-1]
-        db_credentials = json.loads(
-            juju.cli("show-secret", "--reveal", "--format", "json", secret_id)
-        )
-        db_relation_user = db_credentials[secret_id]["content"]["Data"]["username"]
-        db_relation_password = db_credentials[secret_id]["content"]["Data"]["password"]
-        if db_relation_user and db_relation_password:
-            break
-        time.sleep(2)
-    assert db_relation_user, "Discourse database relation user not found"
-    assert db_relation_password, "Discourse database relation password not found"
+    # Cannot use simple 'juju wait-for relation' because we need the actual credentials
+    # (passed via Juju secrets), not just relation presence.
+    db_relation_user, db_relation_password = _wait_for_db_relation_credentials(
+        juju, discourse_app_name + "/0", timeout=60
+    )
 
     db_effective_user = juju.cli(
         "ssh",

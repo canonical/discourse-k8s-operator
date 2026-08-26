@@ -63,6 +63,8 @@ def test_setup_discourse(
     )
 
     if response.status_code == 403:
+        # Discourse may return 403 during SAML initialization. If health check
+        # (srv/status) returns 200, the service is functioning correctly and ready.
         health_response = session.get(
             f"{discourse_address}/srv/status",
             timeout=requests_timeout,

@@ -40,6 +40,45 @@ def _set_session_cookie_from_response(
     )
 
 
+def _wait_for_http_endpoint(
+    session: requests.Session,
+    url: str,
+    timeout: int = 10,
+    max_wait: int = 180,
+    check_interval: int = 2,
+) -> requests.Response:
+    """Wait for an HTTP endpoint to respond with 200 OK.
+
+    Args:
+        session: requests session
+        url: endpoint URL to poll
+        timeout: per-request timeout in seconds
+        max_wait: maximum total wait in seconds
+        check_interval: seconds between poll attempts
+
+    Returns:
+        Successful response
+
+    Raises:
+        AssertionError: If endpoint not available within max_wait
+    """
+    start = time.time()
+    last_error = None
+    while time.time() - start < max_wait:
+        try:
+            response = session.get(url, timeout=timeout, verify=False)
+            if response.ok:
+                return response
+        except requests.RequestException as error:
+            last_error = error
+        time.sleep(check_interval)
+
+    msg = f"Failed to reach {url} after {max_wait}s"
+    if last_error:
+        msg += f": {last_error}"
+    raise AssertionError(msg)
+
+
 @pytest.mark.abort_on_fail
 def test_saml_login(  # pylint: disable=too-many-locals
     juju: jubilant.Juju,
@@ -86,24 +125,12 @@ def test_saml_login(  # pylint: disable=too-many-locals
     )
 
     # Wait for SAML metadata endpoint to be available (discourse initializes SAML async)
-    response = None
-    last_error = None
-    for _ in range(90):
-        try:
-            response = session.get(
-                f"{discourse_address}/auth/saml/metadata",
-                timeout=10,
-                verify=False,
-            )
-            if response.ok:
-                break
-        except requests.RequestException as error:
-            last_error = error
-        time.sleep(2)
-    assert response is not None, (
-        f"Failed to reach {discourse_address}/auth/saml/metadata: {last_error}"
+    response = _wait_for_http_endpoint(
+        session,
+        f"{discourse_address}/auth/saml/metadata",
+        timeout=10,
+        max_wait=180,
     )
-    assert response.ok, response.text
     saml_helper.register_service_provider(name=host, metadata=response.text)
 
     # ==================== ASSERT ====================
