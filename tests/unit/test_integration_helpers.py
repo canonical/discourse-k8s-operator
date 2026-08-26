@@ -9,7 +9,7 @@ from pathlib import Path
 
 def _load_pg_restore_utils_module():
     module_path = Path(__file__).resolve().parents[1] / "integration" / "pg_restore_utils.py"
-    spec = spec_from_file_location("test_db_migration", module_path)
+    spec = spec_from_file_location("pg_restore_utils", module_path)
     assert spec and spec.loader
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
