@@ -63,6 +63,58 @@ def _wait_for_db_relation_credentials(
     raise TimeoutError(f"Database relation credentials not available after {timeout}s")
 
 
+def _get_database_effective_user(
+    juju: jubilant.Juju, pg_app_name: str, db_relation_user: str, db_relation_password: str
+) -> str:
+    """Return the database role used by the Discourse relation.
+
+    The fixture database is restored as the PostgreSQL operator, but the charm
+    later migrates and mutates objects as the relation-specific role. We query
+    that role explicitly so the ownership fixup below targets the same user.
+    """
+    return juju.cli(
+        "ssh",
+        "--container",
+        "postgresql",
+        f"{pg_app_name}/0",
+        f"psql -h localhost -U {db_relation_user} --password -d discourse "
+        "-tAc 'SELECT current_user;'",
+        stdin=db_relation_password + "\n",
+    ).strip()
+
+
+def _align_database_ownership(
+    juju: jubilant.Juju, pg_app_name: str, db_pass: str, db_effective_user: str
+) -> None:
+    """Align restored fixture ownership with the charm's runtime database role.
+
+    pg_restore imports the baseline as the operator user, but the charm runs
+    later schema work as the role from the relation secret. Reassigning schema,
+    tables, sequences, and the database itself keeps the fixture realistic and
+    avoids false ownership failures during the migration path.
+    """
+    juju.cli(
+        "ssh",
+        "--container",
+        "postgresql",
+        f"{pg_app_name}/0",
+        "psql -h localhost -U operator --password -d discourse -v ON_ERROR_STOP=1 "  # nosec B608
+        f'-c "DO \\$\\$ DECLARE r RECORD; '
+        f"owner_role TEXT := '{db_effective_user}'; "
+        f"BEGIN "
+        f"EXECUTE format('ALTER SCHEMA public OWNER TO %I', owner_role); "
+        f"FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP "
+        f"EXECUTE format('ALTER TABLE public.%I OWNER TO %I', r.tablename, owner_role); "
+        f"END LOOP; "
+        f"FOR r IN SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public' LOOP "
+        f"EXECUTE format('ALTER SEQUENCE public.%I OWNER TO %I', r.sequence_name, owner_role); "
+        f"END LOOP; "
+        f"END \\$\\$; "
+        f'ALTER DATABASE discourse OWNER TO {db_effective_user};"',
+        stdin=db_pass + "\n",
+    )
+
+
 @pytest.mark.abort_on_fail
 def test_db_migration(  # noqa: C901
     juju: jubilant.Juju,
@@ -234,37 +286,12 @@ def test_db_migration(  # noqa: C901
         juju, discourse_app_name + "/0", timeout=60
     )
 
-    db_effective_user = juju.cli(
-        "ssh",
-        "--container",
-        "postgresql",
-        pg_app_name + "/0",
-        f"psql -h localhost -U {db_relation_user} --password -d discourse "
-        "-tAc 'SELECT current_user;'",
-        stdin=db_relation_password + "\n",
-    ).strip()
+    db_effective_user = _get_database_effective_user(
+        juju, pg_app_name, db_relation_user, db_relation_password
+    )
     assert db_effective_user, "Discourse database effective role not found"
 
-    juju.cli(
-        "ssh",
-        "--container",
-        "postgresql",
-        pg_app_name + "/0",
-        "psql -h localhost -U operator --password -d discourse -v ON_ERROR_STOP=1 "  # nosec B608
-        f'-c "DO \\$\\$ DECLARE r RECORD; '
-        f"owner_role TEXT := '{db_effective_user}'; "
-        f"BEGIN "
-        f"EXECUTE format('ALTER SCHEMA public OWNER TO %I', owner_role); "
-        f"FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP "
-        f"EXECUTE format('ALTER TABLE public.%I OWNER TO %I', r.tablename, owner_role); "
-        f"END LOOP; "
-        f"FOR r IN SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public' LOOP "
-        f"EXECUTE format('ALTER SEQUENCE public.%I OWNER TO %I', r.sequence_name, owner_role); "
-        f"END LOOP; "
-        f"END \\$\\$; "
-        f'ALTER DATABASE discourse OWNER TO {db_effective_user};"',
-        stdin=db_pass + "\n",
-    )
+    _align_database_ownership(juju, pg_app_name, db_pass, db_effective_user)
 
     juju.integrate(discourse_app_name, "redis-k8s")
     juju.integrate(discourse_app_name, "nginx-ingress-integrator")
