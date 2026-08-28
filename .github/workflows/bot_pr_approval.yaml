@@ -5,6 +5,12 @@ on:
 
 jobs:
   bot_pr_approval:
+    # The default GITHUB_TOKEN acts as github-actions[bot]. When a PR is also
+    # authored by github-actions[bot] (e.g. the auto-libs PR created by
+    # auto_update_libs.yaml), GitHub rejects the review with "Can not
+    # approve your own pull request". That failure is expected and does not
+    # indicate a problem with this workflow, so it should not fail CI.
+    continue-on-error: true
     uses: canonical/operator-workflows/.github/workflows/bot_pr_approval.yaml@main
     permissions:
       pull-requests: write
