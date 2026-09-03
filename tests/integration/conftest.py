@@ -5,8 +5,12 @@
 import logging
 import os
 import pathlib
+import shutil
 import socket
+import subprocess  # nosec B404
+import time
 from collections.abc import Generator
+from contextlib import suppress
 from typing import Any, Dict, cast
 
 import jubilant
@@ -29,6 +33,89 @@ ENABLED_PLUGINS = [
 
 # Timeout for juju wait operations in seconds
 JUJU_WAIT_TIMEOUT = 1200
+POSTGRESQL_CHANNEL = "16/stable"
+POSTGRESQL_BASE = "ubuntu@24.04"
+# PostgreSQL charm (16/stable) expects kebab-case plugin config keys.
+POSTGRESQL_PLUGIN_CONFIG = {
+    "plugin-hstore-enable": True,
+    "plugin-pg-trgm-enable": True,
+    "plugin-vector-enable": True,
+}
+SAML_KUBECONFIG_CANDIDATES = (
+    "~/.kube/config",
+    "/var/snap/microk8s/current/credentials/client.config",
+)
+
+
+def _resolve_kubectl_command() -> list[str]:
+    """Resolve kubectl command, falling back to microk8s wrapper when needed."""
+    if shutil.which("kubectl"):
+        return ["kubectl"]
+    if shutil.which("microk8s"):
+        return ["microk8s", "kubectl"]
+    raise FileNotFoundError("Neither kubectl nor microk8s commands are available")
+
+
+def _resolve_saml_kube_config() -> str | None:
+    """Resolve a kubeconfig path usable by saml_test_helper."""
+    kubeconfig = os.environ.get("KUBECONFIG")
+    if kubeconfig:
+        for path in kubeconfig.split(os.pathsep):
+            expanded = pathlib.Path(path).expanduser()
+            if expanded.is_file():
+                return str(expanded)
+
+    for path in SAML_KUBECONFIG_CANDIDATES:
+        expanded = pathlib.Path(path).expanduser()
+        if expanded.is_file():
+            return str(expanded)
+
+    return None
+
+
+def _deploy_saml_test_idp(model_name: str) -> SamlK8sTestHelper:
+    """Deploy the SAML IdP helper with a resolved kubeconfig.
+
+    The helper runs outside Juju and talks directly to Kubernetes. In CI and
+    shared dev machines, $KUBECONFIG is not always exported even when MicroK8s
+    is available, so we resolve a usable kubeconfig path before deployment.
+    """
+    kube_config = _resolve_saml_kube_config()
+    return SamlK8sTestHelper.deploy_saml_idp(model_name, kube_config=kube_config)
+
+
+def _cleanup_saml_integration(juju: jubilant.Juju, app_name: str) -> None:
+    """Remove stale SAML relation/app from shared models to keep tests idempotent."""
+    status = juju.status()
+    if "saml-integrator" not in status.apps:
+        return
+
+    with suppress(subprocess.CalledProcessError):
+        juju.remove_relation(app_name, "saml-integrator")
+
+    juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
+    juju.cli("remove-application", "saml-integrator", "--force", "--no-wait", "--no-prompt")
+    try:
+        juju.wait(lambda current_status: "saml-integrator" not in current_status.apps, timeout=120)
+    except TimeoutError:
+        logger.warning("saml-integrator removal did not complete before cleanup timeout")
+
+
+def _cleanup_saml_test_idp_pod(model_name: str) -> None:
+    """Ensure the helper-managed SAML IdP pod does not persist across runs."""
+    kubectl = _resolve_kubectl_command()
+    subprocess.run(  # nosec
+        [
+            *kubectl,
+            "--namespace",
+            model_name,
+            "delete",
+            "pod",
+            "saml-test-idp",
+            "--ignore-not-found",
+        ],
+        check=True,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -122,14 +209,14 @@ def juju(request: pytest.FixtureRequest) -> Generator[jubilant.Juju, None, None]
             log = juju.debug_log(limit=1000)
             print(log, end="")
 
+    model = request.config.getoption("--model")
     use_existing = request.config.getoption("--use-existing", default=False)
     if use_existing:
-        juju = jubilant.Juju()
+        juju = jubilant.Juju(model=model) if model else jubilant.Juju()
         yield juju
         show_debug_log(juju)
         return
 
-    model = request.config.getoption("--model")
     if model:
         juju = jubilant.Juju(model=model)
         yield juju
@@ -169,13 +256,43 @@ def app_fixture(
 
     use_existing = pytestconfig.getoption("--use-existing", default=False)
     if use_existing:
+        _cleanup_saml_integration(juju, app_name)
+        status = juju.status()
+        if any(app_state.is_error for app_state in status.apps.values()):
+            juju.cli("resolved", "--all")
+
+        juju.config(
+            app_name,
+            {
+                "force_https": True,
+                "s3_enabled": False,
+                "s3_endpoint": "",
+                "s3_bucket": "",
+                "s3_secret_access_key": "",  # nosec B105
+                "s3_access_key_id": "",
+                "s3_region": "",
+            },
+        )
+        juju.cli("resolved", "--all")
+
+        def required_apps_ready(status: jubilant.Status) -> bool:
+            if not status.apps[app_name].is_active:
+                return False
+            if not jubilant.all_active(status, "redis-k8s", "nginx-ingress-integrator"):
+                return False
+            return any(
+                name.startswith("postgresql") and app.is_active
+                for name, app in status.apps.items()
+            )
+
+        juju.wait(required_apps_ready, timeout=JUJU_WAIT_TIMEOUT)
         yield types.App(app_name)
         return
 
     juju.deploy(
         "postgresql-k8s",
-        channel="14/edge",
-        base="ubuntu@22.04",
+        channel=POSTGRESQL_CHANNEL,
+        base=POSTGRESQL_BASE,
         trust=True,
         config={"profile": "testing"},
     )
@@ -200,10 +317,7 @@ def app_fixture(
     # configure postgres
     juju.config(
         "postgresql-k8s",
-        {
-            "plugin_hstore_enable": True,
-            "plugin_pg_trgm_enable": True,
-        },
+        POSTGRESQL_PLUGIN_CONFIG,
     )
     juju.wait(lambda status: jubilant.all_active(status, "postgresql-k8s"))
 
@@ -234,9 +348,13 @@ def app_fixture(
 @pytest.fixture(scope="module")
 def setup_saml_config(juju: jubilant.Juju, app: types.App):
     """Set SAML related charm config to enable SAML authentication."""
+    model_name = juju.model
+    assert model_name is not None
+    _cleanup_saml_integration(juju, app.name)
+    _cleanup_saml_test_idp_pod(model_name)
     juju.config(app.name, {"force_https": True})
 
-    saml_helper = SamlK8sTestHelper.deploy_saml_idp(juju.model)
+    saml_helper = _deploy_saml_test_idp(model_name)
     juju.deploy(
         "saml-integrator",
         channel="latest/edge",
@@ -245,8 +363,8 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
     )
 
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
-    saml_helper.prepare_pod(juju.model, "saml-integrator-0")
-    saml_helper.prepare_pod(juju.model, f"{app.name}-0")
+    saml_helper.prepare_pod(model_name, "saml-integrator-0")
+    saml_helper.prepare_pod(model_name, f"{app.name}-0")
     juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
     juju.config(
         "saml-integrator",
@@ -260,27 +378,59 @@ def setup_saml_config(juju: jubilant.Juju, app: types.App):
 
     yield saml_helper
 
+    with suppress(subprocess.CalledProcessError):
+        juju.remove_relation(app.name, "saml-integrator")
+    juju.wait(jubilant.all_agents_idle, timeout=JUJU_WAIT_TIMEOUT)
+    with suppress(subprocess.CalledProcessError):
+        juju.cli("remove-application", "saml-integrator", "--force", "--no-wait", "--no-prompt")
+    try:
+        juju.wait(lambda status: "saml-integrator" not in status.apps, timeout=120)
+    except TimeoutError:
+        logger.warning("saml-integrator removal did not complete before teardown timeout")
+    _cleanup_saml_test_idp_pod(model_name)
+    juju.config(app.name, {"force_https": True})
+
 
 @pytest.fixture(scope="module", name="admin_credentials")
 def admin_credentials_fixture(juju: jubilant.Juju, app: types.App) -> types.Credentials:
     """Admin user credentials."""
-    email = "system@test.internal"
+    username = f"sys{int(time.time())}"
+    email = f"{username}@test.internal"
     task = juju.run(f"{app.name}/0", "create-user", {"email": email, "admin": True})
     password = task.results["password"]
-    admin_credentials = types.Credentials(
-        email=email, username=email.split("@", maxsplit=1)[0], password=password
-    )
+    admin_credentials = types.Credentials(email=email, username=username, password=password)
     return admin_credentials
 
 
 @pytest.fixture(scope="module", name="admin_api_key")
-def admin_api_key_fixture(admin_credentials: types.Credentials, discourse_address: str) -> str:
+def admin_api_key_fixture(
+    admin_credentials: types.Credentials, discourse_address: str, app_config: Dict[str, str]
+) -> str:
     """Admin user API key"""
     with requests.session() as session:
-        # Get CSRF token
-        response = session.get(
-            f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}
+        session.headers.update(
+            {
+                "Host": app_config["external_hostname"],
+                "X-Forwarded-Proto": "https",
+            }
         )
+        csrf_response = None
+        for _ in range(30):
+            try:
+                csrf_response = session.get(
+                    f"{discourse_address}/session/csrf",
+                    headers={"Accept": "application/json"},
+                    timeout=10,
+                )
+                if csrf_response.ok:
+                    break
+            except requests.RequestException:
+                pass
+            time.sleep(2)
+        assert csrf_response is not None
+
+        # Get CSRF token
+        response = csrf_response
 
         assert response.ok, response.text
         data = response.json()
