@@ -18,7 +18,7 @@ classifiers = [
 dependencies = [
   "cosl==1.10.3",
   "jsonschema==4.26.0",
-  "ops==3.8.1",
+  "ops==3.8.2",
   "pydantic==2.10.6",
 ]
 
