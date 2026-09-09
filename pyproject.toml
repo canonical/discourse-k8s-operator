@@ -61,7 +61,7 @@ integration = [
   "debugpy",
   "jubilant==1.12.0",
   "opcli ; python_version >= '3.12'",
-  "protobuf==7.36.0",
+  "protobuf==7.36.1",
   "psycopg2-binary",
   "pytest",
   "requests",
