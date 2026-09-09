@@ -10,7 +10,7 @@ Pebble is a lightweight, API-driven process supervisor that is responsible for c
 
 Pebble `services` are configured through [layers](https://github.com/canonical/pebble#layer-specification), and the following containers represent each one a layer forming the effective Pebble configuration, or `plan`:
 
-1. A [Discourse](https://www.discourse.org/) container, consisting of a [Unicorn server](https://devcenter.heroku.com/articles/rails-unicorn) running the Discourse application along with the installed plugins.
+1. A [Discourse](https://www.discourse.org/) container, consisting of a [Pitchfork server](https://github.com/Shopify/pitchfork) running the Discourse application along with the installed plugins.
 
 As a result, if you run a `kubectl get pods` on a namespace named for the Juju model you've deployed the Discourse charm into, you'll see something like the following:
 
@@ -31,11 +31,11 @@ title Component diagram for Discourse Charm
 
 Container_Boundary(discourse, "Discourse") {
   Component(pebble, "Pebble", "", "Starts the Discourse server and app")
-  Component(unicorn-server, "Unicorn server", "", "Serves the Discourse application")
+  Component(pitchfork-server, "Pitchfork server", "", "Serves the Discourse application")
   Component(charm, "Discourse App", "", "Discourse application")
 
-  Rel(pebble, unicorn-server, "")
-  Rel(unicorn-server, charm, "")
+  Rel(pebble, pitchfork-server, "")
+  Rel(pitchfork-server, charm, "")
 }
 ```
 
@@ -75,7 +75,7 @@ Configuration files for the workload can be found [here](https://github.com/cano
 
 ### Discourse
 
-Discourse is a Ruby on Rails application deployed on top of the [Unicorn server](https://devcenter.heroku.com/articles/rails-unicorn).
+Discourse is a Ruby on Rails application deployed on top of the [Pitchfork server](https://github.com/Shopify/pitchfork).
 
 The server is started in HTTP mode (port `3000`) serving all the content. Alongside it there's a standalone process running the [Prometheus Exporter Plugin for Discourse](https://github.com/discourse/discourse-prometheus) (port `9394`).
 

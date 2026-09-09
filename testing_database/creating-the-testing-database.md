@@ -1,40 +1,79 @@
 # Create the testing database
-At the writing this document, the testing database is created using Discourse v3.2.0.
-To get the same result use Charm revision 162 and resource revision 152.
 
-## Create the database
-First of all we need to deploy the Discourse following the [tutorial](https://github.com/canonical/discourse-k8s-operator/blob/main/docs/tutorial.md).
+Current baseline fixture:
 
-Then, we need to create a two new users for testing using the actions:
+- Discourse workload: `v2026.1.7`
+- PostgreSQL channel: `14/stable`
+- Expected git_version in `schema_migration_details`: `b6af77c0382ac61817e825e4e285217327772b54`
 
-```juju run discourse-k8s/0 create-user email=email@example.com admin=true```
-```juju run discourse-k8s/0 create-user email=email2@example.com```
+## 1) Deploy the baseline stack
 
-Please note that the first user is an admin and the second one is not. Also please not the passwords that are generated automatically by the command.
+Create a new Juju model or use an existing one with space for a clean deployment:
 
-Now open the Discourse URL in a browser, login with the first user (admin) and create a new topic. Reply to this topic as the admin user again. Then, login with the second user and reply to this topic. Then login with the first user and approve the second users reply.
+```bash
+juju add-model testing-db-baseline || juju switch testing-db-baseline
+```
 
-## Export the database
+Deploy PostgreSQL 14 and wait for it to be ready:
 
-First we need to get the database password:
-```juju run postgresql-k8s/0 get-password username=operator```
+```bash
+juju deploy postgresql-k8s --channel 14/stable --wait
+```
 
-Ssh into the database
-```juju ssh --container postgresql postgresql-k8s/0 bash```
+Deploy the Discourse charm at v2026.1.7 with appropriate configuration:
 
-Create a folder to dump the db
-```mkdir -p /srv/dump/```
+```bash
+# Build/obtain the v2026.1.7 charm file
+juju deploy ./discourse-k8s.charm discourse-k8s \
+  --config developer_emails="noreply@canonical.com" \
+  --config external_hostname="discourse-k8s" \
+  --config smtp_address="test.local" \
+  --config smtp_domain="test.local" \
+  --config s3_install_cors_rule="false" \
+  --wait
 
-Dump the db. IP here is the unit IP
-```pg_dump -Fc -h 10.1.187.134 -U operator -d discourse > "/srv/dump/testing_database.sql"```
+# Relate to PostgreSQL
+juju relate discourse-k8s:postgresql-client postgresql-k8s:database
+```
 
-Exit the container
-```exit```
+Wait until all units reach active/idle state:
 
-Copy the dump into local file system.
-```juju scp --container postgresql postgresql-k8s/0:/srv/dump/testing_database.sql./testing_database.sql```
+```bash
+juju wait-for unit -m testing-db-baseline --timeout=10m
+```
 
+Verify the deployment is healthy by checking unit status and logs if needed.
+
+## 2) Export the database dump from PostgreSQL
+
+Get the PostgreSQL operator password (for example via Juju secret data), then:
+
+```bash
+juju ssh --model <model> --container postgresql postgresql-k8s/0 \
+  "pg_dump -Fc -h localhost -U operator -d discourse > /tmp/testing_database.sql"
+```
+
+Copy the dump into this repository:
+
+```bash
+juju scp --model <model> --container postgresql \
+  postgresql-k8s/0:/tmp/testing_database.sql \
+  ./testing_database/testing_database.sql
+```
+
+## 3) Capture and update expected git_version
+
+Query the baseline git hash:
+
+```bash
+juju ssh --model <model> --container postgresql postgresql-k8s/0 \
+  "psql -h localhost -U operator --password -d discourse \
+  -tAc \"SELECT git_version FROM schema_migration_details ORDER BY id DESC LIMIT 1;\""
+```
+
+Update `tests/integration/test_db_migration.py` to assert the new hash.
 
 ## Final notes
 
-Make sure the db integration test is updated to match the `postgresql-k8s` revision used during the local database back.
+- Keep this fixture aligned with the "from" version for migration testing.
+- Regenerate the dump whenever the supported baseline series changes.

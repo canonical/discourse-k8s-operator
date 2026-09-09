@@ -1,0 +1,31 @@
+diff --git a/db/structure.sql b/db/structure.sql
+index 7f8c5286b95..23a3cb7cd17 100644
+--- a/db/structure.sql
++++ b/db/structure.sql
+@@ -705,7 +705,7 @@ CREATE TABLE public.ai_document_fragments_embeddings (
+     strategy_id integer NOT NULL,
+     strategy_version integer NOT NULL,
+     digest text NOT NULL,
+-    embeddings public.halfvec NOT NULL,
++    embeddings public.vector NOT NULL,
+     created_at timestamp(6) without time zone NOT NULL,
+     updated_at timestamp(6) without time zone NOT NULL
+ );
+@@ -894,7 +894,7 @@ CREATE TABLE public.ai_posts_embeddings (
+     strategy_id integer NOT NULL,
+     strategy_version integer NOT NULL,
+     digest text NOT NULL,
+-    embeddings public.halfvec NOT NULL,
++    embeddings public.vector NOT NULL,
+     created_at timestamp(6) without time zone NOT NULL,
+     updated_at timestamp(6) without time zone NOT NULL
+ );
+@@ -1133,7 +1133,7 @@ CREATE TABLE public.ai_topics_embeddings (
+     strategy_id integer NOT NULL,
+     strategy_version integer NOT NULL,
+     digest text NOT NULL,
+-    embeddings public.halfvec NOT NULL,
++    embeddings public.vector NOT NULL,
+     created_at timestamp(6) without time zone NOT NULL,
+     updated_at timestamp(6) without time zone NOT NULL
+ );

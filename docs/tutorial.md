@@ -93,14 +93,14 @@ Deploy the charms:
 
 ```
 juju deploy redis-k8s --channel latest/edge
-juju deploy postgresql-k8s --channel 14/stable --trust
+juju deploy postgresql-k8s --channel 16/stable --trust
 juju deploy discourse-k8s
 ```
 
-Enable the required PostgreSQL extensions:
+Enable the required PostgreSQL extensions (for `16/stable`, use kebab-case option names):
 
 ```
-juju config postgresql-k8s plugin_hstore_enable=True plugin_pg_trgm_enable=True
+juju config postgresql-k8s plugin-hstore-enable=true plugin-pg-trgm-enable=true plugin-vector-enable=true
 ```
 
 ### Integrate with the Redis k8s charm and the PostgreSQL k8s charm
@@ -122,7 +122,7 @@ discourse-tutorial  microk8s    microk8s/localhost  3.5.4    unsupported  14:07:
 
 App             Version  Status  Scale  Charm           Channel        Rev  Address         Exposed  Message
 discourse-k8s   3.3.0    active      1  discourse-k8s   latest/stable  173  10.152.183.231  no
-postgresql-k8s  14.12    active      1  postgresql-k8s  14/stable      381  10.152.183.143  no
+postgresql-k8s  16.x     active      1  postgresql-k8s  16/stable      381  10.152.183.143  no
 redis-k8s       7.2.5    active      1  redis-k8s       latest/edge     36  10.152.183.188  no
 
 Unit               Workload  Agent  Address      Ports  Message
@@ -246,4 +246,3 @@ or learn more about the charm, check out these pages:
   {ref}`Security overview <explanation_security>`.
 - Learn more about the available {ref}`relation endpoints <reference_integrations>`
   for the Discourse charm.
-

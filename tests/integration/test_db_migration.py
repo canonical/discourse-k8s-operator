@@ -3,23 +3,125 @@
 # See LICENSE file for licensing details.
 """Discourse integration tests."""
 
+import json
 import logging
+import time
 
 import jubilant
 import pytest
 
-from .conftest import JUJU_WAIT_TIMEOUT
+from .conftest import (
+    JUJU_WAIT_TIMEOUT,
+    POSTGRESQL_BASE,
+    POSTGRESQL_CHANNEL,
+    POSTGRESQL_PLUGIN_CONFIG,
+)
+from .pg_restore_utils import is_retryable_pg_restore_error
 
 logger = logging.getLogger(__name__)
 
 
+def _wait_for_db_relation_credentials(
+    juju: jubilant.Juju, app_unit: str, timeout: int = 60
+) -> tuple[str, str]:
+    """Wait for database relation credentials to be available via Juju secrets.
+
+    Args:
+        juju: Juju instance
+        app_unit: Unit name (e.g. "discourse-k8s/0")
+        timeout: Maximum seconds to wait
+
+    Returns:
+        Tuple of (username, password)
+
+    Raises:
+        TimeoutError: If credentials not available within timeout
+        AssertionError: If required fields are missing
+    """
+    start = time.time()
+    while time.time() - start < timeout:
+        show_unit = json.loads(juju.cli("show-unit", "--format", "json", app_unit))
+        relation_info = show_unit[app_unit]["relation-info"]
+        database_relation = next(
+            (relation for relation in relation_info if relation["endpoint"] == "database"),
+            None,
+        )
+        secret_uri = (
+            database_relation["application-data"].get("secret-user") if database_relation else None
+        )
+        if secret_uri:
+            secret_id = secret_uri.rsplit("/", 1)[-1]
+            db_credentials = json.loads(
+                juju.cli("show-secret", "--reveal", "--format", "json", secret_id)
+            )
+            username = db_credentials[secret_id]["content"]["Data"]["username"]
+            password = db_credentials[secret_id]["content"]["Data"]["password"]
+            if username and password:
+                return username, password
+        time.sleep(2)
+
+    raise TimeoutError(f"Database relation credentials not available after {timeout}s")
+
+
+def _get_database_effective_user(
+    juju: jubilant.Juju, pg_app_name: str, db_relation_user: str, db_relation_password: str
+) -> str:
+    """Return the database role used by the Discourse relation.
+
+    The fixture database is restored as the PostgreSQL operator, but the charm
+    later migrates and mutates objects as the relation-specific role. We query
+    that role explicitly so the ownership fixup below targets the same user.
+    """
+    return juju.cli(
+        "ssh",
+        "--container",
+        "postgresql",
+        f"{pg_app_name}/0",
+        f"psql -h localhost -U {db_relation_user} --password -d discourse "
+        "-tAc 'SELECT current_user;'",
+        stdin=db_relation_password + "\n",
+    ).strip()
+
+
+def _align_database_ownership(
+    juju: jubilant.Juju, pg_app_name: str, db_pass: str, db_effective_user: str
+) -> None:
+    """Align restored fixture ownership with the charm's runtime database role.
+
+    pg_restore imports the baseline as the operator user, but the charm runs
+    later schema work as the role from the relation secret. Reassigning schema,
+    tables, sequences, and the database itself keeps the fixture realistic and
+    avoids false ownership failures during the migration path.
+    """
+    juju.cli(
+        "ssh",
+        "--container",
+        "postgresql",
+        f"{pg_app_name}/0",
+        "psql -h localhost -U operator --password -d discourse -v ON_ERROR_STOP=1 "  # nosec B608
+        f'-c "DO \\$\\$ DECLARE r RECORD; '
+        f"owner_role TEXT := '{db_effective_user}'; "
+        f"BEGIN "
+        f"EXECUTE format('ALTER SCHEMA public OWNER TO %I', owner_role); "
+        f"FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP "
+        f"EXECUTE format('ALTER TABLE public.%I OWNER TO %I', r.tablename, owner_role); "
+        f"END LOOP; "
+        f"FOR r IN SELECT sequence_name FROM information_schema.sequences WHERE sequence_schema = 'public' LOOP "
+        f"EXECUTE format('ALTER SEQUENCE public.%I OWNER TO %I', r.sequence_name, owner_role); "
+        f"END LOOP; "
+        f"END \\$\\$; "
+        f'ALTER DATABASE discourse OWNER TO {db_effective_user};"',
+        stdin=db_pass + "\n",
+    )
+
+
 @pytest.mark.abort_on_fail
-def test_db_migration(
+def test_db_migration(  # noqa: C901
     juju: jubilant.Juju,
     charm_file: str,
     charm_resource_images: dict[str, dict[str, str]],
     charm_base: str,
-):
+) -> None:
     """
     arrange: preload postgres with a testing db that was created in Discourse v3.3.0
     act: deploy and integrate with the current Discourse version (latest)
@@ -32,8 +134,8 @@ def test_db_migration(
     pg_app_name = "postgresql-k8s"
     juju.deploy(
         pg_app_name,
-        channel="14/stable",
-        base="ubuntu@22.04",
+        channel=POSTGRESQL_CHANNEL,
+        base=POSTGRESQL_BASE,
         trust=True,
         config={"profile": "testing"},
     )
@@ -41,50 +143,105 @@ def test_db_migration(
         lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
         timeout=JUJU_WAIT_TIMEOUT,
     )
-    juju.config(
-        pg_app_name,
-        {
-            "plugin_hstore_enable": True,
-            "plugin_pg_trgm_enable": True,
-        },
-    )
+    juju.config(pg_app_name, POSTGRESQL_PLUGIN_CONFIG)
     juju.wait(
         lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
         timeout=JUJU_WAIT_TIMEOUT,
     )
-    task = juju.run(pg_app_name + "/0", "get-password", {"username": "operator"})
-    db_pass = task.results["password"]
-    juju.cli(
-        "scp",
-        "--container",
-        "postgresql",
-        "./testing_database/testing_database.sql",
-        pg_app_name + "/0:.",
+    app_secret_id = None
+    for _ in range(30):
+        secrets = json.loads(juju.cli("secrets", "--format", "json"))
+        app_secret_id = next(
+            (
+                secret_id
+                for secret_id, metadata in secrets.items()
+                if metadata.get("owner") == pg_app_name
+                and metadata.get("label", "").startswith("database-peers.")
+            ),
+            None,
+        )
+        if app_secret_id:
+            break
+        time.sleep(2)
+
+    assert app_secret_id, "PostgreSQL app secret with operator password not found"
+
+    secret_data = json.loads(
+        juju.cli("show-secret", "--reveal", "--format", "json", app_secret_id)
     )
+    db_pass = secret_data[app_secret_id]["content"]["Data"]["operator-password"]
+    for _ in range(30):
+        try:
+            juju.cli(
+                "scp",
+                "--container",
+                "postgresql",
+                "./testing_database/testing_database.sql",
+                pg_app_name + "/0:.",
+            )
+            break
+        except jubilant.CLIError as error:
+            if 'container "postgresql" not running' not in error.stderr:
+                raise
+            time.sleep(2)
+    else:
+        raise AssertionError("PostgreSQL container did not become ready for test database upload")
+
+    for _ in range(30):
+        try:
+            juju.cli(
+                "ssh",
+                "--container",
+                "postgresql",
+                pg_app_name + "/0",
+                "createdb -h localhost -U operator --password discourse",
+                stdin=db_pass + "\n",
+            )
+            break
+        except jubilant.CLIError as error:
+            if "Connection refused" not in error.stderr:
+                raise
+            time.sleep(2)
+    else:
+        raise AssertionError("PostgreSQL did not accept TCP connections before migration import")
+
+    for _ in range(5):
+        try:
+            juju.cli(
+                "ssh",
+                "--container",
+                "postgresql",
+                pg_app_name + "/0",
+                "pg_restore -h localhost -U operator \
+                      --password -d discourse \
+                      --no-comments --no-owner --no-privileges --clean --if-exists ./testing_database.sql",
+                stdin=db_pass + "\n",
+            )
+            break
+        except jubilant.CLIError as error:
+            if not is_retryable_pg_restore_error(error.stderr):
+                raise
+            time.sleep(15)
+    else:
+        raise AssertionError(
+            "PostgreSQL did not stay available long enough to restore fixture database"
+        )
 
     juju.cli(
         "ssh",
         "--container",
         "postgresql",
         pg_app_name + "/0",
-        "createdb -h localhost -U operator --password discourse",
+        "psql -h localhost -U operator --password -d discourse \
+              -c 'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO PUBLIC; \
+                  GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO PUBLIC; \
+                  GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO PUBLIC;'",
         stdin=db_pass + "\n",
     )
 
-    juju.cli(
-        "ssh",
-        "--container",
-        "postgresql",
-        pg_app_name + "/0",
-        "pg_restore -h localhost -U operator \
-              --password -d discourse \
-              --no-comments --no-owner --no-privileges --clean --if-exists ./testing_database.sql",
-        stdin=db_pass + "\n",
-    )
-
-    # ensure we are using the Discourse v3.3.0 database
-    # Discourse v3.3.0 uses the git commit hash:
-    # 5bbdc8a813caf55ab3147ac65b5ffafb5e0aab90
+    # ensure we are using the Discourse v2026.1.7 baseline database
+    # Discourse v2026.1.7 uses the git commit hash:
+    # b6af77c0382ac61817e825e4e285217327772b54
     latest_git_version = juju.cli(
         "ssh",
         "--container",
@@ -95,8 +252,8 @@ def test_db_migration(
               -c 'SELECT git_version FROM schema_migration_details LIMIT 1;'",
         stdin=db_pass + "\n",
     )
-    assert "5bbdc8a813caf55ab3147ac65b5ffafb5e0aab90" in latest_git_version, (
-        "Discourse v3.3.0 git version does not match with the database version"
+    assert "b6af77c0382ac61817e825e4e285217327772b54" in latest_git_version, (
+        "Discourse v2026.1.7 git version does not match with the database version"
     )
 
     juju.deploy("redis-k8s", base="ubuntu@22.04", channel="latest/edge")
@@ -121,6 +278,21 @@ def test_db_migration(
     )
 
     juju.integrate(discourse_app_name, pg_app_name + ":database")
+
+    # Wait for database relation to settle and secrets to be available.
+    # Cannot use simple 'juju wait-for relation' because we need the actual credentials
+    # (passed via Juju secrets), not just relation presence.
+    db_relation_user, db_relation_password = _wait_for_db_relation_credentials(
+        juju, discourse_app_name + "/0", timeout=60
+    )
+
+    db_effective_user = _get_database_effective_user(
+        juju, pg_app_name, db_relation_user, db_relation_password
+    )
+    assert db_effective_user, "Discourse database effective role not found"
+
+    _align_database_ownership(juju, pg_app_name, db_pass, db_effective_user)
+
     juju.integrate(discourse_app_name, "redis-k8s")
     juju.integrate(discourse_app_name, "nginx-ingress-integrator")
     juju.wait(

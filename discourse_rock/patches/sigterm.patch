@@ -1,30 +1,31 @@
-diff --git a/config/unicorn.conf.rb b/config/unicorn.conf.rb
-index d3fc43c373..d10ca80bdd 100644
---- a/config/unicorn.conf.rb
-+++ b/config/unicorn.conf.rb
-@@ -62,6 +62,15 @@ check_client_connection false
+diff --git a/config/pitchfork.conf.rb b/config/pitchfork.conf.rb
+index 01e5f7fa..b3c20ed5 100644
+--- a/config/pitchfork.conf.rb
++++ b/config/pitchfork.conf.rb
+@@ -53,6 +53,15 @@ if ENV["RAILS_ENV"] != "production"
+ end
  
- initialized = false
- before_fork do |server, worker|
-+  Signal.trap 'TERM' do
-+    puts 'Unicorn master intercepting TERM and sending myself QUIT after 5s instead'
+ before_fork do |server|
++  Signal.trap "TERM" do
++    puts "Pitchfork master intercepting TERM and sending myself QUIT after 15s instead"
 +    Thread.new do
 +      sleep 15
-+      puts 'Send QUIT signal to master'
-+      Process.kill 'QUIT', Process.pid
++      puts "Send QUIT signal to master"
++      Process.kill "QUIT", Process.pid
 +    end
 +  end
 +
-   unless initialized
-     Discourse.preload_rails!
-     Discourse.before_fork
-@@ -193,6 +202,9 @@ before_fork do |server, worker|
- end
+   Discourse.redis.close
  
- after_fork do |server, worker|
-+  Signal.trap 'TERM' do
-+    puts 'Unicorn worker intercepting TERM and doing nothing. Wait for master to sent QUIT'
-+ end
+   throttle_time = Float(ENV["APP_SERVER_FORK_THROTTLE"], exception: false) || 1
+@@ -85,6 +94,10 @@ end
+ oob_gc_enabled = ENV["DISCOURSE_DISABLE_MAJOR_GC_DURING_REQUESTS"] && RUBY_VERSION >= "3.4"
+ 
+ after_worker_fork do |server, worker|
++  Signal.trap "TERM" do
++    puts "Pitchfork worker intercepting TERM and doing nothing. Wait for master to send QUIT"
++  end
++
    DiscourseEvent.trigger(:web_fork_started)
-   Discourse.after_unicorn_worker_fork
+   Discourse.apply_worker_db_variables_overrides
    Discourse.after_fork

@@ -796,13 +796,21 @@ class DiscourseCharm(CharmBase):
             [
                 os.path.join(DISCOURSE_PATH, "bin/bundle"),
                 "exec",
-                "rake",
-                "admin:create",
+                "rails",
+                "runner",
+                (
+                    "user = User.find_by_email(ENV.fetch('TARGET_EMAIL')); "
+                    "raise 'missing user' unless user; "
+                    "user.admin = true; "
+                    "user.save!"
+                ),
             ],
-            stdin=f"{email}\nn\nY\n",
             working_dir=DISCOURSE_PATH,
             user=CONTAINER_APP_USERNAME,
-            environment=self._create_discourse_environment_settings(),
+            environment={
+                **self._create_discourse_environment_settings(),
+                "TARGET_EMAIL": email,
+            },
             timeout=60,
         )
         try:

@@ -4,6 +4,7 @@
 """Discourse integration tests."""
 
 import logging
+import time
 
 import jubilant
 import pytest
@@ -23,7 +24,7 @@ def test_create_user(juju: jubilant.Juju, app: types.App):
     """
     juju.wait(jubilant.all_active, timeout=JUJU_WAIT_TIMEOUT)
 
-    email = "test-user@test.internal"
+    email = f"test-user-{int(time.time())}@test.internal"
 
     task = juju.run(app.name + "/0", "create-user", {"email": email})
     assert task.results["user"] == email
@@ -34,16 +35,26 @@ def test_create_user(juju: jubilant.Juju, app: types.App):
     assert excinfo.value.task.status == "failed"
 
 
-def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: str):
+def test_promote_user(
+    juju: jubilant.Juju,
+    app: types.App,
+    discourse_address: str,
+    app_config: dict[str, str],
+):
     """
     arrange: A discourse application
     act: Promote a user to admin
     assert: User cannot access the admin API before being promoted
     """
     with requests.session() as session:
+        base_headers = {"Host": app_config["external_hostname"], "X-Forwarded-Proto": "https"}
+        session.headers.update(base_headers)
 
-        def get_api_key(csrf_token: str) -> bool:
-            response = session.post(
+        def get_api_key_response(
+            http_session: requests.Session, csrf_token: str
+        ) -> requests.Response:
+            http_session.headers.update(base_headers)
+            response = http_session.post(
                 f"{discourse_address}/admin/api/keys",
                 headers={
                     "Content-Type": "application/json",
@@ -52,40 +63,63 @@ def test_promote_user(juju: jubilant.Juju, app: types.App, discourse_address: st
                 },
                 json={"key": {"description": "admin-api-key", "username": None}},
             )
-            return response.json().get("key") is not None
+            return response
 
-        response = session.get(
-            f"{discourse_address}/session/csrf", headers={"Accept": "application/json"}, timeout=60
-        )
+        def login(http_session: requests.Session, email: str, password: str) -> str:
+            http_session.headers.update(base_headers)
+            csrf_response = http_session.get(
+                f"{discourse_address}/session/csrf",
+                headers={"Accept": "application/json"},
+                timeout=60,
+            )
 
-        assert response.ok, response.text
-        data = response.json()
-        assert data["csrf"], data
-        csrf = data["csrf"]
+            assert csrf_response.ok, csrf_response.text
+            data = csrf_response.json()
+            assert data["csrf"], data
+            csrf = data["csrf"]
 
-        email = "test-promote-user@test.internal"
+            login_response = http_session.post(
+                f"{discourse_address}/session",
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "X-CSRF-Token": csrf,
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                data={
+                    "login": email,
+                    "password": password,
+                    "second_factor_method": "1",
+                    "timezone": "Asia/Hong_Kong",
+                },
+            )
+            assert login_response.ok, login_response.text
+            assert "error" not in login_response.json()
+
+            refreshed_csrf = http_session.get(
+                f"{discourse_address}/session/csrf",
+                headers={"Accept": "application/json"},
+                timeout=60,
+            )
+            assert refreshed_csrf.ok, refreshed_csrf.text
+            refreshed_data = refreshed_csrf.json()
+            assert refreshed_data["csrf"], refreshed_data
+            return refreshed_data["csrf"]
+
+        email = f"test-promote-user-{int(time.time())}@test.internal"
         task = juju.run(app.name + "/0", "create-user", {"email": email})
         assert task.results["user"] == email
 
-        response = session.post(
-            f"{discourse_address}/session",
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "X-CSRF-Token": csrf,
-                "X-Requested-With": "XMLHttpRequest",
-            },
-            data={
-                "login": email,
-                "password": task.results["password"],
-                "second_factor_method": "1",
-                "timezone": "Asia/Hong_Kong",
-            },
-        )
+        csrf = login(session, email, task.results["password"])
 
-        assert response.ok, response.text
-        assert "error" not in response.json()
+        unpromoted_response = get_api_key_response(session, csrf)
+        assert unpromoted_response.ok is False, unpromoted_response.text
 
-        assert not get_api_key(csrf), "This should fail as the user is not promoted"
+        promote_task = juju.run(app.name + "/0", "promote-user", {"email": email})
+        assert promote_task.results["user"] == email
 
-        juju.run(app.name + "/0", "promote-user", {"email": email})
-        assert get_api_key(csrf), "This should succeed as the user is promoted"
+        with requests.session() as promoted_session:
+            promoted_csrf = login(promoted_session, email, task.results["password"])
+            promoted_response = get_api_key_response(promoted_session, promoted_csrf)
+
+        assert promoted_response.ok, promoted_response.text
+        assert promoted_response.json().get("key"), promoted_response.text

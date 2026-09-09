@@ -40,10 +40,10 @@ parts:
       - zlib1g-dev
     build-environment:
       - ARCH: "x64"
-      - NODE_VERSION: "22.12.0"
+      - NODE_VERSION: "22.18.0"
       - RAILS_ENV: "production"
       - RUBY_INSTALL_VERSION: "0.10.1"
-      - RUBY_VERSION: "3.3.8"
+      - RUBY_VERSION: "3.4.7"
       - PNPM_VERSION: "10.28.0"
     override-build: |
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
@@ -65,7 +65,7 @@ parts:
     plugin: dump
     source: https://github.com/discourse/discourse.git
     source-depth: 1
-    source-tag: v2026.1.7
+    source-tag: v2026.7.1
     source-type: git
     override-build: |
       craftctl default
@@ -101,7 +101,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-mermaid-theme-component.git
-    source-commit: 77117ae7df58dae8ed9a59808e3874a6ad4fa848
+    source-commit: b5d31a95e442d754df9300688afaa111e9e333dd
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-mermaid-theme-component/
@@ -109,7 +109,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-saml.git
-    source-commit: e2044235dbdb217814d411e9637da31616928681
+    source-commit: 2d58152fc34d97743ee3538606cbde8051eb2bcf
     source-depth: 1
     override-build: |
       craftctl default
@@ -120,7 +120,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-prometheus.git
-    source-commit: 14d2328911c3b7ed5b38c4713c52cd835793be5a
+    source-commit: ce3607d85e5d1ec0e56306b7e47cd0f0b8384d6f
     source-depth: 1
     override-build: |
       craftctl default
@@ -131,7 +131,7 @@ parts:
     plugin: dump
     after: [discourse, bundler-config]
     source: https://github.com/discourse/discourse-signatures.git
-    source-commit: 6bf2d448bc4935b77bf0fc0ccdabc61599425e56
+    source-commit: e74f4126d1a2fbfa5e9b3d1b1b499ef67ea6c78b
     source-depth: 1
     organize:
       "*": srv/discourse/app/plugins/discourse-signatures/
@@ -147,15 +147,27 @@ parts:
       - git
     after: [discourse, patches]
     override-stage: |
-      git -C srv/discourse/app apply patches/db_migrations.patch
-      git -C srv/discourse/app apply patches/lp1903695.patch
-      git -C srv/discourse/app apply patches/discourse-charm.patch
-      git -C srv/discourse/app apply patches/sigterm.patch
+      apply_patch_once() {
+        local patch="$1"
+        if git -C srv/discourse/app apply --reverse --check "$patch" >/dev/null 2>&1; then
+          echo "Patch ${patch} already applied; skipping"
+          return 0
+        fi
+        git -C srv/discourse/app apply "$patch"
+      }
+
+      apply_patch_once patches/db_migrations.patch
+      apply_patch_once patches/lp1903695.patch
+      apply_patch_once patches/discourse-charm.patch
+      apply_patch_once patches/sigterm.patch
+      # Temporary compatibility patch: remove once Postgres charm ships pgvector with halfvec.
+      apply_patch_once patches/pgvector_halfvec_compat.patch
     prime:
-      - srv/discourse/app/db/post_migrate/20260108044513_drop_imap_sync_logs.rb
+      - srv/discourse/app/db/post_migrate/20260112082200_drop_reviewable_action_logs.rb
+      - srv/discourse/app/db/structure.sql
       - srv/discourse/app/lib/middleware/anonymous_cache.rb
       - srv/discourse/app/lib/tasks/discourse-charm.rake
-      - srv/discourse/app/config/unicorn.conf.rb
+      - srv/discourse/app/config/pitchfork.conf.rb
       - srv/discourse/app/config/environments/production.rb
   scripts:
     plugin: dump
@@ -181,11 +193,11 @@ parts:
       - libssl-dev
     override-prime: |
       cd srv/discourse/app
-      gem install -n "bin" bundler -v 2.6.4
+      gem install -n "bin" bundler -v 4.0.11
       bin/bundle install
       bin/bundle install --gemfile="plugins/discourse-prometheus/Gemfile"
       bin/bundle install --gemfile="plugins/discourse-saml/Gemfile"
-      /root/.local/share/pnpm/pnpm install
+      PATH=${CRAFT_PRIME}/usr/bin:${CRAFT_PRIME}/usr/local/bin:$PATH /root/.local/share/pnpm/pnpm install
   discourse-precompile-assets:
     plugin: nil
     after: [apply-patches, setup]
@@ -198,6 +210,7 @@ parts:
     override-prime: |
       systemctl start postgresql
       cd srv/discourse/app
+      git config --global --add safe.directory "$(pwd)"
       su - postgres -c "psql -c \"CREATE DATABASE discourse;\"" || echo "Could not create database, maybe it already exists."
       su - postgres -c "psql -c \"CREATE USER discourse WITH PASSWORD 'discourse';\"" || echo "Could not create user, maybe it already exists."
       su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE discourse TO discourse;\""
