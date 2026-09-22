@@ -27,10 +27,35 @@ Kubernetes offerings.
 
 ## In this documentation
 
-| | |
-|--|--|
-|  {ref}`Tutorials <tutorial>`</br>  Get started - a hands-on introduction to using the Charmed Discourse operator for new users </br> |  {ref}`How-to guides <how_to_index>` </br> Step-by-step guides covering key operations and common tasks | 
-| {ref}`Reference <reference_index>` </br> Technical information - specifications, APIs, architecture | {ref}`Explanation <explanation_index>` </br> Concepts - discussion and clarification of key topics  |
+```{list-table}
+   :header-rows: 1
+   :widths: 15 30
+
+* - 
+  - 
+* - **Get started**
+  - {ref}`Deploy the Discourse charm <tutorial>`
+* - **Deployment**
+  - {ref}`Configure the hostname <how_to_configure_hostname>` | {ref}`Configure the container <how_to_configure_container>` | {ref}`Configure S3 <how_to_configure_s3>` | {ref}`Configure SMTP <how_to_configure_smtp>` | {ref}`Configure SAML <how_to_configure_saml>`
+* - **Operations**
+  - {ref}`Access the Rails console <how_to_access_the_rails_console>` | {ref}`Back up and restore <how_to_backup_and_restore>` | {ref}`Upgrade <how_to_upgrade>`
+* - **Integrations**
+  - {ref}`Integrations <reference_integrations>` | {ref}`External access <reference_external_access>`
+* - **Design**
+  - {ref}`Charm architecture <reference_charm_architecture>` | {ref}`Versioning <reference_versioning>`
+* - **Security**
+  - {ref}`Overview <explanation_security>`
+```
+
+## How this documentation is organized
+
+This documentation uses the
+[Diátaxis documentation structure](https://diataxis.fr/).
+
+* The {ref}`Tutorial <tutorial>` takes you step-by-step through your first deployment of the Discourse charm.
+* The {ref}`How-to guides <how_to_index>` cover practical tasks for configuring, integrating, and maintaining your Discourse deployment.
+* {ref}`Reference <reference_index>` provides technical details on actions, configurations, plugins, integrations, and charm architecture.
+* {ref}`Explanation <explanation_index>` includes context and overviews on key topics such as security.
 
 ## Contributing to this documentation
 
@@ -40,14 +65,18 @@ If there's a particular area of documentation that you'd like to see that's miss
 
 ## Project and community
 
-The Discourse Operator is a member of the Ubuntu family. It's an open source
+The Discourse Operator is a member of the Ubuntu family. It's an open-source
 project that warmly welcomes community projects, contributions, suggestions,
-fixes and constructive feedback.
+fixes, and constructive feedback.
 
 - [Code of conduct](https://ubuntu.com/community/code-of-conduct)
-- [Get support](https://discourse.charmhub.io/)
-- [Join our online chat](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
+- [File a bug](https://github.com/canonical/discourse-k8s-operator/issues)
+- Get support through the [Discourse forum](https://discourse.charmhub.io/)
+- Join our [online chat](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
 - {ref}`Contribute <how_to_contribute>`
+
+Thinking about using the Discourse Operator for your next project?
+[Get in touch](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)!
 
 ```{toctree}
 :hidden:
