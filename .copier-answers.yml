@@ -1,9 +1,10 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: aca1158
+_commit: 5875bae
 _src_path: gh:canonical/platform-engineering-documentation-files.git
 author: Canonical Ltd.
 discourse: https://discourse.charmhub.io
 display_contributors: false
+docs_host: canonical.com
 github_url: https://github.com/canonical/discourse-k8s-operator
 html_favicon: ''
 license_name: Apache-2.0
