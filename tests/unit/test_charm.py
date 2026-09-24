@@ -152,6 +152,24 @@ def test_get_cors_origin_behavior(config, expected_origin, expected_status, base
         )
 
 
+def test_database_port_is_propagated_from_relation(base_state):
+    """
+    arrange: provide a pgbouncer database endpoint on its non-default port.
+    act: configure the charm.
+    assert: Discourse receives the endpoint port.
+    """
+    ctx = testing.Context(DiscourseCharm)
+    base_state["relations"][0].remote_app_data["endpoints"] = "pgbouncer:6432"
+
+    state_in = testing.State(**base_state)
+    container = state_in.get_container(CONTAINER_NAME)
+    state_out = ctx.run(ctx.on.pebble_ready(container), state_in)
+
+    environment = state_out.get_container(CONTAINER_NAME).plan.services[SERVICE_NAME].environment
+    assert environment["DISCOURSE_DB_PORT"] == "6432"
+    assert environment["DISCOURSE_DB_BACKUP_PORT"] == "6432"
+
+
 @pytest.mark.parametrize(
     "config, expected_status",
     [
