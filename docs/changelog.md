@@ -2,6 +2,10 @@
 
 # Changelog
 
+## 2026-09-23
+
+ - docs: Updated the home page to implement the new pattern.
+
 ## 2026-08-24
 
 - feat(docs): onboard repository into Copier-based central management solution
