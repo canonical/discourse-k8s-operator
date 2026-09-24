@@ -14,16 +14,12 @@ myst:
 A {ref}`Juju <juju:juju>` {ref}`charm <juju:charm>` deploying and managing Discourse on Kubernetes.
 
 Discourse is an open-source software application used to create customer-friendly and community-friendly discussion platforms, 
-forums, and mailing lists. It's designed to work as a discussion platform for various topics and is widely used by numerous 
-organizations and individuals to build communities, provide customer support, and facilitate conversations. The platform is 
-built with a focus on simplicity, user-friendliness, and responsiveness, making it accessible from both desktops and mobile 
-devices. Discourse provides various moderation and administration tools, enabling community managers to maintain a healthy and 
-constructive environment.
-
+forums, and mailing lists.
 This charm simplifies operations of Discourse on Kubernetes, such as scaling the number of instances, integration 
 with SSO, access to S3 for redundant file storage and more. It allows for deployment on many different Kubernetes 
 platforms, from [MicroK8s](https://canonical.com/microk8s) or [Charmed Kubernetes](https://ubuntu.com/kubernetes) to public cloud 
 Kubernetes offerings.
+This charm makes operating Discourse straightforward for DevOps and SRE teams who want to run community forums or support platforms on Kubernetes through Juju's clean interface.
 
 ## In this documentation
 
