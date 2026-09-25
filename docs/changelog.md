@@ -2,6 +2,10 @@
 
 # Changelog
 
+## 2026-09-25
+
+- Fix Discourse database and backup connections when the database relation uses a non-default port.
+
 ## 2026-08-24
 
 - feat(docs): onboard repository into Copier-based central management solution
