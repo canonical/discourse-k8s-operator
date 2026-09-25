@@ -217,6 +217,11 @@ extensions = [
     "sphinx_sitemap",
 ]
 
+# Lets a plain ```mermaid fence (which GitHub also renders natively) be
+# treated as the {mermaid} directive, instead of requiring that directive
+# syntax explicitly.
+myst_fence_as_directive = {"mermaid"}
+
 # Excludes files or directories from processing
 exclude_patterns = [
     "doc-cheat-sheet*",
@@ -246,6 +251,5 @@ rst_prolog = """
 
 # Intersphinx mappings for cross-referencing external documentation.
 intersphinx_mapping = {
-    "juju": ("https://documentation.ubuntu.com/juju/3.6/", None),
-    "starter-pack": ("https://canonical-starter-pack.readthedocs-hosted.com/stable/", None),
+    "juju": ("https://canonical.com/juju/docs/juju-cli/3.6/", None),
 }

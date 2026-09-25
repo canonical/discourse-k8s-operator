@@ -6,6 +6,11 @@
 
 - Fix Discourse database and backup connections when the database relation uses a non-default port.
 
+## 2026-09-24
+
+- chore(docs): Manually update the documentation files, and add a new
+  workflow to automatically manage updates.
+
 ## 2026-08-24
 
 - feat(docs): onboard repository into Copier-based central management solution
