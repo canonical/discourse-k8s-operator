@@ -6,7 +6,7 @@ Quick reference for AI agents working in this repository.
 
 Juju charm that deploys [Discourse](https://www.discourse.org/) on Kubernetes.
 The charm (`src/`) pairs with a custom OCI rock (`discourse_rock/`) built with
-[Rockcraft](https://documentation.ubuntu.com/rockcraft/stable/).
+[Rockcraft](https://ubuntu.com/containers/rockcraft/docs/1/).
 
 Key directories:
 
