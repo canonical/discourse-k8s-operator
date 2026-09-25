@@ -2,7 +2,7 @@
 
 # Changelog
 
-# 2026-09-24
+## 2026-09-24
 
 - chore(docs): Manually update the documentation files, and add a new
   workflow to automatically manage updates.
