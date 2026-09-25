@@ -170,7 +170,12 @@ def test_db_migration(  # noqa: C901
         juju.cli("show-secret", "--reveal", "--format", "json", app_secret_id)
     )
     db_pass = secret_data[app_secret_id]["content"]["Data"]["operator-password"]
-    for _ in range(30):
+    # The workload container can restart (e.g. image pull, pod reschedule) shortly
+    # after the charm reports active/idle, so allow a generous window here rather
+    # than the short retry budgets used for simple secret/relation-data lookups.
+    container_ready_timeout = 300
+    start = time.time()
+    while True:
         try:
             juju.cli(
                 "scp",
@@ -183,11 +188,15 @@ def test_db_migration(  # noqa: C901
         except jubilant.CLIError as error:
             if 'container "postgresql" not running' not in error.stderr:
                 raise
-            time.sleep(2)
-    else:
-        raise AssertionError("PostgreSQL container did not become ready for test database upload")
+            if time.time() - start > container_ready_timeout:
+                raise AssertionError(
+                    "PostgreSQL container did not become ready for test database upload "
+                    f"after {container_ready_timeout}s"
+                ) from error
+            time.sleep(5)
 
-    for _ in range(30):
+    start = time.time()
+    while True:
         try:
             juju.cli(
                 "ssh",
@@ -201,9 +210,12 @@ def test_db_migration(  # noqa: C901
         except jubilant.CLIError as error:
             if "Connection refused" not in error.stderr:
                 raise
-            time.sleep(2)
-    else:
-        raise AssertionError("PostgreSQL did not accept TCP connections before migration import")
+            if time.time() - start > container_ready_timeout:
+                raise AssertionError(
+                    "PostgreSQL did not accept TCP connections before migration import "
+                    f"after {container_ready_timeout}s"
+                ) from error
+            time.sleep(5)
 
     for _ in range(5):
         try:
