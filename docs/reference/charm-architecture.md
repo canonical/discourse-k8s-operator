@@ -83,7 +83,7 @@ The workload that this container is running is defined in the [Discourse `rockcr
 
 ## OCI images
 
-The OCI image is built using [Rockcraft](https://documentation.ubuntu.com/rockcraft/stable/) and defined in the [`rockcraft.yaml` file](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse_rock/rockcraft.yaml) in the charm repository. It is then published to [Charmhub](https://charmhub.io/), the official repository for charms.
+The OCI image is built using [Rockcraft](https://ubuntu.com/containers/rockcraft/docs/1/) and defined in the [`rockcraft.yaml` file](https://github.com/canonical/discourse-k8s-operator/blob/main/discourse_rock/rockcraft.yaml) in the charm repository. It is then published to [Charmhub](https://charmhub.io/), the official repository for charms.
 
 This is done by publishing a resource to Charmhub as described in the [Ops guide for publishing charms](https://documentation.ubuntu.com/ops/latest/howto/publish-your-charm-on-charmhub/).
 
