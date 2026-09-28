@@ -153,6 +153,38 @@ def test_get_cors_origin_behavior(config, expected_origin, expected_status, base
 
 
 @pytest.mark.parametrize(
+    "endpoints, expected_port",
+    [
+        pytest.param("dbhost:5432,dbhost-2:5432", "5432", id="postgresql default port"),
+        pytest.param("pgbouncer:6432", "6432", id="pgbouncer port"),
+        pytest.param("pg-1:6432,pg-2:5432", "6432", id="primary endpoint port wins"),
+    ],
+)
+def test_database_port_is_propagated_from_relation(
+    base_state, postgresql_relation, redis_relation, endpoints, expected_port
+):
+    """
+    arrange: provide a database relation advertising the given endpoints.
+    act: configure the charm.
+    assert: Discourse receives the port of the primary endpoint.
+    """
+    ctx = testing.Context(DiscourseCharm)
+    database_relation = testing.Relation(
+        endpoint="database",
+        interface="postgresql_client",
+        remote_app_data={**postgresql_relation.remote_app_data, "endpoints": endpoints},
+    )
+
+    state_in = testing.State(**{**base_state, "relations": [database_relation, redis_relation]})
+    container = state_in.get_container(CONTAINER_NAME)
+    state_out = ctx.run(ctx.on.pebble_ready(container), state_in)
+
+    environment = state_out.get_container(CONTAINER_NAME).plan.services[SERVICE_NAME].environment
+    assert environment["DISCOURSE_DB_PORT"] == expected_port
+    assert environment["DISCOURSE_DB_BACKUP_PORT"] == expected_port
+
+
+@pytest.mark.parametrize(
     "config, expected_status",
     [
         pytest.param(
