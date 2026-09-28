@@ -446,6 +446,7 @@ class DiscourseCharm(CharmBase):
         # The following could fail if the data is malformed.
         # We/don't catch it because we don't want to silently fail in those cases
         redis_relation_data = self._get_redis_relation_data()
+        database_port = database_relation_data["POSTGRES_PORT"]
 
         pod_config = {
             # Since pebble exec command doesn't copy the container env (envVars set in Dockerfile),
@@ -454,11 +455,11 @@ class DiscourseCharm(CharmBase):
             "CONTAINER_APP_ROOT": "/srv/discourse",
             "CONTAINER_APP_USERNAME": CONTAINER_APP_USERNAME,
             "DISCOURSE_CORS_ORIGIN": self._get_cors_origin(),
-            "DISCOURSE_DB_BACKUP_PORT": database_relation_data["POSTGRES_PORT"],
+            "DISCOURSE_DB_BACKUP_PORT": database_port,
             "DISCOURSE_DB_HOST": database_relation_data["POSTGRES_HOST"],
             "DISCOURSE_DB_NAME": database_relation_data["POSTGRES_DB"],
             "DISCOURSE_DB_PASSWORD": database_relation_data["POSTGRES_PASSWORD"],
-            "DISCOURSE_DB_PORT": database_relation_data["POSTGRES_PORT"],
+            "DISCOURSE_DB_PORT": database_port,
             "DISCOURSE_DB_USERNAME": database_relation_data["POSTGRES_USER"],
             "DISCOURSE_DEVELOPER_EMAILS": self.config["developer_emails"],
             "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
