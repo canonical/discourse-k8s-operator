@@ -2,6 +2,10 @@
 
 # Changelog
 
+## 2026-09-30
+
+- docs: Updated the home page to implement the new pattern.
+
 ## 2026-09-25
 
 - Fix Discourse database and backup connections when the database relation uses a non-default port.
