@@ -196,9 +196,11 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert "DISCOURSE_BACKUP_LOCATION" not in updated_plan_env
     assert updated_plan_env["DISCOURSE_CORS_ORIGIN"] == "http://discourse-k8s"
+    assert updated_plan_env["DISCOURSE_DB_BACKUP_PORT"] == "5432"
     assert updated_plan_env["DISCOURSE_DB_HOST"] == "dbhost"
     assert updated_plan_env["DISCOURSE_DB_NAME"] == DATABASE_NAME
     assert updated_plan_env["DISCOURSE_DB_PASSWORD"] == "somepasswd"
+    assert updated_plan_env["DISCOURSE_DB_PORT"] == "5432"
     assert updated_plan_env["DISCOURSE_DB_USERNAME"] == "someuser"
     assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
     assert updated_plan_env["DISCOURSE_HOSTNAME"] == "discourse-k8s"
@@ -253,9 +255,11 @@ def test_on_config_changed_when_valid():
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert updated_plan_env["DISCOURSE_BACKUP_LOCATION"] == "s3"
     assert updated_plan_env["DISCOURSE_CORS_ORIGIN"] == "https://discourse.local,s3.cdn"
+    assert updated_plan_env["DISCOURSE_DB_BACKUP_PORT"] == "5432"
     assert updated_plan_env["DISCOURSE_DB_HOST"] == "dbhost"
     assert updated_plan_env["DISCOURSE_DB_NAME"] == DATABASE_NAME
     assert updated_plan_env["DISCOURSE_DB_PASSWORD"] == "somepasswd"
+    assert updated_plan_env["DISCOURSE_DB_PORT"] == "5432"
     assert updated_plan_env["DISCOURSE_DB_USERNAME"] == "someuser"
     assert updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"] == "user@foo.internal"
     assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
