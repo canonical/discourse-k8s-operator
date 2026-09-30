@@ -9,3 +9,7 @@ By default, the following Discourse plugins are installed with the latest versio
 - [Mermaid](https://github.com/unfoldingWord-dev/discourse-mermaid)
 - [SAML](https://github.com/discourse/discourse-saml)
 - [Prometheus export](https://github.com/discourse/discourse-prometheus)
+
+This plugin list is fixed by the charm. Additional plugins cannot be added through
+the charm configuration; installing another plugin requires interacting directly
+with the workload container.

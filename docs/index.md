@@ -34,11 +34,11 @@ This charm makes operating Discourse straightforward for DevOps and SRE teams wh
 * - **Deployment**
   - {ref}`Configure the hostname <how_to_configure_hostname>` | {ref}`Configure the container <how_to_configure_container>` | {ref}`Configure S3 <how_to_configure_s3>` | {ref}`Configure SMTP <how_to_configure_smtp>` | {ref}`Configure SAML <how_to_configure_saml>`
 * - **Operations**
-  - {ref}`Access the Rails console <how_to_access_the_rails_console>` | {ref}`Back up and restore <how_to_backup_and_restore>` | {ref}`Upgrade <how_to_upgrade>`
-* - **Integrations**
-  - {ref}`Integrations <reference_integrations>` | {ref}`External access <reference_external_access>`
+  - {ref}`Access the Rails console <how_to_access_the_rails_console>` | {ref}`Back up and restore <how_to_backup_and_restore>` | {ref}`Upgrade <how_to_upgrade>` |
+  {ref}`Integrations <reference_integrations>`
 * - **Design**
-  - {ref}`Charm architecture <reference_charm_architecture>` | {ref}`Versioning <reference_versioning>`
+  - {ref}`Charm architecture <reference_charm_architecture>` | {ref}`Versioning <reference_versioning>` | {ref}`External access <reference_external_access>` |
+  {ref}`Plugins <reference_plugins>`
 * - **Security**
   - {ref}`Overview <explanation_security>`
 ```
