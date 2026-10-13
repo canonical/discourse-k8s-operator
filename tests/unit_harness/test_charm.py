@@ -17,6 +17,12 @@ from charm import CONTAINER_NAME, DISCOURSE_PATH, SERVICE_NAME
 from constants import DATABASE_NAME
 from tests.unit_harness import helpers
 
+# These legacy tests still use Harness, which ops marks as deprecated with a
+# PendingDeprecationWarning. The unit suite runs with warnings promoted to
+# errors (see pyproject.toml), so ignore that one warning here until the tests
+# are ported to ops.testing.Context like those in tests/unit.
+pytestmark = pytest.mark.filterwarnings("ignore:Harness is deprecated:PendingDeprecationWarning")
+
 
 @pytest.mark.parametrize(
     "with_postgres, with_redis, with_ingress, status",

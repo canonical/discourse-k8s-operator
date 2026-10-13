@@ -2,6 +2,11 @@
 
 # Changelog
 
+## 2026-10-12
+
+- test: Run the unit tests with warnings promoted to errors, so deprecations
+  and resource leaks fail the suite instead of scrolling past in the log.
+
 ## 2026-09-30
 
 - docs: Updated the home page to implement the new pattern.
