@@ -16,9 +16,9 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "cosl==1.10.3",
+  "cosl==1.11.2",
   "jsonschema==4.26.0",
-  "ops==3.8.1",
+  "ops==3.8.2",
   "pydantic==2.10.6",
 ]
 
@@ -30,7 +30,7 @@ lint = [
   "boto3",
   "bs4",
   "codespell",
-  "jubilant==1.13.0",
+  "jubilant==1.14.0",
   "mypy",
   "pep8-naming",
   "psycopg2-binary",
@@ -59,7 +59,7 @@ integration = [
   "boto3",
   "bs4",
   "debugpy",
-  "jubilant==1.13.0",
+  "jubilant==1.14.0",
   "opcli ; python_version >= '3.12'",
   "protobuf==7.36.0",
   "psycopg2-binary",
@@ -73,7 +73,7 @@ package = false
 
 [tool.uv.sources]
 # opcli is published only from the charm-ci git repository, not PyPI.
-opcli = { git = "https://github.com/canonical/charm-ci.git", tag = "v1.0.1" }
+opcli = { git = "https://github.com/canonical/charm-ci.git", tag = "v1.0.2" }
 
 [tool.ruff]
 target-version = "py310"
@@ -134,6 +134,19 @@ minversion = "6.0"
 log_cli_level = "INFO"
 addopts = "-x"
 pythonpath = [ "lib", "src" ]
+# Turn warnings into errors so deprecations and resource leaks fail the unit
+# suite rather than accumulating unnoticed. The ignore below is anchored to a
+# specific message and is for third-party code; the charm's own code raises
+# none. The legacy Harness tests carry a module-scoped ignore of their own
+# (see tests/unit_harness/test_charm.py), and the integration env opts out
+# (see tox.toml) because any warnings there come from the deployment tooling
+# and are not this charm's to fix.
+filterwarnings = [
+  "error",
+  # Raised by the vendored data_platform_libs charm lib; the fix belongs
+  # upstream in canonical/data-platform-libs.
+  "ignore:JujuVersion.from_environ\\(\\) is deprecated:DeprecationWarning",
+]
 
 [tool.coverage.run]
 branch = true

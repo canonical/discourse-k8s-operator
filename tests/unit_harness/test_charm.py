@@ -17,6 +17,12 @@ from charm import CONTAINER_NAME, DISCOURSE_PATH, SERVICE_NAME
 from constants import DATABASE_NAME
 from tests.unit_harness import helpers
 
+# These legacy tests still use Harness, which ops marks as deprecated with a
+# PendingDeprecationWarning. The unit suite runs with warnings promoted to
+# errors (see pyproject.toml), so ignore that one warning here until the tests
+# are ported to ops.testing.Context like those in tests/unit.
+pytestmark = pytest.mark.filterwarnings("ignore:Harness is deprecated:PendingDeprecationWarning")
+
 
 @pytest.mark.parametrize(
     "with_postgres, with_redis, with_ingress, status",
@@ -196,9 +202,11 @@ def test_on_config_changed_when_valid_no_s3_backup_nor_cdn():
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert "DISCOURSE_BACKUP_LOCATION" not in updated_plan_env
     assert updated_plan_env["DISCOURSE_CORS_ORIGIN"] == "http://discourse-k8s"
+    assert updated_plan_env["DISCOURSE_DB_BACKUP_PORT"] == "5432"
     assert updated_plan_env["DISCOURSE_DB_HOST"] == "dbhost"
     assert updated_plan_env["DISCOURSE_DB_NAME"] == DATABASE_NAME
     assert updated_plan_env["DISCOURSE_DB_PASSWORD"] == "somepasswd"
+    assert updated_plan_env["DISCOURSE_DB_PORT"] == "5432"
     assert updated_plan_env["DISCOURSE_DB_USERNAME"] == "someuser"
     assert updated_plan_env["DISCOURSE_ENABLE_CORS"]
     assert updated_plan_env["DISCOURSE_HOSTNAME"] == "discourse-k8s"
@@ -253,9 +261,11 @@ def test_on_config_changed_when_valid():
     updated_plan_env = updated_plan["services"][SERVICE_NAME]["environment"]
     assert updated_plan_env["DISCOURSE_BACKUP_LOCATION"] == "s3"
     assert updated_plan_env["DISCOURSE_CORS_ORIGIN"] == "https://discourse.local,s3.cdn"
+    assert updated_plan_env["DISCOURSE_DB_BACKUP_PORT"] == "5432"
     assert updated_plan_env["DISCOURSE_DB_HOST"] == "dbhost"
     assert updated_plan_env["DISCOURSE_DB_NAME"] == DATABASE_NAME
     assert updated_plan_env["DISCOURSE_DB_PASSWORD"] == "somepasswd"
+    assert updated_plan_env["DISCOURSE_DB_PORT"] == "5432"
     assert updated_plan_env["DISCOURSE_DB_USERNAME"] == "someuser"
     assert updated_plan_env["DISCOURSE_DEVELOPER_EMAILS"] == "user@foo.internal"
     assert updated_plan_env["DISCOURSE_ENABLE_CORS"]

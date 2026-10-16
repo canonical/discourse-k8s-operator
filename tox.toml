@@ -86,6 +86,10 @@ commands = [
     "--ignore={[vars]tst_path}{/}unit_harness",
     "--log-cli-level=INFO",
     "-s",
+    # pyproject.toml promotes warnings to errors for the unit tests; the
+    # integration suite runs against real deployment tooling whose warnings
+    # are not this charm's to fix, so it keeps pytest's default handling.
+    "--override-ini=filterwarnings=",
     { replace = "posargs", extend = true },
   ],
 ]

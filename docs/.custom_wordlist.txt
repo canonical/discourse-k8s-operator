@@ -26,6 +26,7 @@ npm
 otf
 plantuml
 PNG
+PRs
 Pygments
 pymarkdown
 pymarkdownlnt

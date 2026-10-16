@@ -2,6 +2,24 @@
 
 # Changelog
 
+## 2026-10-12
+
+- test: Run the unit tests with warnings promoted to errors, so deprecations
+  and resource leaks fail the suite instead of scrolling past in the log.
+
+## 2026-09-30
+
+- docs: Updated the home page to implement the new pattern.
+
+## 2026-09-25
+
+- Fix Discourse database and backup connections when the database relation uses a non-default port.
+
+## 2026-09-24
+
+- chore(docs): Manually update the documentation files, and add a new
+  workflow to automatically manage updates.
+
 ## 2026-08-24
 
 - feat(docs): onboard repository into Copier-based central management solution

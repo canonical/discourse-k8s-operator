@@ -15,5 +15,5 @@ Besides that, other services, like link previews and installing themes from a gi
 may need access to external sites to work, so allowing internet access to the Discourse instance is
 recommended. In restricted environments, the `model-config` options `juju-http-proxy`, `juju-https-proxy`
 and `juju-no-proxy` can be used to set up a proxy for Discourse,
-see [Using proxies with Charmed Kubernetes](https://ubuntu.com/kubernetes/docs/proxies) for
+see [Using proxies with Charmed Kubernetes](https://documentation.ubuntu.com/canonical-kubernetes/latest/charm/howto/proxy/) for
 more information.

@@ -139,15 +139,9 @@ def test_db_migration(  # noqa: C901
         trust=True,
         config={"profile": "testing"},
     )
-    juju.wait(
-        lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
-        timeout=JUJU_WAIT_TIMEOUT,
-    )
+    juju.wait(lambda status: jubilant.all_active(status, pg_app_name), timeout=JUJU_WAIT_TIMEOUT)
     juju.config(pg_app_name, POSTGRESQL_PLUGIN_CONFIG)
-    juju.wait(
-        lambda status: pg_app_name in status.apps and status.apps[pg_app_name].is_active,
-        timeout=JUJU_WAIT_TIMEOUT,
-    )
+    juju.wait(lambda status: jubilant.all_active(status, pg_app_name), timeout=JUJU_WAIT_TIMEOUT)
     app_secret_id = None
     for _ in range(30):
         secrets = json.loads(juju.cli("secrets", "--format", "json"))
