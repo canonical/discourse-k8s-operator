@@ -29,11 +29,11 @@ pytestmark = pytest.mark.filterwarnings("ignore:Harness is deprecated:PendingDep
     [
         (False, False, False, WaitingStatus("Waiting for database relation")),
         (False, True, False, WaitingStatus("Waiting for database relation")),
-        (True, False, False, WaitingStatus("Waiting for redis relation")),
+        (True, False, False, WaitingStatus("Waiting for redis or valkey relation")),
         (True, True, False, ActiveStatus()),
         (False, False, True, WaitingStatus("Waiting for database relation")),
         (False, True, True, WaitingStatus("Waiting for database relation")),
-        (True, False, True, WaitingStatus("Waiting for redis relation")),
+        (True, False, True, WaitingStatus("Waiting for redis or valkey relation")),
         (True, True, True, ActiveStatus()),
     ],
     ids=[
@@ -736,7 +736,7 @@ def test_is_database_relation_ready(relation_data, should_be_ready):
         relation_data,
     )
     if should_be_ready:
-        assert harness.model.unit.status == WaitingStatus("Waiting for redis relation")
+        assert harness.model.unit.status == WaitingStatus("Waiting for redis or valkey relation")
     else:
         assert harness.model.unit.status == WaitingStatus("Waiting for database relation")
 
