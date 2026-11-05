@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 VALKEY_APP_NAME = "valkey"
 VALKEY_CHANNEL = "9/stable"
 VALKEY_MAJOR_VERSION = "9"
+VALKEY_ENDPOINT = f"{VALKEY_APP_NAME}:valkey-client"
 REDIS_APP_NAME = "redis-k8s"
 JUJU_WAIT_TIMEOUT = 30 * 60
 PEBBLE = "PEBBLE_SOCKET=/charm/containers/discourse/pebble.socket pebble"
@@ -93,7 +94,7 @@ def test_valkey_relation(
     valkey_status = juju.status().apps[VALKEY_APP_NAME]
     assert valkey_status.charm_channel == VALKEY_CHANNEL
 
-    juju.integrate(app.name, VALKEY_APP_NAME)
+    juju.integrate(f"{app.name}:valkey", VALKEY_ENDPOINT)
     juju.wait(lambda status: status.apps[app.name].is_blocked, timeout=JUJU_WAIT_TIMEOUT)
 
     juju.remove_relation(app.name, REDIS_APP_NAME)
@@ -112,7 +113,7 @@ def test_valkey_relation(
     juju.integrate(app.name, REDIS_APP_NAME)
     juju.wait(lambda status: status.apps[app.name].is_blocked, timeout=JUJU_WAIT_TIMEOUT)
 
-    juju.remove_relation(app.name, VALKEY_APP_NAME)
+    juju.remove_relation(f"{app.name}:valkey", VALKEY_ENDPOINT)
     juju.wait(discourse_active_and_serving, timeout=JUJU_WAIT_TIMEOUT)
 
     environment = _discourse_environment(juju, app)
