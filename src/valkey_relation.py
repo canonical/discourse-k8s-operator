@@ -126,8 +126,6 @@ class ValkeyRequirer:
             raise ValkeyRelationNotReadyError("Valkey endpoints not available yet")
 
         host, port = _parse_endpoint(response.endpoints)
-        # The library logs and skips unreadable secrets instead of raising, and only
-        # considers the resource created once the user secret has been shared.
         if not response.secret_user or response.username is None or response.password is None:
             raise ValkeyRelationNotReadyError("Valkey credentials not available yet")
         return ValkeyConnection(
