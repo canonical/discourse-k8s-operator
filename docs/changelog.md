@@ -2,6 +2,10 @@
 
 # Changelog
 
+## 2026-11-05
+
+- Add `valkey` relation, which can be used instead of the `redis` relation.
+
 ## 2026-10-16
 
 - Update Markdown plugin, fixing deprecation warning of .es6 file extension.

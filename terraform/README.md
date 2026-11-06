@@ -49,6 +49,7 @@ module "discourse_k8s" {
 - `logging` – Loki push API interface
 - `oauth` – OAuth interface
 - `saml` – SAML interface
+- `valkey` – Valkey client interface
 
 ### Provides
 
