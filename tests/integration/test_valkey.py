@@ -18,7 +18,9 @@ from . import types
 logger = logging.getLogger(__name__)
 
 VALKEY_APP_NAME = "valkey"
-VALKEY_CHANNEL = "9/stable"
+# Discourse needs TIME in Lua scripts, which client users can only run since
+# https://github.com/canonical/valkey-operator/pull/214 (not yet in 9/stable).
+VALKEY_CHANNEL = "9/edge"
 VALKEY_MAJOR_VERSION = "9"
 VALKEY_ENDPOINT = f"{VALKEY_APP_NAME}:valkey-client"
 REDIS_APP_NAME = "redis-k8s"
