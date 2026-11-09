@@ -20,7 +20,7 @@ dependencies = [
   "dpcharmlibs-interfaces==1.2.2",
   "jsonschema==4.26.0",
   "ops==3.9.0",
-  "pydantic==2.14.1",
+  "pydantic==2.11.9",
 ]
 
 [dependency-groups]
@@ -147,9 +147,6 @@ filterwarnings = [
   # Raised by the vendored data_platform_libs charm lib; the fix belongs
   # upstream in canonical/data-platform-libs.
   "ignore:JujuVersion.from_environ\\(\\) is deprecated:DeprecationWarning",
-  # Raised by pydantic when importing dpcharmlibs-interfaces; the fix belongs
-  # upstream in canonical/data-platform-charmlibs.
-  "ignore:The '\\w+' attribute with value .* was provided to the `Field\\(\\)` function:pydantic.warnings.UnsupportedFieldAttributeWarning",
 ]
 
 [tool.coverage.run]
