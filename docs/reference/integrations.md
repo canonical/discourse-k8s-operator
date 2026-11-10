@@ -127,6 +127,10 @@ endpoint with the credentials provided by the integration. Integrate Discourse w
 TLS connections to Valkey aren't supported yet. Discourse requires a Valkey charm revision that allows the `TIME`
 command for client users, available in the `9/edge` channel at the time of writing.
 
+If Valkey is related but its connection details are missing or invalid, Discourse is stopped until they are
+available. While both Redis and Valkey are related, the charm is blocked and Discourse keeps running with its
+current cache, so you can switch from Redis to Valkey by relating Valkey and then removing the Redis relation.
+
 Valkey integrate commands:
 
 ```
