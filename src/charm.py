@@ -650,9 +650,11 @@ class DiscourseCharm(CharmBase):
             self.valkey.get_connection()
         except ValkeyRelationNotReadyError:
             self.model.unit.status = WaitingStatus("Waiting for valkey relation to initialize")
+            self._stop_service()
             return False
         except InvalidValkeyRelationDataError as exc:
             self.model.unit.status = BlockedStatus(str(exc))
+            self._stop_service()
             return False
         return True
 
