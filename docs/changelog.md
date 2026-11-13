@@ -2,6 +2,10 @@
 
 # Changelog
 
+## 2026-10-16
+
+- Update Markdown plugin, fixing deprecation warning of .es6 file extension.
+
 ## 2026-10-12
 
 - test: Run the unit tests with warnings promoted to errors, so deprecations
