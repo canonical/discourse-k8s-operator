@@ -49,6 +49,7 @@ ulwazi
 uncomment(ing)?
 utils
 uv
+Valkey
 VMs
 WCAG
 whitespace

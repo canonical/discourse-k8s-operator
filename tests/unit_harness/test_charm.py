@@ -25,16 +25,26 @@ pytestmark = pytest.mark.filterwarnings("ignore:Harness is deprecated:PendingDep
 
 
 @pytest.mark.parametrize(
-    "with_postgres, with_redis, with_ingress, status",
+    "with_postgres, with_redis, with_valkey, with_ingress, status",
     [
-        (False, False, False, WaitingStatus("Waiting for database relation")),
-        (False, True, False, WaitingStatus("Waiting for database relation")),
-        (True, False, False, WaitingStatus("Waiting for redis relation")),
-        (True, True, False, ActiveStatus()),
-        (False, False, True, WaitingStatus("Waiting for database relation")),
-        (False, True, True, WaitingStatus("Waiting for database relation")),
-        (True, False, True, WaitingStatus("Waiting for redis relation")),
-        (True, True, True, ActiveStatus()),
+        (False, False, False, False, WaitingStatus("Waiting for database relation")),
+        (False, True, False, False, WaitingStatus("Waiting for database relation")),
+        (True, False, False, False, WaitingStatus("Waiting for redis or valkey relation")),
+        (True, True, False, False, ActiveStatus()),
+        (False, False, False, True, WaitingStatus("Waiting for database relation")),
+        (False, True, False, True, WaitingStatus("Waiting for database relation")),
+        (True, False, False, True, WaitingStatus("Waiting for redis or valkey relation")),
+        (True, True, False, True, ActiveStatus()),
+        (False, False, True, False, WaitingStatus("Waiting for database relation")),
+        (True, False, True, False, ActiveStatus()),
+        (True, False, True, True, ActiveStatus()),
+        (
+            True,
+            True,
+            True,
+            False,
+            BlockedStatus("Both redis and valkey relations exist, remove one of them"),
+        ),
     ],
     ids=[
         "No relation",
@@ -44,17 +54,26 @@ pytestmark = pytest.mark.filterwarnings("ignore:Harness is deprecated:PendingDep
         "Only ingress",
         "Redis+ingress",
         "Postgres+ingress",
-        "All relations",
+        "Postgres+redis+ingress",
+        "Only valkey",
+        "Postgres+valkey",
+        "Postgres+valkey+ingress",
+        "Postgres+redis+valkey",
     ],
 )
-def test_relations(with_postgres, with_redis, with_ingress, status):
+def test_relations(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    with_postgres, with_redis, with_valkey, with_ingress, status
+):
     """
     arrange: given a deployed discourse charm
     act: when pebble ready event is triggered
     assert: it will have the correct status depending on the relations
     """
     harness = helpers.start_harness(
-        with_postgres=with_postgres, with_redis=with_redis, with_ingress=with_ingress
+        with_postgres=with_postgres,
+        with_redis=with_redis,
+        with_valkey=with_valkey,
+        with_ingress=with_ingress,
     )
     harness.container_pebble_ready("discourse")
     assert harness.model.unit.status == status
@@ -736,7 +755,7 @@ def test_is_database_relation_ready(relation_data, should_be_ready):
         relation_data,
     )
     if should_be_ready:
-        assert harness.model.unit.status == WaitingStatus("Waiting for redis relation")
+        assert harness.model.unit.status == WaitingStatus("Waiting for redis or valkey relation")
     else:
         assert harness.model.unit.status == WaitingStatus("Waiting for database relation")
 

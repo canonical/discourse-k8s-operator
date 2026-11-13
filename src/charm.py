@@ -49,9 +49,15 @@ from constants import (
     SERVICE_PORT,
     SETUP_COMPLETED_FLAG_FILE,
     THROTTLE_LEVELS,
+    VALKEY_RELATION_NAME,
 )
 from database import DatabaseHandler
 from oauth_observer import OAuthObserver
+from valkey_relation import (
+    InvalidValkeyRelationDataError,
+    ValkeyRelationNotReadyError,
+    ValkeyRequirer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +113,16 @@ class DiscourseCharm(CharmBase):
         self.redis = RedisRequires(self)
         self.framework.observe(self.on.redis_relation_updated, self._redis_relation_changed)
 
+        self.valkey = ValkeyRequirer(self, VALKEY_RELATION_NAME)
+        valkey_events = self.valkey.valkey_interface.on
+        for valkey_event in (
+            valkey_events.resource_created,
+            valkey_events.endpoints_changed,
+            valkey_events.authentication_updated,
+            self.on[VALKEY_RELATION_NAME].relation_broken,
+        ):
+            self.framework.observe(valkey_event, self._on_valkey_relation_changed)
+
         self._metrics_endpoint = MetricsEndpointProvider(
             self, jobs=[{"static_configs": [{"targets": [f"*:{PROMETHEUS_PORT}"]}]}]
         )
@@ -148,6 +164,14 @@ class DiscourseCharm(CharmBase):
 
         Args:
             event: Event triggering the redis relation changed event handler.
+        """
+        self._setup_and_activate()
+
+    def _on_valkey_relation_changed(self, _: ops.EventBase) -> None:
+        """Handle valkey relation changes.
+
+        Args:
+            event: Event triggering the valkey relation changed event handler.
         """
         self._setup_and_activate()
 
@@ -435,6 +459,26 @@ class DiscourseCharm(CharmBase):
         )
         return (redis_hostname, redis_port)
 
+    def _get_redis_env(self) -> typing.Dict[str, str]:
+        """Get the Redis connection environment variables from the redis or valkey relation.
+
+        Returns:
+            Dictionary with the Redis connection environment settings.
+        """
+        if self.valkey.is_related:
+            connection = self.valkey.get_connection()
+            host, port = connection.host, connection.port
+            username, password = connection.username, connection.password
+        else:
+            host, port = self._get_redis_relation_data()
+            username, password = "", ""
+        return {
+            "DISCOURSE_REDIS_HOST": host,
+            "DISCOURSE_REDIS_PORT": str(port),
+            "DISCOURSE_REDIS_USERNAME": username,
+            "DISCOURSE_REDIS_PASSWORD": password,
+        }
+
     def _create_discourse_environment_settings(self) -> typing.Dict[str, str]:
         """Create a layer config based on our current configuration.
 
@@ -445,7 +489,7 @@ class DiscourseCharm(CharmBase):
 
         # The following could fail if the data is malformed.
         # We/don't catch it because we don't want to silently fail in those cases
-        redis_relation_data = self._get_redis_relation_data()
+        redis_env = self._get_redis_env()
         database_port = database_relation_data["POSTGRES_PORT"]
 
         pod_config = {
@@ -465,8 +509,6 @@ class DiscourseCharm(CharmBase):
             "DISCOURSE_ENABLE_CORS": str(self.config["enable_cors"]).lower(),
             "DISCOURSE_HOSTNAME": self._get_external_hostname(),
             "DISCOURSE_MAX_CATEGORY_NESTING": str(self.config["max_category_nesting"]),
-            "DISCOURSE_REDIS_HOST": redis_relation_data[0],
-            "DISCOURSE_REDIS_PORT": str(redis_relation_data[1]),
             "DISCOURSE_REFRESH_MAXMIND_DB_DURING_PRECOMPILE_DAYS": "0",
             "DISCOURSE_SERVE_STATIC_ASSETS": "true",
             "DISCOURSE_SMTP_ADDRESS": self.config["smtp_address"],
@@ -481,6 +523,7 @@ class DiscourseCharm(CharmBase):
             "RAILS_ENV": "production",
             "UNICORN_SIDEKIQ_MAX_RSS": str(self.config["sidekiq_max_memory"]),
         }
+        pod_config.update(redis_env)
         pod_config.update(self._get_saml_config())
         # Add OIDC env vars if oauth relation is established
         pod_config.update(self._oauth.get_oidc_env())
@@ -573,8 +616,16 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             self._stop_service()
             return False
+        redis_related = self.model.get_relation(self.redis.relation_name) is not None
+        if redis_related and self.valkey.is_related:
+            self.model.unit.status = BlockedStatus(
+                "Both redis and valkey relations exist, remove one of them"
+            )
+            return False
+        if self.valkey.is_related:
+            return self._is_valkey_relation_ready()
         if not self.redis.relation_data:
-            self.model.unit.status = WaitingStatus("Waiting for redis relation")
+            self.model.unit.status = WaitingStatus("Waiting for redis or valkey relation")
             self._stop_service()
             return False
         try:
@@ -586,6 +637,24 @@ class DiscourseCharm(CharmBase):
                 return False
         except MissingRedisRelationDataError:
             self.model.unit.status = WaitingStatus("Waiting for redis relation to initialize")
+            return False
+        return True
+
+    def _is_valkey_relation_ready(self) -> bool:
+        """Check if the valkey relation provides valid connection data.
+
+        Returns:
+            If the valkey relation is ready.
+        """
+        try:
+            self.valkey.get_connection()
+        except ValkeyRelationNotReadyError:
+            self.model.unit.status = WaitingStatus("Waiting for valkey relation to initialize")
+            self._stop_service()
+            return False
+        except InvalidValkeyRelationDataError as exc:
+            self.model.unit.status = BlockedStatus(str(exc))
+            self._stop_service()
             return False
         return True
 

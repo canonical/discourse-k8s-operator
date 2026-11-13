@@ -113,3 +113,27 @@ Redis integrate commands:
 ```
 juju integrate discourse-k8s redis-k8s
 ```
+
+## valkey
+
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
+
+_Interface_: `valkey_client`
+
+_Supported charms_: [valkey](https://charmhub.io/valkey)
+
+Valkey is an open source fork of Redis and can be used instead of Redis. Discourse connects to the Valkey primary
+endpoint with the credentials provided by the integration. Integrate Discourse with either Redis or Valkey, not both.
+TLS connections to Valkey aren't supported yet. Discourse requires a Valkey charm revision that allows the `TIME`
+command for client users, available in the `9/edge` channel at the time of writing.
+
+If Valkey is related but its connection details are missing or invalid, Discourse is stopped until they are
+available. While both Redis and Valkey are related, the charm is blocked and Discourse keeps running with its
+current cache, so you can switch from Redis to Valkey by relating Valkey and then removing the Redis relation.
+
+Valkey integrate commands:
+
+```
+juju deploy valkey --channel 9/edge --trust
+juju integrate discourse-k8s valkey
+```
