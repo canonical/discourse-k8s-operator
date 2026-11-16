@@ -43,6 +43,7 @@ requires:
   redis:
     interface: redis
     limit: 1
+    optional: true
   valkey:
     interface: valkey_client
     limit: 1
