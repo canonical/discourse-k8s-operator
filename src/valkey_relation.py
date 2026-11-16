@@ -112,7 +112,12 @@ class ValkeyRequirer:
                 relation.id, component=relation.app
             )
         except ValidationError as exc:
-            logger.error("Invalid valkey relation data: %s", exc)
+            # The default error text includes the input values, which may hold the credentials.
+            fields = [
+                ".".join(str(loc) for loc in error["loc"])
+                for error in exc.errors(include_input=False, include_url=False)
+            ]
+            logger.error("Invalid valkey relation data, invalid fields: %s", ", ".join(fields))
             raise InvalidValkeyRelationDataError("Invalid valkey relation data") from exc
         except ops.SecretNotFoundError as exc:
             raise ValkeyRelationNotReadyError("Valkey credentials not available yet") from exc
