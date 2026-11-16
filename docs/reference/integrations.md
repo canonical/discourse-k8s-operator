@@ -131,6 +131,10 @@ If Valkey is related but its connection details are missing or invalid, Discours
 available. While both Redis and Valkey are related, the charm is blocked and Discourse keeps running with its
 current cache, so you can switch from Redis to Valkey by relating Valkey and then removing the Redis relation.
 
+Switching between Redis and Valkey doesn't copy any data. Background jobs waiting in the Sidekiq queues, scheduled
+and retried jobs, and cached data are lost. Discourse recreates its periodic jobs and caches on its own, but jobs
+that were waiting to run, such as pending emails or notifications, aren't run. Switch during a quiet period.
+
 Valkey integrate commands:
 
 ```
