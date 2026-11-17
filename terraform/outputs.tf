@@ -15,6 +15,7 @@ output "requires" {
     logging     = "logging"
     oauth       = "oauth"
     saml        = "saml"
+    valkey      = "valkey"
   }
 }
 
@@ -37,5 +38,6 @@ output "endpoints" {
     logging           = "logging"
     oauth             = "oauth"
     saml              = "saml"
+    valkey            = "valkey"
   }
 }

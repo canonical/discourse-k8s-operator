@@ -42,6 +42,7 @@ You can check out the [full list of actions here](https://charmhub.io/discourse-
 This charm can be integrated with other Juju charms and services:
 
   - [Redis](https://charmhub.io/redis-k8s): Redis is an open source (BSD licensed), in-memory data structure store, used as a database, cache and message broker.
+  - [Valkey](https://charmhub.io/valkey): Valkey is an open source key-value store, an alternative to Redis.
   - [Saml](https://charmhub.io/saml-integrator): SAML is an open standard used for authentication.
   - [PostgreSQL](https://charmhub.io/postgresql-k8s): PostgreSQL is a powerful, open source object-relational database system.
 

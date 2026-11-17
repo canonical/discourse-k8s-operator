@@ -4,6 +4,7 @@
 """helpers for the unit tests."""
 
 import contextlib
+import json
 import typing
 import unittest.mock
 
@@ -20,6 +21,7 @@ def start_harness(  # pylint: disable=too-many-arguments
     saml_fields: tuple = (False, ""),
     with_postgres: bool = True,
     with_redis: bool = True,
+    with_valkey: bool = False,
     with_ingress: bool = False,
     with_config: typing.Optional[typing.Dict[str, typing.Any]] = None,
     run_initial_hooks=True,
@@ -33,6 +35,7 @@ def start_harness(  # pylint: disable=too-many-arguments
     Args:
         - with_postgres: should a postgres relation be added
         - with_redis: should a redis relation be added
+        - with_valkey: should a valkey relation be added
         - with_ingress: should a ingress relation be added
         - with_config: apply some configuration to the charm
 
@@ -52,6 +55,9 @@ def start_harness(  # pylint: disable=too-many-arguments
 
     if with_redis:
         add_redis_relation(harness)
+
+    if with_valkey:
+        add_valkey_relation(harness)
 
     if with_ingress:
         _add_ingress_relation(harness)
@@ -123,6 +129,30 @@ def add_redis_relation(harness, relation_data=None, app_data=None):
         redis_relation_id,
         "redis/0",
         {"hostname": "redis-host", "port": "1010"} if relation_data is None else relation_data,
+    )
+
+
+def add_valkey_relation(harness):
+    """Add valkey relation and a valkey response with credentials to the charm.
+
+    Args:
+        - A harness instance
+    """
+    secret_id = harness.add_model_secret(
+        "valkey", {"username": "valkey-user", "password": "valkey-password"}
+    )
+    relation_id = harness.add_relation("valkey", "valkey")
+    harness.grant_secret(secret_id, harness.charm.app.name)
+    harness.add_relation_unit(relation_id, "valkey/0")
+    response = {
+        "resource": "*",
+        "request-id": "a2b7f513afa07883",
+        "salt": "Uh39g15ZlrWSwJtk",
+        "endpoints": "valkey-host:6379",
+        "secret-user": secret_id,
+    }
+    harness.update_relation_data(
+        relation_id, "valkey", {"version": "v1", "requests": json.dumps([response])}
     )
 
 

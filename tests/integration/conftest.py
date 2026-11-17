@@ -33,6 +33,7 @@ ENABLED_PLUGINS = [
 
 # Timeout for juju wait operations in seconds
 JUJU_WAIT_TIMEOUT = 1200
+PEBBLE = "PEBBLE_SOCKET=/charm/containers/discourse/pebble.socket pebble"
 POSTGRESQL_CHANNEL = "16/stable"
 POSTGRESQL_BASE = "ubuntu@24.04"
 # PostgreSQL charm (16/stable) expects kebab-case plugin config keys.
@@ -330,10 +331,7 @@ def app_fixture(
     # Enable plugins calling rake site_settings:import in one of the units.
     inline_yaml = "\n".join(f"{plugin}_enabled: true" for plugin in ENABLED_PLUGINS)
     discourse_rake_command = "/srv/discourse/app/bin/bundle exec rake site_settings:import "
-    pebble_exec = (
-        "PEBBLE_SOCKET=/charm/containers/discourse/pebble.socket "
-        "pebble exec --user=_daemon_ --context=discourse -w=/srv/discourse/app"
-    )
+    pebble_exec = f"{PEBBLE} exec --user=_daemon_ --context=discourse -w=/srv/discourse/app"
     full_command = (
         "/bin/bash -c "
         f"'set -euo pipefail; echo \"{inline_yaml}\" | {pebble_exec} -- {discourse_rake_command}'"

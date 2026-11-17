@@ -6,6 +6,9 @@ This guide provides instructions for configuring the external hostname of the Di
 
 ## Prerequisites
 
+Have a Discourse deployment from `latest/edge`, integrated with PostgreSQL and
+Valkey, as described in the {ref}`deployment tutorial <tutorial>`.
+
 Deploy and relate [nginx-ingress-integrator](https://charmhub.io/nginx-ingress-integrator) charm.
 
 ```
@@ -33,17 +36,17 @@ The output of `juju status` should look similar to the following:
 Model           Controller  Cloud/Region        Version  SLA          Timestamp
 tutorial        mk8s        microk8s/localhost  2.9.44   unsupported  18:19:34-04:00
 
-App                       Version  Status  Scale  Charm                     Channel        Rev  Address         Exposed  Message
-discourse-k8s             2.8.14   active      1  discourse-k8s                             41  <discourse-ip>  no
-nginx-ingress-integrator  25.3.0   active      1  nginx-ingress-integrator  latest/stable   81  <ingress-ip>    no       Ingress IP(s): 127.0.0.1, Service IP(s): <ingress-svc-ip>
-postgresql-k8s            14.9     active      1  postgresql-k8s            14/edge        145  <postgres-ip>   no       Primary
-redis-k8s                 7.0.4    active      1  redis-k8s                 latest/edge     26  <redis-ip>      no
+App                      Version    Status  Scale  Charm                     Channel        Rev  Address         Exposed  Message
+discourse-k8s            2026.7.3   active      1  discourse-k8s             latest/edge    318  <discourse-ip>  no
+nginx-ingress-integrator 25.3.0     active      1  nginx-ingress-integrator  latest/stable  81   <ingress-ip>    no       Ingress IP(s): 127.0.0.1, Service IP(s): <ingress-svc-ip>
+postgresql-k8s           14.9       active      1  postgresql-k8s            14/edge        145  <postgres-ip>   no       Primary
+valkey                   9.0.4      active      1  valkey                    9/edge         158  <valkey-ip>     no
 
 Unit                         Workload  Agent  Address           Ports   Message
 discourse-k8s/0*             active    idle   <discourse-ip>
 nginx-ingress-integrator/0*  active    idle   <ingress-ip>              Ingress IP(s): 127.0.0.1, Service IP(s): <ingress-svc-ip>
 postgresql-k8s/0*            active    idle   <postgres-ip>             Primary
-redis-k8s/0*                 active    idle   <redis-ip>    
+valkey/0*                    active    idle   <valkey-ip>
 ```
 
 Note the Service IP(s): next to nginx-ingress-integrator charm’s Status output.

@@ -105,6 +105,10 @@ PostgreSQL is an open-source object-relational database used by Discourse to sto
 
 Redis is an open-source in-memory data structure store used as a cache backend. Copies of frequently accessed data are stored and used if satisfy the request. Otherwise, the application will handle it. This configuration helps to reduce the number of queries and improve response latency.
 
+### Valkey
+
+Valkey is an open-source fork of Redis. The charm can integrate with the [Valkey charm](https://charmhub.io/valkey) instead of Redis to provide the same cache backend.
+
 ### Grafana
 
 Grafana is an open-source visualization tools that allows to query, visualize, alert on, and visualize metrics from mixed data sources in configurable dashboards for observability. This charms is shipped with its own Grafana dashboard and supports integration with the [Grafana Operator](https://charmhub.io/grafana-k8s) to simplify observability.
@@ -132,6 +136,7 @@ For this charm, the following events are observed:
 4. [`database_relation_joined`](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation joins. Action: initialize the database and enable the appropriate extensions.
 5. [`master_changed`](https://github.com/canonical/ops-lib-pgsql): PostgreSQLClient custom event for when the connection details to the master database on this relation change. Action: update the database connection string configuration and emit `config_changed` event.
 6. [`redis_relation_updated`](https://github.com/canonical/redis-k8s-operator): Redis Operator custom event for when the relation details have been updated. Action: wait for the integrations and restart the containers.
+7. [`resource_created`, `endpoints_changed` and `authentication_updated`](https://github.com/canonical/data-platform-charmlibs): Valkey client custom events for when the Valkey connection details are available or updated. Action: wait for the integrations and restart the containers.
 
 <!-- vale Canonical.400-Enforce-inclusive-terms = YES -->
 

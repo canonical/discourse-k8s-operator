@@ -56,7 +56,7 @@ juju bootstrap microk8s tutorial-controller
 ## What you'll do
 
 1. Deploy the Discourse charm
-2. Integrate with `nginx-ingress-integrator`, `postgresql-k8s` and `redis-k8s` charms
+2. Integrate with `nginx-ingress-integrator`, `postgresql-k8s` and `valkey` charms
 3. Inspect the Kubernetes resources created
 4. Create an admin user and log in
 5. Clean up the environment
@@ -83,18 +83,20 @@ juju add-model discourse-tutorial
 
 ### Deploy the charms
 
-Discourse requires connections to PostgreSQL and Redis. For more information, see the {ref}`Charm Integrations <reference_integrations>`.
+Discourse requires connections to PostgreSQL and Valkey. For more information, see the {ref}`Charm Integrations <reference_integrations>`.
 
 ```{note}
 Discourse requires PostgreSQL extensions to be available in the relation.
+Valkey support requires the Discourse charm from `latest/edge`. Use Valkey's
+`9/edge` channel, which provides the client permissions required by Discourse.
 ```
 
 Deploy the charms:
 
 ```
-juju deploy redis-k8s --channel latest/edge
+juju deploy valkey --channel 9/edge --trust
 juju deploy postgresql-k8s --channel 16/stable --trust
-juju deploy discourse-k8s
+juju deploy discourse-k8s --channel latest/edge
 ```
 
 Enable the required PostgreSQL extensions (for `16/stable`, use kebab-case option names):
@@ -103,16 +105,17 @@ Enable the required PostgreSQL extensions (for `16/stable`, use kebab-case optio
 juju config postgresql-k8s plugin-hstore-enable=true plugin-pg-trgm-enable=true plugin-vector-enable=true
 ```
 
-### Integrate with the Redis k8s charm and the PostgreSQL k8s charm
+### Integrate with the Valkey charm and the PostgreSQL k8s charm
 
-Integrate `redis-k8s` and `postgresql-k8s` to `discourse-k8s`:
+Integrate `valkey` and `postgresql-k8s` to `discourse-k8s`:
 
 ```
-juju integrate redis-k8s discourse-k8s
+juju integrate discourse-k8s valkey
 juju integrate discourse-k8s postgresql-k8s
 ```
 
-By running `juju status --relations` the current state of the deployment can be queried:
+By running `juju status --relations` the current state of the deployment can be queried.
+The output should look similar to the following:
 
 ```{terminal}
 :output-only:
@@ -120,15 +123,15 @@ By running `juju status --relations` the current state of the deployment can be 
 Model               Controller  Cloud/Region        Version  SLA          Timestamp
 discourse-tutorial  microk8s    microk8s/localhost  3.5.4    unsupported  14:07:18+03:00
 
-App             Version  Status  Scale  Charm           Channel        Rev  Address         Exposed  Message
-discourse-k8s   3.3.0    active      1  discourse-k8s   latest/stable  173  10.152.183.231  no
-postgresql-k8s  16.x     active      1  postgresql-k8s  16/stable      381  10.152.183.143  no
-redis-k8s       7.2.5    active      1  redis-k8s       latest/edge     36  10.152.183.188  no
+App             Version    Status  Scale  Charm           Channel      Rev  Address         Exposed  Message
+discourse-k8s   2026.7.3   active      1  discourse-k8s   latest/edge  318  10.152.183.231  no
+postgresql-k8s  16.x       active      1  postgresql-k8s  16/stable    381  10.152.183.143  no
+valkey          9.0.4      active      1  valkey          9/edge       158  10.152.183.188  no
 
 Unit               Workload  Agent  Address      Ports  Message
 discourse-k8s/0*   active    idle   10.1.32.182
 postgresql-k8s/0*  active    idle   10.1.32.184         Primary
-redis-k8s/0*       active    idle   10.1.32.181
+valkey/0*          active    idle   10.1.32.181
 
 Integration provider           Requirer                       Interface          Type     Message
 discourse-k8s:restart          discourse-k8s:restart          rolling_op         peer
@@ -136,8 +139,11 @@ postgresql-k8s:database        discourse-k8s:database         postgresql_client 
 postgresql-k8s:database-peers  postgresql-k8s:database-peers  postgresql_peers   peer
 postgresql-k8s:restart         postgresql-k8s:restart         rolling_op         peer
 postgresql-k8s:upgrade         postgresql-k8s:upgrade         upgrade            peer
-redis-k8s:redis                discourse-k8s:redis            redis              regular
-redis-k8s:redis-peers          redis-k8s:redis-peers          redis-peers        peer
+valkey:valkey-client           discourse-k8s:valkey           valkey_client      regular
+valkey:valkey-peers            valkey:valkey-peers            valkey_peers       peer
+valkey:status-peers            valkey:status-peers            status_peers       peer
+valkey:refresh-v-three         valkey:refresh-v-three         refresh            peer
+valkey:rollingops-peers        valkey:rollingops-peers        rollingops-peers   peer
 ```
 
 The deployment finishes when all the charms show `Active` states.
@@ -149,7 +155,7 @@ Run `kubectl get pods -n discourse-tutorial` to see the pods that are being crea
 
 NAME                             READY   STATUS    RESTARTS   AGE
 modeloperator-c584f6f9f-qf9gr    1/1     Running   0          5m30s
-redis-k8s-0                      3/3     Running   0          5m22s
+valkey-0                         2/2     Running   0          5m22s
 discourse-k8s-0                  2/2     Running   0          5m1s
 postgresql-k8s-0                 2/2     Running   0          5m9s
 ```

@@ -47,4 +47,5 @@ SERVICE_PORT = 3000
 SETUP_COMPLETED_FLAG_FILE = "/run/discourse-k8s-operator/setup_completed"
 DATABASE_RELATION_NAME = "database"
 OAUTH_RELATION_NAME = "oauth"
+VALKEY_RELATION_NAME = "valkey"
 OAUTH_SCOPE = "openid email"
