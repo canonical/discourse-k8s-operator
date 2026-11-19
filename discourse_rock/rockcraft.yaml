@@ -43,7 +43,8 @@ parts:
       - NODE_VERSION: "22.18.0"
       - RAILS_ENV: "production"
       - RUBY_INSTALL_VERSION: "0.10.1"
-      - RUBY_VERSION: "3.4.7"
+      - RUBY_VERSION: "3.4.13"
+      - RUBY_SHA256: "6474dff9c02ea685fc44877a4807a27366bf109b176dad182108bb8c96d09589"
       - PNPM_VERSION: "10.28.0"
     override-build: |
       node_uri="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${ARCH}.tar.gz"
@@ -58,7 +59,10 @@ parts:
       tar -xzvf ruby-install-${RUBY_INSTALL_VERSION}.tar.gz
       cd ruby-install-${RUBY_INSTALL_VERSION}/
       make install
-      ruby-install --system ruby $RUBY_VERSION
+      ruby-install --system \
+        --url "https://cache.ruby-lang.org/pub/ruby/${RUBY_VERSION%.*}/ruby-${RUBY_VERSION}.tar.xz" \
+        --sha256 "$RUBY_SHA256" \
+        ruby $RUBY_VERSION
       cp -pR /usr/local/ ${CRAFT_OVERLAY}/usr/
   discourse:
     after: [tooling]

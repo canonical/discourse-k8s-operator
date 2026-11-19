@@ -2,6 +2,12 @@
 
 # Changelog
 
+## 2026-11-19
+
+- Upgrade Ruby in the Discourse rock from 3.4.7 to 3.4.13 to fix the Regexp and
+  String case conversion remote code execution vulnerabilities announced on
+  2026-11-18.
+
 ## 2026-11-05
 
 - Add `valkey` relation, which can be used instead of the `redis` relation.
