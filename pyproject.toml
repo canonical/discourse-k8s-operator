@@ -19,7 +19,7 @@ dependencies = [
   "cosl==1.11.3",
   "dpcharmlibs-interfaces==1.2.2",
   "jsonschema==4.26.0",
-  "ops==3.9.0",
+  "ops==3.10.0",
   "pydantic==2.12.5",
 ]
 
