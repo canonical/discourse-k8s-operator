@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -733,7 +733,7 @@ integration = [
     { name = "boto3" },
     { name = "bs4" },
     { name = "debugpy" },
-    { name = "jubilant", specifier = "==1.14.0" },
+    { name = "jubilant", specifier = "==1.15.0" },
     { name = "opcli", marker = "python_full_version >= '3.12'", git = "https://github.com/canonical/charm-ci.git?tag=v1.0.2" },
     { name = "protobuf", specifier = "==7.36.0" },
     { name = "psycopg2-binary" },
@@ -745,7 +745,7 @@ lint = [
     { name = "boto3" },
     { name = "bs4" },
     { name = "codespell" },
-    { name = "jubilant", specifier = "==1.14.0" },
+    { name = "jubilant", specifier = "==1.15.0" },
     { name = "mypy" },
     { name = "pep8-naming" },
     { name = "psycopg2-binary" },
@@ -1028,14 +1028,14 @@ wheels = [
 
 [[package]]
 name = "jubilant"
-version = "1.14.0"
+version = "1.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/f1/f9d7581e6bea4ca89bb1c9aca3309629047f3bb0c49ddb0cabe33889d9fd/jubilant-1.14.0.tar.gz", hash = "sha256:d7fb046c716640ccd39c072dc1471de84cc54d78e331cc18d422ca7a5b72b378", size = 37181, upload-time = "2026-09-29T23:03:24.598Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/78/593575bdce4aa6a4db1a197937be9eea191d54d86e9ec67838f4c11af111/jubilant-1.15.0.tar.gz", hash = "sha256:5b7a6c4be94a859736822f7b3bb3e4a12da4c01e8c81fdb42f517d15e89d87dd", size = 37932, upload-time = "2026-11-20T01:58:51.406Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/d4/6effc16acb9fff30603c46270ab58f48c812ba1f567025f22ab5eb96c91a/jubilant-1.14.0-py3-none-any.whl", hash = "sha256:2a631fb2363cdd26c0dea52659b5a8946e36f57fec922895521ab59bda6398e8", size = 39483, upload-time = "2026-09-29T23:03:23.102Z" },
+    { url = "https://files.pythonhosted.org/packages/34/22/0ad8ad38f7630db84c8d8161c52ff9ade7af2b3726b471afa8d1fde94cd8/jubilant-1.15.0-py3-none-any.whl", hash = "sha256:59689b98a5960082d06941d6bd9f6842465481d9d6a78451842984de2d16a3a9", size = 40152, upload-time = "2026-11-20T01:58:50.273Z" },
 ]
 
 [[package]]
