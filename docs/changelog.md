@@ -5,6 +5,7 @@
 ## 2026-11-24
 
 - Increase Pebble's `kill-delay` for the `discourse` service from `20s` to `40s`.
+- Fix an intermittent failure in `test_valkey_relation` related to an out-of-date `valkey` status.
 
 ## 2026-11-19
 
