@@ -2,6 +2,10 @@
 
 # Changelog
 
+## 2026-11-24
+
+- Increase Pebble's `kill-delay` for the `discourse` service from `20s` to `40s`.
+
 ## 2026-11-19
 
 - Upgrade Ruby in the Discourse rock from 3.4.7 to 3.4.13 to fix the Regexp and

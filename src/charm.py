@@ -567,7 +567,7 @@ class DiscourseCharm(CharmBase):
                     "user": CONTAINER_APP_USERNAME,
                     "startup": "enabled",
                     "environment": self._create_discourse_environment_settings(),
-                    "kill-delay": "20s",
+                    "kill-delay": "40s",
                 }
             },
             "checks": {
