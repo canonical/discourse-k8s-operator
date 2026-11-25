@@ -147,7 +147,7 @@ def test_valkey_relation(
     assert redis_ping(juju, unit) == "PONG"
     valkey_version = valkey_server_version(juju, unit)
     assert valkey_version.split(".")[0] == VALKEY_MAJOR_VERSION
-    assert valkey_version == valkey_status.version
+    assert valkey_version == juju.status().apps[VALKEY_APP_NAME].version
 
 
 @pytest.mark.abort_on_fail
