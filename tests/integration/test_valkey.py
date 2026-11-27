@@ -33,6 +33,7 @@ from .valkey_helpers import (
     redis_ping,
     status_ok,
     switch_to_valkey,
+    uses_valkey,
     valkey_server_version,
 )
 
@@ -229,12 +230,13 @@ def test_redis_restored(
     """
     arrange: discourse related to valkey only.
     act: relate redis, then remove the valkey relation.
-    assert: discourse is blocked while both are related, then uses redis without
+    assert: discourse keeps using valkey while both are related, then uses redis without
         credentials.
     """
     unit = f"{app.name}/0"
     juju.integrate(app.name, REDIS_APP_NAME)
-    juju.wait(lambda status: all_units(status, app.name, "blocked"), timeout=JUJU_WAIT_TIMEOUT)
+    juju.wait(active_and_serving, timeout=JUJU_WAIT_TIMEOUT)
+    assert uses_valkey(juju, unit)
 
     juju.remove_relation(f"{app.name}:valkey", VALKEY_ENDPOINT)
     juju.wait(active_and_serving, timeout=JUJU_WAIT_TIMEOUT)

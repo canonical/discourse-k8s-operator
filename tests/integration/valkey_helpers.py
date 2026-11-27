@@ -46,17 +46,26 @@ def all_units(status: jubilant.Status, app_name: str, workload_status: str) -> b
 def switch_to_valkey(
     juju: jubilant.Juju, app: types.App, ready: Callable[[jubilant.Status], bool]
 ) -> None:
-    """Replace the redis relation of discourse with a valkey relation.
+    """Relate valkey to discourse and then remove its redis relation.
 
     Args:
         juju: the juju client.
         app: the discourse application, related to redis.
-        ready: condition to wait for once the redis relation is removed.
+        ready: condition to wait for once discourse uses valkey.
     """
+    unit = f"{app.name}/0"
     juju.integrate(f"{app.name}:valkey", VALKEY_ENDPOINT)
-    juju.wait(lambda status: all_units(status, app.name, "blocked"), timeout=JUJU_WAIT_TIMEOUT)
+    juju.wait(
+        lambda status: ready(status) and uses_valkey(juju, unit),
+        timeout=JUJU_WAIT_TIMEOUT,
+    )
     juju.remove_relation(app.name, REDIS_APP_NAME)
     juju.wait(ready, timeout=JUJU_WAIT_TIMEOUT)
+
+
+def uses_valkey(juju: jubilant.Juju, unit: str) -> bool:
+    """Whether the discourse service of a unit is configured with valkey credentials."""
+    return bool(discourse_environment(juju, unit).get("DISCOURSE_REDIS_USERNAME"))
 
 
 def discourse_environment(juju: jubilant.Juju, unit: str) -> Dict[str, str]:
