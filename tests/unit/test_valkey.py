@@ -139,20 +139,22 @@ def test_redis_relation_sets_empty_credentials(base_state):
     assert environment["DISCOURSE_REDIS_PASSWORD"] == ""
 
 
-def test_valkey_and_redis_relations_block(base_state, valkey_user_secret):
+def test_valkey_preferred_over_redis(base_state, valkey_user_secret):
     """
     arrange: relate discourse to both redis and valkey.
     act: run pebble ready.
-    assert: the charm is blocked.
+    assert: the charm is active and discourse uses valkey.
     """
     base_state["relations"].append(_valkey_relation(secrets={"user": valkey_user_secret}))
     state_in = testing.State(**base_state, secrets=[valkey_user_secret])
 
     state_out = _run_pebble_ready(state_in)
 
-    assert state_out.unit_status == BlockedStatus(
-        "Both redis and valkey relations exist, remove one of them"
-    )
+    assert state_out.unit_status == ActiveStatus()
+    environment = _environment(state_out)
+    assert environment["DISCOURSE_REDIS_HOST"] == "valkey-primary"
+    assert environment["DISCOURSE_REDIS_USERNAME"] == VALKEY_USERNAME
+    assert environment["DISCOURSE_REDIS_PASSWORD"] == VALKEY_PASSWORD
 
 
 def test_no_redis_nor_valkey_relation_waits(base_state, postgresql_relation):

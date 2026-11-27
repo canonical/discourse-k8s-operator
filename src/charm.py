@@ -616,12 +616,6 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             self._stop_service()
             return False
-        redis_related = self.model.get_relation(self.redis.relation_name) is not None
-        if redis_related and self.valkey.is_related:
-            self.model.unit.status = BlockedStatus(
-                "Both redis and valkey relations exist, remove one of them"
-            )
-            return False
         if self.valkey.is_related:
             return self._is_valkey_relation_ready()
         if not self.redis.relation_data:
@@ -643,6 +637,9 @@ class DiscourseCharm(CharmBase):
     def _is_valkey_relation_ready(self) -> bool:
         """Check if the valkey relation provides valid connection data.
 
+        While the data is not ready, discourse keeps running with its current settings,
+        so it stays on redis when switching from redis to valkey.
+
         Returns:
             If the valkey relation is ready.
         """
@@ -650,7 +647,6 @@ class DiscourseCharm(CharmBase):
             self.valkey.get_connection()
         except ValkeyRelationNotReadyError:
             self.model.unit.status = WaitingStatus("Waiting for valkey relation to initialize")
-            self._stop_service()
             return False
         except InvalidValkeyRelationDataError as exc:
             self.model.unit.status = BlockedStatus(str(exc))

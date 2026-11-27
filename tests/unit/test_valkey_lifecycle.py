@@ -274,25 +274,29 @@ def test_valkey_removed_stops_and_new_relation_starts(ctx, container, postgresql
 
 
 @pytest.mark.parametrize(
-    "endpoints, expected_status",
+    "endpoints, expected_status, expected_service_status",
     [
         pytest.param(
             "valkey-primary",
             BlockedStatus("Invalid valkey endpoint: valkey-primary"),
+            pebble.ServiceStatus.INACTIVE,
             id="invalid endpoint",
         ),
         pytest.param(
-            "", WaitingStatus("Waiting for valkey relation to initialize"), id="no endpoint"
+            "",
+            WaitingStatus("Waiting for valkey relation to initialize"),
+            pebble.ServiceStatus.ACTIVE,
+            id="no endpoint",
         ),
     ],
 )
-def test_valkey_unusable_stops_running_service(
-    ctx, container, postgresql_relation, endpoints, expected_status
+def test_valkey_unusable_running_service(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    ctx, container, postgresql_relation, endpoints, expected_status, expected_service_status
 ):
     """
     arrange: discourse running with valkey.
     act: valkey advertises unusable endpoints.
-    assert: discourse is stopped instead of running with outdated settings.
+    assert: discourse is stopped if the data is invalid, and keeps running while waiting.
     """
     valkey_relation = _valkey_relation()
     secret = _user_secret(valkey_relation)
@@ -309,7 +313,7 @@ def test_valkey_unusable_stops_running_service(
     state = ctx.run(ctx.on.relation_changed(relation, remote_unit=0), state)
 
     assert state.unit_status == expected_status
-    assert _service_status(state) == pebble.ServiceStatus.INACTIVE
+    assert _service_status(state) == expected_service_status
 
 
 def test_redis_change_applies_new_host(ctx, container, postgresql_relation, redis_relation):

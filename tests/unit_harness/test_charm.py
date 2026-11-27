@@ -38,13 +38,7 @@ pytestmark = pytest.mark.filterwarnings("ignore:Harness is deprecated:PendingDep
         (False, False, True, False, WaitingStatus("Waiting for database relation")),
         (True, False, True, False, ActiveStatus()),
         (True, False, True, True, ActiveStatus()),
-        (
-            True,
-            True,
-            True,
-            False,
-            BlockedStatus("Both redis and valkey relations exist, remove one of them"),
-        ),
+        (True, True, True, False, ActiveStatus()),
     ],
     ids=[
         "No relation",
