@@ -152,7 +152,7 @@ def test_valkey_preferred_over_redis(base_state, valkey_user_secret):
 
     assert state_out.unit_status == ActiveStatus()
     environment = _environment(state_out)
-    assert environment["DISCOURSE_REDIS_HOST"] != "redis-host"
+    assert environment["DISCOURSE_REDIS_HOST"] == "valkey-primary"
     assert environment["DISCOURSE_REDIS_USERNAME"] == VALKEY_USERNAME
     assert environment["DISCOURSE_REDIS_PASSWORD"] == VALKEY_PASSWORD
 
