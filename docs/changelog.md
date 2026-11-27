@@ -2,6 +2,11 @@
 
 # Changelog
 
+## 2026-11-27
+
+- Prefer the `valkey` relation over the `redis` relation when both are related, instead of
+  blocking. Discourse keeps using Redis until Valkey provides valid connection details.
+
 ## 2026-11-19
 
 - Upgrade Ruby in the Discourse rock from 3.4.7 to 3.4.13 to fix the Regexp and
