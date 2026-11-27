@@ -123,13 +123,14 @@ _Interface_: `valkey_client`
 _Supported charms_: [valkey](https://charmhub.io/valkey)
 
 Valkey is an open source fork of Redis and can be used instead of Redis. Discourse connects to the Valkey primary
-endpoint with the credentials provided by the integration. Integrate Discourse with either Redis or Valkey, not both.
+endpoint with the credentials provided by the integration. If both Redis and Valkey are related, Discourse keeps using Redis until Valkey provides valid connection details,
+then uses Valkey.
 TLS connections to Valkey aren't supported yet. Discourse requires a Valkey charm revision that allows the `TIME`
 command for client users, available in the `9/edge` channel at the time of writing.
 
 If Valkey is related but its connection details are missing or invalid, Discourse is stopped until they are
-available. While both Redis and Valkey are related, the charm is blocked and Discourse keeps running with its
-current cache, so you can switch from Redis to Valkey by relating Valkey and then removing the Redis relation.
+available. You can switch from Redis to Valkey by relating Valkey, without
+removing the Redis relation first.
 
 Switching between Redis and Valkey doesn't copy any data. Background jobs waiting in the Sidekiq queues, scheduled
 and retried jobs, and cached data are lost. Discourse recreates its periodic jobs and caches on its own, but jobs
