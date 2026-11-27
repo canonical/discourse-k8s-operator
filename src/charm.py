@@ -79,12 +79,10 @@ class DiscourseCharm(CharmBase):
     # All attributes are necessary for the charm functionality
 
     on = RedisRelationCharmEvents()
-    _stored = ops.StoredState()
 
     def __init__(self, *args):
         """Initialize defaults and event handlers."""
         super().__init__(*args)
-        self._stored.set_default(valkey_selected=False)
 
         self._database = DatabaseHandler(self, DATABASE_RELATION_NAME)
         self._oauth = OAuthObserver(self, self._setup_and_activate, self._get_external_hostname)
@@ -461,35 +459,13 @@ class DiscourseCharm(CharmBase):
         )
         return (redis_hostname, redis_port)
 
-    def _use_valkey(self) -> bool:
-        """Select the backend used by Discourse.
-
-        Redis is kept while Valkey is related but has never provided valid connection data.
-        Once Valkey is selected, it stays selected until the Valkey relation is removed.
-
-        Returns:
-            True if Discourse must use Valkey, False if it must use Redis.
-        """
-        if not self.valkey.is_related:
-            self._stored.valkey_selected = False
-            return False
-        if self._stored.valkey_selected:
-            return True
-        try:
-            self.valkey.get_connection()
-        except (ValkeyRelationNotReadyError, InvalidValkeyRelationDataError):
-            # Without Redis there is nothing to fall back to, so report the Valkey state.
-            return self.model.get_relation(self.redis.relation_name) is None
-        self._stored.valkey_selected = True
-        return True
-
     def _get_redis_env(self) -> typing.Dict[str, str]:
         """Get the Redis connection environment variables from the redis or valkey relation.
 
         Returns:
             Dictionary with the Redis connection environment settings.
         """
-        if self._use_valkey():
+        if self.valkey.is_related:
             connection = self.valkey.get_connection()
             host, port = connection.host, connection.port
             username, password = connection.username, connection.password
@@ -640,7 +616,7 @@ class DiscourseCharm(CharmBase):
             self.model.unit.status = WaitingStatus("Waiting for database relation")
             self._stop_service()
             return False
-        if self._use_valkey():
+        if self.valkey.is_related:
             return self._is_valkey_relation_ready()
         if not self.redis.relation_data:
             self.model.unit.status = WaitingStatus("Waiting for redis or valkey relation")
@@ -661,6 +637,9 @@ class DiscourseCharm(CharmBase):
     def _is_valkey_relation_ready(self) -> bool:
         """Check if the valkey relation provides valid connection data.
 
+        While the data is not ready, discourse keeps running with its current settings,
+        so it stays on redis when switching from redis to valkey.
+
         Returns:
             If the valkey relation is ready.
         """
@@ -668,7 +647,6 @@ class DiscourseCharm(CharmBase):
             self.valkey.get_connection()
         except ValkeyRelationNotReadyError:
             self.model.unit.status = WaitingStatus("Waiting for valkey relation to initialize")
-            self._stop_service()
             return False
         except InvalidValkeyRelationDataError as exc:
             self.model.unit.status = BlockedStatus(str(exc))
